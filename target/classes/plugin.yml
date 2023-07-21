@@ -1,0 +1,67 @@
+name: PlayTimeManager
+main: Main.PlayTimeManager
+version: 2.0.0
+author: TheGaBr0_
+api-version: 1.19
+
+softdepend: [PlaceholderAPI, LuckPerms]
+
+commands:
+  playtime:
+    description: Command to get play time of players
+    permission: playtime
+    permission-message: You don't have the permission to execute this command!
+  playtimedbadd:
+    description: Command to add old play time data
+    permission: playtime.dbadd
+    permission-message: You don't have the permission to execute this command!
+  playtimeuuidadd:
+    description: Command to add old uuid stored data
+    permission: playtime.dbadd
+    permission-message: You don't have the permission to execute this command!
+  playtimeaverage:
+    description: Command to get the average of play time data
+    permission: playtime.average
+    permission-message: You don't have the permission to execute this command!
+  playtimestats:
+    description: Command to get play time statistic data
+    permission: playtime.stats
+    permission-message: You don't have the permission to execute this command!
+  playtimetop:
+    description: Command to get players with higher play time
+    permission: playtime.top
+    permission-message: You don't have the permission to execute this command!
+  playtimegroup:
+    description: Command to set a LuckPerms role based on playtime
+    permission: playtime.group
+    permission-message: You don't have the permission to execute this command!
+
+permissions:
+  playtime.*:
+    default: op
+    description: Da accesso a tutti i comandi
+    children:
+      playtime: true
+      playtime.others: true
+      playtime.others.modify: true
+      playtime.dbadd: true
+      playtime.average: true
+      playtime.stats: true
+      playtime.top: true
+      playtime.group: true
+  playtime:
+    default: true
+  playtime.others:
+    default: false
+  playtime.others.modify:
+    default: false
+  playtime.dbadd:
+    default: false
+  playtime.average:
+    default: false
+  playtime.stats:
+    default: false
+  playtime.top:
+    default: false
+  playtime.group:
+    default: false

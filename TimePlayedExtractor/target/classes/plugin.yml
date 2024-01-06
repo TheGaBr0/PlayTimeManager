@@ -1,0 +1,5 @@
+name: TimePlayedExtractor
+main: Main.TimePlayedExtractor
+version: 1.0.0
+author: TheGaBr0_
+api-version: 1.16

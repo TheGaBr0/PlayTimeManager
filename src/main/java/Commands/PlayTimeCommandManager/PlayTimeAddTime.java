@@ -2,7 +2,7 @@ package Commands.PlayTimeCommandManager;
 
 import UsersDatabases.DataCombiner;
 import UsersDatabases.User;
-import Main.PlayTimeManager;
+import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.CommandSender;
 
 public class PlayTimeAddTime {

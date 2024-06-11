@@ -1,6 +1,6 @@
 package Commands;
 
-import Main.PlayTimeManager;
+import me.thegabro.playtimemanager.PlayTimeManager;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import org.bukkit.command.Command;

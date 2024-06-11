@@ -1,4 +1,4 @@
-package Main;
+package me.thegabro.playtimemanager;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;

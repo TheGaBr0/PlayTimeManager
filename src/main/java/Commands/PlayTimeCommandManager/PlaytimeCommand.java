@@ -2,7 +2,7 @@ package Commands.PlayTimeCommandManager;
 
 import UsersDatabases.User;
 import UsersDatabases.UsersManager;
-import Main.PlayTimeManager;
+import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;

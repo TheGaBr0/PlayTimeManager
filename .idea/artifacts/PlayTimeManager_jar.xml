@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="PlayTimeManager:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/PlayTimeManager_jar</output-path>
+    <root id="archive" name="PlayTimeManager.jar">
+      <element id="module-output" name="PlayTimeManager" />
+    </root>
+  </artifact>
+</component>

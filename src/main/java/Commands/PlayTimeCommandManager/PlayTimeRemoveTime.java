@@ -1,7 +1,7 @@
 package Commands.PlayTimeCommandManager;
 
 import UsersDatabases.*;
-import Main.PlayTimeManager;
+import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.CommandSender;
 
 public class PlayTimeRemoveTime {

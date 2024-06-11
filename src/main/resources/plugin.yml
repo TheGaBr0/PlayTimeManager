@@ -1,8 +1,8 @@
 name: PlayTimeManager
-main: Main.PlayTimeManager
-version: 2.0.0
-author: TheGaBr0_
-api-version: 1.19
+version: '${project.version}'
+main: me.thegabro.playtimemanager.PlayTimeManager
+api-version: '1.20'
+author: TheGabro
 
 softdepend: [PlaceholderAPI, LuckPerms]
 

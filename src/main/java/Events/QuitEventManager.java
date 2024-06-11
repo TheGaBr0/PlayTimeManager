@@ -1,7 +1,7 @@
 package Events;
 
 import UsersDatabases.User;
-import Main.PlayTimeManager;
+import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;

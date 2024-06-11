@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c5c8bcb5-cf0e-4612-b038-b9f0362569f3" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/src/main/java/Main/PlayTimeManager.java" beforeDir="false" />
-    </list>
+    <list default="true" id="c5c8bcb5-cf0e-4612-b038-b9f0362569f3" name="Changes" comment="removed wrong folders" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -94,6 +92,19 @@
       <option name="presentableId" value="Default" />
       <updated>1718092656981</updated>
     </task>
+    <task id="LOCAL-00001" summary="removed wrong folders">
+      <option name="closed" value="true" />
+      <created>1718093988411</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1718093988411</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="removed wrong folders" />
+    <option name="LAST_COMMIT_MESSAGE" value="removed wrong folders" />
   </component>
 </project>

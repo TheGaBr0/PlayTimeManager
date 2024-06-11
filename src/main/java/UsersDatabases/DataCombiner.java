@@ -26,12 +26,10 @@ public class DataCombiner {
         long sum = 0;
         long count = 0;
 
-        for(User user : usersManager.getStoredPlayers()) {
+        for(String nickname : usersManager.getStoredPlayers()) {
 
-            if(user.getPlayTime() != 0L){
-                sum += user.getPlayTime();
-                count++;
-            }
+            sum += usersManager.getPlayTimeByNick(nickname);
+            count++;
         }
 
         if(count == 0)
@@ -52,20 +50,21 @@ public class DataCombiner {
 
         df.setRoundingMode(RoundingMode.CEILING);
 
-        for (User user : usersManager.getStoredPlayers()) {
+        for (String nickname : usersManager.getStoredPlayers()) {
 
-            if(user.getPlayTime() != 0L){
+            if(usersManager.userExists(nickname)){
+                long playtime = usersManager.getPlayTimeByNick(nickname);
                 numberOfPlayers++;
                 if (format.equals("d"))
-                    if (convertTicksToDays(user.getPlayTime() / 20) >= time)
+                    if (convertTicksToDays(playtime / 20) >= time)
                         sum++;
 
                 if (format.equals("h"))
-                    if (convertTicksToHours(user.getPlayTime() / 20) >= time)
+                    if (convertTicksToHours(playtime / 20) >= time)
                         sum++;
 
                 if (format.equals("m"))
-                    if (convertTicksToMinutes(user.getPlayTime() / 20) >= time)
+                    if (convertTicksToMinutes(playtime / 20) >= time)
                         sum++;
             }
 
@@ -82,21 +81,22 @@ public class DataCombiner {
 
     public List<String> FillTopPlayers(){
 
-        ArrayList<Map.Entry<String, Long>> ordered = plugin.getPlayTimeDB().getSortedPlayTimeMap();
-
-        topPlayers.clear();
-
-        for(int i = 0; i<plugin.getPlayTimeDB().getSize(); i++){
-            String nickname = plugin.getUuidDB().getPlayerName(String.valueOf(ordered.get(i).getKey()));
-            if(nickname != null){
-                User user = usersManager.getUserByNickname(nickname);
-                if(user.getPlayTime() != 0L){
-                    topPlayers.add(user.getName());
-                }
-            }
-        }
-
-        return topPlayers;
+//        ArrayList<Map.Entry<String, Long>> ordered = plugin.getPlayTimeDB().getSortedPlayTimeMap();
+//
+//        topPlayers.clear();
+//
+//        for(int i = 0; i<100; i++){
+//            String nickname = usersManager.getPlayerName(String.valueOf(ordered.get(i).getKey()));
+//            if(nickname != null){
+//                User user = usersManager.getUserByNickname(nickname);
+//                if(user.getPlayTime() != 0L){
+//                    topPlayers.add(user.getName());
+//                }
+//            }
+//        }
+//
+//        return topPlayers;
+        return null;
 
     }
 

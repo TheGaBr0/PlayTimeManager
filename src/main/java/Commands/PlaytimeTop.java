@@ -60,14 +60,14 @@ public class PlaytimeTop implements TabExecutor {
                                 sender.sendMessage("[§6Play§eTime§f]§7 Top "+numeroUtentiTotali+" players - page: "+page);
                                 for (int i = indiceInizio; i < indiceFine; i++) {
                                     sender.sendMessage("§7§l#"+(i+1)+" §e"+ topPlayers.get(i)+" §7- §d"+
-                                            plugin.getPlayTimeDB().convertTime(plugin.getUsersManager().getUserByNickname(topPlayers.get(i)).getPlayTime()/20));
+                                            plugin.getUsersManager().convertTime(plugin.getUsersManager().getUserByNickname(topPlayers.get(i)).getPlayTime()/20));
                                 }
                             } else if (page == 0) {
                                 // Mostra tutti i giocatori
                                 sender.sendMessage("[§6Play§eTime§f]§7 Top "+numeroUtentiTotali+" players - page: 1");
                                 for (int i = 0; i <= numeroUtentiTotali; i++) {
                                     sender.sendMessage("§7§l#"+(i+1)+" §e"+ topPlayers.get(i)+" §7- §d"+
-                                            plugin.getPlayTimeDB().convertTime(plugin.getUsersManager().getUserByNickname(topPlayers.get(i)).getPlayTime()/20));
+                                            plugin.getUsersManager().convertTime(plugin.getUsersManager().getUserByNickname(topPlayers.get(i)).getPlayTime()/20));
                                 }
                             } else {
                                 // Pagina non valida

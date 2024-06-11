@@ -31,7 +31,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
     @Override
     public String onRequest(OfflinePlayer player, String params) {
         if(params.equalsIgnoreCase("PlayTime")){
-            return String.valueOf(plugin.getPlayTimeDB().convertTime(plugin.getUsersManager().getUserByNickname(player.getName()).getPlayTime()/20));
+            return String.valueOf(plugin.getUsersManager().convertTime(plugin.getUsersManager().getUserByNickname(player.getName()).getPlayTime()/20));
         }
 
         if(params.toLowerCase().contains("PlayTime_Top_".toLowerCase())) {
@@ -39,7 +39,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
             if(isStringInt(params.substring(13))){
                 position = Integer.parseInt(params.substring(13));
                 User user = plugin.getDbDataCombiner().getPlayerAtPosition(position);
-                return plugin.getPlayTimeDB().convertTime(user.getPlayTime()/20);
+                return plugin.getUsersManager().convertTime(user.getPlayTime()/20);
             }
         }
 

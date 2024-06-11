@@ -6,13 +6,12 @@ import org.bukkit.command.CommandSender;
 
 public class PlayTimeRemoveTime {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private User user;
+    private final String nickname;
     private UsersManager usersManager;
-    protected UuidDB uuidDB;
 
-    public PlayTimeRemoveTime(CommandSender sender, String[] args, User user){
+    public PlayTimeRemoveTime(CommandSender sender, String[] args){
 
-        this.user = user;
+        this.nickname = args[0];
         usersManager = plugin.getUsersManager();
         execute(sender, args);
     }
@@ -40,9 +39,9 @@ public class PlayTimeRemoveTime {
             case "m": timeToTicks = -1 * time * 1200L; break;
             default: sender.sendMessage("[§6Play§eTime§f]§7 Time format must be specified! [d/h/m]"); return;
         }
-        String formattedOldPlaytime = plugin.getPlayTimeDB().convertTime(user.getPlayTime() / 20);
-        user.manuallyUpdatePlayTime(timeToTicks);
-        String formattedNewPlaytime = plugin.getPlayTimeDB().convertTime(user.getPlayTime() / 20);
+        String formattedOldPlaytime = usersManager.convertTime(usersManager.getPlayTimeByNick(nickname) / 20);
+        usersManager.setArtificialPlayTimeByNick(nickname, usersManager.getArtificialPlayTimeByNick(nickname) + timeToTicks);
+        String formattedNewPlaytime = usersManager.convertTime(usersManager.getPlayTimeByNick(nickname) / 20);
 
         sender.sendMessage("[§6Play§eTime§f]§7 PlayTime of §e" + args[0] +
                 "§7 has been updated from §6" + formattedOldPlaytime + "§7 to §6" + formattedNewPlaytime +"!");

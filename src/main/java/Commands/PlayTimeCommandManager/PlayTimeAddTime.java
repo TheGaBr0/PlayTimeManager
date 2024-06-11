@@ -1,15 +1,16 @@
 package Commands.PlayTimeCommandManager;
 
-import UsersDatabases.DataCombiner;
-import UsersDatabases.User;
+import UsersDatabases.UsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.CommandSender;
 
 public class PlayTimeAddTime {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private User user;
-    public PlayTimeAddTime(CommandSender sender, String[] args, User user){
-        this.user = user;
+    private final String nickname;
+    private final UsersManager usersManager;
+    public PlayTimeAddTime(CommandSender sender, String[] args){
+        this.nickname = args[0];
+        this.usersManager = plugin.getUsersManager();
         execute(sender, args);
     }
 
@@ -36,9 +37,9 @@ public class PlayTimeAddTime {
             case "m": timeToTicks = time * 1200L; break;
             default: sender.sendMessage("[§6Play§eTime§f]§7 Time format must be specified! [d/h/m]"); return;
         }
-        String formattedOldPlaytime = plugin.getPlayTimeDB().convertTime(user.getPlayTime() / 20);
-        user.manuallyUpdatePlayTime(timeToTicks);
-        String formattedNewPlaytime = plugin.getPlayTimeDB().convertTime(user.getPlayTime() / 20);
+        String formattedOldPlaytime = usersManager.convertTime(usersManager.getPlayTimeByNick(nickname) / 20);
+        usersManager.setArtificialPlayTimeByNick(nickname, usersManager.getArtificialPlayTimeByNick(nickname) + timeToTicks);
+        String formattedNewPlaytime = usersManager.convertTime(usersManager.getPlayTimeByNick(nickname) / 20);
 
         sender.sendMessage("[§6Play§eTime§f]§7 PlayTime of §e" + args[0] +
                 "§7 has been updated from §6" + formattedOldPlaytime + "§7 to §6" + formattedNewPlaytime +"!");

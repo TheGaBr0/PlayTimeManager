@@ -17,7 +17,7 @@ import java.util.List;
 public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
     private final List<String> subCommands = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private UsersManager usersManager;
+    private final UsersManager usersManager;
 
     public PlayTimeCommandManager() {
         subCommands.add("add");
@@ -34,8 +34,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
         if (!(sender instanceof Player) || sender.hasPermission("playtime")) {
             if(args.length <= 1){
                 if(args.length == 1){
-                    User user = usersManager.getUserByNickname(args[0]);
-                    if(user.getPlayTime() == 0L){
+                    if(usersManager.userExists(args[0])){
                         sender.sendMessage("[§6Play§eTime§f]§7 The player §e" + args[0] + "§7 has never joined the server!");
                         return false;
                     }
@@ -48,18 +47,16 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
             if (sender.hasPermission("playtime.others.modify")){
                 String subCommand = args[1];
 
-                User user = usersManager.getUserByNickname(args[0]);
-
                 if (!subCommands.contains(subCommand)) {
                     sender.sendMessage("[§6Play§eTime§f]§7 Unknown subcommand: " + subCommand);
                     return false;
                 }
 
                 if (subCommand.equals("add")) {
-                    new PlayTimeAddTime(sender, args, user);
+                    new PlayTimeAddTime(sender, args);
                     return true;
                 } else if (subCommand.equals("remove")) {
-                    new PlayTimeRemoveTime(sender, args, user);
+                    new PlayTimeRemoveTime(sender, args);
                     return true;
                 }
             }
@@ -78,7 +75,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
 
-            StringUtil.copyPartialMatches(args[0], getPlayersFromDB(), completions);
+            StringUtil.copyPartialMatches(args[0], usersManager.getStoredPlayers(), completions);
 
             Collections.sort(completions);
 
@@ -90,19 +87,6 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
             return completions;
         }
         return null;
-    }
-
-    private List<String>getPlayersFromDB(){
-
-        List<String> players = new ArrayList<String>();
-
-        for (User user : usersManager.getStoredPlayers() ) {
-            if(user.getPlayTime() != 0L)
-                players.add(user.getName());
-        }
-
-        return players;
-
     }
 
 }

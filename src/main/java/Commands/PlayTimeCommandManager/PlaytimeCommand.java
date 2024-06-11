@@ -47,20 +47,19 @@ public class PlaytimeCommand{
 
     private boolean handleOther(CommandSender sender, String playerName) {
 
-        user = usersManager.getUserByNickname(playerName);
+        long playtime = usersManager.getPlayTimeByNick(playerName);
 
-        long playtime = user.getPlayTime();
         String message = formatPlaytimeMessage(sender, playerName, playtime);
         sender.sendMessage(message);
         return true;
     }
 
     private String formatPlaytimeMessage(CommandSender sender, String playerName, long playtime) {
-        String formattedPlaytime = plugin.getPlayTimeDB().convertTime(playtime / 20);
-        long customPlayTime =  plugin.getCustomPlayTImeDB().getCustomPlayTime(user.getUuid());
+        String formattedPlaytime = usersManager.convertTime(playtime / 20);
+        long customPlayTime =  usersManager.getArtificialPlayTimeByNick(user.getUuid());
         if(customPlayTime != 0L && sender.hasPermission("playtime.others.modify"))
             return "[§6Play§eTime§f]§7 Il tempo di gioco di §e" + playerName + "§7 è §6" + formattedPlaytime +
-                    " ("+plugin.getPlayTimeDB().convertTime(customPlayTime / 20)+")";
+                    " ("+usersManager.convertTime(customPlayTime / 20)+")";
         else
             return "[§6Play§eTime§f]§7 Il tempo di gioco di §e" + playerName + "§7 è §6" + formattedPlaytime;
 

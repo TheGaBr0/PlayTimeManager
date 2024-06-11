@@ -3,6 +3,8 @@ package me.thegabro.playtimemanager;
 import Commands.*;
 import Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import Events.JoinEventManager;
+import SQLiteDB.Database;
+import SQLiteDB.SQLite;
 import UsersDatabases.*;
 import Events.QuitEventManager;
 import PlaceHolders.PlayTimePlaceHolders;
@@ -16,21 +18,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class PlayTimeManager extends JavaPlugin{
 
     private static PlayTimeManager instance;
-    private PlayTimeDB playTimeDB;
-    private UuidDB uuidDB;
-    private CustomPlayTimeDB customPlayTImeDB;
     private DataCombiner dbDataCombiner;
     private UsersManager usersManager;
     public LuckPerms luckPermsApi = null;
     private Configuration config;
+    private Database db;
 
     @Override
     public void onEnable() {
 
         instance = this;
-        playTimeDB = new PlayTimeDB(this, this.getDataFolder(), "PlayTimeDatabase", true, true);
-        uuidDB = new UuidDB(this, this.getDataFolder(), "UuidDatabase", true, true);
-        customPlayTImeDB = new CustomPlayTimeDB(this, this.getDataFolder(), "CustomPlayTimeDatabase", true, true);
+        this.db = new SQLite(this);
+        this.db.load();
         config = new Configuration(this, this.getDataFolder(), "config", true, true);
 
         if(Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
@@ -51,11 +50,9 @@ public class PlayTimeManager extends JavaPlugin{
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
         getCommand("playtime").setExecutor(new PlayTimeCommandManager() {});
-        getCommand("playtimedbadd").setExecutor(new PlaytimeDbAdd() {});
         getCommand("playtimeaverage").setExecutor(new PlaytimeAverage() {});
         getCommand("playtimestats").setExecutor(new PlaytimeStats() {});
         getCommand("playtimetop").setExecutor(new PlaytimeTop() {});
-        getCommand("playtimeuuidadd").setExecutor(new PlaytimeUuidAdd());
         //getCommand("playtimehelp").setExecutor(new PlaytimeHelp(this));
 
         getLogger().info("has been enabled!");
@@ -80,15 +77,11 @@ public class PlayTimeManager extends JavaPlugin{
         return config;
     }
 
-    public PlayTimeDB getPlayTimeDB(){return playTimeDB;}
-
-    public UuidDB getUuidDB(){return uuidDB;}
-
     public UsersManager getUsersManager(){return usersManager;}
 
-    public CustomPlayTimeDB getCustomPlayTImeDB(){return customPlayTImeDB;}
-
     public DataCombiner getDbDataCombiner(){return dbDataCombiner;}
+
+    public Database getDatabase() { return this.db; }
 
 
 

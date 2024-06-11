@@ -77,12 +77,12 @@ public class UsersManagerLuckPerms extends UsersManager{
                                     if(p != null){
                                         p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10, 0);
                                         p.sendMessage("[§6Play§eTime§f]§7 Avendo raggiunto §6" +
-                                                plugin.getPlayTimeDB().convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20)
+                                                plugin.getUsersManager().convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20)
                                                 + "§7 di tempo di gioco " + "§7sei stato promosso a §e" + group + "§7!" +
                                                 " Contatta lo staff su §9Discord§7 per ricevere il tuo ruolo anche li!");
                                         Bukkit.getServer().getConsoleSender().sendMessage("[§6Play§eTime§f]§7 User §e"
                                                 + user.getName() + " §7has reached §6" +
-                                                plugin.getPlayTimeDB().convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20) +
+                                                plugin.getUsersManager().convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20) +
                                                 " §7so it is now part of §e" + group + " §7group!");
                                     }
                                 }

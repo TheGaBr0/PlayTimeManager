@@ -1,26 +1,22 @@
 package UsersDatabases;
 
-import me.thegabro.playtimemanager.PlayTimeManager;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.node.Node;
 import net.luckperms.api.node.types.InheritanceNode;
-import net.luckperms.api.query.QueryOptions;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
-public class UsersManagerLuckPerms extends UsersManager{
+public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
 
     private final long timeInSeconds = 60;
 
-    public UsersManagerLuckPerms(){
+    public OnlineUsersManagerLuckPerms(){
         super();
 
         new BukkitRunnable() {
@@ -35,7 +31,7 @@ public class UsersManagerLuckPerms extends UsersManager{
 
                 if(groups != null){
                     // Iterate through online users
-                    for (User user : onlineUsers) {
+                    for (OnlineUser onlineUser : onlineUsers) {
 
                         // Iterate through groups
                         for (String group : groups.keySet()) {
@@ -46,9 +42,9 @@ public class UsersManagerLuckPerms extends UsersManager{
                             }
 
                             // Check play time requirement for group
-                            if (user.getPlayTime() >= groups.get(group)) {
+                            if (onlineUser.getPlayTime() >= groups.get(group)) {
                                 // Get LuckPerms user
-                                userLuckPerms = plugin.luckPermsApi.getUserManager().getUser(UUID.fromString(user.getUuid()));
+                                userLuckPerms = plugin.luckPermsApi.getUserManager().getUser(UUID.fromString(onlineUser.getUuid()));
                                 if (userLuckPerms == null) {
                                     continue; // Skip to next group if user doesn't exist in LuckPerms
                                 }
@@ -72,17 +68,17 @@ public class UsersManagerLuckPerms extends UsersManager{
                                     plugin.luckPermsApi.getUserManager().saveUser(userLuckPerms);
 
                                     // Send messages to player and console
-                                    p = Bukkit.getPlayerExact(user.getName());
+                                    p = Bukkit.getPlayerExact(onlineUser.getNickname());
 
                                     if(p != null){
                                         p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10, 0);
                                         p.sendMessage("[§6Play§eTime§f]§7 Avendo raggiunto §6" +
-                                                plugin.getUsersManager().convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20)
+                                                convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20)
                                                 + "§7 di tempo di gioco " + "§7sei stato promosso a §e" + group + "§7!" +
                                                 " Contatta lo staff su §9Discord§7 per ricevere il tuo ruolo anche li!");
                                         Bukkit.getServer().getConsoleSender().sendMessage("[§6Play§eTime§f]§7 User §e"
-                                                + user.getName() + " §7has reached §6" +
-                                                plugin.getUsersManager().convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20) +
+                                                + onlineUser.getNickname() + " §7has reached §6" +
+                                                convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20) +
                                                 " §7so it is now part of §e" + group + " §7group!");
                                     }
                                 }
@@ -95,4 +91,27 @@ public class UsersManagerLuckPerms extends UsersManager{
         }.runTaskTimer(plugin,0,timeInSeconds * 20);
     }
 
+    private String convertTime(long secondsx) {
+        int days = (int) TimeUnit.SECONDS.toDays(secondsx);
+        int hours = (int) (TimeUnit.SECONDS.toHours(secondsx) - TimeUnit.DAYS.toHours(days));
+        int minutes = (int) (TimeUnit.SECONDS.toMinutes(secondsx) - TimeUnit.HOURS.toMinutes(hours)
+                - TimeUnit.DAYS.toMinutes(days));
+        int seconds = (int) (TimeUnit.SECONDS.toSeconds(secondsx) - TimeUnit.MINUTES.toSeconds(minutes)
+                - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days));
+
+        if (days != 0) {
+            return days + "d, " + hours + "h, " + minutes + "m, " + seconds + "s";
+        } else {
+            if (hours != 0) {
+                return hours + "h, " + minutes + "m, " + seconds + "s";
+            } else {
+                if (minutes != 0) {
+                    return minutes + "m, " + seconds + "s";
+                } else {
+                    return seconds + "s";
+                }
+            }
+
+        }
+    }
 }

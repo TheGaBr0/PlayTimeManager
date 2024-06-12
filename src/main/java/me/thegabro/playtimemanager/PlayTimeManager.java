@@ -5,10 +5,9 @@ import Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import Events.JoinEventManager;
 import SQLiteDB.Database;
 import SQLiteDB.SQLite;
-import UsersDatabases.*;
 import Events.QuitEventManager;
 import PlaceHolders.PlayTimePlaceHolders;
-import UsersDatabases.UsersManager;
+import UsersDatabases.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import org.bukkit.Bukkit;
@@ -18,8 +17,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class PlayTimeManager extends JavaPlugin{
 
     private static PlayTimeManager instance;
-    private DataCombiner dbDataCombiner;
-    private UsersManager usersManager;
+    private OnlineUsersManager onlineUsersManager;
     public LuckPerms luckPermsApi = null;
     private Configuration config;
     private Database db;
@@ -36,12 +34,11 @@ public class PlayTimeManager extends JavaPlugin{
             getCommand("playtimegroup").setExecutor(new PlaytimeLuckPermsGroup());
             luckPermsApi = LuckPermsProvider.get();
             //usersManager = new UsersManagerLuckPerms();
-            usersManager = new UsersManager();
+            onlineUsersManager = new OnlineUsersManager();
         }else{
-            usersManager = new UsersManager();
+            onlineUsersManager = new OnlineUsersManager();
         }
 
-        dbDataCombiner = new DataCombiner();
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlayTimePlaceHolders().register();
@@ -62,7 +59,7 @@ public class PlayTimeManager extends JavaPlugin{
     @Override
     public void onDisable() {
         for(Player p : Bukkit.getOnlinePlayers()){
-            usersManager.removeOnlineUser(usersManager.getUserByNickname(p.getPlayer().getName()));
+            onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(p.getPlayer().getName()));
         }
 
         getLogger().info("has been disabled!");
@@ -77,9 +74,7 @@ public class PlayTimeManager extends JavaPlugin{
         return config;
     }
 
-    public UsersManager getUsersManager(){return usersManager;}
-
-    public DataCombiner getDbDataCombiner(){return dbDataCombiner;}
+    public OnlineUsersManager getUsersManager(){return onlineUsersManager;}
 
     public Database getDatabase() { return this.db; }
 

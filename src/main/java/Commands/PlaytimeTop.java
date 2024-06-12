@@ -1,5 +1,7 @@
 package Commands;
 
+import SQLiteDB.Database;
+import UsersDatabases.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -9,10 +11,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class PlaytimeTop implements TabExecutor {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final Database db = plugin.getDatabase();
     public final int TOP_MAX = 100;
     int page;
 
@@ -39,11 +43,12 @@ public class PlaytimeTop implements TabExecutor {
                         }else{
                             page = 1;
                         }
-                        List<String> topPlayers = plugin.getDbDataCombiner().FillTopPlayers();
+                        int numeroUtentiTotali = Integer.parseInt(args[0]);
+                        List<DBUser> topPlayers = db.getTopPlayersByPlaytime(numeroUtentiTotali);
 
-                        if(topPlayers.size()>0){
+                        if(!topPlayers.isEmpty()){
                             // Ottenere il numero totale degli utenti dal parametro args[0]
-                            int numeroUtentiTotali = Integer.parseInt(args[0]);
+
 
                             if(numeroUtentiTotali > topPlayers.size())
                                 numeroUtentiTotali = topPlayers.size();
@@ -60,14 +65,14 @@ public class PlaytimeTop implements TabExecutor {
                                 sender.sendMessage("[§6Play§eTime§f]§7 Top "+numeroUtentiTotali+" players - page: "+page);
                                 for (int i = indiceInizio; i < indiceFine; i++) {
                                     sender.sendMessage("§7§l#"+(i+1)+" §e"+ topPlayers.get(i)+" §7- §d"+
-                                            plugin.getUsersManager().convertTime(plugin.getUsersManager().getUserByNickname(topPlayers.get(i)).getPlayTime()/20));
+                                            convertTime(topPlayers.get(i).getPlaytime()/20));
                                 }
                             } else if (page == 0) {
                                 // Mostra tutti i giocatori
                                 sender.sendMessage("[§6Play§eTime§f]§7 Top "+numeroUtentiTotali+" players - page: 1");
                                 for (int i = 0; i <= numeroUtentiTotali; i++) {
                                     sender.sendMessage("§7§l#"+(i+1)+" §e"+ topPlayers.get(i)+" §7- §d"+
-                                            plugin.getUsersManager().convertTime(plugin.getUsersManager().getUserByNickname(topPlayers.get(i)).getPlayTime()/20));
+                                            convertTime(topPlayers.get(i).getPlaytime()/20));
                                 }
                             } else {
                                 // Pagina non valida
@@ -114,6 +119,30 @@ public class PlaytimeTop implements TabExecutor {
         }
 
         return result;
+    }
+
+    private String convertTime(long secondsx) {
+        int days = (int) TimeUnit.SECONDS.toDays(secondsx);
+        int hours = (int) (TimeUnit.SECONDS.toHours(secondsx) - TimeUnit.DAYS.toHours(days));
+        int minutes = (int) (TimeUnit.SECONDS.toMinutes(secondsx) - TimeUnit.HOURS.toMinutes(hours)
+                - TimeUnit.DAYS.toMinutes(days));
+        int seconds = (int) (TimeUnit.SECONDS.toSeconds(secondsx) - TimeUnit.MINUTES.toSeconds(minutes)
+                - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days));
+
+        if (days != 0) {
+            return days + "d, " + hours + "h, " + minutes + "m, " + seconds + "s";
+        } else {
+            if (hours != 0) {
+                return hours + "h, " + minutes + "m, " + seconds + "s";
+            } else {
+                if (minutes != 0) {
+                    return minutes + "m, " + seconds + "s";
+                } else {
+                    return seconds + "s";
+                }
+            }
+
+        }
     }
 
 

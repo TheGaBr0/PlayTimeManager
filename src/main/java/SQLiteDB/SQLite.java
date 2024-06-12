@@ -23,7 +23,7 @@ public class SQLite extends Database{
             "uuid VARCHAR(32) NOT NULL," +
             "nickname VARCHAR(32) NOT NULL," +
             "playtime BIGINT NOT NULL," +
-            "artificial_playtime BIGINT," +
+            "artificial_playtime BIGINT NOT NULL," +
             "PRIMARY KEY (uuid)" +
             ");";
 

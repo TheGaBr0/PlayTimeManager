@@ -1,16 +1,18 @@
 package Commands.PlayTimeCommandManager;
 
-import UsersDatabases.UsersManager;
+import UsersDatabases.DBUser;
+import UsersDatabases.OnlineUser;
+import UsersDatabases.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.CommandSender;
 
+import java.util.concurrent.TimeUnit;
+
 public class PlayTimeAddTime {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final String nickname;
-    private final UsersManager usersManager;
+    private final OnlineUsersManager onlineUsersManager;
     public PlayTimeAddTime(CommandSender sender, String[] args){
-        this.nickname = args[0];
-        this.usersManager = plugin.getUsersManager();
+        this.onlineUsersManager = plugin.getUsersManager();
         execute(sender, args);
     }
 
@@ -37,12 +39,42 @@ public class PlayTimeAddTime {
             case "m": timeToTicks = time * 1200L; break;
             default: sender.sendMessage("[§6Play§eTime§f]§7 Time format must be specified! [d/h/m]"); return;
         }
-        String formattedOldPlaytime = usersManager.convertTime(usersManager.getPlayTimeByNick(nickname) / 20);
-        usersManager.setArtificialPlayTimeByNick(nickname, usersManager.getArtificialPlayTimeByNick(nickname) + timeToTicks);
-        String formattedNewPlaytime = usersManager.convertTime(usersManager.getPlayTimeByNick(nickname) / 20);
+
+        DBUser user = onlineUsersManager.getOnlineUser(sender.getName());
+
+        if(user == null)
+            user = DBUser.fromNickname(sender.getName());
+
+        String formattedOldPlaytime = convertTime(user.getPlaytime() / 20);
+        user.setArtificialPlaytime(user.getArtificialPlaytime() + timeToTicks);
+        String formattedNewPlaytime = convertTime(user.getPlaytime() / 20);
 
         sender.sendMessage("[§6Play§eTime§f]§7 PlayTime of §e" + args[0] +
                 "§7 has been updated from §6" + formattedOldPlaytime + "§7 to §6" + formattedNewPlaytime +"!");
 
+    }
+
+    private String convertTime(long secondsx) {
+        int days = (int) TimeUnit.SECONDS.toDays(secondsx);
+        int hours = (int) (TimeUnit.SECONDS.toHours(secondsx) - TimeUnit.DAYS.toHours(days));
+        int minutes = (int) (TimeUnit.SECONDS.toMinutes(secondsx) - TimeUnit.HOURS.toMinutes(hours)
+                - TimeUnit.DAYS.toMinutes(days));
+        int seconds = (int) (TimeUnit.SECONDS.toSeconds(secondsx) - TimeUnit.MINUTES.toSeconds(minutes)
+                - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days));
+
+        if (days != 0) {
+            return days + "d, " + hours + "h, " + minutes + "m, " + seconds + "s";
+        } else {
+            if (hours != 0) {
+                return hours + "h, " + minutes + "m, " + seconds + "s";
+            } else {
+                if (minutes != 0) {
+                    return minutes + "m, " + seconds + "s";
+                } else {
+                    return seconds + "s";
+                }
+            }
+
+        }
     }
 }

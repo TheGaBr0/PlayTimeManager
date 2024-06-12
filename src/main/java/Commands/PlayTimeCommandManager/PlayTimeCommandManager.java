@@ -1,7 +1,7 @@
 package Commands.PlayTimeCommandManager;
 
-import UsersDatabases.User;
-import UsersDatabases.UsersManager;
+import SQLiteDB.Database;
+import UsersDatabases.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -17,12 +17,13 @@ import java.util.List;
 public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
     private final List<String> subCommands = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final UsersManager usersManager;
+    private final OnlineUsersManager onlineUsersManager;
+    private final Database db = plugin.getDatabase();
 
     public PlayTimeCommandManager() {
         subCommands.add("add");
         subCommands.add("remove");
-        usersManager = plugin.getUsersManager();
+        onlineUsersManager = plugin.getUsersManager();
     }
 
     @Override
@@ -34,7 +35,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
         if (!(sender instanceof Player) || sender.hasPermission("playtime")) {
             if(args.length <= 1){
                 if(args.length == 1){
-                    if(usersManager.userExists(args[0])){
+                    if(!onlineUsersManager.userExists(args[0])){
                         sender.sendMessage("[§6Play§eTime§f]§7 The player §e" + args[0] + "§7 has never joined the server!");
                         return false;
                     }
@@ -75,7 +76,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
 
-            StringUtil.copyPartialMatches(args[0], usersManager.getStoredPlayers(), completions);
+            StringUtil.copyPartialMatches(args[0], db.getAllNicknames(), completions);
 
             Collections.sort(completions);
 

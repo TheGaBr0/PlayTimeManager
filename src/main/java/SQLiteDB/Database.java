@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
+import UsersDatabases.DBUser;
 import org.bukkit.entity.Player;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -387,12 +388,13 @@ public abstract class Database {
             conn = getSQLConnection();
 
             // Prepare the SQL statement to insert a new player into the play_time table
-            ps = conn.prepareStatement("INSERT INTO play_time (uuid, nickname, playtime, artificial_playtime) VALUES (?, ?, ?, NULL);");
+            ps = conn.prepareStatement("INSERT INTO play_time (uuid, nickname, playtime, artificial_playtime) VALUES (?, ?, ?, ?);");
 
             // Set the parameters in the prepared statement
             ps.setString(1, uuid);
             ps.setString(2, nickname);
             ps.setLong(3, playtime);
+            ps.setLong(4, 0);
 
             // Execute the insert
             ps.executeUpdate();
@@ -411,6 +413,154 @@ public abstract class Database {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
+    }
+
+    public Double getAveragePlaytime() {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            // Establish connection to the database
+            conn = getSQLConnection();
+
+            // Prepare the SQL statement to calculate the average playtime
+            ps = conn.prepareStatement("SELECT AVG(playtime) AS avg_playtime FROM play_time;");
+
+            // Execute the query and get the result set
+            rs = ps.executeQuery();
+
+            // Check if a result is returned
+            if (rs.next()) {
+                // Retrieve and return the average playtime value
+                return rs.getDouble("avg_playtime");
+            }
+        } catch (SQLException ex) {
+            // Log any SQL exceptions that occur during query execution
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            // Ensure that resources are closed to avoid memory leaks
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                // Log any SQL exceptions that occur during resource closure
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+        return null; // Return null if an error occurs
+    }
+
+    public Double getPercentageOfPlayersWithPlaytimeGreaterThan(long playtime) {
+        Connection conn = null;
+        PreparedStatement psTotal = null;
+        PreparedStatement psGreater = null;
+        ResultSet rsTotal = null;
+        ResultSet rsGreater = null;
+        try {
+            // Establish connection to the database
+            conn = getSQLConnection();
+
+            // Prepare the SQL statement to count the total number of players
+            psTotal = conn.prepareStatement("SELECT COUNT(*) AS total_players FROM play_time;");
+
+            // Execute the query and get the result set for the total number of players
+            rsTotal = psTotal.executeQuery();
+
+            // Prepare the SQL statement to count the number of players with playtime greater than the given value
+            psGreater = conn.prepareStatement("SELECT COUNT(*) AS greater_players FROM play_time WHERE playtime > ?;");
+
+            // Set the playtime parameter in the prepared statement
+            psGreater.setLong(1, playtime);
+
+            // Execute the query and get the result set for players with playtime greater than the given value
+            rsGreater = psGreater.executeQuery();
+
+            // Check if results are returned
+            if (rsTotal.next() && rsGreater.next()) {
+                int totalPlayers = rsTotal.getInt("total_players");
+                int greaterPlayers = rsGreater.getInt("greater_players");
+
+                // Calculate and return the percentage of players with playtime greater than the given value
+                if (totalPlayers > 0) {
+                    return (greaterPlayers * 100.0) / totalPlayers;
+                }
+            }
+        } catch (SQLException ex) {
+            // Log any SQL exceptions that occur during query execution
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            // Ensure that resources are closed to avoid memory leaks
+            try {
+                if (rsTotal != null)
+                    rsTotal.close();
+                if (rsGreater != null)
+                    rsGreater.close();
+                if (psTotal != null)
+                    psTotal.close();
+                if (psGreater != null)
+                    psGreater.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                // Log any SQL exceptions that occur during resource closure
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+        return null; // Return null if an error occurs
+    }
+
+    public List<DBUser> getTopPlayersByPlaytime(int topN) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        List<DBUser> topPlayers = new ArrayList<>();
+        try {
+            // Establish connection to the database
+            conn = getSQLConnection();
+
+            // Prepare the SQL statement to select the top N players with the highest playtime
+            ps = conn.prepareStatement("SELECT uuid FROM play_time ORDER BY playtime DESC LIMIT ?;");
+
+            // Set the topN parameter in the prepared statement
+            ps.setInt(1, topN);
+
+            // Execute the query and get the result set
+            rs = ps.executeQuery();
+
+            // Iterate through the result set to retrieve player data
+            while (rs.next()) {
+                // Retrieve and add the player data to the list
+                String uuid = rs.getString("uuid");
+                DBUser userByUUID = DBUser.fromUUID(uuid);
+                topPlayers.add(userByUUID);
+            }
+        } catch (SQLException ex) {
+            // Log any SQL exceptions that occur during query execution
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            // Ensure that resources are closed to avoid memory leaks
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                // Log any SQL exceptions that occur during resource closure
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+        return topPlayers; // Return the list of top players
+    }
+
+    public DBUser getTopPlayerAtPosition(int position){
+        List<DBUser> topPlayers = getTopPlayersByPlaytime(position);
+        return topPlayers.get(position);
     }
 
     public void close(PreparedStatement ps,ResultSet rs){

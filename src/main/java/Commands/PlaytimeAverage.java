@@ -18,7 +18,7 @@ public class PlaytimeAverage implements CommandExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
         if (sender.hasPermission("playtime.average")){
-            sender.sendMessage("[§6Play§eTime§f]§7 The average play time is:§6 " + convertTime((long) (db.getAveragePlaytime()/20)));
+            sender.sendMessage("[§6Play§eTime§f]§7 The average play time is:§6 " + convertTime((long) (Math.ceil(db.getAveragePlaytime()/20))));
         }else{
             sender.sendMessage("[§6Play§eTime§f]§7 You don't have the permission to execute this command");
         }
@@ -26,6 +26,7 @@ public class PlaytimeAverage implements CommandExecutor {
     }
 
     private String convertTime(long secondsx) {
+        plugin.getLogger().info(String.valueOf(secondsx));
         int days = (int) TimeUnit.SECONDS.toDays(secondsx);
         int hours = (int) (TimeUnit.SECONDS.toHours(secondsx) - TimeUnit.DAYS.toHours(days));
         int minutes = (int) (TimeUnit.SECONDS.toMinutes(secondsx) - TimeUnit.HOURS.toMinutes(hours)

@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.logging.Level;
 
 import UsersDatabases.DBUser;
-import org.bukkit.entity.Player;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
 
@@ -454,7 +453,7 @@ public abstract class Database {
         return null; // Return null if an error occurs
     }
 
-    public Double getPercentageOfPlayersWithPlaytimeGreaterThan(long playtime) {
+    public Object[] getPercentageOfPlayers(long playtime) {
         Connection conn = null;
         PreparedStatement psTotal = null;
         PreparedStatement psGreater = null;
@@ -471,7 +470,7 @@ public abstract class Database {
             rsTotal = psTotal.executeQuery();
 
             // Prepare the SQL statement to count the number of players with playtime greater than the given value
-            psGreater = conn.prepareStatement("SELECT COUNT(*) AS greater_players FROM play_time WHERE playtime > ?;");
+            psGreater = conn.prepareStatement("SELECT COUNT(*) AS greater_players FROM play_time WHERE playtime >= ?;");
 
             // Set the playtime parameter in the prepared statement
             psGreater.setLong(1, playtime);
@@ -486,7 +485,7 @@ public abstract class Database {
 
                 // Calculate and return the percentage of players with playtime greater than the given value
                 if (totalPlayers > 0) {
-                    return (greaterPlayers * 100.0) / totalPlayers;
+                    return new Object[] {(greaterPlayers * 100.0) / totalPlayers , greaterPlayers, totalPlayers};
                 }
             }
         } catch (SQLException ex) {
@@ -513,17 +512,18 @@ public abstract class Database {
         return null; // Return null if an error occurs
     }
 
-    public List<DBUser> getTopPlayersByPlaytime(int topN) {
+    public ArrayList<String> getTopPlayersByPlaytime(int topN) {
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
-        List<DBUser> topPlayers = new ArrayList<>();
+        ArrayList<String> topPlayers = new ArrayList<>();
         try {
             // Establish connection to the database
             conn = getSQLConnection();
 
             // Prepare the SQL statement to select the top N players with the highest playtime
-            ps = conn.prepareStatement("SELECT uuid FROM play_time ORDER BY playtime DESC LIMIT ?;");
+            ps = conn.prepareStatement("SELECT uuid FROM play_time " +
+                    "ORDER BY (playtime + artificial_playtime) DESC LIMIT ?;");
 
             // Set the topN parameter in the prepared statement
             ps.setInt(1, topN);
@@ -533,10 +533,10 @@ public abstract class Database {
 
             // Iterate through the result set to retrieve player data
             while (rs.next()) {
+
                 // Retrieve and add the player data to the list
                 String uuid = rs.getString("uuid");
-                DBUser userByUUID = DBUser.fromUUID(uuid);
-                topPlayers.add(userByUUID);
+                topPlayers.add(uuid);
             }
         } catch (SQLException ex) {
             // Log any SQL exceptions that occur during query execution
@@ -559,8 +559,11 @@ public abstract class Database {
     }
 
     public DBUser getTopPlayerAtPosition(int position){
-        List<DBUser> topPlayers = getTopPlayersByPlaytime(position);
-        return topPlayers.get(position);
+        ArrayList<String> topPlayers = getTopPlayersByPlaytime(position);
+        ArrayList<DBUser> topDBUsers = new ArrayList<>();
+        for(String uuid : topPlayers)
+            topDBUsers.add(DBUser.fromUUID(uuid));
+        return topDBUsers.get(position);
     }
 
     public void close(PreparedStatement ps,ResultSet rs){

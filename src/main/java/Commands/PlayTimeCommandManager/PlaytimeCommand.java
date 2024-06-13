@@ -39,7 +39,7 @@ public class PlaytimeCommand{
 
         onlineUser = onlineUsersManager.getOnlineUser(sender.getName());
 
-        String message = formatPlaytimeMessage(sender, sender.getName(), onlineUser.getPlayTime(), onlineUser.getArtificialPlaytime());
+        String message = formatPlaytimeMessage(sender, sender.getName(), onlineUser.getPlaytime(), onlineUser.getArtificialPlaytime());
         sender.sendMessage(message);
         return true;
     }

@@ -44,14 +44,17 @@ public class PlaytimeTop implements TabExecutor {
                             page = 1;
                         }
                         int numeroUtentiTotali = Integer.parseInt(args[0]);
-                        List<DBUser> topPlayers = db.getTopPlayersByPlaytime(numeroUtentiTotali);
+                        ArrayList<String> topPlayers = db.getTopPlayersByPlaytime(numeroUtentiTotali);
+                        ArrayList<DBUser> topDBUsers = new ArrayList<>();
+                        for(String uuid : topPlayers)
+                            topDBUsers.add(DBUser.fromUUID(uuid));
 
-                        if(!topPlayers.isEmpty()){
+                        if(!topDBUsers.isEmpty()){
                             // Ottenere il numero totale degli utenti dal parametro args[0]
 
 
-                            if(numeroUtentiTotali > topPlayers.size())
-                                numeroUtentiTotali = topPlayers.size();
+                            if(numeroUtentiTotali > topDBUsers.size())
+                                numeroUtentiTotali = topDBUsers.size();
 
                             // Calcolare il numero di pagine
                             int numeroPagine = (int) Math.ceil((double) (numeroUtentiTotali + 1) / 10);
@@ -64,15 +67,15 @@ public class PlaytimeTop implements TabExecutor {
                                 // Stampa i giocatori della pagina specificata
                                 sender.sendMessage("[§6Play§eTime§f]§7 Top "+numeroUtentiTotali+" players - page: "+page);
                                 for (int i = indiceInizio; i < indiceFine; i++) {
-                                    sender.sendMessage("§7§l#"+(i+1)+" §e"+ topPlayers.get(i)+" §7- §d"+
-                                            convertTime(topPlayers.get(i).getPlaytime()/20));
+                                    sender.sendMessage("§7§l#"+(i+1)+" §e"+ topDBUsers.get(i).getNickname()+" §7- §d"+
+                                            convertTime(topDBUsers.get(i).getPlaytime()/20));
                                 }
                             } else if (page == 0) {
                                 // Mostra tutti i giocatori
                                 sender.sendMessage("[§6Play§eTime§f]§7 Top "+numeroUtentiTotali+" players - page: 1");
                                 for (int i = 0; i <= numeroUtentiTotali; i++) {
-                                    sender.sendMessage("§7§l#"+(i+1)+" §e"+ topPlayers.get(i)+" §7- §d"+
-                                            convertTime(topPlayers.get(i).getPlaytime()/20));
+                                    sender.sendMessage("§7§l#"+(i+1)+" §e"+ topDBUsers.get(i).getNickname()+" §7- §d"+
+                                            convertTime(topDBUsers.get(i).getPlaytime()/20));
                                 }
                             } else {
                                 // Pagina non valida
@@ -144,6 +147,7 @@ public class PlaytimeTop implements TabExecutor {
 
         }
     }
+
 
 
     @Override

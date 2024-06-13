@@ -42,7 +42,7 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
                             }
 
                             // Check play time requirement for group
-                            if (onlineUser.getPlayTime() >= groups.get(group)) {
+                            if (onlineUser.getPlaytime() >= groups.get(group)) {
                                 // Get LuckPerms user
                                 userLuckPerms = plugin.luckPermsApi.getUserManager().getUser(UUID.fromString(onlineUser.getUuid()));
                                 if (userLuckPerms == null) {

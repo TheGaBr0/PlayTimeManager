@@ -25,6 +25,10 @@ public class PlayTimeManager extends JavaPlugin{
     @Override
     public void onEnable() {
 
+
+        if (!getDataFolder().exists()) getDataFolder().mkdir();
+        saveDefaultConfig();
+
         instance = this;
         this.db = new SQLite(this);
         this.db.load();
@@ -48,7 +52,7 @@ public class PlayTimeManager extends JavaPlugin{
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
         getCommand("playtime").setExecutor(new PlayTimeCommandManager() {});
         getCommand("playtimeaverage").setExecutor(new PlaytimeAverage() {});
-        getCommand("playtimestats").setExecutor(new PlaytimeStats() {});
+        getCommand("playtimepercentage").setExecutor(new PlaytimePercentage() {});
         getCommand("playtimetop").setExecutor(new PlaytimeTop() {});
         //getCommand("playtimehelp").setExecutor(new PlaytimeHelp(this));
 

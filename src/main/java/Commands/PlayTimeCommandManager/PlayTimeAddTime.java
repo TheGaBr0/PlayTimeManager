@@ -40,10 +40,10 @@ public class PlayTimeAddTime {
             default: sender.sendMessage("[§6Play§eTime§f]§7 Time format must be specified! [d/h/m]"); return;
         }
 
-        DBUser user = onlineUsersManager.getOnlineUser(sender.getName());
+        DBUser user = onlineUsersManager.getOnlineUser(args[0]);
 
         if(user == null)
-            user = DBUser.fromNickname(sender.getName());
+            user = DBUser.fromNickname(args[0]);
 
         String formattedOldPlaytime = convertTime(user.getPlaytime() / 20);
         user.setArtificialPlaytime(user.getArtificialPlaytime() + timeToTicks);

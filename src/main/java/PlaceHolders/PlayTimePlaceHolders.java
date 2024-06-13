@@ -5,6 +5,7 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class PlayTimePlaceHolders extends PlaceholderExpansion{
@@ -23,7 +24,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
 
     @Override
     public @NotNull String getVersion() {
-        return "2.0.0";
+        return "3.0.0";
     }
 
     @Override
@@ -34,7 +35,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
     @Override
     public String onRequest(OfflinePlayer player, String params) {
         if(params.equalsIgnoreCase("PlayTime")){
-            return String.valueOf(convertTime(plugin.getUsersManager().getOnlineUser(player.getName()).getPlayTime()/20));
+            return convertTime(plugin.getUsersManager().getOnlineUser(player.getName()).getPlaytime() / 20);
         }
 
         if(params.toLowerCase().contains("PlayTime_Top_".toLowerCase())) {

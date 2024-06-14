@@ -5,7 +5,6 @@ C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\Commands\Pl
 C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\SQLiteDB\Error.java
 C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\Commands\PlayTimeCommandManager\PlayTimeRemoveTime.java
 C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\SQLiteDB\Database.java
-C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\Commands\PlaytimeStats.java
 C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\SQLiteDB\Errors.java
 C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\Events\QuitEventManager.java
 C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\Commands\PlayTimeCommandManager\PlayTimeCommandManager.java
@@ -13,6 +12,8 @@ C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\Commands\Pl
 C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\SQLiteDB\SQLite.java
 C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\UsersDatabases\OnlineUsersManagerLuckPerms.java
 C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\Commands\PlaytimeAverage.java
+C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\Commands\PlaytimePercentage.java
+C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\Commands\PlaytimeReload.java
 C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\PlaceHolders\PlayTimePlaceHolders.java
 C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\UsersDatabases\OnlineUser.java
 C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\src\main\java\me\thegabro\playtimemanager\Configuration.java

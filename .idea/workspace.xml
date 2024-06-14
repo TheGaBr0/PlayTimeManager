@@ -4,48 +4,22 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c5c8bcb5-cf0e-4612-b038-b9f0362569f3" name="Changes" comment="Users managing refactored. DbUser class added to handle requests related to offline users.">
+    <list default="true" id="c5c8bcb5-cf0e-4612-b038-b9f0362569f3" name="Changes" comment="Fixes">
+      <change afterPath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeReload.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dependency-reduced-pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/dependency-reduced-pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlayTimeAddTime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlayTimeAddTime.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlayTimeRemoveTime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlayTimeRemoveTime.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlaytimeCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlaytimeCommand.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeAverage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeAverage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeStats.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlaytimePercentage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeTop.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeTop.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/PlaceHolders/PlayTimePlaceHolders.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/PlaceHolders/PlayTimePlaceHolders.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/SQLiteDB/Database.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/SQLiteDB/Database.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/UsersDatabases/DBUser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/UsersDatabases/DBUser.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/UsersDatabases/OnlineUser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/UsersDatabases/OnlineUser.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/UsersDatabases/OnlineUsersManagerLuckPerms.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/UsersDatabases/OnlineUsersManagerLuckPerms.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/thegabro/playtimemanager/Configuration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/thegabro/playtimemanager/Configuration.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/thegabro/playtimemanager/PlayTimeManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/thegabro/playtimemanager/PlayTimeManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/config.yml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/config.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/plugin.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/PlayTimeManager-2.5-shaded.jar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeAddTime.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeAddTime.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeRemoveTime.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeRemoveTime.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlaytimeCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlaytimeCommand.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlaytimeAverage.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlaytimeAverage.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlaytimeStats.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlaytimeStats.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlaytimeTop.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlaytimeTop.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Events/JoinEventManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Events/JoinEventManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Events/QuitEventManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Events/QuitEventManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/PlaceHolders/PlayTimePlaceHolders.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/PlaceHolders/PlayTimePlaceHolders.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/UsersDatabases/DataCombiner.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/UsersDatabases/User.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/UsersDatabases/UsersManager.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/UsersDatabases/UsersManagerLuckPerms$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/UsersDatabases/UsersManagerLuckPerms.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$2.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$3.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/config.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/config.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/Configuration.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/Configuration.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/plugin.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-archiver/pom.properties" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-archiver/pom.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/original-PlayTimeManager-2.5.jar" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -170,7 +144,15 @@
       <option name="project" value="LOCAL" />
       <updated>1718210797639</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Fixes">
+      <option name="closed" value="true" />
+      <created>1718311172794</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1718311172794</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -188,6 +170,18 @@
     <MESSAGE value="removed wrong folders" />
     <MESSAGE value="SQL storage migration completed, but nothing works" />
     <MESSAGE value="Users managing refactored. DbUser class added to handle requests related to offline users." />
-    <option name="LAST_COMMIT_MESSAGE" value="Users managing refactored. DbUser class added to handle requests related to offline users." />
+    <MESSAGE value="Fixes" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixes" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/Commands/PlaytimeLuckPermsGroup.java</url>
+          <line>69</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

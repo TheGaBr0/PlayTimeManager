@@ -1,35 +1,49 @@
 package UsersDatabases;
 
 import net.luckperms.api.model.group.Group;
+import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
 import net.luckperms.api.node.types.InheritanceNode;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
-
-    private final long timeInSeconds = 60;
-
+    private BukkitTask schedule;
     public OnlineUsersManagerLuckPerms(){
         super();
 
-        new BukkitRunnable() {
+        restartSchedule();
+    }
+
+    public void restartSchedule(){
+        // Cancel the existing schedule
+        if (schedule != null) {
+            schedule.cancel();
+        }
+
+        // Create a new task and assign it to the schedule variable
+        schedule = new BukkitRunnable() {
             public void run() {
                 Player p;
                 HashMap<String, Long> groups;
                 Group groupLuckPerms;
-                net.luckperms.api.model.user.User userLuckPerms;
-
+                User userLuckPerms;
+                if (plugin.getConfiguration().getLuckPermsCheckVerbose())
+                    Bukkit.getConsoleSender().sendMessage("[§6Play§eTime§f]§7 Luckperms check started, refresh rate is "
+                            + convertTime(plugin.getConfiguration().getLuckPermsCheckRate()) +
+                            ".\n If you find this message annoying you can deactivate it by changing §6luckperms-check-verbose " +
+                            "§7in the config.yml");
                 // Get groups from configuration
                 groups = plugin.getConfiguration().getGroups();
 
-                if(groups != null){
+                if (groups != null) {
                     // Iterate through online users
                     for (OnlineUser onlineUser : onlineUsers) {
 
@@ -70,7 +84,7 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
                                     // Send messages to player and console
                                     p = Bukkit.getPlayerExact(onlineUser.getNickname());
 
-                                    if(p != null){
+                                    if (p != null) {
                                         p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10, 0);
                                         p.sendMessage("[§6Play§eTime§f]§7 Avendo raggiunto §6" +
                                                 convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20)
@@ -88,7 +102,7 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
                 }
             }
 
-        }.runTaskTimer(plugin,0,timeInSeconds * 20);
+        }.runTaskTimer(plugin, 0, plugin.getConfiguration().getLuckPermsCheckRate() * 20);
     }
 
     private String convertTime(long secondsx) {
@@ -114,4 +128,5 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
 
         }
     }
+
 }

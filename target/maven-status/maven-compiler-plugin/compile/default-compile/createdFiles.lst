@@ -4,6 +4,7 @@ Commands\PlaytimeTop.class
 me\thegabro\playtimemanager\Configuration.class
 me\thegabro\playtimemanager\PlayTimeManager$4.class
 Events\QuitEventManager.class
+me\thegabro\playtimemanager\PlayTimeManager$5.class
 Commands\PlayTimeCommandManager\PlayTimeAddTime.class
 Commands\PlayTimeCommandManager\PlaytimeCommand.class
 Commands\PlaytimeAverage.class
@@ -23,4 +24,5 @@ SQLiteDB\Database.class
 SQLiteDB\SQLite.class
 UsersDatabases\OnlineUsersManager.class
 Commands\PlayTimeCommandManager\PlayTimeCommandManager.class
+Commands\PlaytimeReload.class
 SQLiteDB\Errors.class

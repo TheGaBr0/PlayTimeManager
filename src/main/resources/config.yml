@@ -9,4 +9,11 @@
 #                          ▄█
 #                        ██▀
 
+#luckperms-check-rate sets every how many seconds a check will be made on online players to see if they have
+#reached a new goal. With many players and a low rate it may cause lag.
+#Time should be specified as seconds, default is 15 minutes (900s)
+luckperms-check-rate: 900
+
+luckperms-check-verbose: true
+#You should leave the group section untouched as there's a command in game to properly set it: /playtimegroup
 Groups:

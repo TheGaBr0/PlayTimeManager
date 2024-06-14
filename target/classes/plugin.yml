@@ -24,8 +24,12 @@ commands:
     permission: playtime.top
     permission-message: You don't have the permission to execute this command!
   playtimegroup:
-    description: Command to set a LuckPerms role based on playtime
+    description: Command to set a LuckPerms group based on playtime
     permission: playtime.group
+    permission-message: You don't have the permission to execute this command!
+  playtimereload:
+    description: Command to reload the main config
+    permission: playtime.reload
     permission-message: You don't have the permission to execute this command!
 
 permissions:
@@ -41,6 +45,7 @@ permissions:
       playtime.percentage: true
       playtime.top: true
       playtime.group: true
+      playtime.reload: true
   playtime:
     default: true
   playtime.others:
@@ -54,4 +59,6 @@ permissions:
   playtime.top:
     default: false
   playtime.group:
+    default: false
+  playtime.reload:
     default: false

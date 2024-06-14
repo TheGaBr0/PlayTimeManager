@@ -16,16 +16,20 @@ commands:
     permission: playtime.average
     permission-message: You don't have the permission to execute this command!
   playtimepercentage:
-    description: Command to get the % of players that get a playtime greater than or equal to a given one
+    description: Command to get the % of players that have a playtime greater than or equal to a given one
     permission: playtime.playtimepercentage
     permission-message: You don't have the permission to execute this command!
   playtimetop:
-    description: Command to get players with higher play time
+    description: Command to get the top N players with higher playtime
     permission: playtime.top
     permission-message: You don't have the permission to execute this command!
   playtimegroup:
-    description: Command to set a LuckPerms role based on playtime
+    description: Command to set a LuckPerms group based on playtime
     permission: playtime.group
+    permission-message: You don't have the permission to execute this command!
+  playtimereload:
+    description: Command to reload the main config
+    permission: playtime.reload
     permission-message: You don't have the permission to execute this command!
 
 permissions:
@@ -36,11 +40,11 @@ permissions:
       playtime: true
       playtime.others: true
       playtime.others.modify: true
-      playtime.dbadd: true
       playtime.average: true
       playtime.percentage: true
       playtime.top: true
       playtime.group: true
+      playtime.reload: true
   playtime:
     default: true
   playtime.others:
@@ -54,4 +58,6 @@ permissions:
   playtime.top:
     default: false
   playtime.group:
+    default: false
+  playtime.reload:
     default: false

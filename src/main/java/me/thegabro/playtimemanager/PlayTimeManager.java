@@ -8,6 +8,7 @@ import SQLiteDB.SQLite;
 import Events.QuitEventManager;
 import PlaceHolders.PlayTimePlaceHolders;
 import UsersDatabases.OnlineUsersManager;
+import UsersDatabases.OnlineUsersManagerLuckPerms;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import org.bukkit.Bukkit;
@@ -29,20 +30,18 @@ public class PlayTimeManager extends JavaPlugin{
         if (!getDataFolder().exists()) getDataFolder().mkdir();
         saveDefaultConfig();
 
+        config = new Configuration(this.getDataFolder(), "config", true, true);
         instance = this;
         this.db = new SQLite(this);
         this.db.load();
-        config = new Configuration(this, this.getDataFolder(), "config", true, true);
 
         if(Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
             getCommand("playtimegroup").setExecutor(new PlaytimeLuckPermsGroup());
             luckPermsApi = LuckPermsProvider.get();
-            //usersManager = new UsersManagerLuckPerms();
-            onlineUsersManager = new OnlineUsersManager();
+            onlineUsersManager = new OnlineUsersManagerLuckPerms();
         }else{
             onlineUsersManager = new OnlineUsersManager();
         }
-
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlayTimePlaceHolders().register();
@@ -54,6 +53,7 @@ public class PlayTimeManager extends JavaPlugin{
         getCommand("playtimeaverage").setExecutor(new PlaytimeAverage() {});
         getCommand("playtimepercentage").setExecutor(new PlaytimePercentage() {});
         getCommand("playtimetop").setExecutor(new PlaytimeTop() {});
+        getCommand("playtimereload").setExecutor(new PlaytimeReload() {});
         //getCommand("playtimehelp").setExecutor(new PlaytimeHelp(this));
 
         getLogger().info("has been enabled!");

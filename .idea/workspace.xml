@@ -4,17 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c5c8bcb5-cf0e-4612-b038-b9f0362569f3" name="Changes" comment="Warnings fixed">
+    <list default="true" id="c5c8bcb5-cf0e-4612-b038-b9f0362569f3" name="Changes" comment="Minor improvements. PAPI placeholders fixed.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeAverage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeAverage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeLuckPermsGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeLuckPermsGroup.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/PlaceHolders/PlayTimePlaceHolders.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/PlaceHolders/PlayTimePlaceHolders.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/SQLiteDB/Database.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/SQLiteDB/Database.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$2.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$3.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$4.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/plugin.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlayTimeCommandManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlayTimeCommandManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeAddTime.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeAddTime.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeCommandManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeCommandManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeRemoveTime.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeRemoveTime.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlaytimeCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlaytimeCommand.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlaytimeAverage.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlaytimeAverage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlaytimeLuckPermsGroup.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlaytimeLuckPermsGroup.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/PlaceHolders/PlayTimePlaceHolders.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/PlaceHolders/PlayTimePlaceHolders.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/Configuration.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/Configuration.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -163,7 +164,15 @@
       <option name="project" value="LOCAL" />
       <updated>1718391907547</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Minor improvements. PAPI placeholders fixed.">
+      <option name="closed" value="true" />
+      <created>1718394301731</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1718394301731</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -184,6 +193,7 @@
     <MESSAGE value="Fixes" />
     <MESSAGE value="LuckPerms schedule options in the config has been added, general optimizations of the scheduler included." />
     <MESSAGE value="Warnings fixed" />
-    <option name="LAST_COMMIT_MESSAGE" value="Warnings fixed" />
+    <MESSAGE value="Minor improvements. PAPI placeholders fixed." />
+    <option name="LAST_COMMIT_MESSAGE" value="Minor improvements. PAPI placeholders fixed." />
   </component>
 </project>

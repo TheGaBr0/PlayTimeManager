@@ -562,7 +562,7 @@ public abstract class Database {
         ArrayList<DBUser> topDBUsers = new ArrayList<>();
         for(String uuid : topPlayers)
             topDBUsers.add(DBUser.fromUUID(uuid));
-        return topDBUsers.get(position);
+        return topDBUsers.get(position-1);
     }
 
     public void close(PreparedStatement ps,ResultSet rs){

@@ -1,11 +1,10 @@
 package PlaceHolders;
 import UsersDatabases.DBUser;
-import me.thegabro.playtimemanager.PlayTimeManager;import UsersDatabases.OnlineUser;
+import me.thegabro.playtimemanager.PlayTimeManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class PlayTimePlaceHolders extends PlaceholderExpansion{
@@ -34,7 +33,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
 
     @Override
     public String onRequest(OfflinePlayer player, String params) {
-        if(params.equalsIgnoreCase("PlayTime")){
+        if(params.equalsIgnoreCase("")){
             return convertTime(plugin.getUsersManager().getOnlineUser(player.getName()).getPlaytime() / 20);
         }
 

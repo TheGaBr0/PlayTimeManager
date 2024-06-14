@@ -115,7 +115,7 @@ public class PlaytimeTop implements TabExecutor {
     }
 
     public List<String> getPages(String players){
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
 
         for(int i = 0; i<Math.ceil(Float.parseFloat(players)/10); i++){
             result.add("p"+(i+1));

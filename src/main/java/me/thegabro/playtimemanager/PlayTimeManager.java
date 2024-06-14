@@ -15,6 +15,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Objects;
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class PlayTimeManager extends JavaPlugin{
 
     private static PlayTimeManager instance;
@@ -36,7 +38,7 @@ public class PlayTimeManager extends JavaPlugin{
         this.db.load();
 
         if(Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
-            getCommand("playtimegroup").setExecutor(new PlaytimeLuckPermsGroup());
+            Objects.requireNonNull(getCommand("playtimegroup")).setExecutor(new PlaytimeLuckPermsGroup());
             luckPermsApi = LuckPermsProvider.get();
             onlineUsersManager = new OnlineUsersManagerLuckPerms();
         }else{
@@ -49,11 +51,11 @@ public class PlayTimeManager extends JavaPlugin{
 
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
-        getCommand("playtime").setExecutor(new PlayTimeCommandManager() {});
-        getCommand("playtimeaverage").setExecutor(new PlaytimeAverage() {});
-        getCommand("playtimepercentage").setExecutor(new PlaytimePercentage() {});
-        getCommand("playtimetop").setExecutor(new PlaytimeTop() {});
-        getCommand("playtimereload").setExecutor(new PlaytimeReload() {});
+        Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {});
+        Objects.requireNonNull(getCommand("playtimeaverage")).setExecutor(new PlaytimeAverage() {});
+        Objects.requireNonNull(getCommand("playtimepercentage")).setExecutor(new PlaytimePercentage() {});
+        Objects.requireNonNull(getCommand("playtimetop")).setExecutor(new PlaytimeTop() {});
+        Objects.requireNonNull(getCommand("playtimereload")).setExecutor(new PlaytimeReload() {});
         //getCommand("playtimehelp").setExecutor(new PlaytimeHelp(this));
 
         getLogger().info("has been enabled!");
@@ -63,7 +65,7 @@ public class PlayTimeManager extends JavaPlugin{
     @Override
     public void onDisable() {
         for(Player p : Bukkit.getOnlinePlayers()){
-            onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(p.getPlayer().getName()));
+            onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
         }
 
         getLogger().info("has been disabled!");

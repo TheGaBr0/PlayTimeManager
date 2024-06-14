@@ -1,15 +1,13 @@
 package me.thegabro.playtimemanager;
 
-import UsersDatabases.OnlineUsersManagerLuckPerms;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Set;
-
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class Configuration {
 
     private final boolean createIfNotExist, resource;
@@ -40,18 +38,16 @@ public class Configuration {
         try {
             config.save(file);
         } catch (Exception exc) {
-            exc.printStackTrace();
+            plugin.getLogger().severe(String.valueOf(exc));
         }
     }
 
-    private File reloadFile() {
+    private void reloadFile() {
         file = new File(path, name);
-        return file;
     }
 
-    private FileConfiguration reloadConfig() {
+    private void reloadConfig() {
         config = YamlConfiguration.loadConfiguration(file);
-        return config;
     }
 
     public void reload() {
@@ -75,7 +71,7 @@ public class Configuration {
             try {
                 file.createNewFile();
             } catch (Exception exc) {
-                exc.printStackTrace();
+                plugin.getLogger().severe(String.valueOf(exc));
             }
         }
     }
@@ -103,7 +99,7 @@ public class Configuration {
     }
 
     private void updateLuckPermsGroups() {
-        HashMap<String, Long> groups = new HashMap<String, Long>();
+        HashMap<String, Long> groups = new HashMap<>();
         if (config.contains("Groups")) {
             ConfigurationSection groupsSection = config.getConfigurationSection("Groups");
             if (groupsSection != null) {
@@ -120,10 +116,10 @@ public class Configuration {
                 }
                 this.groups = groups;
             }else{
-                this.groups = new HashMap<String, Long>();
+                this.groups = new HashMap<>();
             }
         }else{
-            this.groups = new HashMap<String, Long>();
+            this.groups = new HashMap<>();
         }
     }
 

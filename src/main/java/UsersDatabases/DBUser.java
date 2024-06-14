@@ -57,11 +57,6 @@ public class DBUser {
         return nickname;
     }
 
-    public void setNickname(String nickname) {
-        db.updateNickname(uuid, nickname);
-        this.nickname = nickname;
-    }
-
     public long getPlaytime() {
         return DBplaytime;
     }

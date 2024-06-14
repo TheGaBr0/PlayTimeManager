@@ -8,7 +8,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.util.concurrent.TimeUnit;
 
 public class PlaytimePercentage implements CommandExecutor {
 

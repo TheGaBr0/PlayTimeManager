@@ -12,11 +12,9 @@ import java.util.concurrent.TimeUnit;
 public class PlaytimeCommand{
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private OnlineUser onlineUser;
-    private final OnlineUsersManager onlineUsersManager;
+    private final OnlineUsersManager onlineUsersManager = plugin.getUsersManager();
 
     public PlaytimeCommand(CommandSender sender, String[] args){
-        onlineUsersManager = plugin.getUsersManager();
         execute(sender, args);
     }
 
@@ -37,7 +35,7 @@ public class PlaytimeCommand{
             return false;
         }
 
-        onlineUser = onlineUsersManager.getOnlineUser(sender.getName());
+        OnlineUser onlineUser = onlineUsersManager.getOnlineUser(sender.getName());
 
         String message = formatPlaytimeMessage(sender, sender.getName(), onlineUser.getPlaytime(), onlineUser.getArtificialPlaytime());
         sender.sendMessage(message);

@@ -4,22 +4,27 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c5c8bcb5-cf0e-4612-b038-b9f0362569f3" name="Changes" comment="Fixes">
-      <change afterPath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeReload.java" afterDir="false" />
+    <list default="true" id="c5c8bcb5-cf0e-4612-b038-b9f0362569f3" name="Changes" comment="Warnings fixed">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlayTimeAddTime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlayTimeAddTime.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlayTimeCommandManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlayTimeCommandManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlayTimeRemoveTime.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlayTimeRemoveTime.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlaytimeCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlaytimeCommand.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeAverage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeAverage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/UsersDatabases/OnlineUsersManagerLuckPerms.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/UsersDatabases/OnlineUsersManagerLuckPerms.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeLuckPermsGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeLuckPermsGroup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlaytimePercentage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlaytimePercentage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeTop.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlaytimeTop.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/SQLiteDB/Database.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/SQLiteDB/Database.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/SQLiteDB/Errors.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/SQLiteDB/Errors.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/UsersDatabases/DBUser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/UsersDatabases/DBUser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/UsersDatabases/OnlineUser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/UsersDatabases/OnlineUser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/UsersDatabases/OnlineUsersManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/UsersDatabases/OnlineUsersManager.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/thegabro/playtimemanager/Configuration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/thegabro/playtimemanager/Configuration.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/me/thegabro/playtimemanager/PlayTimeManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/thegabro/playtimemanager/PlayTimeManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/config.yml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/config.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/plugin.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlaytimeAverage.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlaytimeAverage.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/config.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/config.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/Configuration.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/Configuration.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/plugin.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager$4.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -152,7 +157,15 @@
       <option name="project" value="LOCAL" />
       <updated>1718311172794</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="LuckPerms schedule options in the config has been added, general optimizations of the scheduler included.">
+      <option name="closed" value="true" />
+      <created>1718375739638</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1718375739638</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -171,14 +184,16 @@
     <MESSAGE value="SQL storage migration completed, but nothing works" />
     <MESSAGE value="Users managing refactored. DbUser class added to handle requests related to offline users." />
     <MESSAGE value="Fixes" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixes" />
+    <MESSAGE value="LuckPerms schedule options in the config has been added, general optimizations of the scheduler included." />
+    <MESSAGE value="Warnings fixed" />
+    <option name="LAST_COMMIT_MESSAGE" value="Warnings fixed" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/Commands/PlaytimeLuckPermsGroup.java</url>
-          <line>69</line>
+          <line>68</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
       </breakpoints>

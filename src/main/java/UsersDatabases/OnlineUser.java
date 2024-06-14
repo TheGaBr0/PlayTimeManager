@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 public class OnlineUser extends DBUser{
 
     private long actualPlayTime;
-    private Player p;
+    private final Player p;
 
     public OnlineUser(Player p) {
         super(p);

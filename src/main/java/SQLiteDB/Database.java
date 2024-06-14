@@ -18,7 +18,6 @@ public abstract class Database {
     Connection connection;
     // The name of the table we created back in SQLite class.
     public String table = "play_time";
-    public int tokens = 0;
     public Database(PlayTimeManager instance){
         plugin = instance;
     }

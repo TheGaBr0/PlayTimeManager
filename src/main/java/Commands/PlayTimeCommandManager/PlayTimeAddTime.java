@@ -1,7 +1,6 @@
 package Commands.PlayTimeCommandManager;
 
 import UsersDatabases.DBUser;
-import UsersDatabases.OnlineUser;
 import UsersDatabases.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.CommandSender;
@@ -10,9 +9,8 @@ import java.util.concurrent.TimeUnit;
 
 public class PlayTimeAddTime {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final OnlineUsersManager onlineUsersManager;
+    private final OnlineUsersManager onlineUsersManager =  plugin.getUsersManager();
     public PlayTimeAddTime(CommandSender sender, String[] args){
-        this.onlineUsersManager = plugin.getUsersManager();
         execute(sender, args);
     }
 

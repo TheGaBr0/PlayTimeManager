@@ -2,7 +2,6 @@ package Commands;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.luckperms.api.model.group.Group;
-import net.luckperms.api.model.user.User;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -87,7 +86,7 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, String[] args) {
         final List<String> completions = new ArrayList<>();
         if (args.length == 1) {
             StringUtil.copyPartialMatches(args[0],  Arrays.asList(SUBCOMMANDS), completions);

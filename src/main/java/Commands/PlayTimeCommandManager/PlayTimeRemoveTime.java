@@ -8,11 +8,9 @@ import java.util.concurrent.TimeUnit;
 
 public class PlayTimeRemoveTime {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private OnlineUsersManager onlineUsersManager;
+    private final OnlineUsersManager onlineUsersManager =  plugin.getUsersManager();
 
     public PlayTimeRemoveTime(CommandSender sender, String[] args){
-
-        onlineUsersManager = plugin.getUsersManager();
         execute(sender, args);
     }
     public void execute(CommandSender sender, String[] args){

@@ -75,14 +75,15 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
         final List<String> completions = new ArrayList<>();
 
-        if (args.length == 1) {
-
-            StringUtil.copyPartialMatches(args[0], db.getAllNicknames(), completions);
-
-            Collections.sort(completions);
-
-            return completions;
-        }
+//The following code causes "java.sql.SQLException: stmt pointer is closed" when a PAPI leaderboard is active. Should probably cache the nicknames
+//        if (args.length == 1) {
+//
+//            StringUtil.copyPartialMatches(args[0], db.getAllNicknames(), completions);
+//
+//            Collections.sort(completions);
+//
+//            return completions;
+//        }
 
         if (args.length == 2 && sender.hasPermission("playtime.others.modify")) {
             StringUtil.copyPartialMatches(args[1], subCommands, completions);

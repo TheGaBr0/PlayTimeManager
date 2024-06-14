@@ -1,0 +1,34 @@
+Index: src/main/java/Commands/PlayTimeCommandManager/PlayTimeCommandManager.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package Commands.PlayTimeCommandManager;\r\n\r\nimport SQLiteDB.Database;\r\nimport UsersDatabases.OnlineUsersManager;\r\nimport me.thegabro.playtimemanager.PlayTimeManager;\r\nimport org.bukkit.command.Command;\r\nimport org.bukkit.command.CommandExecutor;\r\nimport org.bukkit.command.CommandSender;\r\nimport org.bukkit.command.TabCompleter;\r\nimport org.bukkit.entity.Player;\r\nimport org.bukkit.util.StringUtil;\r\nimport org.jetbrains.annotations.NotNull;\r\n\r\nimport java.util.ArrayList;\r\nimport java.util.Collections;\r\nimport java.util.List;\r\n\r\npublic class PlayTimeCommandManager implements CommandExecutor, TabCompleter {\r\n    private final List<String> subCommands = new ArrayList<>();\r\n    private final PlayTimeManager plugin = PlayTimeManager.getInstance();\r\n    private final OnlineUsersManager onlineUsersManager;\r\n    private final Database db = plugin.getDatabase();\r\n\r\n    public PlayTimeCommandManager() {\r\n        subCommands.add(\"add\");\r\n        subCommands.add(\"remove\");\r\n        onlineUsersManager = plugin.getUsersManager();\r\n    }\r\n\r\n    @Override\r\n    public boolean onCommand(@NotNull CommandSender sender, Command command, @NotNull String label, String[] args) {\r\n\r\n        if (!command.getName().equalsIgnoreCase(\"playtime\")) {\r\n            return false;\r\n        }\r\n        if (!(sender instanceof Player) || sender.hasPermission(\"playtime\")) {\r\n            if(args.length <= 1){\r\n                if(args.length == 1){\r\n                    if(!onlineUsersManager.userExists(args[0])){\r\n                        sender.sendMessage(\"[§6Play§eTime§f]§7 The player §e\" + args[0] + \"§7 has never joined the server!\");\r\n                        return false;\r\n                    }\r\n                }\r\n\r\n                new PlaytimeCommand(sender, args);\r\n                return true;\r\n            }\r\n\r\n            if (sender.hasPermission(\"playtime.others.modify\")){\r\n                String subCommand = args[1];\r\n\r\n                if (!subCommands.contains(subCommand)) {\r\n                    sender.sendMessage(\"[§6Play§eTime§f]§7 Unknown subcommand: \" + subCommand);\r\n                    return false;\r\n                }\r\n\r\n                if (subCommand.equals(\"add\")) {\r\n                    new PlayTimeAddTime(sender, args);\r\n                    return true;\r\n                } else if (subCommand.equals(\"remove\")) {\r\n                    new PlayTimeRemoveTime(sender, args);\r\n                    return true;\r\n                }\r\n            }\r\n\r\n\r\n        } else {\r\n            sender.sendMessage(\"[§6Play§eTime§f]§7 You don't have permission to use this command\");\r\n        }\r\n\r\n        return false;\r\n    }\r\n\r\n    @Override\r\n    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {\r\n        final List<String> completions = new ArrayList<>();\r\n\r\n        if (args.length == 1) {\r\n\r\n            StringUtil.copyPartialMatches(args[0], db.getAllNicknames(), completions);\r\n\r\n            Collections.sort(completions);\r\n\r\n            return completions;\r\n        }\r\n\r\n        if (args.length == 2 && sender.hasPermission(\"playtime.others.modify\")) {\r\n            StringUtil.copyPartialMatches(args[1], subCommands, completions);\r\n            return completions;\r\n        }\r\n        return null;\r\n    }\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/Commands/PlayTimeCommandManager/PlayTimeCommandManager.java b/src/main/java/Commands/PlayTimeCommandManager/PlayTimeCommandManager.java
+--- a/src/main/java/Commands/PlayTimeCommandManager/PlayTimeCommandManager.java	(revision 4e9cc8d007744e1d7f4df6907f26b2c062d922a8)
++++ b/src/main/java/Commands/PlayTimeCommandManager/PlayTimeCommandManager.java	(date 1718394792104)
+@@ -75,14 +75,15 @@
+     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
+         final List<String> completions = new ArrayList<>();
+ 
+-        if (args.length == 1) {
+-
+-            StringUtil.copyPartialMatches(args[0], db.getAllNicknames(), completions);
+-
+-            Collections.sort(completions);
+-
+-            return completions;
+-        }
++//The following code causes "java.sql.SQLException: stmt pointer is closed" when a PAPI leaderboard is active. Should probably cache the nicknames
++//        if (args.length == 1) {
++//
++//            StringUtil.copyPartialMatches(args[0], db.getAllNicknames(), completions);
++//
++//            Collections.sort(completions);
++//
++//            return completions;
++//        }
+ 
+         if (args.length == 2 && sender.hasPermission("playtime.others.modify")) {
+             StringUtil.copyPartialMatches(args[1], subCommands, completions);

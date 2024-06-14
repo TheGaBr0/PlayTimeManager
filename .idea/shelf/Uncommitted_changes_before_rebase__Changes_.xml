@@ -1,0 +1,49 @@
+<changelist name="Uncommitted_changes_before_rebase_[Changes]" date="1718394936010" recycled="false" toDelete="true">
+  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/shelved.patch" />
+  <option name="DESCRIPTION" value="Uncommitted changes before rebase [Changes]" />
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/PlaceHolders/PlayTimePlaceHolders.class" />
+    <option name="AFTER_PATH" value="target/classes/PlaceHolders/PlayTimePlaceHolders.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/PlayTimePlaceHolders.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/Commands/PlaytimeAverage.class" />
+    <option name="AFTER_PATH" value="target/classes/Commands/PlaytimeAverage.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/PlaytimeAverage.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/Commands/PlayTimeCommandManager/PlayTimeAddTime.class" />
+    <option name="AFTER_PATH" value="target/classes/Commands/PlayTimeCommandManager/PlayTimeAddTime.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/PlayTimeAddTime.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/Commands/PlaytimeLuckPermsGroup.class" />
+    <option name="AFTER_PATH" value="target/classes/Commands/PlaytimeLuckPermsGroup.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/PlaytimeLuckPermsGroup.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/Commands/PlayTimeCommandManager/PlayTimeRemoveTime.class" />
+    <option name="AFTER_PATH" value="target/classes/Commands/PlayTimeCommandManager/PlayTimeRemoveTime.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/PlayTimeRemoveTime.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/Commands/PlayTimeCommandManager/PlaytimeCommand.class" />
+    <option name="AFTER_PATH" value="target/classes/Commands/PlayTimeCommandManager/PlaytimeCommand.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/PlaytimeCommand.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/me/thegabro/playtimemanager/Configuration.class" />
+    <option name="AFTER_PATH" value="target/classes/me/thegabro/playtimemanager/Configuration.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/Configuration.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/Commands/PlayTimeCommandManager/PlayTimeCommandManager.class" />
+    <option name="AFTER_PATH" value="target/classes/Commands/PlayTimeCommandManager/PlayTimeCommandManager.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/PlayTimeCommandManager.class" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="target/classes/me/thegabro/playtimemanager/PlayTimeManager.class" />
+    <option name="AFTER_PATH" value="target/classes/me/thegabro/playtimemanager/PlayTimeManager.class" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase_[Changes]/PlayTimeManager.class" />
+  </binary>
+</changelist>

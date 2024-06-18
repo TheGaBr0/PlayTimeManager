@@ -1,4 +1,4 @@
-package UsersDatabases;
+package Users;
 
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;

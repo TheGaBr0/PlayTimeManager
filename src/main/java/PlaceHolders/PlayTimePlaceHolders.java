@@ -1,5 +1,5 @@
 package PlaceHolders;
-import UsersDatabases.DBUser;
+import Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;

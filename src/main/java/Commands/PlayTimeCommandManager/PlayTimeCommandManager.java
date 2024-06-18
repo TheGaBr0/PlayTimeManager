@@ -1,7 +1,7 @@
 package Commands.PlayTimeCommandManager;
 
 import SQLiteDB.Database;
-import UsersDatabases.OnlineUsersManager;
+import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,7 +12,6 @@ import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {

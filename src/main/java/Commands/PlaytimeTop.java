@@ -1,7 +1,7 @@
 package Commands;
 
 import SQLiteDB.Database;
-import UsersDatabases.DBUser;
+import Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;

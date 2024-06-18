@@ -1,4 +1,4 @@
-package UsersDatabases;
+package Users;
 
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;

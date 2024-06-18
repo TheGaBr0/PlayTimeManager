@@ -1,4 +1,4 @@
-package UsersDatabases;
+package Users;
 
 import SQLiteDB.Database;
 import me.thegabro.playtimemanager.PlayTimeManager;

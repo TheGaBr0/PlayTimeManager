@@ -1,7 +1,7 @@
 package Commands.PlayTimeCommandManager;
 
-import UsersDatabases.DBUser;
-import UsersDatabases.OnlineUsersManager;
+import Users.DBUser;
+import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.CommandSender;
 

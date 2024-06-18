@@ -1,6 +1,6 @@
 package Commands;
 
-import UsersDatabases.OnlineUsersManagerLuckPerms;
+import Users.OnlineUsersManagerLuckPerms;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

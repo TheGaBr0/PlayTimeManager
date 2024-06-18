@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
-import UsersDatabases.DBUser;
+import Users.DBUser;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
 

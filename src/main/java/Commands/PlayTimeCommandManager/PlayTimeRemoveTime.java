@@ -1,6 +1,6 @@
 package Commands.PlayTimeCommandManager;
 
-import UsersDatabases.*;
+import Users.*;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.CommandSender;
 

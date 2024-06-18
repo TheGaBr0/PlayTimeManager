@@ -1,22 +1,20 @@
 package Commands.PlayTimeCommandManager;
 
-import UsersDatabases.User;
-import UsersDatabases.UsersManager;
+import UsersDatabases.DBUser;
+import UsersDatabases.OnlineUser;
+import UsersDatabases.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class PlaytimeCommand{
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private User user;
-    private final UsersManager usersManager;
+    private final OnlineUsersManager onlineUsersManager = plugin.getUsersManager();
 
     public PlaytimeCommand(CommandSender sender, String[] args){
-        usersManager = plugin.getUsersManager();
         execute(sender, args);
     }
 
@@ -37,32 +35,53 @@ public class PlaytimeCommand{
             return false;
         }
 
-        user = usersManager.getUserByNickname(sender.getName());
+        OnlineUser onlineUser = onlineUsersManager.getOnlineUser(sender.getName());
 
-        long playtime = user.getPlayTime();
-        String message = formatPlaytimeMessage(sender, user.getName(), playtime);
+        String message = formatPlaytimeMessage(sender, sender.getName(), onlineUser.getPlaytime(), onlineUser.getArtificialPlaytime());
         sender.sendMessage(message);
         return true;
     }
 
     private boolean handleOther(CommandSender sender, String playerName) {
 
-        user = usersManager.getUserByNickname(playerName);
+        DBUser dbUser = DBUser.fromNickname(playerName);
 
-        long playtime = user.getPlayTime();
-        String message = formatPlaytimeMessage(sender, playerName, playtime);
+        String message = formatPlaytimeMessage(sender, dbUser.getNickname(), dbUser.getPlaytime(), dbUser.getArtificialPlaytime());
         sender.sendMessage(message);
         return true;
     }
 
-    private String formatPlaytimeMessage(CommandSender sender, String playerName, long playtime) {
-        String formattedPlaytime = plugin.getPlayTimeDB().convertTime(playtime / 20);
-        long customPlayTime =  plugin.getCustomPlayTImeDB().getCustomPlayTime(user.getUuid());
-        if(customPlayTime != 0L && sender.hasPermission("playtime.others.modify"))
+    private String formatPlaytimeMessage(CommandSender sender, String playerName, long playtime, long artificialPlaytime) {
+        String formattedPlaytime = convertTime(playtime / 20);
+        if(sender.hasPermission("playtime.others.modify"))
             return "[§6Play§eTime§f]§7 Il tempo di gioco di §e" + playerName + "§7 è §6" + formattedPlaytime +
-                    " ("+plugin.getPlayTimeDB().convertTime(customPlayTime / 20)+")";
+                    " ("+ convertTime(artificialPlaytime / 20)+")";
         else
             return "[§6Play§eTime§f]§7 Il tempo di gioco di §e" + playerName + "§7 è §6" + formattedPlaytime;
 
+    }
+
+    private String convertTime(long secondsx) {
+        int days = (int) TimeUnit.SECONDS.toDays(secondsx);
+        int hours = (int) (TimeUnit.SECONDS.toHours(secondsx) - TimeUnit.DAYS.toHours(days));
+        int minutes = (int) (TimeUnit.SECONDS.toMinutes(secondsx) - TimeUnit.HOURS.toMinutes(hours)
+                - TimeUnit.DAYS.toMinutes(days));
+        int seconds = (int) (TimeUnit.SECONDS.toSeconds(secondsx) - TimeUnit.MINUTES.toSeconds(minutes)
+                - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days));
+
+        if (days != 0) {
+            return days + "d, " + hours + "h, " + minutes + "m, " + seconds + "s";
+        } else {
+            if (hours != 0) {
+                return hours + "h, " + minutes + "m, " + seconds + "s";
+            } else {
+                if (minutes != 0) {
+                    return minutes + "m, " + seconds + "s";
+                } else {
+                    return seconds + "s";
+                }
+            }
+
+        }
     }
 }

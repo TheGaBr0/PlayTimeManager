@@ -3,31 +3,33 @@ package me.thegabro.playtimemanager;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Set;
-
+@SuppressWarnings("ResultOfMethodCallIgnored")
 public class Configuration {
 
-    protected final boolean createIfNotExist, resource;
-    protected final JavaPlugin plugin;
+    private final boolean createIfNotExist, resource;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
 
-    protected FileConfiguration config;
-    protected File file, path;
-    protected String name;
+    private FileConfiguration config;
+    private File file;
+    private final File path;
+    private final String name;
+    private HashMap<String, Long> groups;
+    private long luckpermsCheckRate;
+    private boolean luckpermsCheckVerbose;
 
-    public Configuration(JavaPlugin instance, File path, String name, boolean createIfNotExist, boolean resource) {
-        this.plugin = instance;
+    public Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
         this.path = path;
         this.name = name + ".yml";
         this.createIfNotExist = createIfNotExist;
         this.resource = resource;
         create();
         reloadConfig();
+        updateLuckPermsCheck();
+        updateLuckPermsGroups();
     }
 
     //Getters, variables and constructors
@@ -36,23 +38,23 @@ public class Configuration {
         try {
             config.save(file);
         } catch (Exception exc) {
-            exc.printStackTrace();
+            plugin.getLogger().severe(String.valueOf(exc));
         }
     }
 
-    private File reloadFile() {
+    private void reloadFile() {
         file = new File(path, name);
-        return file;
     }
 
-    private FileConfiguration reloadConfig() {
+    private void reloadConfig() {
         config = YamlConfiguration.loadConfiguration(file);
-        return config;
     }
 
     public void reload() {
         reloadFile();
         reloadConfig();
+        updateLuckPermsCheck();
+        updateLuckPermsGroups();
     }
 
     private void create() {
@@ -69,7 +71,7 @@ public class Configuration {
             try {
                 file.createNewFile();
             } catch (Exception exc) {
-                exc.printStackTrace();
+                plugin.getLogger().severe(String.valueOf(exc));
             }
         }
     }
@@ -77,20 +79,27 @@ public class Configuration {
     public void addGroup(String groupname, long timeRequired) {
         config.createSection("Groups." + groupname + ".time-required");
         config.set("Groups." + groupname + ".time-required", timeRequired);
+        updateLuckPermsGroups();
         save();
     }
 
     public void removeGroup(String groupname) {
         config.set("Groups." + groupname, null);
+        updateLuckPermsGroups();
         save();
     }
 
-    public long getGroupPlayTime(String groupname){
-        return config.getLong("Groups." + groupname + ".time-required");
+    public HashMap<String, Long> getGroups(){
+        return groups;
     }
 
-    public HashMap<String, Long> getGroups() {
-        HashMap<String, Long> groups = new HashMap<String, Long>();
+
+    public long getGroupPlayTime(String groupname){
+        return groups.get(groupname);
+    }
+
+    private void updateLuckPermsGroups() {
+        HashMap<String, Long> groups = new HashMap<>();
         if (config.contains("Groups")) {
             ConfigurationSection groupsSection = config.getConfigurationSection("Groups");
             if (groupsSection != null) {
@@ -105,12 +114,25 @@ public class Configuration {
 
                     }
                 }
-                return groups;
+                this.groups = groups;
             }else{
-                return null;
+                this.groups = new HashMap<>();
             }
         }else{
-            return null;
+            this.groups = new HashMap<>();
         }
+    }
+
+    private void updateLuckPermsCheck(){
+        this.luckpermsCheckRate = config.getLong("luckperms-check-rate");
+        this.luckpermsCheckVerbose = config.getBoolean("luckperms-check-verbose");
+    }
+
+    public long getLuckPermsCheckRate(){
+        return luckpermsCheckRate;
+    }
+
+    public boolean getLuckPermsCheckVerbose(){
+        return luckpermsCheckVerbose;
     }
 }

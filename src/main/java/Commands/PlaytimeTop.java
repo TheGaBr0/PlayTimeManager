@@ -1,5 +1,7 @@
 package Commands;
 
+import SQLiteDB.Database;
+import UsersDatabases.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -9,10 +11,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class PlaytimeTop implements TabExecutor {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final Database db = plugin.getDatabase();
     public final int TOP_MAX = 100;
     int page;
 
@@ -39,14 +43,18 @@ public class PlaytimeTop implements TabExecutor {
                         }else{
                             page = 1;
                         }
-                        List<String> topPlayers = plugin.getDbDataCombiner().FillTopPlayers();
+                        int numeroUtentiTotali = Integer.parseInt(args[0]);
+                        ArrayList<String> topPlayers = db.getTopPlayersByPlaytime(numeroUtentiTotali);
+                        ArrayList<DBUser> topDBUsers = new ArrayList<>();
+                        for(String uuid : topPlayers)
+                            topDBUsers.add(DBUser.fromUUID(uuid));
 
-                        if(topPlayers.size()>0){
+                        if(!topDBUsers.isEmpty()){
                             // Ottenere il numero totale degli utenti dal parametro args[0]
-                            int numeroUtentiTotali = Integer.parseInt(args[0]);
 
-                            if(numeroUtentiTotali > topPlayers.size())
-                                numeroUtentiTotali = topPlayers.size();
+
+                            if(numeroUtentiTotali > topDBUsers.size())
+                                numeroUtentiTotali = topDBUsers.size();
 
                             // Calcolare il numero di pagine
                             int numeroPagine = (int) Math.ceil((double) (numeroUtentiTotali + 1) / 10);
@@ -59,15 +67,15 @@ public class PlaytimeTop implements TabExecutor {
                                 // Stampa i giocatori della pagina specificata
                                 sender.sendMessage("[§6Play§eTime§f]§7 Top "+numeroUtentiTotali+" players - page: "+page);
                                 for (int i = indiceInizio; i < indiceFine; i++) {
-                                    sender.sendMessage("§7§l#"+(i+1)+" §e"+ topPlayers.get(i)+" §7- §d"+
-                                            plugin.getPlayTimeDB().convertTime(plugin.getUsersManager().getUserByNickname(topPlayers.get(i)).getPlayTime()/20));
+                                    sender.sendMessage("§7§l#"+(i+1)+" §e"+ topDBUsers.get(i).getNickname()+" §7- §d"+
+                                            convertTime(topDBUsers.get(i).getPlaytime()/20));
                                 }
                             } else if (page == 0) {
                                 // Mostra tutti i giocatori
                                 sender.sendMessage("[§6Play§eTime§f]§7 Top "+numeroUtentiTotali+" players - page: 1");
                                 for (int i = 0; i <= numeroUtentiTotali; i++) {
-                                    sender.sendMessage("§7§l#"+(i+1)+" §e"+ topPlayers.get(i)+" §7- §d"+
-                                            plugin.getPlayTimeDB().convertTime(plugin.getUsersManager().getUserByNickname(topPlayers.get(i)).getPlayTime()/20));
+                                    sender.sendMessage("§7§l#"+(i+1)+" §e"+ topDBUsers.get(i).getNickname()+" §7- §d"+
+                                            convertTime(topDBUsers.get(i).getPlaytime()/20));
                                 }
                             } else {
                                 // Pagina non valida
@@ -107,7 +115,7 @@ public class PlaytimeTop implements TabExecutor {
     }
 
     public List<String> getPages(String players){
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
 
         for(int i = 0; i<Math.ceil(Float.parseFloat(players)/10); i++){
             result.add("p"+(i+1));
@@ -115,6 +123,31 @@ public class PlaytimeTop implements TabExecutor {
 
         return result;
     }
+
+    private String convertTime(long secondsx) {
+        int days = (int) TimeUnit.SECONDS.toDays(secondsx);
+        int hours = (int) (TimeUnit.SECONDS.toHours(secondsx) - TimeUnit.DAYS.toHours(days));
+        int minutes = (int) (TimeUnit.SECONDS.toMinutes(secondsx) - TimeUnit.HOURS.toMinutes(hours)
+                - TimeUnit.DAYS.toMinutes(days));
+        int seconds = (int) (TimeUnit.SECONDS.toSeconds(secondsx) - TimeUnit.MINUTES.toSeconds(minutes)
+                - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days));
+
+        if (days != 0) {
+            return days + "d, " + hours + "h, " + minutes + "m, " + seconds + "s";
+        } else {
+            if (hours != 0) {
+                return hours + "h, " + minutes + "m, " + seconds + "s";
+            } else {
+                if (minutes != 0) {
+                    return minutes + "m, " + seconds + "s";
+                } else {
+                    return seconds + "s";
+                }
+            }
+
+        }
+    }
+
 
 
     @Override

@@ -4,15 +4,27 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c5c8bcb5-cf0e-4612-b038-b9f0362569f3" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/src/main/java/Main/PlayTimeManager.java" beforeDir="false" />
+    <list default="true" id="c5c8bcb5-cf0e-4612-b038-b9f0362569f3" name="Changes" comment="Removed all nicknames autocompletion due to a db error when papi a leaderboard is active.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectColorInfo">{
@@ -23,20 +35,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Maven.PlayTimeManager [compile].executor": "Run",
-    "Maven.PlayTimeManager package.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/gbott/Desktop/Minecraft stuff/PlayTimeManager",
-    "project.structure.last.edited": "Artifacts",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "reference.settings.project.maven.repository.indices"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Maven.PlayTimeManager [compile].executor&quot;: &quot;Run&quot;,
+    &quot;Maven.PlayTimeManager package.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;dev&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/gbott/Desktop/Minecraft stuff/PlayTimeManager&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15429688&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.projectsettings.compiler.javacompiler&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\gbott\Desktop\Minecraft stuff\PlayTimeManager\PlayTimeManager\src\main\resources" />
@@ -94,6 +106,109 @@
       <option name="presentableId" value="Default" />
       <updated>1718092656981</updated>
     </task>
+    <task id="LOCAL-00001" summary="removed wrong folders">
+      <option name="closed" value="true" />
+      <created>1718093988411</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1718093988411</updated>
+    </task>
+    <task id="LOCAL-00002" summary="SQL storage migration completed, but nothing works">
+      <option name="closed" value="true" />
+      <created>1718137704805</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1718137704805</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Users managing refactored. DbUser class added to handle requests related to offline users.">
+      <option name="closed" value="true" />
+      <created>1718210797639</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1718210797639</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Fixes">
+      <option name="closed" value="true" />
+      <created>1718311172794</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1718311172794</updated>
+    </task>
+    <task id="LOCAL-00005" summary="LuckPerms schedule options in the config has been added, general optimizations of the scheduler included.">
+      <option name="closed" value="true" />
+      <created>1718375739638</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1718375739638</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Warnings fixed">
+      <option name="closed" value="true" />
+      <created>1718391907547</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1718391907547</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Minor improvements. PAPI placeholders fixed.">
+      <option name="closed" value="true" />
+      <created>1718394301731</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1718394301731</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Removed all nicknames autocompletion due to a db error when papi a leaderboard is active.">
+      <option name="closed" value="true" />
+      <created>1718394926626</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1718394926626</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Removed all nicknames autocompletion due to a db error when papi a leaderboard is active.">
+      <option name="closed" value="true" />
+      <created>1718395000014</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1718395000014</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Removed all nicknames autocompletion due to a db error when papi a leaderboard is active.">
+      <option name="closed" value="true" />
+      <created>1718395088398</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1718395088398</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="removed wrong folders" />
+    <MESSAGE value="SQL storage migration completed, but nothing works" />
+    <MESSAGE value="Users managing refactored. DbUser class added to handle requests related to offline users." />
+    <MESSAGE value="Fixes" />
+    <MESSAGE value="LuckPerms schedule options in the config has been added, general optimizations of the scheduler included." />
+    <MESSAGE value="Warnings fixed" />
+    <MESSAGE value="Minor improvements. PAPI placeholders fixed." />
+    <MESSAGE value="Removed all nicknames autocompletion due to a db error when papi a leaderboard is active." />
+    <option name="LAST_COMMIT_MESSAGE" value="Removed all nicknames autocompletion due to a db error when papi a leaderboard is active." />
   </component>
 </project>

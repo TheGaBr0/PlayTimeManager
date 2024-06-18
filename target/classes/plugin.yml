@@ -1,5 +1,5 @@
 name: PlayTimeManager
-version: '2.5'
+version: '3.0'
 main: me.thegabro.playtimemanager.PlayTimeManager
 api-version: '1.20'
 author: TheGabro
@@ -11,29 +11,25 @@ commands:
     description: Command to get play time of players
     permission: playtime
     permission-message: You don't have the permission to execute this command!
-  playtimedbadd:
-    description: Command to add old play time data
-    permission: playtime.dbadd
-    permission-message: You don't have the permission to execute this command!
-  playtimeuuidadd:
-    description: Command to add old uuid stored data
-    permission: playtime.dbadd
-    permission-message: You don't have the permission to execute this command!
   playtimeaverage:
     description: Command to get the average of play time data
     permission: playtime.average
     permission-message: You don't have the permission to execute this command!
-  playtimestats:
-    description: Command to get play time statistic data
-    permission: playtime.stats
+  playtimepercentage:
+    description: Command to get the % of players that have a playtime greater than or equal to a given one
+    permission: playtime.playtimepercentage
     permission-message: You don't have the permission to execute this command!
   playtimetop:
-    description: Command to get players with higher play time
+    description: Command to get the top N players with higher playtime
     permission: playtime.top
     permission-message: You don't have the permission to execute this command!
   playtimegroup:
-    description: Command to set a LuckPerms role based on playtime
+    description: Command to set a LuckPerms group based on playtime
     permission: playtime.group
+    permission-message: You don't have the permission to execute this command!
+  playtimereload:
+    description: Command to reload the main config
+    permission: playtime.reload
     permission-message: You don't have the permission to execute this command!
 
 permissions:
@@ -44,24 +40,24 @@ permissions:
       playtime: true
       playtime.others: true
       playtime.others.modify: true
-      playtime.dbadd: true
       playtime.average: true
-      playtime.stats: true
+      playtime.percentage: true
       playtime.top: true
       playtime.group: true
+      playtime.reload: true
   playtime:
     default: true
   playtime.others:
     default: false
   playtime.others.modify:
     default: false
-  playtime.dbadd:
-    default: false
   playtime.average:
     default: false
-  playtime.stats:
+  playtime.percentage:
     default: false
   playtime.top:
     default: false
   playtime.group:
+    default: false
+  playtime.reload:
     default: false

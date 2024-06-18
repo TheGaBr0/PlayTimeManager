@@ -1,5 +1,6 @@
 package Commands;
 
+import Users.OnlineUsersManagerLuckPerms;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.luckperms.api.model.group.Group;
 import org.bukkit.command.Command;
@@ -17,6 +18,7 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private static final String[] SUBCOMMANDS = {"addGroup", "removeGroup"};
     private static final String[] TIME = {"setTime:"};
+    private final OnlineUsersManagerLuckPerms onlineUsersManager = (OnlineUsersManagerLuckPerms) plugin.getUsersManager();
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
@@ -65,6 +67,7 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
         Group group = plugin.luckPermsApi.getGroupManager().getGroup(groupName);
         if (group != null){
             plugin.getConfiguration().addGroup(groupName, time);
+            onlineUsersManager.restartSchedule();
             sender.sendMessage("[§6Play§eTime§f]§7 The group §e"+groupName+"§7 will be automatically set to a player " +
                     "whenever he reaches §6"+ convertTime(time/20));
         }else{
@@ -79,6 +82,7 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
 
         if (group != null){
             plugin.getConfiguration().removeGroup(groupName);
+            onlineUsersManager.restartSchedule();
             sender.sendMessage("[§6Play§eTime§f]§7 The group §e"+groupName+" §7has been removed!");
         }else{
             sender.sendMessage("[§6Play§eTime§f]§7 The group §e"+groupName+" §7doesn't exists!");

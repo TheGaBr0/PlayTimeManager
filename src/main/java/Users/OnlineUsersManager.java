@@ -43,4 +43,12 @@ public class OnlineUsersManager {
         return null;
     }
 
+    public OnlineUser getOnlineUserByUUID(String uuid){
+        for(OnlineUser user : onlineUsers){
+            if(user.getUuid().equals(uuid))
+                return user;
+        }
+        return null;
+    }
+
 }

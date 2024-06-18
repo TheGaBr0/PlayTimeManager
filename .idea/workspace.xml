@@ -4,8 +4,44 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c5c8bcb5-cf0e-4612-b038-b9f0362569f3" name="Changes" comment="Removed all nicknames autocompletion due to a db error when papi a leaderboard is active.">
+    <list default="true" id="c5c8bcb5-cf0e-4612-b038-b9f0362569f3" name="Changes" comment="Hikari CP has been added to handle parallel queries.">
+      <change afterPath="$PROJECT_DIR$/src/main/java/SQLiteDB/LogFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase__Changes_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_rebase__Changes_.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlaytimeCommand.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Commands/PlayTimeCommandManager/PlaytimeCommand.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/PlaceHolders/PlayTimePlaceHolders.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/PlaceHolders/PlayTimePlaceHolders.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/SQLiteDB/Database.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/SQLiteDB/Database.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/SQLiteDB/SQLite.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/SQLiteDB/SQLite.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Users/OnlineUsersManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Users/OnlineUsersManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Users/OnlineUsersManagerLuckPerms.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Users/OnlineUsersManagerLuckPerms.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/thegabro/playtimemanager/Configuration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/thegabro/playtimemanager/Configuration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/me/thegabro/playtimemanager/PlayTimeManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/me/thegabro/playtimemanager/PlayTimeManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/config.yml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/config.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/PlayTimeManager-3.0-shaded.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/PlayTimeManager-3.0-shaded.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeAddTime.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeAddTime.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeCommandManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeCommandManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeRemoveTime.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlayTimeRemoveTime.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlaytimeCommand.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlayTimeCommandManager/PlaytimeCommand.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlaytimeAverage.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlaytimeAverage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlaytimeLuckPermsGroup.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlaytimeLuckPermsGroup.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlaytimeReload.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlaytimeReload.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Commands/PlaytimeTop.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Commands/PlaytimeTop.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Events/JoinEventManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Events/JoinEventManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/Events/QuitEventManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Events/QuitEventManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/PlaceHolders/PlayTimePlaceHolders.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/PlaceHolders/PlayTimePlaceHolders.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/SQLiteDB/Database.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/SQLiteDB/Database.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/SQLiteDB/SQLite.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/SQLiteDB/SQLite.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/UsersDatabases/DBUser.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/UsersDatabases/OnlineUser.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/UsersDatabases/OnlineUsersManager.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/UsersDatabases/OnlineUsersManagerLuckPerms$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/UsersDatabases/OnlineUsersManagerLuckPerms.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/config.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/config.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/Configuration.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/Configuration.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/me/thegabro/playtimemanager/PlayTimeManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/original-PlayTimeManager-3.0.jar" beforeDir="false" afterPath="$PROJECT_DIR$/target/original-PlayTimeManager-3.0.jar" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,7 +76,7 @@
     &quot;Maven.PlayTimeManager [compile].executor&quot;: &quot;Run&quot;,
     &quot;Maven.PlayTimeManager package.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;dev&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/Users/gbott/Desktop/Minecraft stuff/PlayTimeManager&quot;,
     &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
@@ -186,7 +222,15 @@
       <option name="project" value="LOCAL" />
       <updated>1718395088398</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="Refactoring">
+      <option name="closed" value="true" />
+      <created>1718701431011</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1718701431011</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -209,6 +253,8 @@
     <MESSAGE value="Warnings fixed" />
     <MESSAGE value="Minor improvements. PAPI placeholders fixed." />
     <MESSAGE value="Removed all nicknames autocompletion due to a db error when papi a leaderboard is active." />
-    <option name="LAST_COMMIT_MESSAGE" value="Removed all nicknames autocompletion due to a db error when papi a leaderboard is active." />
+    <MESSAGE value="Refactoring" />
+    <MESSAGE value="Hikari CP has been added to handle parallel queries." />
+    <option name="LAST_COMMIT_MESSAGE" value="Hikari CP has been added to handle parallel queries." />
   </component>
 </project>

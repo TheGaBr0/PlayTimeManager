@@ -44,9 +44,12 @@ public class PlaytimeCommand{
 
     private boolean handleOther(CommandSender sender, String playerName) {
 
-        DBUser dbUser = DBUser.fromNickname(playerName);
+        DBUser user = onlineUsersManager.getOnlineUser(sender.getName());
 
-        String message = formatPlaytimeMessage(sender, dbUser.getNickname(), dbUser.getPlaytime(), dbUser.getArtificialPlaytime());
+        if(user == null)
+            user = DBUser.fromNickname(playerName);
+
+        String message = formatPlaytimeMessage(sender, user.getNickname(), user.getPlaytime(), user.getArtificialPlaytime());
         sender.sendMessage(message);
         return true;
     }

@@ -1,16 +1,13 @@
 package SQLiteDB;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.logging.Level;
 
 import me.thegabro.playtimemanager.PlayTimeManager; // import your main class
 
 public class SQLite extends Database{
+
     String dbname;
     PlayTimeManager plugin;
     public SQLite(PlayTimeManager instance){
@@ -30,38 +27,26 @@ public class SQLite extends Database{
 
     // SQL creation stuff, You can leave the blow stuff untouched.
     public Connection getSQLConnection() {
-        File dataFolder = new File(plugin.getDataFolder(), dbname+".db");
-        if (!dataFolder.exists()){
-            try {
-                dataFolder.createNewFile();
-            } catch (IOException e) {
-                plugin.getLogger().log(Level.SEVERE, "File write error: "+dbname+".db");
-            }
+        if (dataSource == null) {
+            throw new IllegalStateException("DataSource not initialized");
         }
         try {
-            if(connection!=null&&!connection.isClosed()){
-                return connection;
-            }
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:" + dataFolder);
-            return connection;
-        } catch (SQLException ex) {
-            plugin.getLogger().log(Level.SEVERE,"SQLite exception on initialize", ex);
-        } catch (ClassNotFoundException ex) {
-            plugin.getLogger().log(Level.SEVERE, "You need the SQLite JBDC library. Google it. Put it in /lib folder.");
+            return dataSource.getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
-        return null;
     }
 
+
     public void load() {
+        initialize(dbname);
         connection = getSQLConnection();
         try {
             Statement s = connection.createStatement();
-            plugin.getLogger().info(String.valueOf(s.executeUpdate(SQLiteCreateTable)));
+            s.executeUpdate(SQLiteCreateTable);
             s.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        initialize();
     }
 }

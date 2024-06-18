@@ -4,6 +4,7 @@ import Commands.*;
 import Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import Events.JoinEventManager;
 import SQLiteDB.Database;
+import SQLiteDB.LogFilter;
 import SQLiteDB.SQLite;
 import Events.QuitEventManager;
 import PlaceHolders.PlayTimePlaceHolders;
@@ -28,7 +29,7 @@ public class PlayTimeManager extends JavaPlugin{
     @Override
     public void onEnable() {
 
-
+        LogFilter.registerFilter();
         if (!getDataFolder().exists()) getDataFolder().mkdir();
         saveDefaultConfig();
 
@@ -67,7 +68,7 @@ public class PlayTimeManager extends JavaPlugin{
         for(Player p : Bukkit.getOnlinePlayers()){
             onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
         }
-
+        db.close();
         getLogger().info("has been disabled!");
     }
 

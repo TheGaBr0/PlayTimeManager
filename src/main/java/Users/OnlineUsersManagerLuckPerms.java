@@ -11,11 +11,13 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
     private BukkitTask schedule;
+    private String configSound, configMessage;
     public OnlineUsersManagerLuckPerms(){
         super();
 
@@ -85,11 +87,19 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
                                     p = Bukkit.getPlayerExact(onlineUser.getNickname());
 
                                     if (p != null) {
-                                        p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10, 0);
-                                        p.sendMessage("[§6Play§eTime§f]§7 Avendo raggiunto §6" +
-                                                convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20)
-                                                + "§7 di tempo di gioco " + "§7sei stato promosso a §e" + group + "§7!" +
-                                                " Contatta lo staff su §9Discord§7 per ricevere il tuo ruolo anche li!");
+                                        try{
+                                            configSound = plugin.getConfiguration().getLuckPermsGoalSound();
+                                            Sound sound = Sound.valueOf(configSound);
+                                            p.playSound(p.getLocation(), sound, 10, 0);
+                                        }catch(IllegalArgumentException exception){
+                                            plugin.getLogger().severe(configSound + " is not a valid argument for luckperms-time-goal-sound" +
+                                                    "setting in config.yaml");
+                                        }
+
+                                        configMessage = replacePlaceholders(plugin.getConfiguration().getLuckPermsGoalMessage(), p, group);
+
+                                        p.sendMessage(configMessage);
+
                                         Bukkit.getServer().getConsoleSender().sendMessage("[§6Play§eTime§f]§7 User §e"
                                                 + onlineUser.getNickname() + " §7has reached §6" +
                                                 convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20) +
@@ -127,6 +137,25 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
             }
 
         }
+    }
+
+    public String replacePlaceholders(String input, Player p, String group) {
+        // Create a map for the placeholders and their corresponding values
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("%PLAYER_NAME%", p.getName());
+        placeholders.put("%GROUP_NAME%", group);
+
+        // Calculate TIME_REQUIRED
+        String playTimeSeconds = convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20);
+
+        placeholders.put("%TIME_REQUIRED%", playTimeSeconds);
+
+        // Replace placeholders in the input string
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            input = input.replace(entry.getKey(), entry.getValue());
+        }
+
+        return input;
     }
 
 }

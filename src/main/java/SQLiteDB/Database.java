@@ -1,5 +1,7 @@
 package SQLiteDB;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,6 +9,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import Users.DBUser;
 
@@ -16,8 +20,9 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 public abstract class Database {
     PlayTimeManager plugin;
     Connection connection;
+    protected static HikariDataSource dataSource;
+
     // The name of the table we created back in SQLite class.
-    public String table = "play_time";
     public Database(PlayTimeManager instance){
         plugin = instance;
     }
@@ -26,16 +31,23 @@ public abstract class Database {
 
     public abstract void load();
 
-    public void initialize(){
-        connection = getSQLConnection();
-        try{
-            PreparedStatement ps = connection.prepareStatement("SELECT * FROM " + table + " WHERE uuid = ?");
-            ResultSet rs = ps.executeQuery();
-            close(ps,rs);
-
-        } catch (SQLException ex) {
-            plugin.getLogger().log(Level.SEVERE, "Unable to retreive connection", ex);
+    public void initialize(String dbName) {
+        File dataFolder = new File(plugin.getDataFolder(), dbName + ".db");
+        if (!dataFolder.exists()) {
+            try {
+                dataFolder.createNewFile();
+            } catch (IOException e) {
+                plugin.getLogger().log(Level.SEVERE, "File write error: " + dbName + ".db");
+            }
         }
+
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:sqlite:" + dataFolder.getAbsolutePath());
+        config.setDriverClassName("org.sqlite.JDBC");
+        config.setMaximumPoolSize(20);
+        config.setConnectionTestQuery("SELECT 1");
+
+        dataSource = new HikariDataSource(config);
     }
 
     public String getNickname(String uuid) {
@@ -560,19 +572,27 @@ public abstract class Database {
     public DBUser getTopPlayerAtPosition(int position){
         ArrayList<String> topPlayers = getTopPlayersByPlaytime(position);
         ArrayList<DBUser> topDBUsers = new ArrayList<>();
-        for(String uuid : topPlayers)
-            topDBUsers.add(DBUser.fromUUID(uuid));
-        return topDBUsers.get(position-1);
-    }
+        DBUser user;
+        for(String uuid : topPlayers){
+            user = plugin.getUsersManager().getOnlineUserByUUID(uuid);
+            if(user == null)
+                user = DBUser.fromUUID(uuid);
 
-    public void close(PreparedStatement ps,ResultSet rs){
-        try {
-            if (ps != null)
-                ps.close();
-            if (rs != null)
-                rs.close();
-        } catch (SQLException ex) {
-            Error.close(plugin, ex);
+            topDBUsers.add(user);
+        }
+
+        try{
+            return topDBUsers.get(position-1);
+        }catch(IndexOutOfBoundsException exp){
+            return null;
         }
     }
+
+
+    public void close() {
+        if (dataSource != null) {
+            dataSource.close();
+        }
+    }
+
 }

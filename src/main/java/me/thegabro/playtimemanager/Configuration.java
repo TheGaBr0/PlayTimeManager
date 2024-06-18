@@ -20,6 +20,8 @@ public class Configuration {
     private HashMap<String, Long> groups;
     private long luckpermsCheckRate;
     private boolean luckpermsCheckVerbose;
+    private String luckpermsGoalMessage;
+    private String luckpermsGoalSound;
 
     public Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
         this.path = path;
@@ -28,7 +30,7 @@ public class Configuration {
         this.resource = resource;
         create();
         reloadConfig();
-        updateLuckPermsCheck();
+        updateLuckPermsSettings();
         updateLuckPermsGroups();
     }
 
@@ -53,7 +55,7 @@ public class Configuration {
     public void reload() {
         reloadFile();
         reloadConfig();
-        updateLuckPermsCheck();
+        updateLuckPermsSettings();
         updateLuckPermsGroups();
     }
 
@@ -123,9 +125,11 @@ public class Configuration {
         }
     }
 
-    private void updateLuckPermsCheck(){
+    private void updateLuckPermsSettings(){
         this.luckpermsCheckRate = config.getLong("luckperms-check-rate");
         this.luckpermsCheckVerbose = config.getBoolean("luckperms-check-verbose");
+        this.luckpermsGoalMessage = config.getString("luckperms-time-goal-message");
+        this.luckpermsGoalSound = config.getString("luckperms-time-goal-sound");
     }
 
     public long getLuckPermsCheckRate(){
@@ -135,4 +139,14 @@ public class Configuration {
     public boolean getLuckPermsCheckVerbose(){
         return luckpermsCheckVerbose;
     }
+
+    public String getLuckPermsGoalMessage(){
+        return luckpermsGoalMessage;
+    }
+
+    public String getLuckPermsGoalSound(){
+        return luckpermsGoalSound;
+    }
+
+
 }

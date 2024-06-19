@@ -22,6 +22,8 @@ public class Configuration {
     private boolean luckpermsCheckVerbose;
     private String luckpermsGoalMessage;
     private String luckpermsGoalSound;
+    private String playtimeSelfMessage;
+    private String playtimeOthersMessage;
 
     public Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
         this.path = path;
@@ -29,9 +31,7 @@ public class Configuration {
         this.createIfNotExist = createIfNotExist;
         this.resource = resource;
         create();
-        reloadConfig();
-        updateLuckPermsSettings();
-        updateLuckPermsGroups();
+        reload();
     }
 
     //Getters, variables and constructors
@@ -57,6 +57,7 @@ public class Configuration {
         reloadConfig();
         updateLuckPermsSettings();
         updateLuckPermsGroups();
+        updateMessages();
     }
 
     private void create() {
@@ -128,8 +129,13 @@ public class Configuration {
     private void updateLuckPermsSettings(){
         this.luckpermsCheckRate = config.getLong("luckperms-check-rate");
         this.luckpermsCheckVerbose = config.getBoolean("luckperms-check-verbose");
-        this.luckpermsGoalMessage = config.getString("luckperms-time-goal-message");
         this.luckpermsGoalSound = config.getString("luckperms-time-goal-sound");
+    }
+
+    private void updateMessages(){
+        this.luckpermsGoalMessage = config.getString("luckperms-time-goal-message");
+        this.playtimeSelfMessage = config.getString("playtime-self-message");
+        this.playtimeOthersMessage = config.getString("playtime-others-message");
     }
 
     public long getLuckPermsCheckRate(){
@@ -146,6 +152,14 @@ public class Configuration {
 
     public String getLuckPermsGoalSound(){
         return luckpermsGoalSound;
+    }
+
+    public String getPlaytimeSelfMessage(){
+        return playtimeSelfMessage;
+    }
+
+    public String getPlaytimeOthersMessage(){
+        return playtimeOthersMessage;
     }
 
 

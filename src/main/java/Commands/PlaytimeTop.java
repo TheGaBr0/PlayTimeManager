@@ -33,11 +33,11 @@ public class PlaytimeTop implements TabExecutor {
                                 if(getPages(args[0]).contains(args[1])){
                                     page = Integer.parseInt(args[1].substring(1));
                                 }else{
-                                    sender.sendMessage("[§6Play§eTime§f]§7 Page "+args[1].substring(1)+" doesn't exist!");
+                                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Page "+args[1].substring(1)+" doesn't exist!");
                                     return false;
                                 }
                             }else{
-                                sender.sendMessage("[§6Play§eTime§f]§7 The argument is not valid!");
+                                sender.sendMessage("[§6PlayTime§eManager§f]§7 The argument is not valid!");
                                 return false;
                             }
                         }else{
@@ -65,37 +65,37 @@ public class PlaytimeTop implements TabExecutor {
                                 int indiceFine = Math.min(page * 10, numeroUtentiTotali);
 
                                 // Stampa i giocatori della pagina specificata
-                                sender.sendMessage("[§6Play§eTime§f]§7 Top "+numeroUtentiTotali+" players - page: "+page);
+                                sender.sendMessage("[§6PlayTime§eManager§f]§7 Top "+numeroUtentiTotali+" players - page: "+page);
                                 for (int i = indiceInizio; i < indiceFine; i++) {
                                     sender.sendMessage("§7§l#"+(i+1)+" §e"+ topDBUsers.get(i).getNickname()+" §7- §d"+
                                             convertTime(topDBUsers.get(i).getPlaytime()/20));
                                 }
                             } else if (page == 0) {
                                 // Mostra tutti i giocatori
-                                sender.sendMessage("[§6Play§eTime§f]§7 Top "+numeroUtentiTotali+" players - page: 1");
+                                sender.sendMessage("[§6PlayTime§eManager§f]§7 Top "+numeroUtentiTotali+" players - page: 1");
                                 for (int i = 0; i <= numeroUtentiTotali; i++) {
                                     sender.sendMessage("§7§l#"+(i+1)+" §e"+ topDBUsers.get(i).getNickname()+" §7- §d"+
                                             convertTime(topDBUsers.get(i).getPlaytime()/20));
                                 }
                             } else {
                                 // Pagina non valida
-                                sender.sendMessage("[§6Play§eTime§f]§7 Invalid page!");
+                                sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid page!");
                             }
                         }else{
-                            sender.sendMessage("[§6Play§eTime§f]§7 No players joined!");
+                            sender.sendMessage("[§6PlayTime§eManager§f]§7 No players joined!");
                         }
                     }else{
-                        sender.sendMessage("[§6Play§eTime§f]§7 Number of players is limited to 100!");
+                        sender.sendMessage("[§6PlayTime§eManager§f]§7 Number of players is limited to 100!");
                     }
                 }
                 else{
-                    sender.sendMessage("[§6Play§eTime§f]§7 The argument is not valid!");
+                    sender.sendMessage("[§6PlayTime§eManager§f]§7 The argument is not valid!");
                 }
             }else{
-                sender.sendMessage("[§6Play§eTime§f]§7 You must specify the number of players you'd like to rank!");
+                sender.sendMessage("[§6PlayTime§eManager§f]§7 You must specify the number of players you'd like to rank!");
             }
         }else{
-            sender.sendMessage("[§6Play§eTime§f]§7 You don't have the permission to execute this command");
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have the permission to execute this command");
         }
         return false;
     }

@@ -18,14 +18,13 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private static final String[] SUBCOMMANDS = {"addGroup", "removeGroup"};
     private static final String[] TIME = {"setTime:"};
-    private final OnlineUsersManagerLuckPerms onlineUsersManager = (OnlineUsersManagerLuckPerms) plugin.getUsersManager();
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
         if (sender.hasPermission("playtime.group")){
 
             if(args.length <= 2){
-                sender.sendMessage("[§6Play§eTime§f]§7 Too few arguments!");
+                sender.sendMessage("[§6PlayTime§eManager§f]§7 Too few arguments!");
                 return false;
             }
 
@@ -33,14 +32,14 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
             if (args[2].contains("setTime:") && args[2].startsWith("setTime:")) {
                 extractedTime = args[2].substring(args[2].indexOf(":")+1);
             }else{
-                sender.sendMessage("[§6Play§eTime§f]§7 Time is not specified correctly!");
+                sender.sendMessage("[§6PlayTime§eManager§f]§7 Time is not specified correctly!");
                 return false;
             }
             long time;
             try{
                 time = Integer.parseInt(extractedTime.replaceAll("[^\\d.]", ""));
             }catch(NumberFormatException e){
-                sender.sendMessage("[§6Play§eTime§f]§7 Time is not specified correctly!");
+                sender.sendMessage("[§6PlayTime§eManager§f]§7 Time is not specified correctly!");
                 return false;
             }
 
@@ -49,15 +48,18 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
                 case "d": time = time * 1728000L; break;
                 case "h": time = time * 72000L; break;
                 case "m": time = time * 1200L; break;
-                default: sender.sendMessage("[§6Play§eTime§f]§7 Time format must be specified! [d/h/m]"); return false;
+                default: sender.sendMessage("[§6PlayTime§eManager§f]§7 Time format must be specified! [d/h/m]"); return false;
             }
 
             if(args[0].equals("addGroup"))
                 addGroup(sender, args, time);
-            else
+            else if (args[0].equals("removeGroup"))
                 removeGroup(sender, args);
+            else
+                sender.sendMessage("[§6PlayTime§eManager§f]§7 Subcommand "+args[0]+" is not valid.");
+
         }else{
-            sender.sendMessage("[§6Play§eTime§f]§7 You don't have the permission to execute this command");
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have the permission to execute this command");
         }
         return false;
     }
@@ -66,12 +68,13 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
         String groupName = args[1];
         Group group = plugin.luckPermsApi.getGroupManager().getGroup(groupName);
         if (group != null){
+            OnlineUsersManagerLuckPerms onlineUsersManager = (OnlineUsersManagerLuckPerms) plugin.getUsersManager();
             plugin.getConfiguration().addGroup(groupName, time);
             onlineUsersManager.restartSchedule();
-            sender.sendMessage("[§6Play§eTime§f]§7 The group §e"+groupName+"§7 will be automatically set to a player " +
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 The group §e"+groupName+"§7 will be automatically set to a player " +
                     "whenever he reaches §6"+ convertTime(time/20));
         }else{
-            sender.sendMessage("[§6Play§eTime§f]§7 The group §e"+groupName+"§7 doesn't exist in LuckPerms configuration!");
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 The group §e"+groupName+"§7 doesn't exist in LuckPerms configuration!");
         }
 
     }
@@ -81,11 +84,12 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
         Group group = plugin.luckPermsApi.getGroupManager().getGroup(groupName);
 
         if (group != null){
+            OnlineUsersManagerLuckPerms onlineUsersManager = (OnlineUsersManagerLuckPerms) plugin.getUsersManager();
             plugin.getConfiguration().removeGroup(groupName);
             onlineUsersManager.restartSchedule();
-            sender.sendMessage("[§6Play§eTime§f]§7 The group §e"+groupName+" §7has been removed!");
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 The group §e"+groupName+" §7has been removed!");
         }else{
-            sender.sendMessage("[§6Play§eTime§f]§7 The group §e"+groupName+" §7doesn't exists!");
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 The group §e"+groupName+" §7doesn't exists!");
         }
     }
 

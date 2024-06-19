@@ -36,7 +36,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
             if(args.length <= 1){
                 if(args.length == 1){
                     if(!onlineUsersManager.userExists(args[0])){
-                        sender.sendMessage("[§6Play§eTime§f]§7 The player §e" + args[0] + "§7 has never joined the server!");
+                        sender.sendMessage("[§6PlayTime§eManager§f]§7 The player §e" + args[0] + "§7 has never joined the server!");
                         return false;
                     }
                 }
@@ -49,7 +49,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
                 String subCommand = args[1];
 
                 if (!subCommands.contains(subCommand)) {
-                    sender.sendMessage("[§6Play§eTime§f]§7 Unknown subcommand: " + subCommand);
+                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Unknown subcommand: " + subCommand);
                     return false;
                 }
 
@@ -64,7 +64,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
 
         } else {
-            sender.sendMessage("[§6Play§eTime§f]§7 You don't have permission to use this command");
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have permission to use this command");
         }
 
         return false;

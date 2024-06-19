@@ -7,6 +7,8 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class PlaytimeCommand{
@@ -24,20 +26,24 @@ public class PlaytimeCommand{
         } else if (args.length == 1 && sender.hasPermission("playtime.others")) {
             return handleOther(sender, args[0]);
         } else {
-            sender.sendMessage("[§6Play§eTime§f]§7 Usage: /playtime [player]");
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtime [player]");
             return false;
         }
     }
 
     private boolean handleSelf(CommandSender sender) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("[§6Play§eTime§f]§7 You must be a player to execute this command");
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 You must be a player to execute this command");
             return false;
         }
 
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(sender.getName());
 
-        String message = formatPlaytimeMessage(sender, sender.getName(), onlineUser.getPlaytime(), onlineUser.getArtificialPlaytime());
+        String formattedPlaytime = convertTime(onlineUser.getPlaytime() / 20);
+        String message = replacePlaceholders(plugin.getConfiguration().getPlaytimeSelfMessage(), sender.getName(), formattedPlaytime);
+        if(sender.hasPermission("playtime.others.modify"))
+            message = message + " ("+ convertTime(onlineUser.getArtificialPlaytime() / 20)+")";
+
         sender.sendMessage(message);
         return true;
     }
@@ -49,20 +55,14 @@ public class PlaytimeCommand{
         if(user == null)
             user = DBUser.fromNickname(playerName);
 
-        String message = formatPlaytimeMessage(sender, user.getNickname(), user.getPlaytime(), user.getArtificialPlaytime());
+        String formattedPlaytime = convertTime(user.getPlaytime() / 20);
+        String message = replacePlaceholders(plugin.getConfiguration().getPlaytimeOthersMessage(), playerName, formattedPlaytime);
+        if(sender.hasPermission("playtime.others.modify"))
+            message = message + " ("+ convertTime(user.getArtificialPlaytime() / 20)+")";
         sender.sendMessage(message);
         return true;
     }
 
-    private String formatPlaytimeMessage(CommandSender sender, String playerName, long playtime, long artificialPlaytime) {
-        String formattedPlaytime = convertTime(playtime / 20);
-        if(sender.hasPermission("playtime.others.modify"))
-            return "[§6Play§eTime§f]§7 Il tempo di gioco di §e" + playerName + "§7 è §6" + formattedPlaytime +
-                    " ("+ convertTime(artificialPlaytime / 20)+")";
-        else
-            return "[§6Play§eTime§f]§7 Il tempo di gioco di §e" + playerName + "§7 è §6" + formattedPlaytime;
-
-    }
 
     private String convertTime(long secondsx) {
         int days = (int) TimeUnit.SECONDS.toDays(secondsx);
@@ -86,5 +86,20 @@ public class PlaytimeCommand{
             }
 
         }
+    }
+
+    public String replacePlaceholders(String input, String playerName, String playtime) {
+        // Create a map for the placeholders and their corresponding values
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("%PLAYER_NAME%", playerName);
+        placeholders.put("%PLAYTIME%", playtime);
+
+
+        // Replace placeholders in the input string
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            input = input.replace(entry.getKey(), entry.getValue());
+        }
+
+        return input;
     }
 }

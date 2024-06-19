@@ -38,73 +38,78 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
                 Group groupLuckPerms;
                 User userLuckPerms;
                 if (plugin.getConfiguration().getLuckPermsCheckVerbose())
-                    Bukkit.getConsoleSender().sendMessage("[§6Play§eTime§f]§7 Luckperms check started, refresh rate is "
+                    Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Luckperms check started, refresh rate is "
                             + convertTime(plugin.getConfiguration().getLuckPermsCheckRate()) +
                             ".\n If you find this message annoying you can deactivate it by changing §6luckperms-check-verbose " +
                             "§7in the config.yml");
                 // Get groups from configuration
                 groups = plugin.getConfiguration().getGroups();
 
-                if (groups != null) {
-                    // Iterate through online users
-                    for (OnlineUser onlineUser : onlineUsers) {
+                if (groups.isEmpty()) {
+                    schedule.cancel();
+                    Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 No group has been detected " +
+                            "in the config.yml, luckperms check canceled.");
 
-                        // Iterate through groups
-                        for (String group : groups.keySet()) {
-                            // Get group from LuckPerms
-                            groupLuckPerms = plugin.luckPermsApi.getGroupManager().getGroup(group);
-                            if (groupLuckPerms == null) {
-                                continue; // Skip to next group if group doesn't exist in LuckPerms
+                }
+
+                // Iterate through online users
+                for (OnlineUser onlineUser : onlineUsers) {
+
+                    // Iterate through groups
+                    for (String group : groups.keySet()) {
+                        // Get group from LuckPerms
+                        groupLuckPerms = plugin.luckPermsApi.getGroupManager().getGroup(group);
+                        if (groupLuckPerms == null) {
+                            continue; // Skip to next group if group doesn't exist in LuckPerms
+                        }
+
+                        // Check play time requirement for group
+                        if (onlineUser.getPlaytime() >= groups.get(group)) {
+                            // Get LuckPerms user
+                            userLuckPerms = plugin.luckPermsApi.getUserManager().getUser(UUID.fromString(onlineUser.getUuid()));
+                            if (userLuckPerms == null) {
+                                continue; // Skip to next group if user doesn't exist in LuckPerms
                             }
 
-                            // Check play time requirement for group
-                            if (onlineUser.getPlaytime() >= groups.get(group)) {
-                                // Get LuckPerms user
-                                userLuckPerms = plugin.luckPermsApi.getUserManager().getUser(UUID.fromString(onlineUser.getUuid()));
-                                if (userLuckPerms == null) {
-                                    continue; // Skip to next group if user doesn't exist in LuckPerms
-                                }
-
-                                // Check if user already has the group
-                                boolean hasGroup = false;
-                                for (Node node : userLuckPerms.getNodes()) {
-                                    if (node.getKey().startsWith("group.")) {
-                                        String groupName = node.getKey().substring(6);
-                                        if (groupName.equals(group)) {
-                                            hasGroup = true;
-                                            break;
-                                        }
+                            // Check if user already has the group
+                            boolean hasGroup = false;
+                            for (Node node : userLuckPerms.getNodes()) {
+                                if (node.getKey().startsWith("group.")) {
+                                    String groupName = node.getKey().substring(6);
+                                    if (groupName.equals(group)) {
+                                        hasGroup = true;
+                                        break;
                                     }
                                 }
+                            }
 
-                                if (!hasGroup) {
-                                    // Add group to user's LuckPerms data
-                                    InheritanceNode node = InheritanceNode.builder(groupLuckPerms).value(true).build();
-                                    userLuckPerms.data().add(node);
-                                    plugin.luckPermsApi.getUserManager().saveUser(userLuckPerms);
+                            if (!hasGroup) {
+                                // Add group to user's LuckPerms data
+                                InheritanceNode node = InheritanceNode.builder(groupLuckPerms).value(true).build();
+                                userLuckPerms.data().add(node);
+                                plugin.luckPermsApi.getUserManager().saveUser(userLuckPerms);
 
-                                    // Send messages to player and console
-                                    p = Bukkit.getPlayerExact(onlineUser.getNickname());
+                                // Send messages to player and console
+                                p = Bukkit.getPlayerExact(onlineUser.getNickname());
 
-                                    if (p != null) {
-                                        try{
-                                            configSound = plugin.getConfiguration().getLuckPermsGoalSound();
-                                            Sound sound = Sound.valueOf(configSound);
-                                            p.playSound(p.getLocation(), sound, 10, 0);
-                                        }catch(IllegalArgumentException exception){
-                                            plugin.getLogger().severe(configSound + " is not a valid argument for luckperms-time-goal-sound" +
-                                                    "setting in config.yaml");
-                                        }
-
-                                        configMessage = replacePlaceholders(plugin.getConfiguration().getLuckPermsGoalMessage(), p, group);
-
-                                        p.sendMessage(configMessage);
-
-                                        Bukkit.getServer().getConsoleSender().sendMessage("[§6Play§eTime§f]§7 User §e"
-                                                + onlineUser.getNickname() + " §7has reached §6" +
-                                                convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20) +
-                                                " §7so it is now part of §e" + group + " §7group!");
+                                if (p != null) {
+                                    try{
+                                        configSound = plugin.getConfiguration().getLuckPermsGoalSound();
+                                        Sound sound = Sound.valueOf(configSound);
+                                        p.playSound(p.getLocation(), sound, 10, 0);
+                                    }catch(IllegalArgumentException exception){
+                                        plugin.getLogger().severe(configSound + " is not a valid argument for luckperms-time-goal-sound" +
+                                                "setting in config.yaml");
                                     }
+
+                                    configMessage = replacePlaceholders(plugin.getConfiguration().getLuckPermsGoalMessage(), p, group);
+
+                                    p.sendMessage(configMessage);
+
+                                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 User §e"
+                                            + onlineUser.getNickname() + " §7has reached §6" +
+                                            convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20) +
+                                            " §7so it is now part of §e" + group + " §7group!");
                                 }
                             }
                         }

@@ -1,2 +1,2 @@
 # PlayTimeManager
-![alt text](https://imgur.com/a/WOtIh3L "Title")
+![alt text](https://i.imgur.com/2xtCa45.png "Title")

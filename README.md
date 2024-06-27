@@ -16,5 +16,5 @@ PlayTimeManager is a plugin designed to track and store players' playtime using 
 | **                                                | playtime.*              | op      | Gives you access to all permissions                                                                                                    |
 ## PlaceHoldersApi
 * `%PTM_PlayTime%` : This placeholder shows to the player his playtime
-* `%PlayTime_Top_#%` : This placeholder shows the playtime of the player in position # with the highest playtime [100 is the maximum value].
+* `%PTM_PlayTime_Top_#%` : This placeholder shows the playtime of the player in position # with the highest playtime [100 is the maximum value].
 * `%PTM_Nickname_Top_#%` : This placeholder shows the name of the player in position # with the highest playtime [100 is the maximum value].

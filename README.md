@@ -14,3 +14,7 @@ PlayTimeManager is a plugin designed to track and store players' playtime using 
 | /playtimegroup <groupname> setTime:<timerequired> | playtime.group          | no      | Allows you to to configure a group of LuckPerms that will be<br>assigned automatically when the required time is reached by the player |
 | /playtimereload                                   | playtime.reload         | no      | Allows you to reload the config.yml                                                                                                    |
 | **                                                | playtime.*              | op      | Gives you access to all permissions                                                                                                    |
+## PlaceHoldersApi
+* %PTM_PlayTime% : This placeholder shows to the player his playtime
+* %PlayTime_Top_#% : This placeholder shows the playtime of the player in position # with the highest playtime [100 is the maximum value].
+* %PTM_Nickname_Top_#% : This placeholder shows the name of the player in position # with the highest playtime [100 is the maximum value].

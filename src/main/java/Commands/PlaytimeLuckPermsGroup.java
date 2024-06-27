@@ -72,7 +72,7 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
             plugin.getConfiguration().addGroup(groupName, time);
             onlineUsersManager.restartSchedule();
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The group §e"+groupName+"§7 will be automatically set to a player " +
-                    "whenever he reaches §6"+ convertTime(time/20));
+                    "whenever it reaches §6"+ convertTime(time/20));
         }else{
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The group §e"+groupName+"§7 doesn't exist in LuckPerms configuration!");
         }

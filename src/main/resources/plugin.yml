@@ -20,7 +20,7 @@ commands:
     permission: playtime.playtimepercentage
     permission-message: You don't have the permission to execute this command!
   playtimetop:
-    description: Command to get the top N players with higher playtime
+    description: Command to get the top N players with highest playtime
     permission: playtime.top
     permission-message: You don't have the permission to execute this command!
   playtimegroup:
@@ -35,7 +35,7 @@ commands:
 permissions:
   playtime.*:
     default: op
-    description: Da accesso a tutti i comandi
+    description: Gives access to every command
     children:
       playtime: true
       playtime.others: true

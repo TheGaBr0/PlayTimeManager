@@ -2,7 +2,7 @@
 Hello and welcome to PlayTimeManager! I initially created this plugin for the server on which I am currently a developer. We don't have thousands or hundreds of players, but we had to find a way to track players' playtime to promote one whenever it reaches a certain amount. I looked around on the web, but I couldn't find any plugin that was able to satisfy our issue: we needed a playtime plugin, somewhat efficient, that could automatically promote a player to a new rank through LuckPerms. Well, that's what this plugin is supposed to do!
 ## What's PlayTimeManager?
 PlayTimeManager is a plugin designed to track and store players' playtime using SQLite and HikariCP. It allows manual modification of playtime through specific commands, enabling you to either penalize or assist players in reaching their goals. With integration to LuckPerms, you can set it to automatically promote players who achieve a certain playtime. Additionally, it supports PAPI, allowing you to create leaderboards or let players view their own playtime.
-##Commands and permissions
+## Commands and permissions
 | Command                                           | Permission             | Default | Description                                                                                                                            |
 | --------------------------------------------------|------------------------|:-------:|----------------------------------------------------------------------------------------------------------------------------------------|
 | /playtime                                         | playtime               | yes     | Allows you to get your own own playtime                                                                                                |

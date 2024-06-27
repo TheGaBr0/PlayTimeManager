@@ -1,1 +1,1 @@
-![alt text](https://i.imgur.com/r36FJfu.png "PlayTime Logo")
+![alt text](https://i.imgur.com/cMGDraE.png "PlayTime Logo")

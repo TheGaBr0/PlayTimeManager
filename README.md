@@ -20,6 +20,8 @@ This plugin mainly supports english, however, messages that are meant to be seen
 * `%PTM_PlayTime%` : This placeholder shows to the player his playtime
 * `%PTM_PlayTime_Top_#%` : This placeholder shows the playtime of the player in position # with the highest playtime [100 is the maximum value].
 * `%PTM_Nickname_Top_#%` : This placeholder shows the name of the player in position # with the highest playtime [100 is the maximum value].
+Example: <br>
+![alt text](https://i.imgur.com/tbK5mH4.gif "PlayTime Leaderboard example")
 ## Examples of use
 * `/playtime TheGabro add 1d` -> This command will manually add 1 day of playtime to the specified player. <br> If a player with playtime.others.modify permission tries to get the playtime of TheGabro (who has a manually modified playtime), he will also be shown the added/removed time in addition to the normal time. <br> ![alt text](https://i.imgur.com/Aqd1Yh3.png "PlayTime addition example") <br> Only one time format at a time is currently supported (e.g. 1d,4h,3m is not supported)
 * `/playtimepercentage 1d`: <br> ![alt text](https://i.imgur.com/wQndA7j.png "PlayTime percentage example") <br> Only one time format at a time is currently supported (e.g. 1d,4h,3m is not supported)

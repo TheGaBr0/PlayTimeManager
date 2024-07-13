@@ -18,7 +18,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
 
     @Override
     public @NotNull String getAuthor() {
-        return "TheGaBr0_";
+        return "TheGabro";
     }
 
     @Override

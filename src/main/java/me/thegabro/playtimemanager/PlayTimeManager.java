@@ -41,6 +41,7 @@ public class PlayTimeManager extends JavaPlugin{
         if(Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
             Objects.requireNonNull(getCommand("playtimegroup")).setExecutor(new PlaytimeLuckPermsGroup());
             luckPermsApi = LuckPermsProvider.get();
+            getLogger().info("LuckPerms detected! Launching related auto-promotion functions");
             onlineUsersManager = new OnlineUsersManagerLuckPerms();
         }else{
             onlineUsersManager = new OnlineUsersManager();

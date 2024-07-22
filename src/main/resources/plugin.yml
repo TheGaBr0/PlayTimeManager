@@ -3,7 +3,7 @@ version: '${project.version}'
 main: me.thegabro.playtimemanager.PlayTimeManager
 api-version: '1.21'
 author: TheGabro
-Description: A playtime plugin manager based on SQLite
+Description: A simple playtime plugin manager
 
 softdepend: [PlaceholderAPI, LuckPerms]
 

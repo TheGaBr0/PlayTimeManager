@@ -92,20 +92,18 @@ public abstract class Database {
         return null; // Return null if the player is not found or an error occurs
     }
 
-    public Long getTotalPlaytime(String uuid) {
+    public Long getPlaytime(String uuid) {
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
             conn = getSQLConnection();
-            ps = conn.prepareStatement("SELECT playtime, artificial_playtime FROM play_time WHERE uuid = ?;");
+            ps = conn.prepareStatement("SELECT playtime FROM play_time WHERE uuid = ?;");
             ps.setString(1, uuid);
 
             rs = ps.executeQuery();
             if (rs.next()) {
-                long playtime = rs.getLong("playtime");
-                long artificialPlaytime = rs.getLong("artificial_playtime");
-                return playtime + artificialPlaytime;
+                return rs.getLong("playtime");
             }
         } catch (SQLException ex) {
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
@@ -434,7 +432,7 @@ public abstract class Database {
             conn = getSQLConnection();
 
             // Prepare the SQL statement to calculate the average playtime
-            ps = conn.prepareStatement("SELECT AVG(playtime) AS avg_playtime FROM play_time;");
+            ps = conn.prepareStatement("SELECT AVG(playtime + artificial_playtime) AS avg_playtime FROM play_time;");
 
             // Execute the query and get the result set
             rs = ps.executeQuery();
@@ -481,7 +479,7 @@ public abstract class Database {
             rsTotal = psTotal.executeQuery();
 
             // Prepare the SQL statement to count the number of players with playtime greater than the given value
-            psGreater = conn.prepareStatement("SELECT COUNT(*) AS greater_players FROM play_time WHERE playtime >= ?;");
+            psGreater = conn.prepareStatement("SELECT COUNT(*) AS greater_players FROM play_time WHERE (playtime + artificial_playtime) >= ?;");
 
             // Set the playtime parameter in the prepared statement
             psGreater.setLong(1, playtime);

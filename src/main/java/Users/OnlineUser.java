@@ -22,6 +22,7 @@ public class OnlineUser extends DBUser{
         actualPlayTime += db.getArtificialPlaytime(uuid);
     }
 
+    @Override
     public long getPlaytime(){
         updatePlayTime();
         return actualPlayTime;

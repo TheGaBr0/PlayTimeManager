@@ -42,9 +42,10 @@ public class PlayTimeRemoveTime {
         if(user == null)
             user = DBUser.fromNickname(args[0]);
 
-        String formattedOldPlaytime = convertTime(user.getPlaytime() / 20);
+        long oldPlaytime = user.getPlaytime() / 20;
+        String formattedOldPlaytime = convertTime(oldPlaytime);
         user.setArtificialPlaytime(user.getArtificialPlaytime() + timeToTicks);
-        String formattedNewPlaytime = convertTime(user.getPlaytime() / 20);
+        String formattedNewPlaytime = convertTime(oldPlaytime + (timeToTicks /20));
 
         sender.sendMessage("[§6PlayTime§eManager§f]§7 PlayTime of §e" + args[0] +
                 "§7 has been updated from §6" + formattedOldPlaytime + "§7 to §6" + formattedNewPlaytime +"!");

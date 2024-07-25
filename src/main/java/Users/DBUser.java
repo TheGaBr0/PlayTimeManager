@@ -27,14 +27,14 @@ public class DBUser {
         this.uuid = p.getUniqueId().toString();
         this.nickname = p.getName();
         userMapping();
-        this.DBplaytime = db.getTotalPlaytime(uuid);
+        this.DBplaytime = db.getPlaytime(uuid);
         this.artificialPlaytime = db.getArtificialPlaytime(uuid);
     }
 
     // Factory method to create DBUser by UUID
     public static DBUser fromUUID(String uuid) {
         String nickname = db.getNickname(uuid);
-        long playtime = db.getTotalPlaytime(uuid);
+        long playtime = db.getPlaytime(uuid);
         long artificialPlaytime = db.getArtificialPlaytime(uuid);
         return new DBUser(uuid, nickname, playtime, artificialPlaytime);
     }
@@ -42,7 +42,7 @@ public class DBUser {
     // Factory method to create DBUser by nickname
     public static DBUser fromNickname(String nickname) {
         String uuid = db.getUUIDFromNickname(nickname);
-        long playtime = db.getTotalPlaytime(uuid);
+        long playtime = db.getPlaytime(uuid);
         long artificialPlaytime = db.getArtificialPlaytime(uuid);
         return new DBUser(uuid, nickname, playtime, artificialPlaytime);
     }
@@ -58,7 +58,7 @@ public class DBUser {
     }
 
     public long getPlaytime() {
-        return DBplaytime;
+        return DBplaytime + artificialPlaytime;
     }
 
 

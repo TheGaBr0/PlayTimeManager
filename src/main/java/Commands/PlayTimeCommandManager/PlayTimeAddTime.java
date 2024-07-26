@@ -35,7 +35,8 @@ public class PlayTimeAddTime {
             case "d": timeToTicks = time * 1728000L; break;
             case "h": timeToTicks = time * 72000L; break;
             case "m": timeToTicks = time * 1200L; break;
-            default: sender.sendMessage("[§6PlayTime§eManager§f]§7 Time format must be specified! [d/h/m]"); return;
+            case "s": timeToTicks = time * 20L; break;
+            default: sender.sendMessage("[§6PlayTime§eManager§f]§7 Time format must be specified! [d/h/m/s]"); return;
         }
 
         DBUser user = onlineUsersManager.getOnlineUser(args[0]);

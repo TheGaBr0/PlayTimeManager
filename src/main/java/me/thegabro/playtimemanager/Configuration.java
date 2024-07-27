@@ -79,6 +79,10 @@ public class Configuration {
         }
     }
 
+    public String getVersion(){
+        return config.getString("config-version");
+    }
+
     public void addGroup(String groupname, long timeRequired) {
         config.createSection("Groups." + groupname + ".time-required");
         config.set("Groups." + groupname + ".time-required", timeRequired);

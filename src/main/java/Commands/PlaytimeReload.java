@@ -10,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
 public class PlaytimeReload implements CommandExecutor {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final OnlineUsersManagerLuckPerms onlineUsersManager = (OnlineUsersManagerLuckPerms) plugin.getUsersManager();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
         if (sender.hasPermission("playtime.reload")){
@@ -18,6 +17,7 @@ public class PlaytimeReload implements CommandExecutor {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The configuration file has been reloaded");
 
             if(plugin.luckPermsApi != null) {
+                OnlineUsersManagerLuckPerms onlineUsersManager = (OnlineUsersManagerLuckPerms) plugin.getUsersManager();
                 onlineUsersManager.restartSchedule();
                 sender.sendMessage("[§6PlayTime§eManager§f]§7 LuckPerms check schedule has been restarted");
             }

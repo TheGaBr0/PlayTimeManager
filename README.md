@@ -26,9 +26,9 @@ Both Paper and Spigot are supported.
 Example: <br>
 ![alt text](https://i.imgur.com/tbK5mH4.gif "PlayTime Leaderboard example")
 ## Examples of use
-* `/playtime TheGabro add 1d` -> This command will manually add 1 day of playtime to the specified player. <br> If a player with playtime.others.modify permission tries to get the playtime of TheGabro (who has a manually modified playtime), he will also be shown the added/removed time in addition to the normal time. <br> ![alt text](https://i.imgur.com/Aqd1Yh3.png "PlayTime addition example") <br> Only one time format at a time is currently supported (e.g. 1d,4h,3m is not supported)
-* `/playtimepercentage 1d`: <br> ![alt text](https://i.imgur.com/wQndA7j.png "PlayTime percentage example") <br> Only one time format at a time is currently supported (e.g. 1d,4h,3m is not supported)
-* `/playtimegroup addGroup member setTime:1d` -> This command will configure the plugin to automatically promote to "member" players who reach 1 day of playtime <br> Only one time format at a time is currently supported (e.g. 1d,4h,3m is not supported) <br>
+* `/playtime TheGabro add 1d` -> This command will manually add 1 day of playtime to the specified player. <br> If a player with playtime.others.modify permission tries to get the playtime of TheGabro (who has a manually modified playtime), he will also be shown the added/removed time in addition to the normal time. <br> ![alt text](https://i.imgur.com/Aqd1Yh3.png "PlayTime addition example") <br> Multiple time formats at a time are supported (e.g. 1d,4h,3m)
+* `/playtimepercentage 1d`: <br> ![alt text](https://i.imgur.com/wQndA7j.png "PlayTime percentage example") <br> Multiple time formats at a time are supported (e.g. 1d,4h,3m)
+* `/playtimegroup addGroup member setTime:1d` -> This command will configure the plugin to automatically promote to "member" players who reach 1 day of playtime <br> Multiple time formats at a time are supported (e.g. 1d,4h,3m) <br>
 ![alt text](https://i.imgur.com/iWvqAlw.png "PlayTime group creation example")
 ## To do
 Will add suggestions as they are proposed!

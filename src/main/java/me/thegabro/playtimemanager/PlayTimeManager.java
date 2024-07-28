@@ -16,7 +16,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.HashMap;
 import java.util.Objects;
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class PlayTimeManager extends JavaPlugin{
@@ -26,7 +25,6 @@ public class PlayTimeManager extends JavaPlugin{
     public LuckPerms luckPermsApi = null;
     private Configuration config;
     private Database db;
-    String configVersion = "3.0";
     @Override
     public void onEnable() {
 
@@ -35,10 +33,6 @@ public class PlayTimeManager extends JavaPlugin{
         saveDefaultConfig();
 
         config = new Configuration(this.getDataFolder(), "config", true, true);
-
-        if(!config.getVersion().equals(configVersion)){
-            updateConfigFile();
-        }
 
         instance = this;
         this.db = new SQLite(this);
@@ -91,15 +85,5 @@ public class PlayTimeManager extends JavaPlugin{
     public OnlineUsersManager getUsersManager(){return onlineUsersManager;}
 
     public Database getDatabase() { return this.db; }
-
-    private void updateConfigFile(){
-        String playtimeSelfMessage = config.getPlaytimeSelfMessage();
-        String playtimeOthersMessage = config.getPlaytimeOthersMessage();
-        String luckpermsGoalSound = config.getLuckPermsGoalSound();
-        String luckpermsGoalMessage = config.getLuckPermsGoalMessage();
-        long luckPermsCheckRate = config.getLuckPermsCheckRate();
-        boolean luckPermsCheckVerbose = config.getLuckPermsCheckVerbose();
-        HashMap<String, Long> groups = config.getGroups();
-    }
 
 }

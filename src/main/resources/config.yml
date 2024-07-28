@@ -11,9 +11,6 @@
 # ██║ ╚═╝ ██║██║  ██║██║ ╚████║██║  ██║╚██████╔╝███████╗██║  ██║
 # ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
 
-#do not touch!
-config-version: 3.0
-
 #This messaged is showed each time /playtime is executed.
 #Available placeholders: %PLAYTIME%, %PLAYER_NAME%
 playtime-self-message: "[§6PlayTime§eManager§f]§7 Your playtime is §6%PLAYTIME%"

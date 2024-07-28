@@ -4,6 +4,9 @@ I thought this could be useful to other server administrators as well, so I deci
 ## What's PlayTimeManager?
 PlayTimeManager is a plugin designed to track and store players' playtime using SQLite and HikariCP. It allows manual modification of playtime through specific commands, enabling you to either penalize or assist players in reaching their goals. With integration to LuckPerms, you can set it to automatically promote players who achieve a certain playtime. Additionally, it supports PAPI, allowing you to create leaderboards or let players view their own playtime.<br>
 This plugin mainly supports english, however, messages that are meant to be seen by players can be edited in the config.yml. 
+
+Both Paper and Spigot are supported.
+
 ## Commands and permissions
 | Command                                                                       | Permission              | Default | Description                                                                                                                            |
 | ------------------------------------------------------------------------------|-------------------------|:-------:|----------------------------------------------------------------------------------------------------------------------------------------|
@@ -17,7 +20,7 @@ This plugin mainly supports english, however, messages that are meant to be seen
 | /playtimereload                                                               | playtime.reload         | no      | Allows you to reload the config.yml                                                                                                    |
 | **                                                                            | playtime.*              | op      | Gives you access to all permissions                                                                                                    |
 ## PlaceHoldersApi
-* `%PTM_PlayTime%` : This placeholder shows to the player his playtime
+* `%PTM_PlayTime%` : This placeholder shows to the player its playtime
 * `%PTM_PlayTime_Top_#%` : This placeholder shows the playtime of the player in position # with the highest playtime [100 is the maximum value].
 * `%PTM_Nickname_Top_#%` : This placeholder shows the name of the player in position # with the highest playtime [100 is the maximum value].
 Example: <br>

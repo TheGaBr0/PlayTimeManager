@@ -2,21 +2,20 @@ package Commands;
 
 import Users.OnlineUsersManagerLuckPerms;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import net.kyori.adventure.inventory.Book;
+import net.kyori.adventure.text.Component;
 import net.luckperms.api.model.group.Group;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
+import org.bukkit.command.*;
+import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class PlaytimeLuckPermsGroup implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final String[] SUBCOMMANDS = {"addGroup", "removeGroup"};
+    private final String[] SUBCOMMANDS = {"add", "remove", "list"};
     private final String[] TIME = {"setTime:"};
 
     @Override
@@ -26,18 +25,17 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
             return false;
         }
 
-        if (args.length < 2) {
+        if (args.length < 1) {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 Too few arguments!");
             return false;
         }
 
         String subCommand = args[0].toLowerCase();
-        String groupName = args[1];
-
+        String groupName;
         switch (subCommand) {
-            case "addgroup":
+            case "add":
                 if (args.length < 3) {
-                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtime addGroup <groupName> setTime:<time>");
+                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtime add <groupName> setTime:<time>");
                     return false;
                 }
                 if (!args[2].startsWith("setTime:")) {
@@ -50,10 +48,19 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
                     sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid time format!");
                     return false;
                 }
+                groupName = args[1];
                 addGroup(sender, groupName, timeToTicks);
                 break;
-            case "removegroup":
+            case "remove":
+                if (args.length < 2) {
+                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtime remove <groupName>");
+                    return false;
+                }
+                groupName = args[1];
                 removeGroup(sender, groupName);
+                break;
+            case "list":
+                list(sender);
                 break;
             default:
                 sender.sendMessage("[§6PlayTime§eManager§f]§7 Subcommand " + subCommand + " is not valid.");
@@ -98,14 +105,41 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
     }
 
     private void removeGroup(CommandSender sender, String groupName) {
-        Group group = plugin.luckPermsApi.getGroupManager().getGroup(groupName);
-        if (group != null) {
+        HashMap<String, Long> groups = plugin.getConfiguration().getGroups();
+
+        if (groups.containsKey(groupName)) {
             OnlineUsersManagerLuckPerms onlineUsersManager = (OnlineUsersManagerLuckPerms) plugin.getUsersManager();
             plugin.getConfiguration().removeGroup(groupName);
             onlineUsersManager.restartSchedule();
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The group §e" + groupName + " §7has been removed!");
         } else {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The group §e" + groupName + " §7doesn't exist!");
+        }
+    }
+
+    private void list(CommandSender sender){
+        HashMap<String, Long> groups = plugin.getConfiguration().getGroups();
+
+        if (sender instanceof Player) {
+            Book.Builder book = Book.builder();
+            Component bookAuthor = Component.text("TheGabro");
+            Component bookTitle = Component.text("PlayTimeManager Groups");
+            book.author(bookAuthor);
+            book.title(bookTitle);
+
+            List<Component> pages = convertToComponents(groups);
+
+            book.pages(pages);
+
+            Player p = (Player) sender;
+            p.openBook(book);
+        }else{
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 Groups stored:");
+            for (Map.Entry<String, Long> entry : groups.entrySet()) {
+                String groupName = entry.getKey();
+                Long timeRequired = entry.getValue();
+                sender.sendMessage("[§6PlayTime§eManager§f]§7 "+groupName+" - "+convertTime(timeRequired/20));
+            }
         }
     }
 
@@ -117,12 +151,12 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
             return completions;
         }
 
-        if (args.length == 2 && args[0].equals("removeGroup")){
+        if (args.length == 2 && args[0].equals(SUBCOMMANDS[1])){
             StringUtil.copyPartialMatches(args[1],  plugin.getConfiguration().getGroups().keySet(), completions);
             return completions;
         }
 
-        if(args.length == 3 && args[0].equals("addGroup")){
+        if(args.length == 3 && args[0].equals(SUBCOMMANDS[0])){
             StringUtil.copyPartialMatches(args[2],  Arrays.asList(TIME), completions);
             return completions;
         }
@@ -152,6 +186,32 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
             }
 
         }
+    }
+
+    public List<Component> convertToComponents(Map<String, Long> map) {
+        List<Component> componentList = new ArrayList<>();
+        StringBuilder groupsBuilder = new StringBuilder();
+        int groupCount = 0;
+
+        for (Map.Entry<String, Long> entry : map.entrySet()) {
+            String groupName = entry.getKey();
+            Long timeRequired = entry.getValue();
+            groupsBuilder.append("- ").append(groupName).append("\n").append(convertTime(timeRequired/20)).append("\n");
+            groupCount++;
+
+            if(groupCount == 7){
+                componentList.add(Component.text(groupsBuilder.toString()));
+                groupsBuilder.setLength(0);
+                groupCount = 0;
+            }
+        }
+
+        // Add any remaining nicknames that didn't make up a full set of 7
+        if (groupCount > 0) {
+            componentList.add(Component.text(groupsBuilder.toString()));
+        }
+
+        return componentList;
     }
 }
 

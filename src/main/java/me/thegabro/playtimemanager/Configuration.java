@@ -80,7 +80,7 @@ public class Configuration {
     }
 
     public void addGroup(String groupname, long timeRequired) {
-        config.createSection("Groups." + groupname + ".time-required");
+        config.createSection("Groups." + groupname);
         config.set("Groups." + groupname + ".time-required", timeRequired);
         updateLuckPermsGroups();
         save();
@@ -95,7 +95,6 @@ public class Configuration {
     public HashMap<String, Long> getGroups(){
         return groups;
     }
-
 
     public long getGroupPlayTime(String groupname){
         return groups.get(groupname);
@@ -142,25 +141,68 @@ public class Configuration {
         return luckpermsCheckRate;
     }
 
+    public void setLuckPermsCheckRate(Long rate){
+        if (rate != null) {
+            config.set("luckperms-check-rate", rate);
+        }
+    }
+
     public boolean getLuckPermsCheckVerbose(){
         return luckpermsCheckVerbose;
+    }
+
+    public void setLuckPermsCheckVerbose(Boolean verbose){
+        if (verbose != null) {
+            config.set("luckperms-check-verbose", verbose);
+        }
     }
 
     public String getLuckPermsGoalMessage(){
         return luckpermsGoalMessage;
     }
 
+    public void setLuckPermsGoalMessage(String message){
+        if (message != null) {
+            config.set("luckperms-time-goal-message", message);
+        }
+    }
+
     public String getLuckPermsGoalSound(){
         return luckpermsGoalSound;
+    }
+
+    public void setLuckPermsGoalSound(String sound){
+        if (sound != null) {
+            config.set("luckperms-time-goal-sound", sound);
+        }
     }
 
     public String getPlaytimeSelfMessage(){
         return playtimeSelfMessage;
     }
 
+    public void setPlaytimeSelfMessage(String message){
+        if (message != null) {
+            config.set("playtime-self-message", message);
+        }
+    }
+
     public String getPlaytimeOthersMessage(){
         return playtimeOthersMessage;
     }
 
+    public void setPlaytimeOthersMessage(String message){
+        if (message != null) {
+            config.set("playtime-others-message", message);
+        }
+    }
 
+    public String getVersion(){
+        String version = config.getString("config-version");
+
+        if(version == null)
+            return "null";
+        else
+            return version;
+    }
 }

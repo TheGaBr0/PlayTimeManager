@@ -10,6 +10,8 @@
 # ██║╚██╔╝██║██╔══██║██║╚██╗██║██╔══██║██║   ██║██╔══╝  ██╔══██╗
 # ██║ ╚═╝ ██║██║  ██║██║ ╚████║██║  ██║╚██████╔╝███████╗██║  ██║
 # ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
+#leave this untouched
+config-version: 3.0
 
 #This messaged is showed each time /playtime is executed.
 #Available placeholders: %PLAYTIME%, %PLAYER_NAME%
@@ -39,5 +41,4 @@ luckperms-check-verbose: true
 #You should leave the group section untouched as there's a command in game to properly set it: /playtimegroup
 #
 Groups:
-
 

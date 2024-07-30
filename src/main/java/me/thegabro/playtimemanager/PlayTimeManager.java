@@ -119,7 +119,7 @@ public class PlayTimeManager extends JavaPlugin{
         for (Map.Entry<String, Long> entry : groups.entrySet()) {
             String groupName = entry.getKey();
             Long timeRequired = entry.getValue();
-            config.addGroup(groupName, timeRequired);
+            config.setGroup(groupName, timeRequired);
         }
 
         config.reload();

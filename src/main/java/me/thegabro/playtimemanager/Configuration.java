@@ -79,7 +79,7 @@ public class Configuration {
         }
     }
 
-    public void addGroup(String groupname, long timeRequired) {
+    public void setGroup(String groupname, long timeRequired) {
         config.createSection("Groups." + groupname);
         config.set("Groups." + groupname + ".time-required", timeRequired);
         updateLuckPermsGroups();

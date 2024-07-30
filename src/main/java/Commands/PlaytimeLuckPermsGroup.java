@@ -1,7 +1,6 @@
 package Commands;
 
 import Users.OnlineUsersManagerLuckPerms;
-import me.clip.placeholderapi.libs.kyori.adventure.text.event.HoverEvent;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.kyori.adventure.inventory.Book;
 import net.kyori.adventure.text.Component;
@@ -18,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 public class PlaytimeLuckPermsGroup implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final String[] SUBCOMMANDS = {"add", "remove", "list"};
+    private final String[] SUBCOMMANDS = {"set", "remove", "list"};
     private final String[] TIME = {"setTime:"};
 
     @Override
@@ -36,9 +35,9 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
         String subCommand = args[0].toLowerCase();
         String groupName;
         switch (subCommand) {
-            case "add":
+            case "set":
                 if (args.length < 3) {
-                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtime add <groupName> setTime:<time>");
+                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtime set <groupName> setTime:<time>");
                     return false;
                 }
                 if (!args[2].startsWith("setTime:")) {
@@ -52,7 +51,7 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
                     return false;
                 }
                 groupName = args[1];
-                addGroup(sender, groupName, timeToTicks);
+                setGroup(sender, groupName, timeToTicks);
                 break;
             case "remove":
                 if (args.length < 2) {
@@ -103,11 +102,11 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
         return timeToTicks;
     }
 
-    private void addGroup(CommandSender sender, String groupName, long time) {
+    private void setGroup(CommandSender sender, String groupName, long time) {
         Group group = plugin.luckPermsApi.getGroupManager().getGroup(groupName);
         if (group != null) {
             OnlineUsersManagerLuckPerms onlineUsersManager = (OnlineUsersManagerLuckPerms) plugin.getUsersManager();
-            plugin.getConfiguration().addGroup(groupName, time);
+            plugin.getConfiguration().setGroup(groupName, time);
             onlineUsersManager.restartSchedule();
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The group §e" + groupName + "§7 will be automatically set to a player " +
                     "whenever it reaches §6" + convertTime(time / 20));

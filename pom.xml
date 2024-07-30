@@ -6,13 +6,13 @@
 
   <groupId>me.TheGabro</groupId>
   <artifactId>PlayTimeManager</artifactId>
-  <version>3.0.4-dev2</version>
+  <version>3.0.4-dev3</version>
   <packaging>jar</packaging>
 
-  <properties>
-    <java.version>1.8</java.version>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+    <properties>
+        <java.version>1.8</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 
   <build>
     <plugins>

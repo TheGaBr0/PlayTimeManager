@@ -1,9 +1,12 @@
 package Commands;
 
 import Users.OnlineUsersManagerLuckPerms;
+import me.clip.placeholderapi.libs.kyori.adventure.text.event.HoverEvent;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.kyori.adventure.inventory.Book;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.luckperms.api.model.group.Group;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
@@ -78,11 +81,20 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
                 int time = Integer.parseInt(part.replaceAll("[^\\d.]", ""));
                 String format = part.replaceAll("\\d", "");
                 switch (format) {
-                    case "d": timeToTicks += time * 1728000L; break;
-                    case "h": timeToTicks += time * 72000L; break;
-                    case "m": timeToTicks += time * 1200L; break;
-                    case "s": timeToTicks += time * 20L; break;
-                    default: return -1; // Invalid format
+                    case "d":
+                        timeToTicks += time * 1728000L;
+                        break;
+                    case "h":
+                        timeToTicks += time * 72000L;
+                        break;
+                    case "m":
+                        timeToTicks += time * 1200L;
+                        break;
+                    case "s":
+                        timeToTicks += time * 20L;
+                        break;
+                    default:
+                        return -1; // Invalid format
                 }
             } catch (NumberFormatException e) {
                 return -1; // Invalid number
@@ -117,7 +129,7 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
         }
     }
 
-    private void list(CommandSender sender){
+    private void list(CommandSender sender) {
         HashMap<String, Long> groups = plugin.getConfiguration().getGroups();
 
         if (sender instanceof Player) {
@@ -133,12 +145,12 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
 
             Player p = (Player) sender;
             p.openBook(book);
-        }else{
+        } else {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 Groups stored:");
             for (Map.Entry<String, Long> entry : groups.entrySet()) {
                 String groupName = entry.getKey();
                 Long timeRequired = entry.getValue();
-                sender.sendMessage("[§6PlayTime§eManager§f]§7 "+groupName+" - "+convertTime(timeRequired/20));
+                sender.sendMessage("[§6PlayTime§eManager§f]§7 " + groupName + " - " + convertTime(timeRequired / 20));
             }
         }
     }
@@ -147,17 +159,17 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
     public List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, String[] args) {
         final List<String> completions = new ArrayList<>();
         if (args.length == 1) {
-            StringUtil.copyPartialMatches(args[0],  Arrays.asList(SUBCOMMANDS), completions);
+            StringUtil.copyPartialMatches(args[0], Arrays.asList(SUBCOMMANDS), completions);
             return completions;
         }
 
-        if (args.length == 2 && args[0].equals(SUBCOMMANDS[1])){
-            StringUtil.copyPartialMatches(args[1],  plugin.getConfiguration().getGroups().keySet(), completions);
+        if (args.length == 2 && args[0].equals(SUBCOMMANDS[1])) {
+            StringUtil.copyPartialMatches(args[1], plugin.getConfiguration().getGroups().keySet(), completions);
             return completions;
         }
 
-        if(args.length == 3 && args[0].equals(SUBCOMMANDS[0])){
-            StringUtil.copyPartialMatches(args[2],  Arrays.asList(TIME), completions);
+        if (args.length == 3 && args[0].equals(SUBCOMMANDS[0])) {
+            StringUtil.copyPartialMatches(args[2], Arrays.asList(TIME), completions);
             return completions;
         }
 
@@ -190,25 +202,31 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
 
     public List<Component> convertToComponents(Map<String, Long> map) {
         List<Component> componentList = new ArrayList<>();
-        StringBuilder groupsBuilder = new StringBuilder();
+        List<Component> groupComponents = new ArrayList<>();
         int groupCount = 0;
 
         for (Map.Entry<String, Long> entry : map.entrySet()) {
             String groupName = entry.getKey();
             Long timeRequired = entry.getValue();
-            groupsBuilder.append("- ").append(groupName).append("\n").append(convertTime(timeRequired/20)).append("\n");
+
+            Component groupComponent = Component.text("- " + groupName + "\n" + convertTime(timeRequired / 20))
+                    .clickEvent(ClickEvent.copyToClipboard("/playtimegroup add " + groupName + " setTime:"))
+                    .hoverEvent(Component.text("Click to copy command for modifying §e" + groupName + "§r playtime"));
+
+            groupComponents.add(groupComponent);
+            groupComponents.add(Component.newline());
             groupCount++;
 
-            if(groupCount == 7){
-                componentList.add(Component.text(groupsBuilder.toString()));
-                groupsBuilder.setLength(0);
+            if (groupCount == 7) {
+                componentList.add(Component.join(JoinConfiguration.noSeparators(), groupComponents));
+                groupComponents.clear();
                 groupCount = 0;
             }
         }
 
-        // Add any remaining nicknames that didn't make up a full set of 7
-        if (groupCount > 0) {
-            componentList.add(Component.text(groupsBuilder.toString()));
+        // Add any remaining groups that didn't make up a full set of 7
+        if (!groupComponents.isEmpty()) {
+            componentList.add(Component.join(JoinConfiguration.noSeparators(), groupComponents));
         }
 
         return componentList;

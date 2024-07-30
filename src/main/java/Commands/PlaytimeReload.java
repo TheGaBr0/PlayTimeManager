@@ -16,7 +16,7 @@ public class PlaytimeReload implements CommandExecutor {
             plugin.getConfiguration().reload();
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The configuration file has been reloaded");
 
-            if(plugin.luckPermsApi != null) {
+            if(plugin.isLuckPermsLoaded()) {
                 OnlineUsersManagerLuckPerms onlineUsersManager = (OnlineUsersManagerLuckPerms) plugin.getUsersManager();
                 onlineUsersManager.restartSchedule();
                 sender.sendMessage("[§6PlayTime§eManager§f]§7 LuckPerms check schedule has been restarted");

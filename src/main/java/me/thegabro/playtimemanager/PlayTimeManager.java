@@ -28,7 +28,7 @@ public class PlayTimeManager extends JavaPlugin{
     public LuckPerms luckPermsApi = null;
     private Configuration config;
     private Database db;
-    String configVersion = "3.0";
+    private boolean isLuckPermsLoaded;
     @Override
     public void onEnable() {
 
@@ -36,10 +36,11 @@ public class PlayTimeManager extends JavaPlugin{
 
         config = new Configuration(this.getDataFolder(), "config", true, true);
 
+        String configVersion = "3.0";
         if(!config.getVersion().equals(configVersion)){
             getLogger().info("Old config version detected, updating it to the latest one...");
             updateConfigFile();
-            getLogger().info("Update completed! Latest version: "+configVersion);
+            getLogger().info("Update completed! Latest version: "+ configVersion);
 
         }
 
@@ -52,8 +53,10 @@ public class PlayTimeManager extends JavaPlugin{
             luckPermsApi = LuckPermsProvider.get();
             getLogger().info("LuckPerms detected! Launching related auto-promotion functions");
             onlineUsersManager = new OnlineUsersManagerLuckPerms();
+            isLuckPermsLoaded = true;
         }else{
             onlineUsersManager = new OnlineUsersManager();
+            isLuckPermsLoaded = false;
         }
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -125,4 +128,7 @@ public class PlayTimeManager extends JavaPlugin{
         config.reload();
     }
 
+    public boolean isLuckPermsLoaded() {
+        return isLuckPermsLoaded;
+    }
 }

@@ -34,7 +34,7 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
         schedule = new BukkitRunnable() {
             public void run() {
                 Player p;
-                HashMap<String, Long> groups;
+                Map<String, Long> groups;
                 Group groupLuckPerms;
                 User userLuckPerms;
                 if (plugin.getConfiguration().getLuckPermsCheckVerbose())
@@ -43,7 +43,7 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
                             ".\n If you find this message annoying you can deactivate it by changing §6luckperms-check-verbose " +
                             "§7in the config.yml");
                 // Get groups from configuration
-                groups = plugin.getConfiguration().getGroups();
+                groups = plugin.groups;
 
                 if (groups.isEmpty()) {
                     schedule.cancel();
@@ -108,7 +108,7 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
 
                                     Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 User §e"
                                             + onlineUser.getNickname() + " §7has reached §6" +
-                                            convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20) +
+                                            convertTime(groups.get(group) / 20) +
                                             " §7so it is now part of §e" + group + " §7group!");
                                 }
                             }
@@ -151,7 +151,7 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
         placeholders.put("%GROUP_NAME%", group);
 
         // Calculate TIME_REQUIRED
-        String playTimeSeconds = convertTime(plugin.getConfiguration().getGroupPlayTime(group) / 20);
+        String playTimeSeconds = convertTime(plugin.groups.get(group) / 20);
 
         placeholders.put("%TIME_REQUIRED%", playTimeSeconds);
 

@@ -6,7 +6,7 @@ import java.sql.Statement;
 
 import me.thegabro.playtimemanager.PlayTimeManager; // import your main class
 
-public class SQLite extends Database{
+public class SQLite extends PlayTimeDatabase {
 
     String dbname;
     PlayTimeManager plugin;
@@ -16,12 +16,17 @@ public class SQLite extends Database{
         dbname = "play_time";
     }
 
-    public String SQLiteCreateTable = "CREATE TABLE IF NOT EXISTS play_time (" +
+    public String PlayTimeTable = "CREATE TABLE IF NOT EXISTS play_time (" +
             "uuid VARCHAR(32) NOT NULL," +
             "nickname VARCHAR(32) NOT NULL," +
             "playtime BIGINT NOT NULL," +
             "artificial_playtime BIGINT NOT NULL," +
             "PRIMARY KEY (uuid)" +
+            ");";
+    public String GroupsTable = "CREATE TABLE IF NOT EXISTS groups (" +
+            "group_name VARCHAR(32) NOT NULL," +
+            "playtime_required BIGINT NOT NULL," +
+            "PRIMARY KEY (group_name)" +
             ");";
 
 
@@ -43,7 +48,8 @@ public class SQLite extends Database{
         connection = getSQLConnection();
         try {
             Statement s = connection.createStatement();
-            s.executeUpdate(SQLiteCreateTable);
+            s.executeUpdate(PlayTimeTable);
+            s.executeUpdate(GroupsTable);
             s.close();
         } catch (SQLException e) {
             e.printStackTrace();

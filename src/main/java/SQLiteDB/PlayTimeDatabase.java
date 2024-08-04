@@ -7,7 +7,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -17,13 +19,13 @@ import Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
 
-public abstract class Database {
+public abstract class PlayTimeDatabase {
     PlayTimeManager plugin;
     Connection connection;
     protected static HikariDataSource dataSource;
 
     // The name of the table we created back in SQLite class.
-    public Database(PlayTimeManager instance){
+    public PlayTimeDatabase(PlayTimeManager instance){
         plugin = instance;
     }
 
@@ -586,6 +588,86 @@ public abstract class Database {
         }
     }
 
+    public void addGroup(String groupName, long playtimeRequired) {
+        try (Connection conn = getSQLConnection();
+             PreparedStatement ps = conn.prepareStatement("INSERT INTO groups (group_name, playtime_required) VALUES (?, ?) ON CONFLICT(group_name) DO UPDATE SET playtime_required=excluded.playtime_required;")) {
+            ps.setString(1, groupName);
+            ps.setLong(2, playtimeRequired);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), e);
+        }
+    }
+
+    public Long getGroupPlaytime(String groupName) {
+        try (Connection conn = getSQLConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT playtime_required FROM groups WHERE group_name = ?;")) {
+            ps.setString(1, groupName);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong("playtime_required");
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), e);
+        }
+        return null;
+    }
+
+    public List<String> getAllGroupsNames() {
+        List<String> groups = new ArrayList<>();
+        try (Connection conn = getSQLConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT group_name FROM groups;");
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                groups.add(rs.getString("group_name"));
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), e);
+        }
+        return groups;
+    }
+
+    public Map<String, Long> getAllGroupsData() {
+        Map<String, Long> groups = new HashMap<>();
+        try (Connection conn = getSQLConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT group_name, playtime_required FROM groups;");
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                String groupName = rs.getString("group_name");
+                Long time = rs.getLong("playtime_required");
+                groups.put(groupName, time);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), e);
+        }
+        return groups;
+    }
+
+    public boolean groupExists(String groupName) {
+        try (Connection conn = getSQLConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM groups WHERE group_name = ?;")) {
+            ps.setString(1, groupName);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), e);
+        }
+        return false;
+    }
+
+    public void deleteGroup(String groupName) {
+        try (Connection conn = getSQLConnection();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM groups WHERE group_name = ?;")) {
+            ps.setString(1, groupName);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), e);
+        }
+    }
 
     public void close() {
         if (dataSource != null) {

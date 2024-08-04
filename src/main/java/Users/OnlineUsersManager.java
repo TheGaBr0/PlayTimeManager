@@ -1,6 +1,6 @@
 package Users;
 
-import SQLiteDB.Database;
+import SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -10,7 +10,7 @@ import java.util.ArrayList;
 public class OnlineUsersManager {
     protected final PlayTimeManager plugin = PlayTimeManager.getInstance();
     protected final ArrayList<OnlineUser> onlineUsers = new ArrayList<>();
-    private final Database db = plugin.getDatabase();
+    private final PlayTimeDatabase db = plugin.getDatabase();
 
     public OnlineUsersManager(){
         loadOnlineUsers();

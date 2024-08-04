@@ -1,6 +1,6 @@
 package Commands.PlayTimeCommandManager;
 
-import SQLiteDB.Database;
+import SQLiteDB.PlayTimeDatabase;
 import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.Command;
@@ -18,7 +18,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
     private final List<String> subCommands = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final OnlineUsersManager onlineUsersManager;
-    private final Database db = plugin.getDatabase();
+    private final PlayTimeDatabase db = plugin.getDatabase();
 
     public PlayTimeCommandManager() {
         subCommands.add("add");

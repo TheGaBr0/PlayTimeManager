@@ -106,7 +106,8 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
         Group group = plugin.luckPermsApi.getGroupManager().getGroup(groupName);
         if (group != null) {
             OnlineUsersManagerLuckPerms onlineUsersManager = (OnlineUsersManagerLuckPerms) plugin.getUsersManager();
-            plugin.getConfiguration().setGroup(groupName, time);
+            plugin.getDatabase().addGroup(groupName, time);
+            plugin.loadGroups();
             onlineUsersManager.restartSchedule();
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The group §e" + groupName + "§7 will be automatically set to a player " +
                     "whenever it reaches §6" + convertTime(time / 20));
@@ -116,11 +117,12 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
     }
 
     private void removeGroup(CommandSender sender, String groupName) {
-        HashMap<String, Long> groups = plugin.getConfiguration().getGroups();
+        Map<String, Long> groups = plugin.groups;
 
         if (groups.containsKey(groupName)) {
             OnlineUsersManagerLuckPerms onlineUsersManager = (OnlineUsersManagerLuckPerms) plugin.getUsersManager();
-            plugin.getConfiguration().removeGroup(groupName);
+            plugin.getDatabase().deleteGroup(groupName);
+            plugin.loadGroups();
             onlineUsersManager.restartSchedule();
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The group §e" + groupName + " §7has been removed!");
         } else {
@@ -129,7 +131,7 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
     }
 
     private void list(CommandSender sender) {
-        HashMap<String, Long> groups = plugin.getConfiguration().getGroups();
+        Map<String, Long> groups = plugin.groups;
 
         if (sender instanceof Player) {
             Book.Builder book = Book.builder();
@@ -163,7 +165,7 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
         }
 
         if (args.length == 2 && args[0].equals(SUBCOMMANDS[1])) {
-            StringUtil.copyPartialMatches(args[1], plugin.getConfiguration().getGroups().keySet(), completions);
+            StringUtil.copyPartialMatches(args[1], plugin.groups.keySet(), completions);
             return completions;
         }
 
@@ -209,7 +211,7 @@ public class PlaytimeLuckPermsGroup implements TabExecutor {
             Long timeRequired = entry.getValue();
 
             Component groupComponent = Component.text("- " + groupName + "\n" + convertTime(timeRequired / 20))
-                    .clickEvent(ClickEvent.copyToClipboard("/playtimegroup add " + groupName + " setTime:"))
+                    .clickEvent(ClickEvent.copyToClipboard("/playtimegroup set " + groupName + " setTime:"))
                     .hoverEvent(Component.text("Click to copy command for modifying §e" + groupName + "§r playtime"));
 
             groupComponents.add(groupComponent);

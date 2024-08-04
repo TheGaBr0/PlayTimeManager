@@ -1,6 +1,6 @@
 package Commands;
 
-import SQLiteDB.Database;
+import SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 public class PlaytimeAverage implements CommandExecutor {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final Database db = plugin.getDatabase();
+    private final PlayTimeDatabase db = plugin.getDatabase();
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {

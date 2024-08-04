@@ -3,7 +3,7 @@ package me.thegabro.playtimemanager;
 import Commands.*;
 import Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import Events.JoinEventManager;
-import SQLiteDB.Database;
+import SQLiteDB.PlayTimeDatabase;
 import SQLiteDB.LogFilter;
 import SQLiteDB.SQLite;
 import Events.QuitEventManager;
@@ -27,31 +27,35 @@ public class PlayTimeManager extends JavaPlugin{
     private OnlineUsersManager onlineUsersManager;
     public LuckPerms luckPermsApi = null;
     private Configuration config;
-    private Database db;
+    private PlayTimeDatabase db;
     private boolean isLuckPermsLoaded;
+    public Map<String, Long> groups;
     @Override
     public void onEnable() {
 
         instance = this;
 
-        config = new Configuration(this.getDataFolder(), "config", true, true);
-
-        String configVersion = "3.0";
-        if(!config.getVersion().equals(configVersion)){
-            getLogger().info("Old config version detected, updating it to the latest one...");
-            updateConfigFile();
-            getLogger().info("Update completed! Latest version: "+ configVersion);
-
-        }
-
         LogFilter.registerFilter();
         this.db = new SQLite(this);
         this.db.load();
 
+        config = new Configuration(this.getDataFolder(), "config", true, true);
+
+        String configVersion = "3.1";
+        if(!config.getVersion().equals(configVersion)){
+            Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Old config version detected, updating it to the latest one...");
+            updateConfigFile();
+
+            Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ configVersion);
+
+        }
+
+        loadGroups();
+
         if(Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
             Objects.requireNonNull(getCommand("playtimegroup")).setExecutor(new PlaytimeLuckPermsGroup());
             luckPermsApi = LuckPermsProvider.get();
-            getLogger().info("LuckPerms detected! Launching related auto-promotion functions");
+            Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 LuckPerms detected! Launching related auto-promotion functions");
             onlineUsersManager = new OnlineUsersManagerLuckPerms();
             isLuckPermsLoaded = true;
         }else{
@@ -76,6 +80,10 @@ public class PlayTimeManager extends JavaPlugin{
 
     }
 
+    public void loadGroups(){
+        groups = db.getAllGroupsData();
+    }
+
     @Override
     public void onDisable() {
         for(Player p : Bukkit.getOnlinePlayers()){
@@ -96,7 +104,7 @@ public class PlayTimeManager extends JavaPlugin{
 
     public OnlineUsersManager getUsersManager(){return onlineUsersManager;}
 
-    public Database getDatabase() { return this.db; }
+    public PlayTimeDatabase getDatabase() { return this.db; }
 
     private void updateConfigFile(){
         String playtimeSelfMessage = config.getPlaytimeSelfMessage();
@@ -105,7 +113,13 @@ public class PlayTimeManager extends JavaPlugin{
         String luckpermsGoalMessage = config.getLuckPermsGoalMessage();
         long luckPermsCheckRate = config.getLuckPermsCheckRate();
         boolean luckPermsCheckVerbose = config.getLuckPermsCheckVerbose();
-        HashMap<String, Long> groups = config.getGroups();
+        //planned for removal, update groups from 3.0.3 as they are moved into the db
+        for (Map.Entry<String, Long> entry : config.getGroups().entrySet()) {
+
+            String groupName = entry.getKey();
+            Long timeRequired = entry.getValue();
+            db.addGroup(groupName, timeRequired);
+        }
 
         File configFile = new File(this.getDataFolder(), "config.yml");
         configFile.delete();
@@ -118,12 +132,6 @@ public class PlayTimeManager extends JavaPlugin{
         config.setLuckPermsGoalSound(luckpermsGoalSound);
         config.setPlaytimeOthersMessage(playtimeOthersMessage);
         config.setPlaytimeSelfMessage(playtimeSelfMessage);
-
-        for (Map.Entry<String, Long> entry : groups.entrySet()) {
-            String groupName = entry.getKey();
-            Long timeRequired = entry.getValue();
-            config.setGroup(groupName, timeRequired);
-        }
 
         config.reload();
     }

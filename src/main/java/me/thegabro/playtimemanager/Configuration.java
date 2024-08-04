@@ -56,7 +56,6 @@ public class Configuration {
         reloadFile();
         reloadConfig();
         updateLuckPermsSettings();
-        updateLuckPermsGroups();
         updateMessages();
     }
 
@@ -79,25 +78,11 @@ public class Configuration {
         }
     }
 
-    public void setGroup(String groupname, long timeRequired) {
-        config.createSection("Groups." + groupname);
-        config.set("Groups." + groupname + ".time-required", timeRequired);
-        updateLuckPermsGroups();
-        save();
-    }
-
-    public void removeGroup(String groupname) {
-        config.set("Groups." + groupname, null);
-        updateLuckPermsGroups();
-        save();
-    }
-
+    //planned for removal, update groups from 3.0.3 as they are moved into the db
+    //------------------------------------------
     public HashMap<String, Long> getGroups(){
+        updateLuckPermsGroups();
         return groups;
-    }
-
-    public long getGroupPlayTime(String groupname){
-        return groups.get(groupname);
     }
 
     private void updateLuckPermsGroups() {
@@ -124,7 +109,7 @@ public class Configuration {
             this.groups = new HashMap<>();
         }
     }
-
+    //------------------------------------------
     private void updateLuckPermsSettings(){
         this.luckpermsCheckRate = config.getLong("luckperms-check-rate");
         this.luckpermsCheckVerbose = config.getBoolean("luckperms-check-verbose");
@@ -144,6 +129,7 @@ public class Configuration {
     public void setLuckPermsCheckRate(Long rate){
         if (rate != null) {
             config.set("luckperms-check-rate", rate);
+            save();
         }
     }
 
@@ -154,6 +140,7 @@ public class Configuration {
     public void setLuckPermsCheckVerbose(Boolean verbose){
         if (verbose != null) {
             config.set("luckperms-check-verbose", verbose);
+            save();
         }
     }
 
@@ -164,6 +151,7 @@ public class Configuration {
     public void setLuckPermsGoalMessage(String message){
         if (message != null) {
             config.set("luckperms-time-goal-message", message);
+            save();
         }
     }
 
@@ -174,6 +162,7 @@ public class Configuration {
     public void setLuckPermsGoalSound(String sound){
         if (sound != null) {
             config.set("luckperms-time-goal-sound", sound);
+            save();
         }
     }
 
@@ -184,6 +173,7 @@ public class Configuration {
     public void setPlaytimeSelfMessage(String message){
         if (message != null) {
             config.set("playtime-self-message", message);
+            save();
         }
     }
 
@@ -194,6 +184,7 @@ public class Configuration {
     public void setPlaytimeOthersMessage(String message){
         if (message != null) {
             config.set("playtime-others-message", message);
+            save();
         }
     }
 

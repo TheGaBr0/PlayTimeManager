@@ -1,6 +1,6 @@
 package Users;
 
-import SQLiteDB.Database;
+import SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
@@ -12,7 +12,7 @@ public class DBUser {
     protected long artificialPlaytime;
     protected static final PlayTimeManager plugin = PlayTimeManager.getInstance();
     protected long fromServerOnJoinPlayTime;
-    protected static Database db = plugin.getDatabase();
+    protected static PlayTimeDatabase db = plugin.getDatabase();
 
     // Private constructor
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime) {

@@ -1,6 +1,6 @@
 package Commands;
 
-import SQLiteDB.Database;
+import SQLiteDB.PlayTimeDatabase;
 import Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.Command;
@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 public class PlaytimeTop implements TabExecutor {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final Database db = plugin.getDatabase();
+    private final PlayTimeDatabase db = plugin.getDatabase();
     public final int TOP_MAX = 100;
     int page;
 

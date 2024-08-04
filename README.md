@@ -11,7 +11,7 @@ Both Paper and Spigot are supported.
 
 
 ## Commands and permissions
-| Command  &nbsp; &nbsp; &nbsp;                                                 | Permission              | Default | Description                                                                                                                        |
+| Command  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;                                                 | Permission              | Default | Description                                                                                                                        |
 | ------------------------------------------------------------------------------|-------------------------|:-------:|----------------------------------------------------------------------------------------------------------------------------------------|
 | /playtime                                                                     | playtime                | yes     | Allows you to get your own own playtime                                                                                                |
 | /playtime \<playername\>                                                      | playtime.others         | no      | Allows you to get other players' playtime                                                                                              |

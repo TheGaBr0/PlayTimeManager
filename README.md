@@ -8,6 +8,7 @@ While the plugin primarily supports English, player-facing messages can be custo
 
 Both Paper and Spigot are supported.
 
+
 ## Commands and permissions
 | Command                                                                       | Permission              | Default | Description                                                                                                                            |
 | ------------------------------------------------------------------------------|-------------------------|:-------:|----------------------------------------------------------------------------------------------------------------------------------------|
@@ -17,10 +18,13 @@ Both Paper and Spigot are supported.
 | /playtimeaverage                                                              | playtime.average        | no      | Allows you to get the average playtime of all players stored                                                                           |
 | /playtimepercentage \<time\>                                                  | playtime.percentage     | no      | Allows you to get the percentage (and numbers) of players that<br>have a playtime greater than or equal to the specified one           |
 | /playtimetop \<amount of players\> [page number]                              | playtime.top            | no      | Allows you to get the top n players with highest playtime                                                                              |
-| /playtimegroup \<subcommand\>                                                 | playtime.group          | no      | Allows you to to configure a group of LuckPerms that will be<br>assigned automatically when the required time is reached by the player |
-| * set <groupname> setTime:\<timerequired\>                                    | playtime.group          | no      | Allows you add a new group or overwrite an existing one                                                                                |
-| * remove \<groupname\>                                                        | playtime.group          | no      | Allows you remove a configured group                                                                                                   |
-| * list                                                                        | playtime.group          | no      | Allows to view detailed information for all configured groups                                                                          |
+| /playtimegroup \<subcommand\> 
+  <br>**Subcommands available:**
+  <ul>
+    <li>set <groupname> setTime:\<timerequired\></li>  
+    <li>remove \<groupname\> </li> 
+    <li>list </li>
+    </groupname>ul>                                                             | playtime.group          | no      | Allows you to to configure a group of LuckPerms that will be<br>assigned automatically when the required time is reached by the player |
 | /playtimereload                                                               | playtime.reload         | no      | Allows you to reload the config.yml and restart the LuckPerms check schedule                                                           |
 | **                                                                            | playtime.*              | op      | Gives you access to all permissions                                                                                                    |
 ## PlaceHoldersApi

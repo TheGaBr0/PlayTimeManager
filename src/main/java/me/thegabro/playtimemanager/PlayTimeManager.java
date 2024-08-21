@@ -35,11 +35,11 @@ public class PlayTimeManager extends JavaPlugin{
 
         instance = this;
 
+        config = new Configuration(this.getDataFolder(), "config", true, true);
+
         LogFilter.registerFilter();
         this.db = new SQLite(this);
         this.db.load();
-
-        config = new Configuration(this.getDataFolder(), "config", true, true);
 
         String configVersion = "3.1";
         if(!config.getVersion().equals(configVersion)){

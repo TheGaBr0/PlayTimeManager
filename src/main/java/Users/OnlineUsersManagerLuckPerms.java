@@ -48,7 +48,7 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
                 if (groups.isEmpty()) {
                     schedule.cancel();
                     Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 No group has been detected " +
-                            "in the config.yml, luckperms check canceled.");
+                            "in the database, luckperms check canceled.");
 
                 }
 

@@ -3,13 +3,15 @@ package me.thegabro.playtimemanager;
 import Commands.*;
 import Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import Events.JoinEventManager;
+import Goals.Goal;
+import Goals.GoalManager;
 import SQLiteDB.PlayTimeDatabase;
 import SQLiteDB.LogFilter;
 import SQLiteDB.SQLite;
 import Events.QuitEventManager;
 import PlaceHolders.PlayTimePlaceHolders;
 import Users.OnlineUsersManager;
-import Users.OnlineUsersManagerLuckPerms;
+import Users.OnlineUsersManagerGoalCheck;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import org.bukkit.Bukkit;
@@ -17,7 +19,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -29,7 +30,7 @@ public class PlayTimeManager extends JavaPlugin{
     private Configuration config;
     private PlayTimeDatabase db;
     private boolean isLuckPermsLoaded;
-    public Map<String, Long> groups;
+
     @Override
     public void onEnable() {
 
@@ -41,7 +42,7 @@ public class PlayTimeManager extends JavaPlugin{
         this.db = new SQLite(this);
         this.db.load();
 
-        String configVersion = "3.1";
+        String configVersion = "3.2";
         if(!config.getVersion().equals(configVersion)){
             Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Old config version detected, updating it to the latest one...");
             updateConfigFile();
@@ -50,13 +51,10 @@ public class PlayTimeManager extends JavaPlugin{
 
         }
 
-        loadGroups();
-
         if(Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
-            Objects.requireNonNull(getCommand("playtimegroup")).setExecutor(new PlaytimeLuckPermsGroup());
             luckPermsApi = LuckPermsProvider.get();
             Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 LuckPerms detected! Launching related auto-promotion functions");
-            onlineUsersManager = new OnlineUsersManagerLuckPerms();
+            onlineUsersManager = new OnlineUsersManagerGoalCheck();
             isLuckPermsLoaded = true;
         }else{
             onlineUsersManager = new OnlineUsersManager();
@@ -69,6 +67,8 @@ public class PlayTimeManager extends JavaPlugin{
 
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
+        //fix luckperms settings and checks
+        Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeLuckPermsGoal());
         Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {});
         Objects.requireNonNull(getCommand("playtimeaverage")).setExecutor(new PlaytimeAverage() {});
         Objects.requireNonNull(getCommand("playtimepercentage")).setExecutor(new PlaytimePercentage() {});
@@ -76,12 +76,10 @@ public class PlayTimeManager extends JavaPlugin{
         Objects.requireNonNull(getCommand("playtimereload")).setExecutor(new PlaytimeReload() {});
         //getCommand("playtimehelp").setExecutor(new PlaytimeHelp(this));
 
+        GoalManager.initialize(this);
+
         getLogger().info("has been enabled!");
 
-    }
-
-    public void loadGroups(){
-        groups = db.getAllGroupsData();
     }
 
     @Override
@@ -109,30 +107,38 @@ public class PlayTimeManager extends JavaPlugin{
     private void updateConfigFile(){
         String playtimeSelfMessage = config.getPlaytimeSelfMessage();
         String playtimeOthersMessage = config.getPlaytimeOthersMessage();
-        String luckpermsGoalSound = config.getLuckPermsGoalSound();
-        String luckpermsGoalMessage = config.getLuckPermsGoalMessage();
-        long luckPermsCheckRate = config.getLuckPermsCheckRate();
-        boolean luckPermsCheckVerbose = config.getLuckPermsCheckVerbose();
-        //planned for removal, update groups from 3.0.3 as they are moved into the db
-        for (Map.Entry<String, Long> entry : config.getGroups().entrySet()) {
 
-            String groupName = entry.getKey();
-            Long timeRequired = entry.getValue();
-            db.addGroup(groupName, timeRequired);
+        //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
+        //---------------------------------
+        long goalsCheckRate = config.getLuckPermsCheckRate();
+        boolean goalsCheckVerbose = config.getLuckPermsCheckVerbose();
+
+        Map<String, Long> dbgroups = db.getAllGroupsData();
+
+        for (Map.Entry<String, Long> entry : dbgroups.entrySet()) {
+            String name = entry.getKey();   // goal name (String)
+            Long time = entry.getValue(); // goal time (Long)
+            Goal g = new Goal(this, name, time, name);
         }
+
+
+        db.dropGroupsTable();
+
+        //---------------------------------
 
         File configFile = new File(this.getDataFolder(), "config.yml");
         configFile.delete();
 
         config = new Configuration(this.getDataFolder(), "config", true, true);
 
-        config.setLuckPermsCheckRate(luckPermsCheckRate);
-        config.setLuckPermsCheckVerbose(luckPermsCheckVerbose);
-        config.setLuckPermsGoalMessage(luckpermsGoalMessage);
-        config.setLuckPermsGoalSound(luckpermsGoalSound);
+
         config.setPlaytimeOthersMessage(playtimeOthersMessage);
         config.setPlaytimeSelfMessage(playtimeSelfMessage);
-
+        //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
+        //---------------------------------
+        config.setGoalsCheckRate(goalsCheckRate);
+        config.setGoalsCheckVerbose(goalsCheckVerbose);
+        //---------------------------------
         config.reload();
     }
 

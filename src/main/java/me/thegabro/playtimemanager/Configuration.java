@@ -1,12 +1,11 @@
 package me.thegabro.playtimemanager;
 
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.Set;
+
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class Configuration {
 
@@ -18,10 +17,8 @@ public class Configuration {
     private final File path;
     private final String name;
     private HashMap<String, Long> groups;
-    private long luckpermsCheckRate;
-    private boolean luckpermsCheckVerbose;
-    private String luckpermsGoalMessage;
-    private String luckpermsGoalSound;
+    private long goalsCheckRate;
+    private boolean goalsCheckVerbose;
     private String playtimeSelfMessage;
     private String playtimeOthersMessage;
 
@@ -55,7 +52,7 @@ public class Configuration {
     public void reload() {
         reloadFile();
         reloadConfig();
-        updateLuckPermsSettings();
+        updateGoalsSettings();
         updateMessages();
     }
 
@@ -78,93 +75,51 @@ public class Configuration {
         }
     }
 
-    //planned for removal, update groups from 3.0.3 as they are moved into the db
-    //------------------------------------------
-    public HashMap<String, Long> getGroups(){
-        updateLuckPermsGroups();
-        return groups;
-    }
-
-    private void updateLuckPermsGroups() {
-        HashMap<String, Long> groups = new HashMap<>();
-        if (config.contains("Groups")) {
-            ConfigurationSection groupsSection = config.getConfigurationSection("Groups");
-            if (groupsSection != null) {
-                Set<String> groupKeys = groupsSection.getKeys(false);
-                for (String groupName : groupKeys) {
-                    ConfigurationSection groupSection = groupsSection.getConfigurationSection(groupName);
-
-                    if (groupSection != null) {
-                        long timeRequired = config.getInt("Groups."+groupName+".time-required");
-
-                        groups.put(groupName, timeRequired);
-
-                    }
-                }
-                this.groups = groups;
-            }else{
-                this.groups = new HashMap<>();
-            }
-        }else{
-            this.groups = new HashMap<>();
-        }
-    }
-    //------------------------------------------
-    private void updateLuckPermsSettings(){
-        this.luckpermsCheckRate = config.getLong("luckperms-check-rate");
-        this.luckpermsCheckVerbose = config.getBoolean("luckperms-check-verbose");
-        this.luckpermsGoalSound = config.getString("luckperms-time-goal-sound");
-    }
 
     private void updateMessages(){
-        this.luckpermsGoalMessage = config.getString("luckperms-time-goal-message");
         this.playtimeSelfMessage = config.getString("playtime-self-message");
         this.playtimeOthersMessage = config.getString("playtime-others-message");
     }
 
-    public long getLuckPermsCheckRate(){
-        return luckpermsCheckRate;
+    private void updateGoalsSettings(){
+        this.goalsCheckRate = config.getLong("goal-check-rate");
+        this.goalsCheckVerbose = config.getBoolean("goal-check-verbose");
     }
 
-    public void setLuckPermsCheckRate(Long rate){
+
+    public long getGoalsCheckRate(){
+        return goalsCheckRate;
+    }
+
+    public void setGoalsCheckRate(Long rate){
         if (rate != null) {
-            config.set("luckperms-check-rate", rate);
+            config.set("goal-check-rate", rate);
             save();
         }
+    }
+
+    public boolean getGoalsCheckVerbose(){
+        return goalsCheckVerbose;
+    }
+
+    public void setGoalsCheckVerbose(Boolean verbose){
+        if (verbose != null) {
+            config.set("goal-check-verbose", verbose);
+            save();
+        }
+    }
+
+    //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
+    //---------------------------------
+    public long getLuckPermsCheckRate(){
+        return config.getLong("luckperms-check-rate");
     }
 
     public boolean getLuckPermsCheckVerbose(){
-        return luckpermsCheckVerbose;
+        return config.getBoolean("luckperms-check-verbose");
     }
+    //---------------------------------
 
-    public void setLuckPermsCheckVerbose(Boolean verbose){
-        if (verbose != null) {
-            config.set("luckperms-check-verbose", verbose);
-            save();
-        }
-    }
-
-    public String getLuckPermsGoalMessage(){
-        return luckpermsGoalMessage;
-    }
-
-    public void setLuckPermsGoalMessage(String message){
-        if (message != null) {
-            config.set("luckperms-time-goal-message", message);
-            save();
-        }
-    }
-
-    public String getLuckPermsGoalSound(){
-        return luckpermsGoalSound;
-    }
-
-    public void setLuckPermsGoalSound(String sound){
-        if (sound != null) {
-            config.set("luckperms-time-goal-sound", sound);
-            save();
-        }
-    }
 
     public String getPlaytimeSelfMessage(){
         return playtimeSelfMessage;

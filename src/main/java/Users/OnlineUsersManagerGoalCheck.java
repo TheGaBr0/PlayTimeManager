@@ -1,5 +1,7 @@
 package Users;
 
+import Goals.Goal;
+import Goals.GoalManager;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
@@ -10,15 +12,13 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
+public class OnlineUsersManagerGoalCheck extends OnlineUsersManager {
     private BukkitTask schedule;
     private String configSound, configMessage;
-    public OnlineUsersManagerLuckPerms(){
+    public OnlineUsersManagerGoalCheck(){
         super();
 
         restartSchedule();
@@ -34,21 +34,20 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
         schedule = new BukkitRunnable() {
             public void run() {
                 Player p;
-                Map<String, Long> groups;
                 Group groupLuckPerms;
                 User userLuckPerms;
-                if (plugin.getConfiguration().getLuckPermsCheckVerbose())
-                    Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Luckperms check started, refresh rate is "
-                            + convertTime(plugin.getConfiguration().getLuckPermsCheckRate()) +
-                            ".\n If you find this message annoying you can deactivate it by changing §6luckperms-check-verbose " +
+                if (plugin.getConfiguration().getGoalsCheckVerbose())
+                    Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Goal check started, refresh rate is "
+                            + convertTime(plugin.getConfiguration().getGoalsCheckRate()) +
+                            ".\n If you find this message annoying you can deactivate it by changing §6goal-check-verbose " +
                             "§7in the config.yml");
                 // Get groups from configuration
-                groups = plugin.groups;
+                List<String> groups = GoalManager.getGoalsGroups();
 
                 if (groups.isEmpty()) {
                     schedule.cancel();
-                    Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 No group has been detected " +
-                            "in the database, luckperms check canceled.");
+                    Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 No goal has been detected, " +
+                            "goal check canceled.");
 
                 }
 
@@ -56,15 +55,15 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
                 for (OnlineUser onlineUser : onlineUsers) {
 
                     // Iterate through groups
-                    for (String group : groups.keySet()) {
+                    for (Goal goal : GoalManager.getGoals()) {
                         // Get group from LuckPerms
-                        groupLuckPerms = plugin.luckPermsApi.getGroupManager().getGroup(group);
+                        groupLuckPerms = plugin.luckPermsApi.getGroupManager().getGroup(goal.getLPGroup());
                         if (groupLuckPerms == null) {
                             continue; // Skip to next group if group doesn't exist in LuckPerms
                         }
 
                         // Check play time requirement for group
-                        if (onlineUser.getPlaytime() >= groups.get(group)) {
+                        if (onlineUser.getPlaytime() >= goal.getTime()) {
                             // Get LuckPerms user
                             userLuckPerms = plugin.luckPermsApi.getUserManager().getUser(UUID.fromString(onlineUser.getUuid()));
                             if (userLuckPerms == null) {
@@ -76,7 +75,7 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
                             for (Node node : userLuckPerms.getNodes()) {
                                 if (node.getKey().startsWith("group.")) {
                                     String groupName = node.getKey().substring(6);
-                                    if (groupName.equals(group)) {
+                                    if (groupName.equals(goal.getLPGroup())) {
                                         hasGroup = true;
                                         break;
                                     }
@@ -94,22 +93,23 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
 
                                 if (p != null) {
                                     try{
-                                        configSound = plugin.getConfiguration().getLuckPermsGoalSound();
+                                        configSound = goal.getGoalSound();
+                                        plugin.getLogger().info(configSound);
                                         Sound sound = Sound.valueOf(configSound);
                                         p.playSound(p.getLocation(), sound, 10, 0);
                                     }catch(IllegalArgumentException exception){
-                                        plugin.getLogger().severe(configSound + " is not a valid argument for luckperms-time-goal-sound" +
-                                                "setting in config.yaml");
+                                        plugin.getLogger().severe(configSound + " is not a valid argument for goal-sound" +
+                                                "setting in "+goal.getName()+".yaml");
                                     }
 
-                                    configMessage = replacePlaceholders(plugin.getConfiguration().getLuckPermsGoalMessage(), p, group);
+                                    configMessage = replacePlaceholders(goal.getGoalMessage(), p, goal);
 
                                     p.sendMessage(configMessage);
 
                                     Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 User §e"
                                             + onlineUser.getNickname() + " §7has reached §6" +
-                                            convertTime(groups.get(group) / 20) +
-                                            " §7so it is now part of §e" + group + " §7group!");
+                                            convertTime(goal.getTime() / 20) +
+                                            " §7so it is now part of §e" + goal.getLPGroup() + " §7group!");
                                 }
                             }
                         }
@@ -117,7 +117,7 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
                 }
             }
 
-        }.runTaskTimer(plugin, 0, plugin.getConfiguration().getLuckPermsCheckRate() * 20);
+        }.runTaskTimer(plugin, 0, plugin.getConfiguration().getGoalsCheckRate() * 20);
     }
 
     private String convertTime(long secondsx) {
@@ -144,14 +144,14 @@ public class OnlineUsersManagerLuckPerms extends OnlineUsersManager {
         }
     }
 
-    public String replacePlaceholders(String input, Player p, String group) {
+    public String replacePlaceholders(String input, Player p, Goal goal) {
         // Create a map for the placeholders and their corresponding values
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("%PLAYER_NAME%", p.getName());
-        placeholders.put("%GROUP_NAME%", group);
+        placeholders.put("%GROUP_NAME%", goal.getLPGroup());
 
         // Calculate TIME_REQUIRED
-        String playTimeSeconds = convertTime(plugin.groups.get(group) / 20);
+        String playTimeSeconds = convertTime(goal.getTime() / 20);
 
         placeholders.put("%TIME_REQUIRED%", playTimeSeconds);
 

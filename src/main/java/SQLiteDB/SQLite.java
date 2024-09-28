@@ -23,11 +23,6 @@ public class SQLite extends PlayTimeDatabase {
             "artificial_playtime BIGINT NOT NULL," +
             "PRIMARY KEY (uuid)" +
             ");";
-    public String GroupsTable = "CREATE TABLE IF NOT EXISTS groups (" +
-            "group_name VARCHAR(32) NOT NULL," +
-            "playtime_required BIGINT NOT NULL," +
-            "PRIMARY KEY (group_name)" +
-            ");";
 
 
     // SQL creation stuff, You can leave the blow stuff untouched.
@@ -49,10 +44,11 @@ public class SQLite extends PlayTimeDatabase {
         try {
             Statement s = connection.createStatement();
             s.executeUpdate(PlayTimeTable);
-            s.executeUpdate(GroupsTable);
             s.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
+
 }

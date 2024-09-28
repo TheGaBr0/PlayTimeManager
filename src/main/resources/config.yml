@@ -10,8 +10,12 @@
 # ██║╚██╔╝██║██╔══██║██║╚██╗██║██╔══██║██║   ██║██╔══╝  ██╔══██╗
 # ██║ ╚═╝ ██║██║  ██║██║ ╚████║██║  ██║╚██████╔╝███████╗██║  ██║
 # ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
+
+#If you are looking for goals settings, please head to the "Goals" folder.
+#To make such folder appear you need to create at least one goal -> /playtimegoal
+
 #leave this untouched
-config-version: 3.1
+config-version: 3.2
 
 #This messaged is showed each time /playtime is executed.
 #Available placeholders: %PLAYTIME%, %PLAYER_NAME%
@@ -21,21 +25,12 @@ playtime-self-message: "[§6PlayTime§eManager§f]§7 Your playtime is §6%PLAYT
 #Available placeholders: %PLAYTIME%, %PLAYER_NAME%
 playtime-others-message: "[§6PlayTime§eManager§f]§7 The playtime of §e%PLAYER_NAME%§7 is §6%PLAYTIME%"
 
-#This sound is played each time a player reaches a new time goal.
-#A list of available sounds can be found here: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html
-luckperms-time-goal-sound: "ENTITY_PLAYER_LEVELUP"
-
-#This messaged is showed each time a new luckperms time goal has been reached.
-#Available placeholders: %TIME_REQUIRED%, %GROUP_NAME%, %PLAYER_NAME%
-luckperms-time-goal-message: "[§6PlayTime§eManager§f]§7 Congratulations §e%PLAYER_NAME%§7 you have reached §6%TIME_REQUIRED% §7 of 
-                              playtime so you have been promoted to §e%GROUP_NAME%§7!"
-
-#luckperms-check-rate sets every how many seconds a check will be made on online players to see if they have
+#goal-check-rate sets every how many seconds a check will be made on online players to see if they have
 #reached a new time goal. With many players and a low rate it may cause lag.
 #Time should be specified as seconds, default is 15 minutes (900s)
-luckperms-check-rate: 900
+goal-check-rate: 900
 
 #Set this to false to remove debug messages on console
-luckperms-check-verbose: true
+goal-check-verbose: true
 
 

@@ -2,10 +2,7 @@ package SQLiteDB;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -588,46 +585,13 @@ public abstract class PlayTimeDatabase {
         }
     }
 
-    public void addGroup(String groupName, long playtimeRequired) {
-        try (Connection conn = getSQLConnection();
-             PreparedStatement ps = conn.prepareStatement("INSERT INTO groups (group_name, playtime_required) VALUES (?, ?) ON CONFLICT(group_name) DO UPDATE SET playtime_required=excluded.playtime_required;")) {
-            ps.setString(1, groupName);
-            ps.setLong(2, playtimeRequired);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), e);
+    public void close() {
+        if (dataSource != null) {
+            dataSource.close();
         }
     }
 
-    public Long getGroupPlaytime(String groupName) {
-        try (Connection conn = getSQLConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT playtime_required FROM groups WHERE group_name = ?;")) {
-            ps.setString(1, groupName);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getLong("playtime_required");
-                }
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), e);
-        }
-        return null;
-    }
-
-    public List<String> getAllGroupsNames() {
-        List<String> groups = new ArrayList<>();
-        try (Connection conn = getSQLConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT group_name FROM groups;");
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                groups.add(rs.getString("group_name"));
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), e);
-        }
-        return groups;
-    }
-
+    //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
     public Map<String, Long> getAllGroupsData() {
         Map<String, Long> groups = new HashMap<>();
         try (Connection conn = getSQLConnection();
@@ -644,34 +608,14 @@ public abstract class PlayTimeDatabase {
         return groups;
     }
 
-    public boolean groupExists(String groupName) {
-        try (Connection conn = getSQLConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM groups WHERE group_name = ?;")) {
-            ps.setString(1, groupName);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
-                }
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), e);
-        }
-        return false;
-    }
+    // Method to drop the groups table
+    public void dropGroupsTable() {
+        String dropTableSQL = "DROP TABLE IF EXISTS groups;";
 
-    public void deleteGroup(String groupName) {
-        try (Connection conn = getSQLConnection();
-             PreparedStatement ps = conn.prepareStatement("DELETE FROM groups WHERE group_name = ?;")) {
-            ps.setString(1, groupName);
-            ps.executeUpdate();
+        try (Connection connection = getSQLConnection(); Statement statement = connection.createStatement()) {
+            statement.executeUpdate(dropTableSQL);
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), e);
-        }
-    }
-
-    public void close() {
-        if (dataSource != null) {
-            dataSource.close();
+            e.printStackTrace();
         }
     }
 

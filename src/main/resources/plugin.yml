@@ -24,9 +24,9 @@ commands:
     description: Command to get the top N players with highest playtime
     permission: playtime.top
     permission-message: You don't have the permission to execute this command!
-  playtimegroup:
-    description: Command to set a LuckPerms group based on playtime
-    permission: playtime.group
+  playtimegoal:
+    description: Command to manage goals
+    permission: playtime.goal
     permission-message: You don't have the permission to execute this command!
   playtimereload:
     description: Command to reload the main config
@@ -44,7 +44,7 @@ permissions:
       playtime.average: true
       playtime.percentage: true
       playtime.top: true
-      playtime.group: true
+      playtime.goal: true
       playtime.reload: true
   playtime:
     default: true
@@ -58,7 +58,7 @@ permissions:
     default: false
   playtime.top:
     default: false
-  playtime.group:
+  playtime.goal:
     default: false
   playtime.reload:
     default: false

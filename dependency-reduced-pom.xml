@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>me.TheGabro</groupId>
   <artifactId>PlayTimeManager</artifactId>
-  <version>3.0.4</version>
+  <version>3.0.4-1.21.4</version>
   <build>
     <resources>
       <resource>
@@ -48,7 +48,7 @@
     <dependency>
       <groupId>io.papermc.paper</groupId>
       <artifactId>paper-api</artifactId>
-      <version>1.21-R0.1-SNAPSHOT</version>
+      <version>1.21.4-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

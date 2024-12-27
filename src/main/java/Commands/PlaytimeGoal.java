@@ -1,5 +1,6 @@
 package Commands;
 
+import GUIs.AllGoalsGui;
 import Goals.Goal;
 import Goals.GoalManager;
 import Users.OnlineUsersManagerGoalCheck;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 
 public class PlaytimeGoal implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final String[] SUBCOMMANDS = {"set", "remove", "list"};
+    private final String[] SUBCOMMANDS = {"set", "remove", "list", "gui"};
     private final String[] SUBSUBCOMMANDS = {"setTime:", "setLPGroup:"};
 
     @Override
@@ -36,6 +37,14 @@ public class PlaytimeGoal implements TabExecutor {
         String goalName;
         String subCommand = args[0].toLowerCase();
         switch (subCommand) {
+            case "gui":
+                if (!(sender instanceof Player)) {
+                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Only players can use the GUI!");
+                    return false;
+                }
+                AllGoalsGui gui = new AllGoalsGui(plugin);
+                gui.openInventory((Player) sender);
+                return true;
             case "set":
 
                 if (args.length < 2) {

@@ -3,6 +3,8 @@ package me.thegabro.playtimemanager;
 import Commands.*;
 import Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import Events.JoinEventManager;
+import GUIs.AllGoalsGui;
+import GUIs.ConfirmationGui;
 import Goals.Goal;
 import Goals.GoalManager;
 import SQLiteDB.PlayTimeDatabase;
@@ -67,7 +69,9 @@ public class PlayTimeManager extends JavaPlugin{
 
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
-        //fix luckperms settings and checks
+        getServer().getPluginManager().registerEvents(new AllGoalsGui(this), this);
+        getServer().getPluginManager().registerEvents(new ConfirmationGui(this), this);
+
         Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeGoal());
         Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {});
         Objects.requireNonNull(getCommand("playtimeaverage")).setExecutor(new PlaytimeAverage() {});

@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class PlaytimeLuckPermsGoal implements TabExecutor {
+public class PlaytimeGoal implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final String[] SUBCOMMANDS = {"set", "remove", "list"};
     private final String[] SUBSUBCOMMANDS = {"setTime:", "setLPGroup:"};

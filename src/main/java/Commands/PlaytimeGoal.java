@@ -42,7 +42,7 @@ public class PlaytimeGoal implements TabExecutor {
                     sender.sendMessage("[§6PlayTime§eManager§f]§7 Only players can use the GUI!");
                     return false;
                 }
-                AllGoalsGui gui = new AllGoalsGui(plugin);
+                AllGoalsGui gui = new AllGoalsGui();
                 gui.openInventory((Player) sender);
                 return true;
             case "set":

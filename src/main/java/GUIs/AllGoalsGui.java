@@ -31,12 +31,10 @@ import java.util.concurrent.TimeUnit;
 public class AllGoalsGui implements InventoryHolder, Listener {
 
     private final Inventory inv;
-    private final PlayTimeManager plugin;
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
 
-    public AllGoalsGui(PlayTimeManager plugin) {
+    public AllGoalsGui() {
         inv = Bukkit.createInventory(this, 54, Component.text("Goals"));
-        this.plugin = plugin;
     }
 
     public void openInventory(Player p) {
@@ -73,7 +71,8 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                         Material.EXPERIENCE_BOTTLE,
                         Component.text("§e" + goal.getName()),
                         Component.text("§7Required Time: " + convertTime(goal.getTime())),
-                        Component.text("§7Group: " + goal.getLPGroup())
+                        Component.text("§7Group: " + goal.getLPGroup()),
+                        Component.text("§7Press §eright mouse button §7to delete")
                 ));
                 slot++;
             }
@@ -111,20 +110,26 @@ public class AllGoalsGui implements InventoryHolder, Listener {
         if(clickedItem == null || clickedItem.getType().equals(Material.AIR))
             return;
 
+        if(clickedItem.getType() == Material.BARRIER) {
+            whoClicked.closeInventory();
+            whoClicked.sendMessage(Component.text(
+                    "[§6PlayTime§eManager§f]§7 To create a goal use: /playtimegoal set §e<name> §7setTime:§e<time> §7setLPGroup:§e<group>"));
+            return;
+        }
+
         if(!protectedSlots.contains(slot)) {
             if(clickedItem.getItemMeta().hasDisplayName())
                 goalName =  PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName());
 
             if(action.equals(InventoryAction.PICKUP_HALF)){
-
-                ConfirmationGui confirmationGui = new ConfirmationGui(plugin, GoalManager.getGoal(goalName.substring(2)), clickedItem, this);
+                whoClicked.closeInventory();
+                ConfirmationGui confirmationGui = new ConfirmationGui(GoalManager.getGoal(goalName.substring(2)), clickedItem, this);
                 confirmationGui.openInventory(whoClicked);
 
             }else{
-
-                plugin.getLogger().info(goalName.substring(2));
-                /*EventSettingsGui settingsGui = new EventSettingsGui(plugin, plugin.eventManager.getEvent(cutName), this);
-                settingsGui.openInventory(whoClicked);*/
+                whoClicked.closeInventory();
+                GoalSettingsGui settingsGui = new GoalSettingsGui(GoalManager.getGoal(goalName.substring(2)), this);
+                settingsGui.openInventory(whoClicked);
 
             }
         }
@@ -148,15 +153,18 @@ public class AllGoalsGui implements InventoryHolder, Listener {
     }
 
     private String convertTime(long secondsx) {
+
+        if(secondsx == Long.MAX_VALUE)
+            return "None";
+        else
+            secondsx/=20;
+
         int days = (int) TimeUnit.SECONDS.toDays(secondsx);
         int hours = (int) (TimeUnit.SECONDS.toHours(secondsx) - TimeUnit.DAYS.toHours(days));
         int minutes = (int) (TimeUnit.SECONDS.toMinutes(secondsx) - TimeUnit.HOURS.toMinutes(hours)
                 - TimeUnit.DAYS.toMinutes(days));
         int seconds = (int) (TimeUnit.SECONDS.toSeconds(secondsx) - TimeUnit.MINUTES.toSeconds(minutes)
                 - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days));
-
-        if(secondsx == Long.MAX_VALUE)
-            return "None";
 
         if (days != 0) {
             return days + "d, " + hours + "h, " + minutes + "m, " + seconds + "s";

@@ -5,6 +5,7 @@ import Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import Events.JoinEventManager;
 import GUIs.AllGoalsGui;
 import GUIs.ConfirmationGui;
+import GUIs.GoalSettingsGui;
 import Goals.Goal;
 import Goals.GoalManager;
 import SQLiteDB.PlayTimeDatabase;
@@ -69,8 +70,9 @@ public class PlayTimeManager extends JavaPlugin{
 
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
-        getServer().getPluginManager().registerEvents(new AllGoalsGui(this), this);
-        getServer().getPluginManager().registerEvents(new ConfirmationGui(this), this);
+        getServer().getPluginManager().registerEvents(new AllGoalsGui(), this);
+        getServer().getPluginManager().registerEvents(new ConfirmationGui(), this);
+        getServer().getPluginManager().registerEvents(new GoalSettingsGui(), this);
 
         Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeGoal());
         Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {});

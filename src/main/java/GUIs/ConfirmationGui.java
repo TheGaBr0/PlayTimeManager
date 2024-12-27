@@ -22,18 +22,13 @@ import java.util.Arrays;
 public class ConfirmationGui implements InventoryHolder, Listener {
 
     private Inventory inv;
-    private final PlayTimeManager plugin;
     private ItemStack itemToRemove;
     private Object previousGui;
     private Goal g;
 
-    public ConfirmationGui(PlayTimeManager plugin) {
-        this.plugin = plugin;
-    }
+    public ConfirmationGui(){}
 
-    public ConfirmationGui(PlayTimeManager plugin, Goal g, ItemStack itemToRemove, Object gui){
-
-        this.plugin = plugin;
+    public ConfirmationGui(Goal g, ItemStack itemToRemove, Object gui){
 
         inv = Bukkit.createInventory(this, 27, Component.text("Confirm removal"));
 
@@ -94,12 +89,14 @@ public class ConfirmationGui implements InventoryHolder, Listener {
                 e.removeItem(itemToRemove);
                 gui.openInventory(whoClicked);*/
 
+            whoClicked.closeInventory();
             AllGoalsGui gui = (AllGoalsGui) previousGui;
             g.kill();
             gui.openInventory(whoClicked);
         }
 
         if(slot == 15){
+                whoClicked.closeInventory();
                 AllGoalsGui gui = (AllGoalsGui) previousGui;
                 gui.openInventory(whoClicked);
             }

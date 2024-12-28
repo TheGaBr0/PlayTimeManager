@@ -2,6 +2,8 @@ package GUIs;
 
 import Goals.Goal;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -9,17 +11,19 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.PrepareAnvilEvent;
+import org.bukkit.inventory.AnvilInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 import org.checkerframework.checker.nullness.qual.Nullable;
-
+import net.wesjd.anvilgui.AnvilGUI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 public class GoalSettingsGui implements InventoryHolder, Listener {
     private Inventory inv;
@@ -27,7 +31,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     private Object previousGui;
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
 
-    public GoalSettingsGui(){}
+    public GoalSettingsGui() {}
 
     public GoalSettingsGui(Goal g, Object previousGui) {
         this.goal = g;
@@ -44,8 +48,8 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         inv.clear();
 
         // Fill background with glass panes
-        for(int i = 0; i < 27; i++) {
-            if(i != 10 && i != 12 && i != 14 && i != 16 && i != 22 && i != 26) {
+        for (int i = 0; i < 27; i++) {
+            if (i != 10 && i != 12 && i != 14 && i != 16 && i != 22 && i != 26) {
                 inv.setItem(i, createGuiItem(Material.BLACK_STAINED_GLASS_PANE, Component.text("§f[§6P.T.M.§f]§7")));
                 protectedSlots.add(i);
             }
@@ -81,8 +85,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         // Back button
         inv.setItem(26, createGuiItem(Material.MAGENTA_GLAZED_TERRACOTTA,
                 Component.text("§e§lBack")));
-
-
     }
 
     private ItemStack createGuiItem(Material material, @Nullable TextComponent name, @Nullable TextComponent... lore) {
@@ -90,7 +92,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         ItemMeta meta = item.getItemMeta();
         meta.displayName(name);
 
-        ArrayList<Component> metalore = new ArrayList<Component>(Arrays.asList(lore));
+        ArrayList<Component> metalore = new ArrayList<>(Arrays.asList(lore));
         meta.lore(metalore);
         item.setItemMeta(meta);
         return item;
@@ -102,37 +104,34 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     }
 
     public void onGUIClick(Player whoClicked, int slot, ItemStack clickedItem, InventoryAction action) {
-        if(clickedItem == null || clickedItem.getType().equals(Material.AIR)) {
+        if (clickedItem == null || clickedItem.getType().equals(Material.AIR)) {
             return;
         }
 
-        if(!protectedSlots.contains(slot)){
+        if (!protectedSlots.contains(slot)) {
             AllGoalsGui gui;
 
-            switch(slot) {
+            switch (slot) {
                 case 10: // Time setting
-                    // Start chat input for new time
                     whoClicked.closeInventory();
-                    // You would implement chat listener logic here
+                    openTimeAnvilGui(whoClicked, goal);
+
                     break;
 
                 case 12: // LuckPerms group
-                    // Start chat input for new group
                     whoClicked.closeInventory();
                     break;
 
                 case 14: // Goal message
-                    // Start chat input for new message
                     whoClicked.closeInventory();
                     break;
 
                 case 16: // Goal sound
-                    // Start chat input for new sound
                     whoClicked.closeInventory();
                     break;
 
                 case 22: // Delete goal
-                    if(previousGui != null) {
+                    if (previousGui != null) {
                         goal.kill();
                         whoClicked.closeInventory();
                         gui = (AllGoalsGui) previousGui;
@@ -141,7 +140,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                     break;
 
                 case 26: // Back button
-                    if(previousGui != null) {
+                    if (previousGui != null) {
                         whoClicked.closeInventory();
                         gui = (AllGoalsGui) previousGui;
                         gui.openInventory(whoClicked);
@@ -151,14 +150,92 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         }
     }
 
+    private void openTimeAnvilGui(Player player, Goal goal) {
+        new AnvilGUI.Builder()
+                .onClick((slot, stateSnapshot) -> {
+                    if (slot != AnvilGUI.Slot.OUTPUT) {
+                        return Collections.emptyList();
+                    }
+
+                    String text = stateSnapshot.getText();
+                    long time = validateTimeFormat(text);
+                    if (time != Long.MAX_VALUE) {
+                        goal.setTime(time);
+
+                        // Close the anvil and reopen settings GUI
+                        player.closeInventory();
+                        openInventory(player);
+
+                        return Collections.singletonList(AnvilGUI.ResponseAction.close());
+                    } else {
+                        return Collections.singletonList(AnvilGUI.ResponseAction.updateTitle("Invalid format!", true));
+                    }
+                })
+                .onClose(stateSnapshot -> {
+                    openInventory(player);
+                })
+                .onClose(stateSnapshot -> {
+                    // Safely reopen the GoalSettingsGui
+                    Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(player));
+                })
+                .text(convertTime(goal.getTime()))
+                .title("Format: 1d, 2h, 3m, 4s")
+                .plugin(PlayTimeManager.getPlugin(PlayTimeManager.class))
+                .open(player);
+    }
+
+    // Add the helper methods
+    private long validateTimeFormat(String input) {
+        input = input.replace(" ", "");
+        String[] timeParts = input.split(",");
+        long timeToTicks = 0;
+
+        int dcount = 0, hcount = 0, mcount = 0, scount = 0;
+
+        for (String part : timeParts) {
+            try {
+                int time = Integer.parseInt(part.replaceAll("[^\\d.]", ""));
+                String format = part.replaceAll("\\d", "");
+
+                switch(format) {
+                    case "d":
+                        if(dcount == 0) {
+                            timeToTicks += time * 1728000L;
+                            dcount++;
+                        }break;
+                    case "h":
+                        if(hcount == 0) {
+                            timeToTicks += time * 72000L;
+                            hcount++;
+                        }break;
+                    case "m":
+                        if(mcount == 0) {
+                            timeToTicks += time * 1200L;
+                            mcount++;
+                        }break;
+                    case "s":
+                        if(scount == 0) {
+                            timeToTicks += time * 20L;
+                            scount++;
+                        }break;
+                    default:
+                        return Long.MAX_VALUE;
+                }
+            } catch(NumberFormatException e) {
+                return Long.MAX_VALUE;
+            }
+        }
+        return timeToTicks;
+    }
+
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
-        if(e.getInventory().getHolder() instanceof GoalSettingsGui) {
-            if((e.getRawSlot() < e.getInventory().getSize())) {
+        if (e.getInventory().getHolder() instanceof GoalSettingsGui) {
+            if ((e.getRawSlot() < e.getInventory().getSize())) {
                 e.setCancelled(true);
 
                 GoalSettingsGui gui = (GoalSettingsGui) e.getInventory().getHolder();
-                gui.onGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getAction());
+                gui.onGUIClick((Player) e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getAction());
             }
         }
     }

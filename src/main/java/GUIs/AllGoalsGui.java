@@ -5,6 +5,10 @@ import Goals.GoalManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -112,8 +116,30 @@ public class AllGoalsGui implements InventoryHolder, Listener {
 
         if(clickedItem.getType() == Material.BARRIER) {
             whoClicked.closeInventory();
-            whoClicked.sendMessage(Component.text(
-                    "[§6PlayTime§eManager§f]§7 To create a goal use: /playtimegoal set §e<name> §7setTime:§e<time> §7setLPGroup:§e<group>"));
+
+            // Create the base message
+            Component baseMessage = Component.text("[§6PlayTime§eManager§f]§7 To create a goal use:\n\n" +
+                    "/playtimegoal set §e<name> §7setTime:§e<time> §7setLPGroup:§e<group>\n");
+
+            // Create the command text
+            String command = "/playtimegoal set goal1 setTime:1d,2h,3m,4s";
+
+            // Create the clickable [click here] text
+            Component clickableText = Component.text("[click here]")
+                    .color(TextColor.color(255,170,0))
+                    .decoration(TextDecoration.BOLD, true)
+                    .clickEvent(ClickEvent.suggestCommand(command))
+                    .hoverEvent(HoverEvent.showText(Component.text("Click to autocomplete command")));
+
+            // Combine all components
+            Component fullMessage = Component.empty()
+                    .append(baseMessage)
+                    .append(Component.text("\n"))
+                    .append(clickableText)
+                    .color(TextColor.color(170,170,170))
+                    .append(Component.text(" to autocomplete the message"));
+
+            whoClicked.sendMessage(fullMessage);
             return;
         }
 

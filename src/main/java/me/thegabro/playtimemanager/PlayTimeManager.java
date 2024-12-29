@@ -14,9 +14,6 @@ import SQLiteDB.SQLite;
 import Events.QuitEventManager;
 import PlaceHolders.PlayTimePlaceHolders;
 import Users.OnlineUsersManager;
-import Users.OnlineUsersManagerGoalCheck;
-import net.luckperms.api.LuckPerms;
-import net.luckperms.api.LuckPermsProvider;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -29,10 +26,8 @@ public class PlayTimeManager extends JavaPlugin{
 
     private static PlayTimeManager instance;
     private OnlineUsersManager onlineUsersManager;
-    public LuckPerms luckPermsApi = null;
     private Configuration config;
     private PlayTimeDatabase db;
-    private boolean isLuckPermsLoaded;
 
     @Override
     public void onEnable() {
@@ -54,15 +49,9 @@ public class PlayTimeManager extends JavaPlugin{
 
         }
 
-        if(Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
-            luckPermsApi = LuckPermsProvider.get();
-            Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 LuckPerms detected! Launching related auto-promotion functions");
-            onlineUsersManager = new OnlineUsersManagerGoalCheck();
-            isLuckPermsLoaded = true;
-        }else{
-            onlineUsersManager = new OnlineUsersManager();
-            isLuckPermsLoaded = false;
-        }
+
+        onlineUsersManager = new OnlineUsersManager();
+
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlayTimePlaceHolders().register();
@@ -85,6 +74,8 @@ public class PlayTimeManager extends JavaPlugin{
         GoalManager.initialize(this);
 
         getLogger().info("has been enabled!");
+
+        getUsersManager().restartSchedule();
 
     }
 
@@ -124,9 +115,8 @@ public class PlayTimeManager extends JavaPlugin{
         for (Map.Entry<String, Long> entry : dbgroups.entrySet()) {
             String name = entry.getKey();   // goal name (String)
             Long time = entry.getValue(); // goal time (Long)
-            Goal g = new Goal(this, name, time, name);
+            Goal g = new Goal(this, name, time);
         }
-
 
         db.dropGroupsTable();
 
@@ -146,9 +136,5 @@ public class PlayTimeManager extends JavaPlugin{
         config.setGoalsCheckVerbose(goalsCheckVerbose);
         //---------------------------------
         config.reload();
-    }
-
-    public boolean isLuckPermsLoaded() {
-        return isLuckPermsLoaded;
     }
 }

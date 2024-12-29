@@ -119,7 +119,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             Component baseMessage = Component.text("""
                     [§6PlayTime§eManager§f]§7 To create a goal use:
 
-                    /playtimegoal set §e<name> §7setTime:§e<time> §7setLPGroup:§e<group>
+                    /playtimegoal set §e<name> §7setTime:§e<time>
                     """);
 
             // Create the command text

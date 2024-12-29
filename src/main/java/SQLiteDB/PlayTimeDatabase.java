@@ -3,11 +3,10 @@ package SQLiteDB;
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -585,11 +584,88 @@ public abstract class PlayTimeDatabase {
         }
     }
 
+    public boolean hasCompletedGoal(String uuid, String goalName) {
+        try (Connection conn = getSQLConnection();
+             Statement stmt = conn.createStatement()) {
+            var rs = stmt.executeQuery(
+                    "SELECT completed_goals FROM play_time WHERE uuid = '" + uuid + "'"
+            );
+            if (rs.next()) {
+                String completedGoals = rs.getString("completed_goals");
+                return completedGoals != null && completedGoals.contains(goalName);
+            }
+            return false;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public void markGoalAsCompleted(String uuid, String goalName) {
+        try (Connection conn = getSQLConnection();
+             Statement stmt = conn.createStatement()) {
+
+            // get already completed goals
+            var rs = stmt.executeQuery(
+                    "SELECT completed_goals FROM play_time WHERE uuid = '" + uuid + "'"
+            );
+
+            String completedGoals = "";
+            if (rs.next()) {
+                String existing = rs.getString("completed_goals");
+                completedGoals = existing != null ? existing : "";
+            }
+
+            // add the new goal if not present
+            if (!completedGoals.contains(goalName)) {
+                if (!completedGoals.isEmpty()) {
+                    completedGoals += ",";
+                }
+                completedGoals += goalName;
+
+                stmt.executeUpdate(
+                        "UPDATE play_time SET completed_goals = '" + completedGoals + "' " +
+                                "WHERE uuid = '" + uuid + "'"
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void cleanupDeletedGoals(List<String> validGoalNames) {
+        try (Connection conn = getSQLConnection();
+             Statement stmt = conn.createStatement()) {
+
+            var rs = stmt.executeQuery("SELECT uuid, completed_goals FROM play_time");
+            while (rs.next()) {
+                String uuid = rs.getString("uuid");
+                String completedGoals = rs.getString("completed_goals");
+
+                if (completedGoals != null && !completedGoals.isEmpty()) {
+                    // Filter only valid goal names
+                    String[] goals = completedGoals.split(",");
+                    String newCompletedGoals = Arrays.stream(goals)
+                            .filter(validGoalNames::contains)
+                            .collect(Collectors.joining(","));
+
+                    stmt.executeUpdate(
+                            "UPDATE play_time SET completed_goals = '" + newCompletedGoals + "' " +
+                                    "WHERE uuid = '" + uuid + "'"
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void close() {
         if (dataSource != null) {
             dataSource.close();
         }
     }
+
 
     //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
     public Map<String, Long> getAllGroupsData() {

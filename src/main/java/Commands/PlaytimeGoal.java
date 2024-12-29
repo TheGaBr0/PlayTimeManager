@@ -3,12 +3,11 @@ package Commands;
 import GUIs.AllGoalsGui;
 import Goals.Goal;
 import Goals.GoalManager;
-import Users.OnlineUsersManagerGoalCheck;
+import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.kyori.adventure.inventory.Book;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
-import net.luckperms.api.model.group.Group;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
@@ -21,7 +20,7 @@ import java.util.stream.Collectors;
 public class PlaytimeGoal implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final String[] SUBCOMMANDS = {"set", "remove", "list", "gui"};
-    private final String[] SUBSUBCOMMANDS = {"setTime:", "setLPGroup:"};
+    private final String[] SUBSUBCOMMANDS = {"setTime:"};
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
@@ -46,17 +45,15 @@ public class PlaytimeGoal implements TabExecutor {
                 gui.openInventory((Player) sender);
                 return true;
             case "set":
-
                 if (args.length < 2) {
-                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtimegoal set <goalName> setTime:<time> [setLPGroup:<groupName>]");
+                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtimegoal set <goalName> setTime:<time>]");
                     return false;
                 }
 
                 goalName = args[1];
                 String setTime = null;
-                String setLPGroup = null;
 
-                // Process optional arguments: setTime and setLPGroup (interchangeable)
+                // Process optional arguments: setTime
                 for (int i = 2; i < args.length; i++) {
                     if (args[i].startsWith("setTime:")) {
                         if (setTime != null) {
@@ -73,23 +70,13 @@ public class PlaytimeGoal implements TabExecutor {
                             sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid time format!");
                             return false;
                         }
-                    } else if (args[i].startsWith("setLPGroup:")) {
-                        if (setLPGroup != null) {
-                            sender.sendMessage("[§6PlayTime§eManager§f]§7 Duplicate setLPGroup argument!");
-                            return false;
-                        }
-                        setLPGroup = args[i].substring(11); // Extract group name after "setLPGroup:"
-                        if (setLPGroup.isEmpty()) {
-                            sender.sendMessage("[§6PlayTime§eManager§f]§7 Missing group name for setLPGroup!");
-                            return false;
-                        }
                     } else {
                         sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid argument: " + args[i]);
                         return false;
                     }
                 }
 
-                setGoal(sender, goalName, setLPGroup, setTime != null ? parseTime(setTime) : null);
+                setGoal(sender, goalName, setTime != null ? parseTime(setTime) : null);
                 break;
             case "remove":
                 if (args.length < 2) {
@@ -140,7 +127,7 @@ public class PlaytimeGoal implements TabExecutor {
         return timeToTicks;
     }
 
-    private void setGoal(CommandSender sender, String goalName, String groupName, Long time) {
+    private void setGoal(CommandSender sender, String goalName, Long time) {
         Goal g = GoalManager.getGoal(goalName);
         StringBuilder message = new StringBuilder();
 
@@ -149,7 +136,7 @@ public class PlaytimeGoal implements TabExecutor {
             if(time != null)
                 g.setTime(time);
         } else {
-            g = new Goal(plugin, goalName, time, groupName);
+            g = new Goal(plugin, goalName, time);
             message.append("[§6PlayTime§eManager§f]§7 Goal §e").append(goalName).append(" §7created:\n");
         }
 
@@ -159,27 +146,16 @@ public class PlaytimeGoal implements TabExecutor {
         else
             message.append("§7- Required time to reach the goal: §6").append(convertTime(gTime / 20)).append("\n");
 
-        if (groupName != null) {
-            Group group = plugin.luckPermsApi.getGroupManager().getGroup(groupName);
-            if (group != null) {
-                OnlineUsersManagerGoalCheck onlineUsersManager = (OnlineUsersManagerGoalCheck) plugin.getUsersManager();
-                g.setLPGroup(groupName);
-                onlineUsersManager.restartSchedule();
-            } else {
-                sender.sendMessage("[§6PlayTime§eManager§f]§7 The group §e" + groupName + "§7 doesn't exist in LuckPerms configuration!");
-                return;
-            }
-        }
-        message.append("§7- LuckPerms group set: §e").append(g.getLPGroup());
         sender.sendMessage(message.toString());
+
+        plugin.getUsersManager().restartSchedule();
     }
 
     private void removeGoal(CommandSender sender, String goalName) {
         Goal g = GoalManager.getGoal(goalName);
         if (g != null) {
-            OnlineUsersManagerGoalCheck onlineUsersManager = (OnlineUsersManagerGoalCheck) plugin.getUsersManager();
             g.kill();
-            onlineUsersManager.restartSchedule();
+            plugin.getUsersManager().restartSchedule();
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The goal §e" + goalName + " §7has been removed!");
         } else {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The goal §e" + goalName + " §7doesn't exist!");
@@ -206,8 +182,7 @@ public class PlaytimeGoal implements TabExecutor {
             for (Goal goal : goals) {
                 String goalName = goal.getName();
                 Long timeRequired = goal.getTime();
-                String groupName = goal.getLPGroup();
-                sender.sendMessage("[§6PlayTime§eManager§f]§7 " + goalName + " - " + convertTime(timeRequired / 20) + " - Group: " + groupName);
+                sender.sendMessage("[§6PlayTime§eManager§f]§7 " + goalName + " - " + convertTime(timeRequired / 20));
             }
         }
     }
@@ -246,16 +221,6 @@ public class PlaytimeGoal implements TabExecutor {
             // Suggest remaining subsubcommands
             StringUtil.copyPartialMatches(args[args.length - 1], availableSubSubCommands, completions);
 
-            // If the current argument starts with a setLPGroup subsubcommand, suggest an appropriate value
-            if (args[args.length - 1].startsWith("setLPGroup:")) {
-                // Suggest available LuckPerms groups
-                List<String> groups = plugin.luckPermsApi.getGroupManager().getLoadedGroups().stream()
-                        .map(Group::getName)
-                        .map(name -> "setLPGroup:" + name)  // Add "setLPGroup:" prefix
-                        .collect(Collectors.toList());
-                StringUtil.copyPartialMatches(args[args.length - 1], groups, completions);
-            }
-
             return completions;
         }
 
@@ -282,7 +247,6 @@ public class PlaytimeGoal implements TabExecutor {
                     return seconds + "s";
                 }
             }
-
         }
     }
 
@@ -294,15 +258,12 @@ public class PlaytimeGoal implements TabExecutor {
             Goal goal = goalList.get(i);
             String goalName = goal.getName();
             long timeRequired = goal.getTime();
-            String groupName = goal.getLPGroup();
 
             Component pageContent = Component.text()
                     .append(Component.text("Name: ").color(TextColor.color(0xFFAA00)))
                     .append(Component.text(goalName + "\n\n"))
                     .append(Component.text("Time: ").color(TextColor.color(0xFFAA00)))
                     .append(Component.text(timeRequired == Long.MAX_VALUE ? "None\n\n" : convertTime(timeRequired / 20) + "\n\n"))
-                    .append(Component.text("Group: ").color(TextColor.color(0xFFAA00)))
-                    .append(Component.text(groupName != null ? groupName : "None"))
                     .build();
 
             pages.add(pageContent);
@@ -311,5 +272,3 @@ public class PlaytimeGoal implements TabExecutor {
         return pages;
     }
 }
-
-

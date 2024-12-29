@@ -1,8 +1,8 @@
 package Commands;
 
+import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import Goals.GoalManager;
-import Users.OnlineUsersManagerGoalCheck;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -24,11 +24,8 @@ public class PlaytimeReload implements CommandExecutor {
             GoalManager.loadGoals();
 
             // Restart LuckPerms schedule if applicable
-            if (plugin.isLuckPermsLoaded()) {
-                OnlineUsersManagerGoalCheck onlineUsersManager = (OnlineUsersManagerGoalCheck) plugin.getUsersManager();
-                onlineUsersManager.restartSchedule();
-                sender.sendMessage("[§6PlayTime§eManager§f]§7 LuckPerms check schedule has been restarted");
-            }
+            plugin.getUsersManager().restartSchedule();
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 Goal check schedule has been restarted");
 
             return true;
         } else {

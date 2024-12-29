@@ -41,10 +41,6 @@ public class GoalManager {
         return goals.stream().map(Goal::getName).collect(Collectors.toList());
     }
 
-    public static List<String> getGoalsGroups() {
-        return goals.stream().map(Goal::getLPGroup).collect(Collectors.toList());
-    }
-
     public static void clearGoals() {
         goals.clear();
     }
@@ -56,7 +52,7 @@ public class GoalManager {
             if (goalFiles != null) {
                 for (File file : goalFiles) {
                     String goalName = file.getName().replace(".yml", "");
-                    new Goal(plugin, goalName, 0L, null); // Time ad group will be loaded from file in Goal constructor
+                    new Goal(plugin, goalName, 0L); // Time ad group will be loaded from file in Goal constructor
                 }
             }
         }

@@ -6,6 +6,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -16,7 +17,7 @@ public class Goal {
     private long time;
     private String LPGroup;
     private final File goalFile;
-
+    private ArrayList<String> permissions = new ArrayList<>();
     private String goalMessage;
     private String goalSound;
 
@@ -40,9 +41,13 @@ public class Goal {
             LPGroup = config.getString("LuckPermsGroup", LPGroup);
             goalMessage = config.getString("goal-message", getDefaultGoalMessage());
             goalSound = config.getString("goal-sound", getDefaultGoalSound());
+            // Ensure permissions is a valid list
+            permissions = new ArrayList<>(config.getStringList("Permissions"));
+
         } else {
             goalMessage = getDefaultGoalMessage();
             goalSound = getDefaultGoalSound();
+            permissions = new ArrayList<>();
         }
     }
 
@@ -67,6 +72,7 @@ public class Goal {
             config.set("LuckPermsGroup", LPGroup);
             config.set("goal-sound", goalSound);
             config.set("goal-message", goalMessage);
+            config.set("Permissions", permissions);
             config.save(goalFile);
         } catch (IOException e) {
             plugin.getLogger().severe("Could not save goal file for " + name + ": " + e.getMessage());
@@ -130,6 +136,20 @@ public class Goal {
     public void kill() {
         GoalManager.removeGoal(this);
         deleteFile();
+    }
+
+    public ArrayList<String> getPermissions(){
+        return permissions;
+    }
+
+    public void addPermission(String permission){
+        permissions.add(permission);
+        saveToFile();
+    }
+
+    public void removePermission(String permission){
+        permissions.remove(permission);
+        saveToFile();
     }
 
     @Override

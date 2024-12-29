@@ -2,7 +2,6 @@ package GUIs;
 
 import Goals.Goal;
 import Goals.GoalManager;
-import me.thegabro.playtimemanager.PlayTimeManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -24,11 +23,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import Goals.GoalManager;
-
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -75,8 +71,8 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                         Material.EXPERIENCE_BOTTLE,
                         Component.text("§e" + goal.getName()),
                         Component.text("§7Required Time: " + convertTime(goal.getTime())),
-                        Component.text("§7Group: " + goal.getLPGroup()),
-                        Component.text("§7Press §eright mouse button §7to delete")
+                        Component.text("§e" + goal.getPermissions().size() + "§7 " +
+                                (goal.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded"))
                 ));
                 slot++;
             }
@@ -111,15 +107,20 @@ public class AllGoalsGui implements InventoryHolder, Listener {
 
         String goalName = "";
 
-        if(clickedItem == null || clickedItem.getType().equals(Material.AIR))
+        if (clickedItem == null || clickedItem.getType().equals(Material.AIR)
+                || clickedItem.getType().equals(Material.BLACK_STAINED_GLASS_PANE)) {
             return;
+        }
 
         if(clickedItem.getType() == Material.BARRIER) {
             whoClicked.closeInventory();
 
             // Create the base message
-            Component baseMessage = Component.text("[§6PlayTime§eManager§f]§7 To create a goal use:\n\n" +
-                    "/playtimegoal set §e<name> §7setTime:§e<time> §7setLPGroup:§e<group>\n");
+            Component baseMessage = Component.text("""
+                    [§6PlayTime§eManager§f]§7 To create a goal use:
+
+                    /playtimegoal set §e<name> §7setTime:§e<time> §7setLPGroup:§e<group>
+                    """);
 
             // Create the command text
             String command = "/playtimegoal set goal1 setTime:1d,2h,3m,4s";
@@ -143,21 +144,14 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             return;
         }
 
-        if(!protectedSlots.contains(slot)) {
-            if(clickedItem.getItemMeta().hasDisplayName())
-                goalName =  PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName());
+        if(clickedItem.getItemMeta().hasDisplayName()) {
+            goalName = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName());
+            //if(action.equals(InventoryAction.PICKUP_HALF)){
 
-            if(action.equals(InventoryAction.PICKUP_HALF)){
-                whoClicked.closeInventory();
-                ConfirmationGui confirmationGui = new ConfirmationGui(GoalManager.getGoal(goalName.substring(2)), clickedItem, this);
-                confirmationGui.openInventory(whoClicked);
+            whoClicked.closeInventory();
+            GoalSettingsGui settingsGui = new GoalSettingsGui(GoalManager.getGoal(goalName.substring(2)), this);
+            settingsGui.openInventory(whoClicked);
 
-            }else{
-                whoClicked.closeInventory();
-                GoalSettingsGui settingsGui = new GoalSettingsGui(GoalManager.getGoal(goalName.substring(2)), this);
-                settingsGui.openInventory(whoClicked);
-
-            }
         }
     }
 

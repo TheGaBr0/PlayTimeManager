@@ -226,6 +226,10 @@ public class PermissionsGui implements InventoryHolder, Listener {
                     Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(player));
                     return Collections.singletonList(AnvilGUI.ResponseAction.close());
                 })
+                .onClose(state -> {
+                    // Reopen the PermissionsGui when the anvil is closed
+                    Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(state.getPlayer()));
+                })
                 .text("Enter permission")
                 .title("Add Permission")
                 .plugin(PlayTimeManager.getPlugin(PlayTimeManager.class))
@@ -244,6 +248,10 @@ public class PermissionsGui implements InventoryHolder, Listener {
                     }
                     Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(player));
                     return Collections.singletonList(AnvilGUI.ResponseAction.close());
+                })
+                .onClose(state -> {
+                    // Reopen the PermissionsGui when the anvil is closed
+                    Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(state.getPlayer()));
                 })
                 .text(oldPermission)
                 .title("Edit Permission")

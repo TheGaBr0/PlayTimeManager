@@ -71,6 +71,10 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                         Material.EXPERIENCE_BOTTLE,
                         Component.text("§e" + goal.getName()),
                         Component.text("§7Required Time: " + convertTime(goal.getTime())),
+                        Component.text("§7Active: ")
+                                .append(Component.text(goal.isActive() ? "true" : "false")
+                                        .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
+                                .decoration(TextDecoration.ITALIC, false),
                         Component.text("§e" + goal.getPermissions().size() + "§7 " +
                                 (goal.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded"))
                 ));
@@ -119,11 +123,11 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             Component baseMessage = Component.text("""
                     [§6PlayTime§eManager§f]§7 To create a goal use:
 
-                    /playtimegoal set §e<name> §7setTime:§e<time>
+                    Usage: /playtimegoal set §e<name> §7time:§e<time> §7[activate:§etrue§7|§efalse§7]
                     """);
 
             // Create the command text
-            String command = "/playtimegoal set goal1 setTime:1d,2h,3m,4s";
+            String command = "/playtimegoal set goal1 time:1d,2h,3m,4s";
 
             // Create the clickable [click here] text
             Component clickableText = Component.text("[click here]")

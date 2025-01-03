@@ -90,6 +90,10 @@ public class OnlineUsersManager{
 
                 for (OnlineUser onlineUser : onlineUsers) {
                     for (Goal goal : GoalManager.getGoals()) {
+
+                        if(!goal.isActive())
+                            continue;
+
                         p = Bukkit.getPlayerExact(onlineUser.getNickname());
 
                         if (p != null) {

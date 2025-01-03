@@ -14,8 +14,11 @@
 #If you are looking for goals settings, please head to the "Goals" folder.
 #To make such folder appear you need to create at least one goal -> /playtimegoal
 
-#leave this untouched
+#Leave this untouched
 config-version: 3.2
+
+#Leave this untouched
+goals-config-version: 1.0
 
 #This messaged is showed each time /playtime is executed.
 #Available placeholders: %PLAYTIME%, %PLAYER_NAME%

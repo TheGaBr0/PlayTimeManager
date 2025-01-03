@@ -30,7 +30,8 @@ public class PlayTimeManager extends JavaPlugin{
     private Configuration config;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-
+    private final String CONFIGVERSION = "3.2";
+    private final String GOALSCONFIGVERSION = "1.0";
 
     @Override
     public void onEnable() {
@@ -43,12 +44,20 @@ public class PlayTimeManager extends JavaPlugin{
         this.db = new SQLite(this);
         this.db.load();
 
-        String configVersion = "3.2";
-        if(!config.getVersion().equals(configVersion)){
+
+        if(!config.getVersion().equals(CONFIGVERSION)){
             Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Old config version detected, updating it to the latest one...");
             updateConfigFile();
 
-            Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ configVersion);
+            Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ CONFIGVERSION);
+
+        }
+
+        if(!config.getGoalsVersion().equals(GOALSCONFIGVERSION)){
+            Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Old goals config version detected, updating it to the latest one...");
+            updateGoalsConfigFile();
+
+            Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ GOALSCONFIGVERSION);
 
         }
 
@@ -120,16 +129,6 @@ public class PlayTimeManager extends JavaPlugin{
                     Bukkit.getServer().getConsoleSender().sendMessage("§4[§cPlayTime§4Manager§4] §4ERROR: §cLuckPerms is configured but not installed! Goal check will be started.");
                     return false;
                 }
-
-            case "permissionsex":
-                if (Bukkit.getPluginManager().getPlugin("PermissionsEx") != null) {
-                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 PermissionsEx detected! Launching related functions");
-                    return true;
-                } else {
-                    Bukkit.getServer().getConsoleSender().sendMessage("§4[§cPlayTime§4Manager§4] §4ERROR: §cPermissionsEx is configured but not installed! Goal check will be started.");
-                    return false;
-                }
-
             default:
                 Bukkit.getServer().getConsoleSender().sendMessage("§4[§cPlayTime§4Manager§4] §4ERROR: §cInvalid permissions plugin configured: " + configuredPlugin + ". Goal check will be started.");
                 return false;
@@ -150,7 +149,7 @@ public class PlayTimeManager extends JavaPlugin{
         for (Map.Entry<String, Long> entry : dbgroups.entrySet()) {
             String name = entry.getKey();   // goal name (String)
             Long time = entry.getValue(); // goal time (Long)
-            Goal g = new Goal(this, name, time);
+            Goal g = new Goal(this, name, time, true);
             g.addPermission("group."+name);
         }
 
@@ -173,4 +172,6 @@ public class PlayTimeManager extends JavaPlugin{
         //---------------------------------
         config.reload();
     }
+
+    private void updateGoalsConfigFile(){}
 }

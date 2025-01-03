@@ -1,4 +1,3 @@
-// GoalSettingsGui.java
 package GUIs;
 
 import Goals.Goal;
@@ -19,24 +18,18 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-/**
- * GUI for managing goal settings in the PlayTime Manager plugin.
- */
 public class GoalSettingsGui implements InventoryHolder, Listener {
-    // Constants
     private static final int GUI_SIZE = 27;
-
-    // GUI components
     private Inventory inventory;
     private Goal goal;
     private Object previousGui;
 
-    // Slot mappings for main menu
     private static final class Slots {
         static final int TIME_SETTING = 10;
         static final int PERMISSIONS = 12;
         static final int GOAL_MESSAGE = 14;
         static final int GOAL_SOUND = 16;
+        static final int ACTIVATION_STATUS = 20;
         static final int DELETE_GOAL = 22;
         static final int BACK_BUTTON = 26;
     }
@@ -76,6 +69,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 slot == Slots.PERMISSIONS ||
                 slot == Slots.GOAL_MESSAGE ||
                 slot == Slots.GOAL_SOUND ||
+                slot == Slots.ACTIVATION_STATUS ||
                 slot == Slots.DELETE_GOAL ||
                 slot == Slots.BACK_BUTTON;
     }
@@ -111,6 +105,13 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text("§e§lGoal Sound"),
                 Component.text("§7Current: §f" + goal.getGoalSound()),
                 Component.text("§7Click to change the sound")
+        ));
+
+        // Activation status button
+        inventory.setItem(Slots.ACTIVATION_STATUS, createGuiItem(
+                goal.isActive() ? Material.GREEN_CONCRETE : Material.RED_CONCRETE,
+                Component.text(goal.isActive() ? "§a§lGoal Active" : "§c§lGoal Inactive"),
+                Component.text("§7Click to " + (goal.isActive() ? "deactivate" : "activate") + " this goal")
         ));
 
         // Delete button
@@ -171,6 +172,11 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 player.closeInventory();
                 break;
 
+            case Slots.ACTIVATION_STATUS:
+                goal.setActivation(!goal.isActive());
+                initializeItems();
+                break;
+
             case Slots.DELETE_GOAL:
                 handleDeleteGoal(player);
                 break;
@@ -194,7 +200,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                     ((AllGoalsGui) previousGui).openInventory(player);
                 }
             } else {
-                // Reopen this GUI if they clicked no
                 openInventory(player);
             }
         });
@@ -230,6 +235,10 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                                 AnvilGUI.ResponseAction.updateTitle("Invalid format!", true)
                         );
                     }
+                })
+                .onClose(state -> {
+                    // Reopen the PermissionsGui when the anvil is closed
+                    Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(state.getPlayer()));
                 })
                 .text(formatTime(goal.getTime()))
                 .title("Format: 1d, 2h, 3m, 4s")
@@ -315,8 +324,4 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
             }
         }
     }
-
-
-
-
 }

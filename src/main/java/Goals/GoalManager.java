@@ -52,7 +52,7 @@ public class GoalManager {
             if (goalFiles != null) {
                 for (File file : goalFiles) {
                     String goalName = file.getName().replace(".yml", "");
-                    new Goal(plugin, goalName, 0L); // Time ad group will be loaded from file in Goal constructor
+                    new Goal(plugin, goalName, 0L, false); // Time ad group will be loaded from file in Goal constructor
                 }
             }
         }

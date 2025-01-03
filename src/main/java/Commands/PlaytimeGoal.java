@@ -3,7 +3,6 @@ package Commands;
 import GUIs.AllGoalsGui;
 import Goals.Goal;
 import Goals.GoalManager;
-import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.kyori.adventure.inventory.Book;
 import net.kyori.adventure.text.Component;
@@ -15,12 +14,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class PlaytimeGoal implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final String[] SUBCOMMANDS = {"set", "remove", "list", "gui"};
-    private final String[] SUBSUBCOMMANDS = {"setTime:"};
+    private final String[] SUBSUBCOMMANDS = {"time:", "activate:"};
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
@@ -46,28 +44,33 @@ public class PlaytimeGoal implements TabExecutor {
                 return true;
             case "set":
                 if (args.length < 2) {
-                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtimegoal set <goalName> setTime:<time>]");
+                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtimegoal set <goalName> [time:<time>] [activate:true|false]");
                     return false;
                 }
 
                 goalName = args[1];
-                String setTime = null;
+                String time = null;
+                boolean activate = false;
 
-                // Process optional arguments: setTime
+                // Process optional arguments
                 for (int i = 2; i < args.length; i++) {
-                    if (args[i].startsWith("setTime:")) {
-                        if (setTime != null) {
-                            sender.sendMessage("[§6PlayTime§eManager§f]§7 Duplicate setTime argument!");
+                    if (args[i].startsWith("time:")) {
+                        time = args[i].substring(5);
+                        if (time.isEmpty()) {
+                            sender.sendMessage("[§6PlayTime§eManager§f]§7 Missing time value!");
                             return false;
                         }
-                        setTime = args[i].substring(8); // Extract time value after "setTime:"
-                        if (setTime.isEmpty()) {
-                            sender.sendMessage("[§6PlayTime§eManager§f]§7 Missing time value for setTime!");
-                            return false;
-                        }
-                        long timeToTicks = parseTime(setTime);
+                        long timeToTicks = parseTime(time);
                         if (timeToTicks == -1) {
                             sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid time format!");
+                            return false;
+                        }
+                    } else if (args[i].startsWith("activate:")) {
+                        String activateValue = args[i].substring(9).toLowerCase();
+                        if (activateValue.equals("true")) {
+                            activate = true;
+                        } else if (!activateValue.equals("false")) {
+                            sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid activate value! Use true or false");
                             return false;
                         }
                     } else {
@@ -76,7 +79,7 @@ public class PlaytimeGoal implements TabExecutor {
                     }
                 }
 
-                setGoal(sender, goalName, setTime != null ? parseTime(setTime) : null);
+                setGoal(sender, goalName, time != null ? parseTime(time) : null, activate);
                 break;
             case "remove":
                 if (args.length < 2) {
@@ -127,7 +130,7 @@ public class PlaytimeGoal implements TabExecutor {
         return timeToTicks;
     }
 
-    private void setGoal(CommandSender sender, String goalName, Long time) {
+    private void setGoal(CommandSender sender, String goalName, Long time, boolean activate) {
         Goal g = GoalManager.getGoal(goalName);
         StringBuilder message = new StringBuilder();
 
@@ -136,15 +139,18 @@ public class PlaytimeGoal implements TabExecutor {
             if(time != null)
                 g.setTime(time);
         } else {
-            g = new Goal(plugin, goalName, time);
+            g = new Goal(plugin, goalName, time, activate);
             message.append("[§6PlayTime§eManager§f]§7 Goal §e").append(goalName).append(" §7created:\n");
         }
+
+        g.setActivation(activate);
 
         long gTime = g.getTime();
         if(gTime == Long.MAX_VALUE)
             message.append("§7- Required time to reach the goal: §6None\n");
         else
             message.append("§7- Required time to reach the goal: §6").append(convertTime(gTime / 20)).append("\n");
+        message.append("§7- Active: ").append(activate ? "§a" : "§c").append(activate).append("\n");
 
         sender.sendMessage(message.toString());
 
@@ -197,10 +203,8 @@ public class PlaytimeGoal implements TabExecutor {
 
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("set")) {
-                // Suggest goal names for the "set" subcommand
                 StringUtil.copyPartialMatches(args[1], GoalManager.getGoalsNames(), completions);
             } else if (args[0].equalsIgnoreCase("remove")) {
-                // Suggest existing goal names for the "remove" subcommand
                 StringUtil.copyPartialMatches(args[1], GoalManager.getGoalsNames(), completions);
             }
             return completions;
@@ -209,7 +213,7 @@ public class PlaytimeGoal implements TabExecutor {
         if (args.length >= 3 && args[0].equalsIgnoreCase("set")) {
             List<String> availableSubSubCommands = new ArrayList<>(Arrays.asList(SUBSUBCOMMANDS));
 
-            // Check if any of the subsubcommands are already present
+            // Remove already used arguments
             for (int i = 2; i < args.length - 1; i++) {
                 for (String subSubCmd : SUBSUBCOMMANDS) {
                     if (args[i].startsWith(subSubCmd)) {
@@ -218,9 +222,7 @@ public class PlaytimeGoal implements TabExecutor {
                 }
             }
 
-            // Suggest remaining subsubcommands
             StringUtil.copyPartialMatches(args[args.length - 1], availableSubSubCommands, completions);
-
             return completions;
         }
 
@@ -258,12 +260,16 @@ public class PlaytimeGoal implements TabExecutor {
             Goal goal = goalList.get(i);
             String goalName = goal.getName();
             long timeRequired = goal.getTime();
+            boolean isActive = goal.isActive();
 
             Component pageContent = Component.text()
                     .append(Component.text("Name: ").color(TextColor.color(0xFFAA00)))
                     .append(Component.text(goalName + "\n\n"))
                     .append(Component.text("Time: ").color(TextColor.color(0xFFAA00)))
                     .append(Component.text(timeRequired == Long.MAX_VALUE ? "None\n\n" : convertTime(timeRequired / 20) + "\n\n"))
+                    .append(Component.text("Active: ").color(TextColor.color(0xFFAA00)))
+                    .append(Component.text(String.valueOf(isActive)).color(isActive ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
+                    .append(Component.text("\n\n"))
                     .build();
 
             pages.add(pageContent);

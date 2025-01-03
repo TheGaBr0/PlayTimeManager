@@ -162,4 +162,12 @@ public class Configuration {
         else
             return version;
     }
+
+    public String getGoalsVersion(){
+        String version = config.getString("goals-config-version");
+        if(version == null)
+            return "null";
+        else
+            return version;
+    }
 }

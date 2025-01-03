@@ -19,12 +19,14 @@ public class Goal {
     private ArrayList<String> permissions = new ArrayList<>();
     private String goalMessage;
     private String goalSound;
+    private boolean active;
 
-    public Goal(PlayTimeManager plugin, String name, Long time) {
+    public Goal(PlayTimeManager plugin, String name, Long time, boolean active) {
         this.plugin = plugin;
         this.name = name;
         this.time = time == null ? Long.MAX_VALUE : time;
         this.goalFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + name + ".yml");
+        this.active = active;
         loadFromFile();
         saveToFile();
 
@@ -38,9 +40,8 @@ public class Goal {
             time = config.getLong("Time", time);
             goalMessage = config.getString("goal-message", getDefaultGoalMessage());
             goalSound = config.getString("goal-sound", getDefaultGoalSound());
-            // Ensure permissions is a valid list
             permissions = new ArrayList<>(config.getStringList("Permissions"));
-
+            active = config.getBoolean("active", false);
         } else {
             goalMessage = getDefaultGoalMessage();
             goalSound = getDefaultGoalSound();
@@ -65,12 +66,22 @@ public class Goal {
                     "goal-message is showed to a player if it reaches the time specified in this config.",
                     "Available placeholders: %TIME_REQUIRED%, %PLAYER_NAME%",
                     "---------------------------",
+                    "active determines whether this goal is enabled and being checked by the plugin",
+                    "Set to 'true' to enable the goal and track player progress",
+                    "Set to 'false' (default option) to disable the goal without deleting it",
+                    "This is useful for:",
+                    "- Temporarily disabling goals without removing them",
+                    "- Testing new goals before making them live",
+                    "- Managing seasonal or event-specific goals",
+                    "---------------------------",
                     "permissions defines what permissions will be granted to a player when they reach this goal",
-                    "You can specify multiple permissions that will all be granted"
+                    "You can specify multiple permissions and groups that will all be granted. The plugin will assume that",
+                    "the group has already been created using the permissions manager plugin specified in the main config."
             ));
             config.set("Time", time);
             config.set("goal-sound", goalSound);
             config.set("goal-message", goalMessage);
+            config.set("active", active);
             config.set("Permissions", permissions);
             config.save(goalFile);
         } catch (IOException e) {
@@ -117,11 +128,20 @@ public class Goal {
 
     public void setGoalMessage(String goalMessage){
         this.goalMessage = goalMessage;
+        saveToFile();
     }
 
     public void setGoalSound(String goalSound){
         this.goalSound = goalSound;
+        saveToFile();
     }
+
+    public void setActivation(boolean activation){
+        this.active = activation;
+        saveToFile();
+    }
+
+    public boolean isActive(){ return active; }
 
     public void kill() {
         GoalManager.removeGoal(this);

@@ -95,8 +95,9 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.GOAL_MESSAGE, createGuiItem(
                 Material.OAK_SIGN,
                 Component.text("§e§lGoal Message"),
-                Component.text("§7Current: §f" + goal.getGoalMessage()),
-                Component.text("§7Click to modify the message")
+                Component.text("§cTo update this message, please edit the"),
+                Component.text("§c'" + goal.getName() + ".yaml' configuration file."),
+                Component.text("§cModification via GUI is not currently supported.")
         ));
 
         // Sound button
@@ -104,7 +105,9 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Material.NOTE_BLOCK,
                 Component.text("§e§lGoal Sound"),
                 Component.text("§7Current: §f" + goal.getGoalSound()),
-                Component.text("§7Click to change the sound")
+                Component.text("§cTo update this message, please edit the"),
+                Component.text("§c'" + goal.getName() + ".yaml' configuration file."),
+                Component.text("§cModification via GUI is not currently supported.")
         ));
 
         // Activation status button
@@ -164,12 +167,10 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
             case Slots.GOAL_MESSAGE:
                 // TODO: Implement message editing
-                player.closeInventory();
                 break;
 
             case Slots.GOAL_SOUND:
                 // TODO: Implement sound editing
-                player.closeInventory();
                 break;
 
             case Slots.ACTIVATION_STATUS:

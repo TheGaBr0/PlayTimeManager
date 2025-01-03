@@ -84,7 +84,7 @@ public class SQLite extends PlayTimeDatabase {
         }
     }
 
-    public String createBackup() {
+    public void createBackup() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
         String timestamp = dateFormat.format(new Date());
         String backupFileName = "backup_" + timestamp + ".zip";
@@ -109,12 +109,9 @@ public class SQLite extends PlayTimeDatabase {
             String readme = createReadmeContent(timestamp, dbFile);
             addTextToZip("README.txt", readme, zos);
 
-            return backupFile.getAbsolutePath();
-
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to create backup: " + e.getMessage());
             e.printStackTrace();
-            return null;
         }
     }
 

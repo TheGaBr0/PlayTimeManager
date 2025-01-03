@@ -130,7 +130,6 @@ public class OnlineUsersManager{
                                 // Play sound
                                 try {
                                     configSound = goal.getGoalSound();
-                                    plugin.getLogger().info(configSound);
                                     Sound sound = Sound.valueOf(configSound);
                                     p.playSound(p.getLocation(), sound, 10, 0);
                                 } catch (IllegalArgumentException exception) {

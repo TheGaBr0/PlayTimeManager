@@ -126,11 +126,11 @@ public class PlayTimeManager extends JavaPlugin{
                     Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 LuckPerms detected! Launching related functions");
                     return true;
                 } else {
-                    Bukkit.getServer().getConsoleSender().sendMessage("§4[§cPlayTime§4Manager§4] §4ERROR: §cLuckPerms is configured but not installed! Goal check will be started.");
+                    this.getLogger().severe("ERROR: LuckPerms is configured in config.yml but not installed! Goal check will be disabled.");
                     return false;
                 }
             default:
-                Bukkit.getServer().getConsoleSender().sendMessage("§4[§cPlayTime§4Manager§4] §4ERROR: §cInvalid permissions plugin configured: " + configuredPlugin + ". Goal check will be started.");
+                this.getLogger().severe("ERROR: Invalid permissions plugin configured: " + configuredPlugin + ". Goal check will be started.");
                 return false;
         }
     }

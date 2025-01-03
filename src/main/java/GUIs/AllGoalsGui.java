@@ -23,10 +23,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class AllGoalsGui implements InventoryHolder, Listener {
 
@@ -45,7 +44,11 @@ public class AllGoalsGui implements InventoryHolder, Listener {
     public void initializeItems() {
         int leftIndex = 9;
         int rightIndex = 17;
-        Set<Goal> goals = GoalManager.getGoals();
+
+        List<Goal> sortedGoals = GoalManager.getGoals().stream()
+                .sorted(Comparator.comparing(Goal::getName)) // Sort by name
+                .toList();
+
         protectedSlots.clear();
         inv.clear();
 
@@ -59,9 +62,9 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             }
         }
 
-        if(!goals.isEmpty()) {
+        if(!sortedGoals.isEmpty()) {
             int slot = 0;
-            for(Goal goal : goals) {
+            for(Goal goal : sortedGoals) {
                 // Find next available slot
                 while(protectedSlots.contains(slot)) slot++;
                 if(slot >= 54) break; // Stop if inventory is full

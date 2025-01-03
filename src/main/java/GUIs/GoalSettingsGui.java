@@ -182,11 +182,25 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     }
 
     private void handleDeleteGoal(Player player) {
-        if (previousGui != null) {
-            goal.kill();
-            player.closeInventory();
-            ((AllGoalsGui) previousGui).openInventory(player);
-        }
+        ItemStack goalItem = createGuiItem(
+                Material.BARRIER,
+                Component.text("§c§lDelete Goal: " + goal.getName())
+        );
+
+        ConfirmationGui confirmationGui = new ConfirmationGui(goalItem, (confirmed) -> {
+            if (confirmed) {
+                goal.kill();
+                if (previousGui != null) {
+                    ((AllGoalsGui) previousGui).openInventory(player);
+                }
+            } else {
+                // Reopen this GUI if they clicked no
+                openInventory(player);
+            }
+        });
+
+        player.closeInventory();
+        confirmationGui.openInventory(player);
     }
 
     private void handleBackButton(Player player) {

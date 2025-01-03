@@ -61,15 +61,17 @@ public class OnlineUsersManager{
         return null;
     }
 
-    public void restartSchedule(){
-        // Cancel the existing schedule
+    public void restartSchedule() {
         if (schedule != null) {
             schedule.cancel();
         }
 
-        // Create a new task and assign it to the schedule variable
         schedule = new BukkitRunnable() {
             public void run() {
+
+                if(!plugin.isPermissionsManagerConfigured())
+                    return;
+
                 Player p;
                 PlayTimeDatabase db = plugin.getDatabase();
                 if (plugin.getConfiguration().getGoalsCheckVerbose())
@@ -77,51 +79,73 @@ public class OnlineUsersManager{
                             + convertTime(plugin.getConfiguration().getGoalsCheckRate()) +
                             ".\n If you find this message annoying you can deactivate it by changing §6goal-check-verbose " +
                             "§7in the config.yml");
-                // Get groups from configuration
+
                 Set<Goal> goals = GoalManager.getGoals();
 
                 if (goals.isEmpty()) {
                     schedule.cancel();
                     Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 No goal has been detected, " +
                             "goal check canceled.");
-
                 }
 
-                // Iterate through online users
                 for (OnlineUser onlineUser : onlineUsers) {
                     for (Goal goal : GoalManager.getGoals()) {
                         p = Bukkit.getPlayerExact(onlineUser.getNickname());
 
                         if (p != null) {
-
                             if (!db.hasCompletedGoal(p.getUniqueId().toString(), goal.getName())
-                                    && onlineUser.getPlaytime() >= goal.getTime()){
+                                    && onlineUser.getPlaytime() >= goal.getTime()) {
 
+                                // Mark goal as completed
                                 db.markGoalAsCompleted(p.getUniqueId().toString(), goal.getName());
 
-                                try{
+                                // Assign permissions
+                                ArrayList<String> permissions = goal.getPermissions();
+                                if (permissions != null && !permissions.isEmpty()) {
+                                    for (String permission : permissions) {
+                                        try {
+                                            if (permission.startsWith("group.")) {
+                                                // Extract the group name by removing the "group." prefix
+                                                String groupName = permission.substring(6); // "group.".length() == 6
+                                                // Add player to the group
+                                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+                                                        "lp user " + p.getName() + " parent add " + groupName);
+                                            } else {
+                                                // Add regular permission to the player
+                                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+                                                        "lp user " + p.getName() + " permission set " + permission);
+                                            }
+                                        } catch (Exception e) {
+                                            plugin.getLogger().severe("[§6PlayTime§eManager§f]§7 Failed to assign " +
+                                                    (permission.startsWith("group.") ? "group " : "permission ") +
+                                                    permission + " to player " + p.getName() + ": " + e.getMessage());
+                                        }
+                                    }
+                                }
+
+                                // Play sound
+                                try {
                                     configSound = goal.getGoalSound();
                                     plugin.getLogger().info(configSound);
                                     Sound sound = Sound.valueOf(configSound);
                                     p.playSound(p.getLocation(), sound, 10, 0);
-                                }catch(IllegalArgumentException exception){
+                                } catch (IllegalArgumentException exception) {
                                     plugin.getLogger().severe(configSound + " is not a valid argument for goal-sound" +
-                                            "setting in "+goal.getName()+".yaml");
+                                            "setting in " + goal.getName() + ".yaml");
                                 }
 
+                                // Send message
                                 configMessage = replacePlaceholders(goal.getGoalMessage(), p, goal);
-
                                 p.sendMessage(configMessage);
 
                                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 User §e"
                                         + onlineUser.getNickname() + " §7has reached §6" +
-                                        convertTime(goal.getTime() / 20)+"§7!");
+                                        convertTime(goal.getTime() / 20) + "§7!");
                             }
                         }
                     }
                 }
             }
-
         }.runTaskTimer(plugin, 0, plugin.getConfiguration().getGoalsCheckRate() * 20);
     }
 

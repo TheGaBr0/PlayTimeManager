@@ -57,13 +57,16 @@ public class Goal {
 
             FileConfiguration config = new YamlConfiguration();
             config.options().setHeader(Arrays.asList(
-                    "# GUIDE OF AVAILABLE OPTIONS:",
-                    "# ---------------------------",
-                    "# goal-sound is played to a player if it reaches the time specified in this config.",
-                    "# A list of available sounds can be found here: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html",
-                    "# ---------------------------",
-                    "# goal-message is showed to a player if it reaches the time specified in this config.",
-                    "# Available placeholders: %TIME_REQUIRED%, %PLAYER_NAME%"
+                    "GUIDE OF AVAILABLE OPTIONS:",
+                    "---------------------------",
+                    "goal-sound is played to a player if it reaches the time specified in this config.",
+                    "A list of available sounds can be found here: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html",
+                    "---------------------------",
+                    "goal-message is showed to a player if it reaches the time specified in this config.",
+                    "Available placeholders: %TIME_REQUIRED%, %PLAYER_NAME%",
+                    "---------------------------",
+                    "permissions defines what permissions will be granted to a player when they reach this goal",
+                    "You can specify multiple permissions that will all be granted"
             ));
             config.set("Time", time);
             config.set("goal-sound", goalSound);

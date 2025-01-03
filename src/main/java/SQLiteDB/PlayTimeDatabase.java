@@ -585,16 +585,31 @@ public abstract class PlayTimeDatabase {
     }
 
     public boolean hasCompletedGoal(String uuid, String goalName) {
+        String query = "SELECT completed_goals FROM play_time WHERE uuid = ?";
+
         try (Connection conn = getSQLConnection();
-             Statement stmt = conn.createStatement()) {
-            var rs = stmt.executeQuery(
-                    "SELECT completed_goals FROM play_time WHERE uuid = '" + uuid + "'"
-            );
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, uuid);
+            var rs = stmt.executeQuery();
+
             if (rs.next()) {
                 String completedGoals = rs.getString("completed_goals");
-                return completedGoals != null && completedGoals.contains(goalName);
+                if (completedGoals == null) {
+                    return false;
+                }
+
+                // Split the goals string into individual goals and check for exact matches
+                // goals are comma-separated
+                String[] goals = completedGoals.split(",");
+                for (String goal : goals) {
+                    if (goal.trim().equals(goalName)) {
+                        return true;
+                    }
+                }
             }
             return false;
+
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -602,13 +617,16 @@ public abstract class PlayTimeDatabase {
     }
 
     public void markGoalAsCompleted(String uuid, String goalName) {
-        try (Connection conn = getSQLConnection();
-             Statement stmt = conn.createStatement()) {
+        String selectQuery = "SELECT completed_goals FROM play_time WHERE uuid = ?";
+        String updateQuery = "UPDATE play_time SET completed_goals = ? WHERE uuid = ?";
 
-            // get already completed goals
-            var rs = stmt.executeQuery(
-                    "SELECT completed_goals FROM play_time WHERE uuid = '" + uuid + "'"
-            );
+        try (Connection conn = getSQLConnection();
+             PreparedStatement selectStmt = conn.prepareStatement(selectQuery);
+             PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
+
+            // Get already completed goals
+            selectStmt.setString(1, uuid);
+            var rs = selectStmt.executeQuery();
 
             String completedGoals = "";
             if (rs.next()) {
@@ -616,17 +634,24 @@ public abstract class PlayTimeDatabase {
                 completedGoals = existing != null ? existing : "";
             }
 
-            // add the new goal if not present
-            if (!completedGoals.contains(goalName)) {
+            // Split existing goals and check for exact match
+            boolean hasGoal = false;
+            if (!completedGoals.isEmpty()) {
+                String[] goals = completedGoals.split(",");
+                hasGoal = Arrays.stream(goals)
+                        .anyMatch(goal -> goal.trim().equals(goalName));
+            }
+
+            // Add the new goal if not present
+            if (!hasGoal) {
                 if (!completedGoals.isEmpty()) {
                     completedGoals += ",";
                 }
                 completedGoals += goalName;
 
-                stmt.executeUpdate(
-                        "UPDATE play_time SET completed_goals = '" + completedGoals + "' " +
-                                "WHERE uuid = '" + uuid + "'"
-                );
+                updateStmt.setString(1, completedGoals);
+                updateStmt.setString(2, uuid);
+                updateStmt.executeUpdate();
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -634,10 +659,14 @@ public abstract class PlayTimeDatabase {
     }
 
     public void cleanupDeletedGoals(List<String> validGoalNames) {
-        try (Connection conn = getSQLConnection();
-             Statement stmt = conn.createStatement()) {
+        String selectQuery = "SELECT uuid, completed_goals FROM play_time";
+        String updateQuery = "UPDATE play_time SET completed_goals = ? WHERE uuid = ?";
 
-            var rs = stmt.executeQuery("SELECT uuid, completed_goals FROM play_time");
+        try (Connection conn = getSQLConnection();
+             PreparedStatement selectStmt = conn.prepareStatement(selectQuery);
+             PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
+
+            var rs = selectStmt.executeQuery();
             while (rs.next()) {
                 String uuid = rs.getString("uuid");
                 String completedGoals = rs.getString("completed_goals");
@@ -649,10 +678,9 @@ public abstract class PlayTimeDatabase {
                             .filter(validGoalNames::contains)
                             .collect(Collectors.joining(","));
 
-                    stmt.executeUpdate(
-                            "UPDATE play_time SET completed_goals = '" + newCompletedGoals + "' " +
-                                    "WHERE uuid = '" + uuid + "'"
-                    );
+                    updateStmt.setString(1, newCompletedGoals);
+                    updateStmt.setString(2, uuid);
+                    updateStmt.executeUpdate();
                 }
             }
         } catch (SQLException e) {

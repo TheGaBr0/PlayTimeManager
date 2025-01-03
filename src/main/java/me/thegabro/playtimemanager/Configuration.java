@@ -16,11 +16,11 @@ public class Configuration {
     private File file;
     private final File path;
     private final String name;
-    private HashMap<String, Long> groups;
     private long goalsCheckRate;
     private boolean goalsCheckVerbose;
     private String playtimeSelfMessage;
     private String playtimeOthersMessage;
+    private String permissionsManagerPlugin;
 
     public Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
         this.path = path;
@@ -30,8 +30,6 @@ public class Configuration {
         create();
         reload();
     }
-
-    //Getters, variables and constructors
 
     private void save() {
         try {
@@ -54,6 +52,7 @@ public class Configuration {
         reloadConfig();
         updateGoalsSettings();
         updateMessages();
+        updatePermissionsSettings();
     }
 
     private void create() {
@@ -75,7 +74,6 @@ public class Configuration {
         }
     }
 
-
     private void updateMessages(){
         this.playtimeSelfMessage = config.getString("playtime-self-message");
         this.playtimeOthersMessage = config.getString("playtime-others-message");
@@ -86,6 +84,9 @@ public class Configuration {
         this.goalsCheckVerbose = config.getBoolean("goal-check-verbose");
     }
 
+    private void updatePermissionsSettings() {
+        this.permissionsManagerPlugin = config.getString("permissions-manager-plugin", "luckperms");
+    }
 
     public long getGoalsCheckRate(){
         return goalsCheckRate;
@@ -109,6 +110,17 @@ public class Configuration {
         }
     }
 
+    public String getPermissionsManagerPlugin() {
+        return permissionsManagerPlugin;
+    }
+
+    public void setPermissionsManagerPlugin(String plugin) {
+        if (plugin != null) {
+            config.set("permissions-manager-plugin", plugin.toLowerCase());
+            save();
+        }
+    }
+
     //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
     //---------------------------------
     public long getLuckPermsCheckRate(){
@@ -119,7 +131,6 @@ public class Configuration {
         return config.getBoolean("luckperms-check-verbose");
     }
     //---------------------------------
-
 
     public String getPlaytimeSelfMessage(){
         return playtimeSelfMessage;

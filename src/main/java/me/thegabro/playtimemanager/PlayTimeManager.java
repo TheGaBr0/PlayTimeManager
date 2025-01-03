@@ -4,6 +4,7 @@ import Commands.*;
 import Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import Events.JoinEventManager;
 import GUIs.AllGoalsGui;
+import GUIs.ConfirmationGui;
 import GUIs.GoalSettingsGui;
 import GUIs.PermissionsGui;
 import Goals.Goal;
@@ -28,6 +29,8 @@ public class PlayTimeManager extends JavaPlugin{
     private OnlineUsersManager onlineUsersManager;
     private Configuration config;
     private PlayTimeDatabase db;
+    private boolean permissionsManagerConfigured;
+
 
     @Override
     public void onEnable() {
@@ -52,6 +55,7 @@ public class PlayTimeManager extends JavaPlugin{
 
         onlineUsersManager = new OnlineUsersManager();
 
+        permissionsManagerConfigured = checkPermissionsPlugin();
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlayTimePlaceHolders().register();
@@ -62,6 +66,7 @@ public class PlayTimeManager extends JavaPlugin{
         getServer().getPluginManager().registerEvents(new AllGoalsGui(), this);
         getServer().getPluginManager().registerEvents(new GoalSettingsGui(), this);
         getServer().getPluginManager().registerEvents(new PermissionsGui(), this);
+        getServer().getPluginManager().registerEvents(new ConfirmationGui(), this);
 
         Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeGoal());
         Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {});
@@ -101,6 +106,36 @@ public class PlayTimeManager extends JavaPlugin{
 
     public PlayTimeDatabase getDatabase() { return this.db; }
 
+    public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
+
+    private boolean checkPermissionsPlugin() {
+        String configuredPlugin = config.getPermissionsManagerPlugin().toLowerCase();
+
+        switch (configuredPlugin) {
+            case "luckperms":
+                if (Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
+                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 LuckPerms detected! Launching related functions");
+                    return true;
+                } else {
+                    Bukkit.getServer().getConsoleSender().sendMessage("§4[§cPlayTime§4Manager§4] §4ERROR: §cLuckPerms is configured but not installed! Goal check will be started.");
+                    return false;
+                }
+
+            case "permissionsex":
+                if (Bukkit.getPluginManager().getPlugin("PermissionsEx") != null) {
+                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 PermissionsEx detected! Launching related functions");
+                    return true;
+                } else {
+                    Bukkit.getServer().getConsoleSender().sendMessage("§4[§cPlayTime§4Manager§4] §4ERROR: §cPermissionsEx is configured but not installed! Goal check will be started.");
+                    return false;
+                }
+
+            default:
+                Bukkit.getServer().getConsoleSender().sendMessage("§4[§cPlayTime§4Manager§4] §4ERROR: §cInvalid permissions plugin configured: " + configuredPlugin + ". Goal check will be started.");
+                return false;
+        }
+    }
+
     private void updateConfigFile(){
         String playtimeSelfMessage = config.getPlaytimeSelfMessage();
         String playtimeOthersMessage = config.getPlaytimeOthersMessage();
@@ -116,6 +151,7 @@ public class PlayTimeManager extends JavaPlugin{
             String name = entry.getKey();   // goal name (String)
             Long time = entry.getValue(); // goal time (Long)
             Goal g = new Goal(this, name, time);
+            g.addPermission("group."+name);
         }
 
         db.dropGroupsTable();

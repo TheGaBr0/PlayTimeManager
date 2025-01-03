@@ -33,4 +33,9 @@ goal-check-rate: 900
 #Set this to false to remove debug messages on console
 goal-check-verbose: true
 
+#Specify which permissions plugin to use when assigning permissions and groups to a player
+#Available options: "luckperms"
+#You can suggest support for more permissions manager plugin if missing!
+permissions-manager-plugin: "luckperms"
+
 

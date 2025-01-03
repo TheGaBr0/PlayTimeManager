@@ -89,12 +89,25 @@ public class PermissionsGui implements InventoryHolder, Listener {
         // Display permissions
         for (int i = 0; i < PERMISSIONS_PER_PAGE && (startIndex + i) < permissions.size(); i++) {
             String permission = permissions.get(startIndex + i);
-            inventory.setItem(i, parentGui.createGuiItem(
-                    Material.PAPER,
-                    Component.text("§e" + permission),
-                    Component.text("§7Click to edit"),
-                    Component.text("§cRight-click to remove")
-            ));
+
+            if (permission.startsWith("group.")) {
+                inventory.setItem(i, parentGui.createGuiItem(
+                        Material.BOOK,
+                        Component.text("§e" + permission),
+                        Component.text("§7Click to edit"),
+                        Component.text("§cRight-click to remove"),
+                        Component.text(""),  // Empty line for spacing
+                        Component.text("§4§lMake sure the group '" + permission.substring(6) + "'"),
+                        Component.text("§4§lhas been created in LuckPerms!")
+                ));
+            } else {
+                inventory.setItem(i, parentGui.createGuiItem(
+                        Material.PAPER,
+                        Component.text("§e" + permission),
+                        Component.text("§7Click to edit"),
+                        Component.text("§cRight-click to remove")
+                ));
+            }
         }
 
         addControlButtons();
@@ -165,10 +178,7 @@ public class PermissionsGui implements InventoryHolder, Listener {
                 parentGui.openInventory(whoClicked);
             }
             case Slots.DELETE_ALL -> {
-                whoClicked.closeInventory();
-                for(String p: new ArrayList<>(goal.getPermissions()))
-                    goal.removePermission(p);
-                openInventory(whoClicked);
+                handleDeleteAll(whoClicked);
             }
             default -> {
                 if (slot < PERMISSIONS_PER_PAGE && clickedItem.getType() == Material.PAPER) {
@@ -239,5 +249,28 @@ public class PermissionsGui implements InventoryHolder, Listener {
                 .title("Edit Permission")
                 .plugin(PlayTimeManager.getPlugin(PlayTimeManager.class))
                 .open(player);
+    }
+
+    private void handleDeleteAll(Player whoClicked) {
+        ItemStack warningItem = parentGui.createGuiItem(
+                Material.BARRIER,
+                Component.text("§c§lDelete All Permissions"),
+                Component.text("§7This will remove all permissions from this goal")
+        );
+
+        ConfirmationGui confirmationGui = new ConfirmationGui(warningItem, (confirmed) -> {
+            if (confirmed) {
+                for(String p: new ArrayList<>(goal.getPermissions())) {
+                    goal.removePermission(p);
+                }
+                openInventory(whoClicked);
+            } else {
+                // Reopen permissions GUI if they clicked no
+                openInventory(whoClicked);
+            }
+        });
+
+        whoClicked.closeInventory();
+        confirmationGui.openInventory(whoClicked);
     }
 }

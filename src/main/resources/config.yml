@@ -33,12 +33,13 @@ playtime-others-message: "[§6PlayTime§eManager§f]§7 The playtime of §e%PLAY
 #Time should be specified as seconds, default is 15 minutes (900s)
 goal-check-rate: 900
 
-#Set this to false to remove debug messages on console
+#Enable or disable debug logging in the console
+#Default: true
 goal-check-verbose: true
 
-#Specify which permissions plugin to use when assigning permissions and groups to a player
+#Choose your permissions management plugin
 #Available options: "luckperms"
-#You can suggest support for more permissions manager plugin if missing!
+#Using a different permissions plugin? Let me know on my GitHub issues page!
 permissions-manager-plugin: "luckperms"
 
 

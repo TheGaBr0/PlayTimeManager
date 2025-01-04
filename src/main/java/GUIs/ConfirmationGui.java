@@ -19,6 +19,14 @@ import java.util.Arrays;
 import java.util.function.Consumer;
 
 public class ConfirmationGui implements InventoryHolder, Listener {
+    private static final int GUI_SIZE = 27;
+
+    private static final class Slots {
+        static final int YES_BUTTON = 11;
+        static final int ITEM_DISPLAY = 13;
+        static final int NO_BUTTON = 15;
+    }
+
     private Inventory inv;
     private ItemStack itemToRemove;
     private Consumer<Boolean> callback;
@@ -26,7 +34,7 @@ public class ConfirmationGui implements InventoryHolder, Listener {
     public ConfirmationGui() {}
 
     public ConfirmationGui(ItemStack itemToRemove, Consumer<Boolean> callback) {
-        this.inv = Bukkit.createInventory(this, 27, Component.text("Confirm removal"));
+        this.inv = Bukkit.createInventory(this, GUI_SIZE, Component.text("Confirm removal"));
         this.itemToRemove = itemToRemove;
         this.callback = callback;
     }
@@ -38,7 +46,7 @@ public class ConfirmationGui implements InventoryHolder, Listener {
 
     public void initializeItems() {
         // Fill background
-        for(int i = 0; i < 27; i++) {
+        for(int i = 0; i < GUI_SIZE; i++) {
             inv.setItem(i, createGuiItem(
                     new ItemStack(Material.BLACK_STAINED_GLASS_PANE, 1),
                     Component.text("§f[§6P.T.M.§f]§7")
@@ -46,17 +54,17 @@ public class ConfirmationGui implements InventoryHolder, Listener {
         }
 
         // Yes/No buttons
-        inv.setItem(11, createGuiItem(
+        inv.setItem(Slots.YES_BUTTON, createGuiItem(
                 new ItemStack(Material.GREEN_CONCRETE, 1),
                 Component.text("§2§lYes")
         ));
-        inv.setItem(15, createGuiItem(
+        inv.setItem(Slots.NO_BUTTON, createGuiItem(
                 new ItemStack(Material.RED_CONCRETE, 1),
                 Component.text("§4§lNo")
         ));
 
         // Item to remove
-        inv.setItem(13, itemToRemove);
+        inv.setItem(Slots.ITEM_DISPLAY, itemToRemove);
     }
 
     private ItemStack createGuiItem(ItemStack item, @Nullable TextComponent name, @Nullable TextComponent... lore) {
@@ -77,9 +85,9 @@ public class ConfirmationGui implements InventoryHolder, Listener {
     public void onGUIClick(Player whoClicked, int slot) {
         whoClicked.closeInventory();
 
-        if (slot == 11) { // Yes clicked
+        if (slot == Slots.YES_BUTTON) {
             callback.accept(true);
-        } else if (slot == 15) { // No clicked
+        } else if (slot == Slots.NO_BUTTON) {
             callback.accept(false);
         }
     }

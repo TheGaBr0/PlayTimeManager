@@ -1,4 +1,4 @@
-package PlaceHolders;
+package ExternalPluginSupport;
 import Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;

@@ -3,6 +3,7 @@ package GUIs;
 import Goals.Goal;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -91,15 +92,35 @@ public class PermissionsGui implements InventoryHolder, Listener {
             String permission = permissions.get(startIndex + i);
 
             if (permission.startsWith("group.")) {
-                inventory.setItem(i, parentGui.createGuiItem(
-                        Material.BOOK,
-                        Component.text("§e" + permission),
-                        Component.text("§7Click to edit"),
-                        Component.text("§cRight-click to remove"),
-                        Component.text(""),  // Empty line for spacing
-                        Component.text("§4§lMake sure the group '" + permission.substring(6) + "'"),
-                        Component.text("§4§lhas been created in LuckPerms!")
-                ));
+                String groupName = permission.substring(6);
+                boolean groupExists = PlayTimeManager.getInstance().isPermissionsManagerConfigured() &&
+                        PlayTimeManager.getInstance().getLuckPermsApi() != null &&
+                        ExternalPluginSupport.LuckPermsManager.getInstance(PlayTimeManager.getInstance()).groupExists(groupName);
+
+                List<Component> lore = new ArrayList<>();
+                lore.add(Component.text("§7Click to edit"));
+                lore.add(Component.text("§cRight-click to remove"));
+                lore.add(Component.text("")); // Empty line for spacing
+
+                if (!groupExists) {
+                    inventory.setItem(i, parentGui.createGuiItem(
+                            Material.BOOK,
+                            Component.text("§e" + permission),
+                            Component.text("§7Click to edit"),
+                            Component.text("§cRight-click to remove"),
+                            Component.text(""),
+                            Component.text("§c⚠ WARNING: Group '" + groupName + "' does not exist!"),
+                            Component.text("§cPlease create this group in LuckPerms"),
+                            Component.text("§cor remove this permission.")
+                    ));
+                } else {
+                    inventory.setItem(i, parentGui.createGuiItem(
+                            Material.BOOK,
+                            Component.text("§e" + permission),
+                            Component.text("§7Click to edit"),
+                            Component.text("§cRight-click to remove")
+                    ));
+                }
             } else {
                 inventory.setItem(i, parentGui.createGuiItem(
                         Material.PAPER,
@@ -181,7 +202,7 @@ public class PermissionsGui implements InventoryHolder, Listener {
                 handleDeleteAll(whoClicked);
             }
             default -> {
-                if (slot < PERMISSIONS_PER_PAGE && clickedItem.getType() == Material.PAPER) {
+                if (slot < PERMISSIONS_PER_PAGE && (clickedItem.getType() == Material.PAPER || clickedItem.getType() == Material.BOOK)) {
                     String permission = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName()).substring(2); // Remove color codes
                     if (action.equals(InventoryAction.PICKUP_HALF)) {
                         // Remove permission (right-click)

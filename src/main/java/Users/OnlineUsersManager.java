@@ -1,13 +1,10 @@
 package Users;
 
+import ExternalPluginSupport.LuckPermsManager;
 import Goals.Goal;
 import Goals.GoalManager;
 import SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import net.luckperms.api.model.group.Group;
-import net.luckperms.api.model.user.User;
-import net.luckperms.api.node.Node;
-import net.luckperms.api.node.types.InheritanceNode;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -17,50 +14,50 @@ import org.bukkit.scheduler.BukkitTask;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-public class OnlineUsersManager{
+public class OnlineUsersManager {
     private BukkitTask schedule;
     private String configSound, configMessage;
     protected final PlayTimeManager plugin = PlayTimeManager.getInstance();
     protected final ArrayList<OnlineUser> onlineUsers = new ArrayList<>();
     private final PlayTimeDatabase db = plugin.getDatabase();
-    private Group groupLuckPerms;
-    private User userLuckPerms;
+    private final LuckPermsManager luckPermsManager;
 
-    public OnlineUsersManager(){
+    public OnlineUsersManager() {
+        this.luckPermsManager = LuckPermsManager.getInstance(plugin);
         loadOnlineUsers();
         restartSchedule();
     }
 
     public boolean userExists(String nickname) {
-        return  db.getUUIDFromNickname(nickname) != null;
+        return db.getUUIDFromNickname(nickname) != null;
     }
 
-    public void addOnlineUser(OnlineUser onlineUser){
+    public void addOnlineUser(OnlineUser onlineUser) {
         onlineUsers.add(onlineUser);
     }
 
-    public void removeOnlineUser(OnlineUser onlineUser){
+    public void removeOnlineUser(OnlineUser onlineUser) {
         onlineUsers.remove(onlineUser);
     }
 
-    public void loadOnlineUsers(){
-        for(Player p : Bukkit.getOnlinePlayers()){
+    public void loadOnlineUsers() {
+        for (Player p : Bukkit.getOnlinePlayers()) {
             OnlineUser onlineUser = new OnlineUser(p);
             onlineUsers.add(onlineUser);
         }
     }
 
-    public OnlineUser getOnlineUser(String nickname){
-        for(OnlineUser user : onlineUsers){
-            if(user.getNickname().equals(nickname))
+    public OnlineUser getOnlineUser(String nickname) {
+        for (OnlineUser user : onlineUsers) {
+            if (user.getNickname().equals(nickname))
                 return user;
         }
         return null;
     }
 
-    public OnlineUser getOnlineUserByUUID(String uuid){
-        for(OnlineUser user : onlineUsers){
-            if(user.getUuid().equals(uuid))
+    public OnlineUser getOnlineUserByUUID(String uuid) {
+        for (OnlineUser user : onlineUsers) {
+            if (user.getUuid().equals(uuid))
                 return user;
         }
         return null;
@@ -73,8 +70,7 @@ public class OnlineUsersManager{
 
         schedule = new BukkitRunnable() {
             public void run() {
-
-                if(!plugin.isPermissionsManagerConfigured())
+                if (!plugin.isPermissionsManagerConfigured())
                     return;
 
                 Player p;
@@ -95,8 +91,7 @@ public class OnlineUsersManager{
 
                 for (OnlineUser onlineUser : onlineUsers) {
                     for (Goal goal : GoalManager.getGoals()) {
-
-                        if(!goal.isActive())
+                        if (!goal.isActive())
                             continue;
 
                         p = Bukkit.getPlayerExact(onlineUser.getNickname());
@@ -108,54 +103,14 @@ public class OnlineUsersManager{
                                 // Mark goal as completed
                                 db.markGoalAsCompleted(p.getUniqueId().toString(), goal.getName());
 
-                                // Assign permissions
+                                // Assign permissions using LuckPermsManager
                                 ArrayList<String> permissions = goal.getPermissions();
                                 if (permissions != null && !permissions.isEmpty()) {
-                                    for (String permission : permissions) {
-                                        try {
-                                            if (permission.startsWith("group.")) {
-                                                // Extract the group name by removing the "group." prefix
-                                                String groupName = permission.substring(6); // "group.".length() == 6
-
-                                                Group groupLuckPerms = plugin.getLuckPermsApi().getGroupManager().getGroup(groupName);
-                                                if (groupLuckPerms == null) {
-                                                    continue; // Skip to next group if group doesn't exist in LuckPerms
-                                                }
-
-                                                userLuckPerms = plugin.getLuckPermsApi().getUserManager().getUser(UUID.fromString(onlineUser.getUuid()));
-
-                                                if (userLuckPerms == null) {
-                                                    continue; // Skip to next group if user doesn't exist in LuckPerms
-                                                }
-
-                                                // Add player to the group
-                                                InheritanceNode node = InheritanceNode.builder(groupLuckPerms).value(true).build();
-                                                userLuckPerms.data().add(node);
-                                                plugin.getLuckPermsApi().getUserManager().saveUser(userLuckPerms);
-                                            } else {
-                                                // Add regular permission to the player
-                                                userLuckPerms = plugin.getLuckPermsApi().getUserManager().getUser(UUID.fromString(onlineUser.getUuid()));
-
-                                                if (userLuckPerms == null) {
-                                                    continue; // Skip if user doesn't exist in LuckPerms
-                                                }
-
-                                                // Create and add the permission node
-                                                Node permissionNode = Node.builder(permission)
-                                                        .value(true)
-                                                        .build();
-
-                                                userLuckPerms.data().add(permissionNode);
-
-                                                // Save the updated user data
-                                                plugin.getLuckPermsApi().getUserManager().saveUser(userLuckPerms);
-
-                                            }
-                                        } catch (Exception e) {
-                                            plugin.getLogger().severe("[§6PlayTime§eManager§f]§7 Failed to assign " +
-                                                    (permission.startsWith("group.") ? "group " : "permission ") +
-                                                    permission + " to player " + p.getName() + ": " + e.getMessage());
-                                        }
+                                    try {
+                                        luckPermsManager.assignGoalPermissions(onlineUser.getUuid(), goal);
+                                    } catch (Exception e) {
+                                        plugin.getLogger().severe("[§6PlayTime§eManager§f]§7 Failed to assign permissions for goal " +
+                                                goal.getName() + " to player " + p.getName() + ": " + e.getMessage());
                                     }
                                 }
 
@@ -204,26 +159,18 @@ public class OnlineUsersManager{
                     return seconds + "s";
                 }
             }
-
         }
     }
 
     public String replacePlaceholders(String input, Player p, Goal goal) {
-        // Create a map for the placeholders and their corresponding values
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("%PLAYER_NAME%", p.getName());
+        placeholders.put("%TIME_REQUIRED%", convertTime(goal.getTime() / 20));
 
-        // Calculate TIME_REQUIRED
-        String playTimeSeconds = convertTime(goal.getTime() / 20);
-
-        placeholders.put("%TIME_REQUIRED%", playTimeSeconds);
-
-        // Replace placeholders in the input string
         for (Map.Entry<String, String> entry : placeholders.entrySet()) {
             input = input.replace(entry.getKey(), entry.getValue());
         }
 
         return input;
     }
-
 }

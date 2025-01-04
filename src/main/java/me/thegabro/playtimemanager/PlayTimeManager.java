@@ -13,13 +13,13 @@ import SQLiteDB.PlayTimeDatabase;
 import SQLiteDB.LogFilter;
 import SQLiteDB.SQLite;
 import Events.QuitEventManager;
-import PlaceHolders.PlayTimePlaceHolders;
+import ExternalPluginSupport.PlayTimePlaceHolders;
 import Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import net.luckperms.api.LuckPermsProvider;
+import ExternalPluginSupport.LuckPermsManager;
 
 
 import java.io.File;
@@ -35,7 +35,6 @@ public class PlayTimeManager extends JavaPlugin{
     private boolean permissionsManagerConfigured;
     private final String CONFIGVERSION = "3.2";
     private final String GOALSCONFIGVERSION = "1.0";
-    private LuckPerms luckPermsApi = null;
 
     @Override
     public void onEnable() {
@@ -119,27 +118,20 @@ public class PlayTimeManager extends JavaPlugin{
 
     public PlayTimeDatabase getDatabase() { return this.db; }
 
-    public LuckPerms getLuckPermsApi(){ return luckPermsApi; }
-
+    public LuckPerms getLuckPermsApi() {
+        return LuckPermsManager.getInstance(this).getLuckPermsApi();
+    }
     public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
 
     private boolean checkPermissionsPlugin() {
         String configuredPlugin = config.getPermissionsManagerPlugin().toLowerCase();
 
-        switch (configuredPlugin) {
-            case "luckperms":
-                if (Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
-                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 LuckPerms detected! Launching related functions");
-                    luckPermsApi = LuckPermsProvider.get();
-                    return true;
-                } else {
-                    this.getLogger().severe("ERROR: LuckPerms is configured in config.yml but not installed! Goal check will be disabled.");
-                    return false;
-                }
-            default:
-                this.getLogger().severe("ERROR: Invalid permissions plugin configured: " + configuredPlugin + ". Goal check will be started.");
-                return false;
+        if ("luckperms".equals(configuredPlugin)) {
+            return LuckPermsManager.getInstance(this).initialize();
         }
+
+        this.getLogger().severe("ERROR: Invalid permissions plugin configured: " + configuredPlugin + ". Goal check will be started.");
+        return false;
     }
 
     private void updateConfigFile(){

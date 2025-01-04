@@ -15,9 +15,12 @@ import SQLiteDB.SQLite;
 import Events.QuitEventManager;
 import PlaceHolders.PlayTimePlaceHolders;
 import Users.OnlineUsersManager;
+import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import net.luckperms.api.LuckPermsProvider;
+
 
 import java.io.File;
 import java.util.Map;
@@ -32,6 +35,7 @@ public class PlayTimeManager extends JavaPlugin{
     private boolean permissionsManagerConfigured;
     private final String CONFIGVERSION = "3.2";
     private final String GOALSCONFIGVERSION = "1.0";
+    private LuckPerms luckPermsApi = null;
 
     @Override
     public void onEnable() {
@@ -115,6 +119,8 @@ public class PlayTimeManager extends JavaPlugin{
 
     public PlayTimeDatabase getDatabase() { return this.db; }
 
+    public LuckPerms getLuckPermsApi(){ return luckPermsApi; }
+
     public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
 
     private boolean checkPermissionsPlugin() {
@@ -124,6 +130,7 @@ public class PlayTimeManager extends JavaPlugin{
             case "luckperms":
                 if (Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
                     Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 LuckPerms detected! Launching related functions");
+                    luckPermsApi = LuckPermsProvider.get();
                     return true;
                 } else {
                     this.getLogger().severe("ERROR: LuckPerms is configured in config.yml but not installed! Goal check will be disabled.");

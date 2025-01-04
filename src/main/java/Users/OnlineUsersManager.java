@@ -4,6 +4,10 @@ import Goals.Goal;
 import Goals.GoalManager;
 import SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import net.luckperms.api.model.group.Group;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.node.Node;
+import net.luckperms.api.node.types.InheritanceNode;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -19,7 +23,8 @@ public class OnlineUsersManager{
     protected final PlayTimeManager plugin = PlayTimeManager.getInstance();
     protected final ArrayList<OnlineUser> onlineUsers = new ArrayList<>();
     private final PlayTimeDatabase db = plugin.getDatabase();
-
+    private Group groupLuckPerms;
+    private User userLuckPerms;
 
     public OnlineUsersManager(){
         loadOnlineUsers();
@@ -111,13 +116,40 @@ public class OnlineUsersManager{
                                             if (permission.startsWith("group.")) {
                                                 // Extract the group name by removing the "group." prefix
                                                 String groupName = permission.substring(6); // "group.".length() == 6
+
+                                                Group groupLuckPerms = plugin.getLuckPermsApi().getGroupManager().getGroup(groupName);
+                                                if (groupLuckPerms == null) {
+                                                    continue; // Skip to next group if group doesn't exist in LuckPerms
+                                                }
+
+                                                userLuckPerms = plugin.getLuckPermsApi().getUserManager().getUser(UUID.fromString(onlineUser.getUuid()));
+
+                                                if (userLuckPerms == null) {
+                                                    continue; // Skip to next group if user doesn't exist in LuckPerms
+                                                }
+
                                                 // Add player to the group
-                                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
-                                                        "lp user " + p.getName() + " parent add " + groupName);
+                                                InheritanceNode node = InheritanceNode.builder(groupLuckPerms).value(true).build();
+                                                userLuckPerms.data().add(node);
+                                                plugin.getLuckPermsApi().getUserManager().saveUser(userLuckPerms);
                                             } else {
                                                 // Add regular permission to the player
-                                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
-                                                        "lp user " + p.getName() + " permission set " + permission);
+                                                userLuckPerms = plugin.getLuckPermsApi().getUserManager().getUser(UUID.fromString(onlineUser.getUuid()));
+
+                                                if (userLuckPerms == null) {
+                                                    continue; // Skip if user doesn't exist in LuckPerms
+                                                }
+
+                                                // Create and add the permission node
+                                                Node permissionNode = Node.builder(permission)
+                                                        .value(true)
+                                                        .build();
+
+                                                userLuckPerms.data().add(permissionNode);
+
+                                                // Save the updated user data
+                                                plugin.getLuckPermsApi().getUserManager().saveUser(userLuckPerms);
+
                                             }
                                         } catch (Exception e) {
                                             plugin.getLogger().severe("[§6PlayTime§eManager§f]§7 Failed to assign " +

@@ -107,5 +107,11 @@
             <artifactId>anvilgui</artifactId>
             <version>1.10.4-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>net.luckperms</groupId>
+            <artifactId>api</artifactId>
+            <version>5.4</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>

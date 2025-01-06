@@ -4,9 +4,6 @@ import GUIs.AllGoalsGui;
 import Goals.Goal;
 import Goals.GoalManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import net.kyori.adventure.inventory.Book;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
@@ -14,10 +11,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-
 public class PlaytimeGoal implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final String[] SUBCOMMANDS = {"set", "remove", "list", "gui"};
+    private final String[] SUBCOMMANDS = {"set", "remove"};  // Removed "list" from subcommands
     private final String[] SUBSUBCOMMANDS = {"time:", "activate:"};
 
     @Override
@@ -27,21 +23,20 @@ public class PlaytimeGoal implements TabExecutor {
             return false;
         }
 
-        if (args.length < 1) {
-            sender.sendMessage("[§6PlayTime§eManager§f]§7 Too few arguments!");
-            return false;
+        // If no arguments provided and sender is a player, open GUI
+        if (args.length == 0) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage("[§6PlayTime§eManager§f]§7 Only players can use the GUI!");
+                return false;
+            }
+            AllGoalsGui gui = new AllGoalsGui();
+            gui.openInventory((Player) sender);
+            return true;
         }
+
         String goalName;
         String subCommand = args[0].toLowerCase();
         switch (subCommand) {
-            case "gui":
-                if (!(sender instanceof Player)) {
-                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Only players can use the GUI!");
-                    return false;
-                }
-                AllGoalsGui gui = new AllGoalsGui();
-                gui.openInventory((Player) sender);
-                return true;
             case "set":
                 if (args.length < 2) {
                     sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtimegoal set <goalName> [time:<time>] [activate:true|false]");
@@ -88,9 +83,6 @@ public class PlaytimeGoal implements TabExecutor {
                 }
                 goalName = args[1];
                 removeGoal(sender, goalName);
-                break;
-            case "list":
-                list(sender);
                 break;
             default:
                 sender.sendMessage("[§6PlayTime§eManager§f]§7 Subcommand " + subCommand + " is not valid.");
@@ -168,27 +160,25 @@ public class PlaytimeGoal implements TabExecutor {
         }
     }
 
-    private void list(CommandSender sender) {
-        Set<Goal> goals = GoalManager.getGoals();
+    private String convertTime(long secondsx) {
+        int days = (int) TimeUnit.SECONDS.toDays(secondsx);
+        int hours = (int) (TimeUnit.SECONDS.toHours(secondsx) - TimeUnit.DAYS.toHours(days));
+        int minutes = (int) (TimeUnit.SECONDS.toMinutes(secondsx) - TimeUnit.HOURS.toMinutes(hours)
+                - TimeUnit.DAYS.toMinutes(days));
+        int seconds = (int) (TimeUnit.SECONDS.toSeconds(secondsx) - TimeUnit.MINUTES.toSeconds(minutes)
+                - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days));
 
-        if (sender instanceof Player) {
-            Book.Builder book = Book.builder();
-            Component bookAuthor = Component.text("TheGabro");
-            Component bookTitle = Component.text("PlayTimeManager Goals");
-            book.author(bookAuthor);
-            book.title(bookTitle);
-
-            List<Component> pages = convertToComponents(goals);
-            book.pages(pages);
-
-            Player p = (Player) sender;
-            p.openBook(book.build());
+        if (days != 0) {
+            return days + "d, " + hours + "h, " + minutes + "m, " + seconds + "s";
         } else {
-            sender.sendMessage("[§6PlayTime§eManager§f]§7 Goals stored:");
-            for (Goal goal : goals) {
-                String goalName = goal.getName();
-                Long timeRequired = goal.getTime();
-                sender.sendMessage("[§6PlayTime§eManager§f]§7 " + goalName + " - " + convertTime(timeRequired / 20));
+            if (hours != 0) {
+                return hours + "h, " + minutes + "m, " + seconds + "s";
+            } else {
+                if (minutes != 0) {
+                    return minutes + "m, " + seconds + "s";
+                } else {
+                    return seconds + "s";
+                }
             }
         }
     }
@@ -227,54 +217,5 @@ public class PlaytimeGoal implements TabExecutor {
         }
 
         return null;
-    }
-
-    private String convertTime(long secondsx) {
-        int days = (int) TimeUnit.SECONDS.toDays(secondsx);
-        int hours = (int) (TimeUnit.SECONDS.toHours(secondsx) - TimeUnit.DAYS.toHours(days));
-        int minutes = (int) (TimeUnit.SECONDS.toMinutes(secondsx) - TimeUnit.HOURS.toMinutes(hours)
-                - TimeUnit.DAYS.toMinutes(days));
-        int seconds = (int) (TimeUnit.SECONDS.toSeconds(secondsx) - TimeUnit.MINUTES.toSeconds(minutes)
-                - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days));
-
-        if (days != 0) {
-            return days + "d, " + hours + "h, " + minutes + "m, " + seconds + "s";
-        } else {
-            if (hours != 0) {
-                return hours + "h, " + minutes + "m, " + seconds + "s";
-            } else {
-                if (minutes != 0) {
-                    return minutes + "m, " + seconds + "s";
-                } else {
-                    return seconds + "s";
-                }
-            }
-        }
-    }
-
-    public List<Component> convertToComponents(Set<Goal> goals) {
-        List<Component> pages = new ArrayList<>();
-        List<Goal> goalList = new ArrayList<>(goals);
-
-        for (int i = goalList.size() - 1; i >= 0; i--) {
-            Goal goal = goalList.get(i);
-            String goalName = goal.getName();
-            long timeRequired = goal.getTime();
-            boolean isActive = goal.isActive();
-
-            Component pageContent = Component.text()
-                    .append(Component.text("Name: ").color(TextColor.color(0xFFAA00)))
-                    .append(Component.text(goalName + "\n\n"))
-                    .append(Component.text("Time: ").color(TextColor.color(0xFFAA00)))
-                    .append(Component.text(timeRequired == Long.MAX_VALUE ? "None\n\n" : convertTime(timeRequired / 20) + "\n\n"))
-                    .append(Component.text("Active: ").color(TextColor.color(0xFFAA00)))
-                    .append(Component.text(String.valueOf(isActive)).color(isActive ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
-                    .append(Component.text("\n\n"))
-                    .build();
-
-            pages.add(pageContent);
-        }
-
-        return pages;
     }
 }

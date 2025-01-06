@@ -96,7 +96,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Material.OAK_SIGN,
                 Component.text("§e§lGoal Message"),
                 Component.text("§cTo update this message, please edit the"),
-                Component.text("§c'" + goal.getName() + ".yaml' configuration file."),
+                Component.text("§c'" + goal.getName() + ".yml' configuration file."),
                 Component.text("§cModification via GUI is not currently supported.")
         ));
 
@@ -106,7 +106,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text("§e§lGoal Sound"),
                 Component.text("§7Current: §f" + goal.getGoalSound()),
                 Component.text("§cTo update this message, please edit the"),
-                Component.text("§c'" + goal.getName() + ".yaml' configuration file."),
+                Component.text("§c'" + goal.getName() + ".yml' configuration file."),
                 Component.text("§cModification via GUI is not currently supported.")
         ));
 

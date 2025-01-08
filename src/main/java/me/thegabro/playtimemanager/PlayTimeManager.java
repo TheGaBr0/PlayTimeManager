@@ -2,13 +2,11 @@ package me.thegabro.playtimemanager;
 
 import Commands.*;
 import Commands.PlayTimeCommandManager.PlayTimeCommandManager;
+import Events.ChatEventManager;
 import Events.JoinEventManager;
-import GUIs.AllGoalsGui;
-import GUIs.ConfirmationGui;
-import GUIs.GoalSettingsGui;
-import GUIs.PermissionsGui;
+import GUIs.*;
 import Goals.Goal;
-import Goals.GoalManager;
+import Goals.GoalsManager;
 import SQLiteDB.PlayTimeDatabase;
 import SQLiteDB.LogFilter;
 import SQLiteDB.SQLite;
@@ -18,6 +16,7 @@ import Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 import ExternalPluginSupport.LuckPermsManager;
 
@@ -73,12 +72,16 @@ public class PlayTimeManager extends JavaPlugin{
             new PlayTimePlaceHolders().register();
         }
 
+
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
-        getServer().getPluginManager().registerEvents(new AllGoalsGui(), this);
-        getServer().getPluginManager().registerEvents(new GoalSettingsGui(), this);
-        getServer().getPluginManager().registerEvents(new PermissionsGui(), this);
-        getServer().getPluginManager().registerEvents(new ConfirmationGui(), this);
+        getServer().getPluginManager().registerEvents(new ChatEventManager(), this);
+
+        Bukkit.getPluginManager().registerEvents(new AllGoalsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new GoalSettingsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new PermissionsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new CommandsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new ConfirmationGui(), this);
 
         Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeGoal());
         Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {});
@@ -88,7 +91,7 @@ public class PlayTimeManager extends JavaPlugin{
         Objects.requireNonNull(getCommand("playtimereload")).setExecutor(new PlaytimeReload() {});
         //getCommand("playtimehelp").setExecutor(new PlaytimeHelp(this));
 
-        GoalManager.initialize(this);
+        GoalsManager.initialize(this);
 
         getLogger().info("has been enabled!");
 
@@ -102,6 +105,7 @@ public class PlayTimeManager extends JavaPlugin{
             onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
         }
         db.close();
+        HandlerList.unregisterAll(this);
         getLogger().info("has been disabled!");
     }
 

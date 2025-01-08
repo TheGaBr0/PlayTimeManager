@@ -1,7 +1,7 @@
 package GUIs;
 
 import Goals.Goal;
-import Goals.GoalManager;
+import Goals.GoalsManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -25,7 +25,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class AllGoalsGui implements InventoryHolder, Listener {
 
@@ -45,7 +44,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
         int leftIndex = 9;
         int rightIndex = 17;
 
-        List<Goal> sortedGoals = GoalManager.getGoals().stream()
+        List<Goal> sortedGoals = GoalsManager.getGoals().stream()
                 .sorted(Comparator.comparing(Goal::getName)) // Sort by name
                 .toList();
 
@@ -79,7 +78,9 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                                         .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
                                 .decoration(TextDecoration.ITALIC, false),
                         Component.text("§e" + goal.getPermissions().size() + "§7 " +
-                                (goal.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded"))
+                                (goal.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
+                        Component.text("§e" + goal.getCommands().size() + "§7 " +
+                                (goal.getCommands().size() != 1 ? "commands loaded" : "command loaded"))
                 ));
                 slot++;
             }
@@ -126,26 +127,29 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             Component baseMessage = Component.text("""
                     [§6PlayTime§eManager§f]§7 To create a goal use:
 
-                    Usage: /playtimegoal set §e<name> §7time:§e<time> §7[activate:§etrue§7|§efalse§7]
+                    /playtimegoal set §e<name> §7time:§e<time> §7[activate:§etrue§7|§efalse§7]
                     """);
 
             // Create the command text
             String command = "/playtimegoal set goal1 time:1d,2h,3m,4s";
 
-            // Create the clickable [click here] text
+            // Create the surrounding text parts
+            Component preText = Component.text("You can ")
+                    .color(TextColor.color(170,170,170));  // Gray color
+
             Component clickableText = Component.text("[click here]")
-                    .color(TextColor.color(255,170,0))
+                    .color(TextColor.color(255,170,0))  // Gold color
                     .decoration(TextDecoration.BOLD, true)
                     .clickEvent(ClickEvent.suggestCommand(command))
                     .hoverEvent(HoverEvent.showText(Component.text("Click to autocomplete command")));
 
-            // Combine all components
             Component fullMessage = Component.empty()
                     .append(baseMessage)
                     .append(Component.text("\n"))
+                    .append(preText)  // Added "You can" part
                     .append(clickableText)
-                    .color(TextColor.color(170,170,170))
-                    .append(Component.text(" to autocomplete the message"));
+                    .append(Component.text(" to autocomplete the command")
+                            .color(TextColor.color(170,170,170)));  // Gray color
 
             whoClicked.sendMessage(fullMessage);
             return;
@@ -156,7 +160,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             //if(action.equals(InventoryAction.PICKUP_HALF)){
 
             whoClicked.closeInventory();
-            GoalSettingsGui settingsGui = new GoalSettingsGui(GoalManager.getGoal(goalName.substring(2)), this);
+            GoalSettingsGui settingsGui = new GoalSettingsGui(GoalsManager.getGoal(goalName.substring(2)), this);
             settingsGui.openInventory(whoClicked);
 
         }

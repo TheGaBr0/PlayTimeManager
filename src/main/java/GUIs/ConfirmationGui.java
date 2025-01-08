@@ -83,11 +83,12 @@ public class ConfirmationGui implements InventoryHolder, Listener {
     }
 
     public void onGUIClick(Player whoClicked, int slot) {
-        whoClicked.closeInventory();
 
         if (slot == Slots.YES_BUTTON) {
+            whoClicked.closeInventory();
             callback.accept(true);
         } else if (slot == Slots.NO_BUTTON) {
+            whoClicked.closeInventory();
             callback.accept(false);
         }
     }

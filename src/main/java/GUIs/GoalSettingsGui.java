@@ -19,19 +19,20 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class GoalSettingsGui implements InventoryHolder, Listener {
-    private static final int GUI_SIZE = 27;
+    private static final int GUI_SIZE = 45;
     private Inventory inventory;
     private Goal goal;
     private Object previousGui;
 
     private static final class Slots {
         static final int TIME_SETTING = 10;
-        static final int PERMISSIONS = 12;
+        static final int GOAL_PERMISSIONS = 12;
         static final int GOAL_MESSAGE = 14;
         static final int GOAL_SOUND = 16;
-        static final int ACTIVATION_STATUS = 20;
-        static final int DELETE_GOAL = 22;
-        static final int BACK_BUTTON = 26;
+        static final int GOAL_ACTIVATION_STATUS = 29;
+        static final int GOAL_COMMANDS = 31;
+        static final int DELETE_GOAL = 33;
+        static final int BACK_BUTTON = 44;
     }
 
     public GoalSettingsGui(){}
@@ -66,10 +67,11 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
     private boolean isButtonSlot(int slot) {
         return slot == Slots.TIME_SETTING ||
-                slot == Slots.PERMISSIONS ||
+                slot == Slots.GOAL_PERMISSIONS ||
                 slot == Slots.GOAL_MESSAGE ||
                 slot == Slots.GOAL_SOUND ||
-                slot == Slots.ACTIVATION_STATUS ||
+                slot == Slots.GOAL_ACTIVATION_STATUS ||
+                slot == Slots.GOAL_COMMANDS ||
                 slot == Slots.DELETE_GOAL ||
                 slot == Slots.BACK_BUTTON;
     }
@@ -83,7 +85,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         ));
 
         // Permissions button
-        inventory.setItem(Slots.PERMISSIONS, createGuiItem(
+        inventory.setItem(Slots.GOAL_PERMISSIONS, createGuiItem(
                 Material.NAME_TAG,
                 Component.text("§e§lPermissions"),
                 Component.text("§7Currently §e" + goal.getPermissions().size() + "§7 " +
@@ -95,7 +97,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.GOAL_MESSAGE, createGuiItem(
                 Material.OAK_SIGN,
                 Component.text("§e§lGoal Message"),
-                Component.text("§cTo update this message, please edit the"),
+                Component.text("§cTo update this setting, please edit the"),
                 Component.text("§c'" + goal.getName() + ".yml' configuration file."),
                 Component.text("§cModification via GUI is not currently supported.")
         ));
@@ -105,16 +107,25 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Material.NOTE_BLOCK,
                 Component.text("§e§lGoal Sound"),
                 Component.text("§7Current: §f" + goal.getGoalSound()),
-                Component.text("§cTo update this message, please edit the"),
+                Component.text("§cTo update this setting, please edit the"),
                 Component.text("§c'" + goal.getName() + ".yml' configuration file."),
                 Component.text("§cModification via GUI is not currently supported.")
         ));
 
         // Activation status button
-        inventory.setItem(Slots.ACTIVATION_STATUS, createGuiItem(
+        inventory.setItem(Slots.GOAL_ACTIVATION_STATUS, createGuiItem(
                 goal.isActive() ? Material.GREEN_CONCRETE : Material.RED_CONCRETE,
                 Component.text(goal.isActive() ? "§a§lGoal Active" : "§c§lGoal Inactive"),
                 Component.text("§7Click to " + (goal.isActive() ? "deactivate" : "activate") + " this goal")
+        ));
+
+        // Commands button
+        inventory.setItem(Slots.GOAL_COMMANDS, createGuiItem(
+                Material.COMMAND_BLOCK,
+                Component.text("§e§lCommands"),
+                Component.text("§7Currently §e" + goal.getCommands().size() + "§7 " +
+                        (goal.getCommands().size() != 1 ? "commands loaded" : "command loaded")),
+                Component.text("§7Click to manage commands")
         ));
 
         // Delete button
@@ -160,7 +171,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 openTimeEditor(player);
                 break;
 
-            case Slots.PERMISSIONS:
+            case Slots.GOAL_PERMISSIONS:
                 player.closeInventory();
                 new PermissionsGui(goal, this).openInventory(player);
                 break;
@@ -173,7 +184,12 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 // TODO: Implement sound editing
                 break;
 
-            case Slots.ACTIVATION_STATUS:
+            case Slots.GOAL_COMMANDS:
+                player.closeInventory();
+                new CommandsGui(goal, this).openInventory(player);
+                break;
+
+            case Slots.GOAL_ACTIVATION_STATUS:
                 goal.setActivation(!goal.isActive());
                 initializeItems();
                 break;

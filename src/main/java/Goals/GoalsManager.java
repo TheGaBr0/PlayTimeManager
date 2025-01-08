@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class GoalManager {
+public class GoalsManager {
     private static final Set<Goal> goals = new HashSet<>();
     private static PlayTimeManager plugin;
 
@@ -56,5 +56,15 @@ public class GoalManager {
                 }
             }
         }
+    }
+
+    public static boolean areAllInactive(){
+
+        for(Goal g : goals)
+            if(g.isActive())
+                return false;
+
+        return true;
+
     }
 }

@@ -1,8 +1,7 @@
 package Commands;
 
-import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import Goals.GoalManager;
+import Goals.GoalsManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -20,8 +19,8 @@ public class PlaytimeReload implements CommandExecutor {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The configuration file has been reloaded");
 
             // Reload goals
-            GoalManager.clearGoals();
-            GoalManager.loadGoals();
+            GoalsManager.clearGoals();
+            GoalsManager.loadGoals();
 
             // Restart LuckPerms schedule if applicable
             plugin.getUsersManager().restartSchedule();

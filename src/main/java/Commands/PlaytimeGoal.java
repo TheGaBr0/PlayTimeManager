@@ -2,7 +2,7 @@ package Commands;
 
 import GUIs.AllGoalsGui;
 import Goals.Goal;
-import Goals.GoalManager;
+import Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
@@ -123,7 +123,7 @@ public class PlaytimeGoal implements TabExecutor {
     }
 
     private void setGoal(CommandSender sender, String goalName, Long time, boolean activate) {
-        Goal g = GoalManager.getGoal(goalName);
+        Goal g = GoalsManager.getGoal(goalName);
         StringBuilder message = new StringBuilder();
 
         if (g != null) {
@@ -150,7 +150,7 @@ public class PlaytimeGoal implements TabExecutor {
     }
 
     private void removeGoal(CommandSender sender, String goalName) {
-        Goal g = GoalManager.getGoal(goalName);
+        Goal g = GoalsManager.getGoal(goalName);
         if (g != null) {
             g.kill();
             plugin.getUsersManager().restartSchedule();
@@ -193,9 +193,9 @@ public class PlaytimeGoal implements TabExecutor {
 
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("set")) {
-                StringUtil.copyPartialMatches(args[1], GoalManager.getGoalsNames(), completions);
+                StringUtil.copyPartialMatches(args[1], GoalsManager.getGoalsNames(), completions);
             } else if (args[0].equalsIgnoreCase("remove")) {
-                StringUtil.copyPartialMatches(args[1], GoalManager.getGoalsNames(), completions);
+                StringUtil.copyPartialMatches(args[1], GoalsManager.getGoalsNames(), completions);
             }
             return completions;
         }

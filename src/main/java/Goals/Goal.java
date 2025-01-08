@@ -17,6 +17,7 @@ public class Goal {
     private long time;
     private final File goalFile;
     private ArrayList<String> permissions = new ArrayList<>();
+    private ArrayList<String> commands = new ArrayList<>();
     private String goalMessage;
     private String goalSound;
     private boolean active;
@@ -31,7 +32,7 @@ public class Goal {
         saveToFile();
 
 
-        GoalManager.addGoal(this);
+        GoalsManager.addGoal(this);
     }
 
     private void loadFromFile() {
@@ -41,11 +42,13 @@ public class Goal {
             goalMessage = config.getString("goal-message", getDefaultGoalMessage());
             goalSound = config.getString("goal-sound", getDefaultGoalSound());
             permissions = new ArrayList<>(config.getStringList("Permissions"));
+            commands = new ArrayList<>(config.getStringList("Commands"));
             active = config.getBoolean("active", false);
         } else {
             goalMessage = getDefaultGoalMessage();
             goalSound = getDefaultGoalSound();
             permissions = new ArrayList<>();
+            commands = new ArrayList<>();
         }
     }
 
@@ -83,6 +86,7 @@ public class Goal {
             config.set("goal-message", goalMessage);
             config.set("active", active);
             config.set("Permissions", permissions);
+            config.set("Commands", commands);
             config.save(goalFile);
         } catch (IOException e) {
             plugin.getLogger().severe("Could not save goal file for " + name + ": " + e.getMessage());
@@ -144,9 +148,23 @@ public class Goal {
     public boolean isActive(){ return active; }
 
     public void kill() {
-        GoalManager.removeGoal(this);
+        GoalsManager.removeGoal(this);
         deleteFile();
-        plugin.getDatabase().cleanupDeletedGoals(GoalManager.getGoalsNames());
+        plugin.getDatabase().cleanupDeletedGoals(GoalsManager.getGoalsNames());
+    }
+
+    public ArrayList<String> getCommands(){
+        return commands;
+    }
+
+    public void addCommand(String command){
+        commands.add(command);
+        saveToFile();
+    }
+
+    public void removeCommand(String command){
+        commands.remove(command);
+        saveToFile();
     }
 
     public ArrayList<String> getPermissions(){

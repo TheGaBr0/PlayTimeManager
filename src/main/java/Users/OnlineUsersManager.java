@@ -93,7 +93,7 @@ public class OnlineUsersManager {
 
                 if (GoalsManager.areAllInactive()) {
                     schedule.cancel();
-                    Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 There's no active goal " +
+                    Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 There's no active goal, " +
                             "goal check schedule canceled.");
                 }
 
@@ -128,7 +128,7 @@ public class OnlineUsersManager {
                                 // Send message
                                 goalMessageReplacements.put("%PLAYER_NAME%", p.getName());
                                 goalMessageReplacements.put("%TIME_REQUIRED%", convertTime(goal.getTime() / 20));
-                                configMessage = replacePlaceholders(goal.getGoalMessage(), goalMessageReplacements);
+                                configMessage = replacePlaceholders(goal.getGoalMessage());
 
                                 p.sendMessage(configMessage);
 
@@ -163,8 +163,8 @@ public class OnlineUsersManager {
             for (String command : commands) {
                 // Format the command to execute as the server console
                 goalMessageReplacements.put("PLAYER_NAME", player.getName());
-                formattedCommand = replacePlaceholders(command, goalMessageReplacements);
-                formattedCommand = formattedCommand.replace("/", "");
+                formattedCommand = replacePlaceholders(command);
+                formattedCommand = formattedCommand.replaceFirst("/", "");
                 try {
                     // Execute each command as the console
                     plugin.getLogger().info("[§6PlayTime§eManager§f]§7 Executing command: " + formattedCommand);
@@ -199,10 +199,11 @@ public class OnlineUsersManager {
         }
     }
 
-    public String replacePlaceholders(String input, Map<String, String> replacements) {
-        for (Map.Entry<String, String> entry : replacements.entrySet()) {
+    public String replacePlaceholders(String input) {
+        for (Map.Entry<String, String> entry : goalMessageReplacements.entrySet()) {
             input = input.replace(entry.getKey(), entry.getValue());
         }
+        goalMessageReplacements.clear();
         return input;
     }
 }

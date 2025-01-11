@@ -122,7 +122,7 @@ public class OnlineUsersManager {
                                     p.playSound(p.getLocation(), sound, 10, 0);
                                 } catch (IllegalArgumentException exception) {
                                     plugin.getLogger().severe(configSound + " is not a valid argument for goal-sound" +
-                                            "setting in " + goal.getName() + ".yaml");
+                                            "setting in " + goal.getName() + ".yml");
                                 }
 
                                 // Send message

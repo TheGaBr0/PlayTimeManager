@@ -1,9 +1,12 @@
 package Users;
 
+import Goals.Goal;
 import SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
 
 public class DBUser {
     protected String uuid;
@@ -12,14 +15,16 @@ public class DBUser {
     protected long artificialPlaytime;
     protected static final PlayTimeManager plugin = PlayTimeManager.getInstance();
     protected long fromServerOnJoinPlayTime;
+    protected ArrayList<String> completedGoals;
     protected static PlayTimeDatabase db = plugin.getDatabase();
 
     // Private constructor
-    private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime) {
+    private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, ArrayList<String> completedGoals) {
         this.uuid = uuid;
         this.nickname = nickname;
         this.DBplaytime = playtime;
         this.artificialPlaytime = artificialPlaytime;
+        this.completedGoals = completedGoals;
     }
 
     public DBUser(Player p) {
@@ -29,6 +34,7 @@ public class DBUser {
         userMapping();
         this.DBplaytime = db.getPlaytime(uuid);
         this.artificialPlaytime = db.getArtificialPlaytime(uuid);
+        this.completedGoals = db.getCompletedGoals(uuid);
     }
 
     // Factory method to create DBUser by UUID
@@ -36,7 +42,8 @@ public class DBUser {
         String nickname = db.getNickname(uuid);
         long playtime = db.getPlaytime(uuid);
         long artificialPlaytime = db.getArtificialPlaytime(uuid);
-        return new DBUser(uuid, nickname, playtime, artificialPlaytime);
+        ArrayList<String> completedGoals = db.getCompletedGoals(uuid);
+        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals);
     }
 
     // Factory method to create DBUser by nickname
@@ -44,7 +51,8 @@ public class DBUser {
         String uuid = db.getUUIDFromNickname(nickname);
         long playtime = db.getPlaytime(uuid);
         long artificialPlaytime = db.getArtificialPlaytime(uuid);
-        return new DBUser(uuid, nickname, playtime, artificialPlaytime);
+        ArrayList<String> completedGoals = db.getCompletedGoals(uuid);
+        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals);
     }
 
 
@@ -61,7 +69,6 @@ public class DBUser {
         return DBplaytime + artificialPlaytime;
     }
 
-
     public long getArtificialPlaytime() {
         return artificialPlaytime;
     }
@@ -69,6 +76,20 @@ public class DBUser {
     public void setArtificialPlaytime(long artificialPlaytime) {
         this.artificialPlaytime = artificialPlaytime;
         db.updateArtificialPlaytime(uuid, artificialPlaytime);
+    }
+
+    public boolean hasCompletedGoal(String goalName){
+        return completedGoals.contains(goalName);
+    }
+
+    public void markGoalAsCompleted(String goalName){
+        completedGoals.add(goalName);
+        db.updateCompletedGoals(uuid, completedGoals);
+    }
+
+    public void unmarkGoalAsCompleted(String goalName){
+        completedGoals.remove(goalName);
+        db.updateCompletedGoals(uuid, completedGoals);
     }
 
     private void userMapping(){

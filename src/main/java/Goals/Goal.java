@@ -1,5 +1,6 @@
 package Goals;
 
+import Users.DBUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -148,9 +149,9 @@ public class Goal {
     public boolean isActive(){ return active; }
 
     public void kill() {
+        DBUsersManager.getInstance().removeGoalFromAllUsers(name);
         GoalsManager.removeGoal(this);
         deleteFile();
-        plugin.getDatabase().cleanupDeletedGoals(GoalsManager.getGoalsNames());
     }
 
     public ArrayList<String> getCommands(){

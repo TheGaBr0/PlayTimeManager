@@ -42,7 +42,7 @@ public class OnlineUsersManager {
         onlineUsers.remove(onlineUser);
     }
 
-    public void loadOnlineUsers() {
+    private void loadOnlineUsers() {
         for (Player p : Bukkit.getOnlinePlayers()) {
             OnlineUser onlineUser = new OnlineUser(p);
             onlineUsers.add(onlineUser);
@@ -105,11 +105,12 @@ public class OnlineUsersManager {
                         p = Bukkit.getPlayerExact(onlineUser.getNickname());
 
                         if (p != null) {
-                            if (!db.hasCompletedGoal(p.getUniqueId().toString(), goal.getName())
+
+                            if (!onlineUser.hasCompletedGoal(goal.getName())
                                     && onlineUser.getPlaytime() >= goal.getTime()) {
 
                                 // Mark goal as completed
-                                db.markGoalAsCompleted(p.getUniqueId().toString(), goal.getName());
+                                onlineUser.markGoalAsCompleted(goal.getName());
 
                                 assignPermissionsForGoal(onlineUser, goal);
 
@@ -155,7 +156,7 @@ public class OnlineUsersManager {
         }
     }
 
-    public void executeCommands(Goal goal, Player player) {
+    private void executeCommands(Goal goal, Player player) {
         // Get the list of commands associated with the goal
         List<String> commands = goal.getCommands();
         String formattedCommand;
@@ -199,7 +200,7 @@ public class OnlineUsersManager {
         }
     }
 
-    public String replacePlaceholders(String input) {
+    private String replacePlaceholders(String input) {
         for (Map.Entry<String, String> entry : goalMessageReplacements.entrySet()) {
             input = input.replace(entry.getKey(), entry.getValue());
         }

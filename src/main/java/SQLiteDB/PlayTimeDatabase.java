@@ -20,7 +20,6 @@ public abstract class PlayTimeDatabase {
     Connection connection;
     protected static HikariDataSource dataSource;
 
-    // The name of the table we created back in SQLite class.
     public PlayTimeDatabase(PlayTimeManager instance){
         plugin = instance;
     }
@@ -53,28 +52,20 @@ public abstract class PlayTimeDatabase {
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            // Establish connection to the database
             conn = getSQLConnection();
 
-            // Prepare the SQL statement to select nickname for the player with the specified uuid
             ps = conn.prepareStatement("SELECT nickname FROM play_time WHERE uuid = ?;");
 
-            // Set the uuid parameter in the prepared statement
             ps.setString(1, uuid);
 
-            // Execute the query and get the result set
             rs = ps.executeQuery();
 
-            // Check if a result is returned
             if (rs.next()) {
-                // Retrieve and return the nickname value
                 return rs.getString("nickname");
             }
         } catch (SQLException ex) {
-            // Log any SQL exceptions that occur during query execution
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
-            // Ensure that resources are closed to avoid memory leaks
             try {
                 if (rs != null)
                     rs.close();
@@ -83,11 +74,10 @@ public abstract class PlayTimeDatabase {
                 if (conn != null)
                     conn.close();
             } catch (SQLException ex) {
-                // Log any SQL exceptions that occur during resource closure
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return null; // Return null if the player is not found or an error occurs
+        return null; 
     }
 
     public Long getPlaytime(String uuid) {
@@ -125,28 +115,20 @@ public abstract class PlayTimeDatabase {
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            // Establish connection to the database
             conn = getSQLConnection();
 
-            // Prepare the SQL statement to select artificial_playtime for the player with the specified uuid
             ps = conn.prepareStatement("SELECT artificial_playtime FROM play_time WHERE uuid = ?;");
 
-            // Set the uuid parameter in the prepared statement
             ps.setString(1, uuid);
 
-            // Execute the query and get the result set
             rs = ps.executeQuery();
 
-            // Check if a result is returned
             if (rs.next()) {
-                // Retrieve the artificial_playtime value
                 return rs.getLong("artificial_playtime");
             }
         } catch (SQLException ex) {
-            // Log any SQL exceptions that occur during query execution
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
-            // Ensure that resources are closed to avoid memory leaks
             try {
                 if (rs != null)
                     rs.close();
@@ -155,11 +137,10 @@ public abstract class PlayTimeDatabase {
                 if (conn != null)
                     conn.close();
             } catch (SQLException ex) {
-                // Log any SQL exceptions that occur during resource closure
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return null; // Return null if the player is not found or an error occurs
+        return null; 
     }
 
     public String getUUIDFromNickname(String nickname) {
@@ -167,28 +148,20 @@ public abstract class PlayTimeDatabase {
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            // Establish connection to the database
             conn = getSQLConnection();
 
-            // Prepare the SQL statement to select uuid for the player with the specified nickname
             ps = conn.prepareStatement("SELECT uuid FROM play_time WHERE nickname = ? LIMIT 1;");
 
-            // Set the nickname parameter in the prepared statement
             ps.setString(1, nickname);
 
-            // Execute the query and get the result set
             rs = ps.executeQuery();
 
-            // Check if a result is returned
             if (rs.next()) {
-                // Retrieve and return the UUID value
                 return rs.getString("uuid");
             }
         } catch (SQLException ex) {
-            // Log any SQL exceptions that occur during query execution
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
-            // Ensure that resources are closed to avoid memory leaks
             try {
                 if (rs != null)
                     rs.close();
@@ -197,11 +170,10 @@ public abstract class PlayTimeDatabase {
                 if (conn != null)
                     conn.close();
             } catch (SQLException ex) {
-                // Log any SQL exceptions that occur during resource closure
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return null; // Return null if the nickname is not found or an error occurs
+        return null;
     }
 
     public List<String> getAllNicknames() {
@@ -210,25 +182,18 @@ public abstract class PlayTimeDatabase {
         ResultSet rs = null;
         List<String> nicknames = new ArrayList<>();
         try {
-            // Establish connection to the database
             conn = getSQLConnection();
 
-            // Prepare the SQL statement to select all nicknames from the play_time table
             ps = conn.prepareStatement("SELECT nickname FROM play_time;");
 
-            // Execute the query and get the result set
             rs = ps.executeQuery();
 
-            // Iterate through the result set to retrieve nicknames
             while (rs.next()) {
-                // Retrieve and add the nickname value to the list
                 nicknames.add(rs.getString("nickname"));
             }
         } catch (SQLException ex) {
-            // Log any SQL exceptions that occur during query execution
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
-            // Ensure that resources are closed to avoid memory leaks
             try {
                 if (rs != null)
                     rs.close();
@@ -237,41 +202,34 @@ public abstract class PlayTimeDatabase {
                 if (conn != null)
                     conn.close();
             } catch (SQLException ex) {
-                // Log any SQL exceptions that occur during resource closure
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return nicknames; // Return the list of nicknames
+        return nicknames; 
     }
 
     public void updatePlaytime(String uuid, long newPlaytime) {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
-            // Establish connection to the database
             conn = getSQLConnection();
 
-            // Prepare the SQL statement to update the playtime for the player with the specified uuid
+
             ps = conn.prepareStatement("UPDATE play_time SET playtime = ? WHERE uuid = ?;");
 
-            // Set the parameters in the prepared statement
             ps.setLong(1, newPlaytime);
             ps.setString(2, uuid);
 
-            // Execute the update
             ps.executeUpdate();
         } catch (SQLException ex) {
-            // Log any SQL exceptions that occur during query execution
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
-            // Ensure that resources are closed to avoid memory leaks
             try {
                 if (ps != null)
                     ps.close();
                 if (conn != null)
                     conn.close();
             } catch (SQLException ex) {
-                // Log any SQL exceptions that occur during resource closure
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
@@ -281,30 +239,23 @@ public abstract class PlayTimeDatabase {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
-            // Establish connection to the database
             conn = getSQLConnection();
 
-            // Prepare the SQL statement to update the artificial_playtime for the player with the specified uuid
             ps = conn.prepareStatement("UPDATE play_time SET artificial_playtime = ? WHERE uuid = ?;");
 
-            // Set the parameters in the prepared statement
             ps.setLong(1, newArtificialPlaytime);
             ps.setString(2, uuid);
 
-            // Execute the update
             ps.executeUpdate();
         } catch (SQLException ex) {
-            // Log any SQL exceptions that occur during query execution
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
-            // Ensure that resources are closed to avoid memory leaks
             try {
                 if (ps != null)
                     ps.close();
                 if (conn != null)
                     conn.close();
             } catch (SQLException ex) {
-                // Log any SQL exceptions that occur during resource closure
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
@@ -314,30 +265,23 @@ public abstract class PlayTimeDatabase {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
-            // Establish connection to the database
             conn = getSQLConnection();
 
-            // Prepare the SQL statement to update the nickname for the player with the specified uuid
             ps = conn.prepareStatement("UPDATE play_time SET nickname = ? WHERE uuid = ?;");
 
-            // Set the parameters in the prepared statement
             ps.setString(1, newNickname);
             ps.setString(2, uuid);
 
-            // Execute the update
             ps.executeUpdate();
         } catch (SQLException ex) {
-            // Log any SQL exceptions that occur during query execution
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
-            // Ensure that resources are closed to avoid memory leaks
             try {
                 if (ps != null)
                     ps.close();
                 if (conn != null)
                     conn.close();
             } catch (SQLException ex) {
-                // Log any SQL exceptions that occur during resource closure
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
@@ -348,28 +292,21 @@ public abstract class PlayTimeDatabase {
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            // Establish connection to the database
             conn = getSQLConnection();
 
-            // Prepare the SQL statement to check if the player exists in the play_time table
             ps = conn.prepareStatement("SELECT COUNT(*) FROM play_time WHERE uuid = ?;");
 
-            // Set the uuid parameter in the prepared statement
             ps.setString(1, uuid);
 
-            // Execute the query and get the result set
             rs = ps.executeQuery();
 
-            // Retrieve the count of players with the specified uuid
             if (rs.next()) {
                 int count = rs.getInt(1);
-                return count > 0; // Return true if count is greater than 0, indicating the player exists
+                return count > 0;
             }
         } catch (SQLException ex) {
-            // Log any SQL exceptions that occur during query execution
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
-            // Ensure that resources are closed to avoid memory leaks
             try {
                 if (rs != null)
                     rs.close();
@@ -378,11 +315,10 @@ public abstract class PlayTimeDatabase {
                 if (conn != null)
                     conn.close();
             } catch (SQLException ex) {
-                // Log any SQL exceptions that occur during resource closure
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return false; // Return false if an error occurs or the player is not found
+        return false;
     }
 
 
@@ -390,32 +326,25 @@ public abstract class PlayTimeDatabase {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
-            // Establish connection to the database
             conn = getSQLConnection();
 
-            // Prepare the SQL statement to insert a new player into the play_time table
             ps = conn.prepareStatement("INSERT INTO play_time (uuid, nickname, playtime, artificial_playtime) VALUES (?, ?, ?, ?);");
 
-            // Set the parameters in the prepared statement
             ps.setString(1, uuid);
             ps.setString(2, nickname);
             ps.setLong(3, playtime);
             ps.setLong(4, 0);
 
-            // Execute the insert
             ps.executeUpdate();
         } catch (SQLException ex) {
-            // Log any SQL exceptions that occur during query execution
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
-            // Ensure that resources are closed to avoid memory leaks
             try {
                 if (ps != null)
                     ps.close();
                 if (conn != null)
                     conn.close();
             } catch (SQLException ex) {
-                // Log any SQL exceptions that occur during resource closure
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
@@ -426,25 +355,18 @@ public abstract class PlayTimeDatabase {
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
-            // Establish connection to the database
             conn = getSQLConnection();
 
-            // Prepare the SQL statement to calculate the average playtime
             ps = conn.prepareStatement("SELECT AVG(playtime + artificial_playtime) AS avg_playtime FROM play_time;");
 
-            // Execute the query and get the result set
             rs = ps.executeQuery();
 
-            // Check if a result is returned
             if (rs.next()) {
-                // Retrieve and return the average playtime value
                 return rs.getDouble("avg_playtime");
             }
         } catch (SQLException ex) {
-            // Log any SQL exceptions that occur during query execution
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
-            // Ensure that resources are closed to avoid memory leaks
             try {
                 if (rs != null)
                     rs.close();
@@ -453,11 +375,10 @@ public abstract class PlayTimeDatabase {
                 if (conn != null)
                     conn.close();
             } catch (SQLException ex) {
-                // Log any SQL exceptions that occur during resource closure
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return null; // Return null if an error occurs
+        return null;
     }
 
     public Object[] getPercentageOfPlayers(long playtime) {
@@ -467,39 +388,29 @@ public abstract class PlayTimeDatabase {
         ResultSet rsTotal = null;
         ResultSet rsGreater = null;
         try {
-            // Establish connection to the database
             conn = getSQLConnection();
 
-            // Prepare the SQL statement to count the total number of players
             psTotal = conn.prepareStatement("SELECT COUNT(*) AS total_players FROM play_time;");
 
-            // Execute the query and get the result set for the total number of players
             rsTotal = psTotal.executeQuery();
 
-            // Prepare the SQL statement to count the number of players with playtime greater than the given value
             psGreater = conn.prepareStatement("SELECT COUNT(*) AS greater_players FROM play_time WHERE (playtime + artificial_playtime) >= ?;");
 
-            // Set the playtime parameter in the prepared statement
             psGreater.setLong(1, playtime);
 
-            // Execute the query and get the result set for players with playtime greater than the given value
             rsGreater = psGreater.executeQuery();
 
-            // Check if results are returned
             if (rsTotal.next() && rsGreater.next()) {
                 int totalPlayers = rsTotal.getInt("total_players");
                 int greaterPlayers = rsGreater.getInt("greater_players");
 
-                // Calculate and return the percentage of players with playtime greater than the given value
                 if (totalPlayers > 0) {
                     return new Object[] {(greaterPlayers * 100.0) / totalPlayers , greaterPlayers, totalPlayers};
                 }
             }
         } catch (SQLException ex) {
-            // Log any SQL exceptions that occur during query execution
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
-            // Ensure that resources are closed to avoid memory leaks
             try {
                 if (rsTotal != null)
                     rsTotal.close();
@@ -512,11 +423,10 @@ public abstract class PlayTimeDatabase {
                 if (conn != null)
                     conn.close();
             } catch (SQLException ex) {
-                // Log any SQL exceptions that occur during resource closure
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return null; // Return null if an error occurs
+        return null;
     }
 
     public ArrayList<String> getTopPlayersByPlaytime(int topN) {
@@ -525,31 +435,23 @@ public abstract class PlayTimeDatabase {
         ResultSet rs = null;
         ArrayList<String> topPlayers = new ArrayList<>();
         try {
-            // Establish connection to the database
             conn = getSQLConnection();
 
-            // Prepare the SQL statement to select the top N players with the highest playtime
             ps = conn.prepareStatement("SELECT uuid FROM play_time " +
                     "ORDER BY (playtime + artificial_playtime) DESC LIMIT ?;");
 
-            // Set the topN parameter in the prepared statement
             ps.setInt(1, topN);
 
-            // Execute the query and get the result set
             rs = ps.executeQuery();
 
-            // Iterate through the result set to retrieve player data
             while (rs.next()) {
 
-                // Retrieve and add the player data to the list
                 String uuid = rs.getString("uuid");
                 topPlayers.add(uuid);
             }
         } catch (SQLException ex) {
-            // Log any SQL exceptions that occur during query execution
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
-            // Ensure that resources are closed to avoid memory leaks
             try {
                 if (rs != null)
                     rs.close();
@@ -558,11 +460,10 @@ public abstract class PlayTimeDatabase {
                 if (conn != null)
                     conn.close();
             } catch (SQLException ex) {
-                // Log any SQL exceptions that occur during resource closure
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return topPlayers; // Return the list of top players
+        return topPlayers;
     }
 
     public DBUser getTopPlayerAtPosition(int position){
@@ -584,8 +485,9 @@ public abstract class PlayTimeDatabase {
         }
     }
 
-    public boolean hasCompletedGoal(String uuid, String goalName) {
+    public ArrayList<String> getCompletedGoals(String uuid) {
         String query = "SELECT completed_goals FROM play_time WHERE uuid = ?";
+        ArrayList<String> goals = new ArrayList<>();
 
         try (Connection conn = getSQLConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -595,94 +497,41 @@ public abstract class PlayTimeDatabase {
 
             if (rs.next()) {
                 String completedGoals = rs.getString("completed_goals");
-                if (completedGoals == null) {
-                    return false;
-                }
-
-                // Split the goals string into individual goals and check for exact matches
-                // goals are comma-separated
-                String[] goals = completedGoals.split(",");
-                for (String goal : goals) {
-                    if (goal.trim().equals(goalName)) {
-                        return true;
+                if (completedGoals != null && !completedGoals.isEmpty()) {
+                    // Split the goals string into individual goals and add them to the ArrayList
+                    String[] goalsArray = completedGoals.split(",");
+                    for (String goal : goalsArray) {
+                        String trimmedGoal = goal.trim();
+                        if (!trimmedGoal.isEmpty()) {
+                            goals.add(trimmedGoal);
+                        }
                     }
                 }
             }
-            return false;
+            return goals;
 
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            return goals;
         }
     }
 
-    public void markGoalAsCompleted(String uuid, String goalName) {
-        String selectQuery = "SELECT completed_goals FROM play_time WHERE uuid = ?";
+    public void updateCompletedGoals(String uuid, ArrayList<String> goals) {
         String updateQuery = "UPDATE play_time SET completed_goals = ? WHERE uuid = ?";
 
         try (Connection conn = getSQLConnection();
-             PreparedStatement selectStmt = conn.prepareStatement(selectQuery);
              PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
 
-            // Get already completed goals
-            selectStmt.setString(1, uuid);
-            var rs = selectStmt.executeQuery();
+            // Convert ArrayList to comma-separated string, filtering out empty goals
+            String updatedGoals = goals.stream()
+                    .map(String::trim)
+                    .filter(goal -> !goal.isEmpty())
+                    .collect(Collectors.joining(","));
 
-            String completedGoals = "";
-            if (rs.next()) {
-                String existing = rs.getString("completed_goals");
-                completedGoals = existing != null ? existing : "";
-            }
+            updateStmt.setString(1, updatedGoals);
+            updateStmt.setString(2, uuid);
+            updateStmt.executeUpdate();
 
-            // Split existing goals and check for exact match
-            boolean hasGoal = false;
-            if (!completedGoals.isEmpty()) {
-                String[] goals = completedGoals.split(",");
-                hasGoal = Arrays.stream(goals)
-                        .anyMatch(goal -> goal.trim().equals(goalName));
-            }
-
-            // Add the new goal if not present
-            if (!hasGoal) {
-                if (!completedGoals.isEmpty()) {
-                    completedGoals += ",";
-                }
-                completedGoals += goalName;
-
-                updateStmt.setString(1, completedGoals);
-                updateStmt.setString(2, uuid);
-                updateStmt.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void cleanupDeletedGoals(List<String> validGoalNames) {
-        String selectQuery = "SELECT uuid, completed_goals FROM play_time";
-        String updateQuery = "UPDATE play_time SET completed_goals = ? WHERE uuid = ?";
-
-        try (Connection conn = getSQLConnection();
-             PreparedStatement selectStmt = conn.prepareStatement(selectQuery);
-             PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
-
-            var rs = selectStmt.executeQuery();
-            while (rs.next()) {
-                String uuid = rs.getString("uuid");
-                String completedGoals = rs.getString("completed_goals");
-
-                if (completedGoals != null && !completedGoals.isEmpty()) {
-                    // Filter only valid goal names
-                    String[] goals = completedGoals.split(",");
-                    String newCompletedGoals = Arrays.stream(goals)
-                            .filter(validGoalNames::contains)
-                            .collect(Collectors.joining(","));
-
-                    updateStmt.setString(1, newCompletedGoals);
-                    updateStmt.setString(2, uuid);
-                    updateStmt.executeUpdate();
-                }
-            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -711,8 +560,6 @@ public abstract class PlayTimeDatabase {
         }
         return groups;
     }
-
-    // Method to drop the groups table
     public void dropGroupsTable() {
         String dropTableSQL = "DROP TABLE IF EXISTS groups;";
 

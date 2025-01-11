@@ -12,6 +12,8 @@ import SQLiteDB.LogFilter;
 import SQLiteDB.SQLite;
 import Events.QuitEventManager;
 import ExternalPluginSupport.PlayTimePlaceHolders;
+import Users.DBUser;
+import Users.DBUsersManager;
 import Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
@@ -134,7 +136,7 @@ public class PlayTimeManager extends JavaPlugin{
             return LuckPermsManager.getInstance(this).initialize();
         }
 
-        this.getLogger().severe("ERROR: Invalid permissions plugin configured: " + configuredPlugin + ". Goal check will be started.");
+        this.getLogger().severe("ERROR: Invalid permissions plugin configured: " + configuredPlugin + ". Goal check will not be started.");
         return false;
     }
 
@@ -147,6 +149,7 @@ public class PlayTimeManager extends JavaPlugin{
         long goalsCheckRate = config.getLuckPermsCheckRate();
         boolean goalsCheckVerbose = config.getLuckPermsCheckVerbose();
 
+        getLogger().info("Updating database, this may take some time...");
         Map<String, Long> dbgroups = db.getAllGroupsData();
 
         for (Map.Entry<String, Long> entry : dbgroups.entrySet()) {
@@ -158,6 +161,13 @@ public class PlayTimeManager extends JavaPlugin{
 
         db.dropGroupsTable();
 
+        for(Goal g : GoalsManager.getGoals()){
+            for(DBUser u : DBUsersManager.getInstance().getAllDBUsers()){
+                if(u.getPlaytime() >= g.getTime())
+                    u.markGoalAsCompleted(g.getName());
+            }
+        }
+        getLogger().info("Database updated successfully!");
         //---------------------------------
 
         File configFile = new File(this.getDataFolder(), "config.yml");

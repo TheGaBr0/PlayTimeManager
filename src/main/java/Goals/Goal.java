@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public class Goal {
-
+    // Fields
     private final PlayTimeManager plugin;
     private final String name;
     private long time;
@@ -23,6 +23,7 @@ public class Goal {
     private String goalSound;
     private boolean active;
 
+    // Constructor
     public Goal(PlayTimeManager plugin, String name, Long time, boolean active) {
         this.plugin = plugin;
         this.name = name;
@@ -31,19 +32,18 @@ public class Goal {
         this.active = active;
         loadFromFile();
         saveToFile();
-
-
         GoalsManager.addGoal(this);
     }
 
+    // Core file operations
     private void loadFromFile() {
         if (goalFile.exists()) {
             FileConfiguration config = YamlConfiguration.loadConfiguration(goalFile);
-            time = config.getLong("Time", time);
+            time = config.getLong("time", time);
             goalMessage = config.getString("goal-message", getDefaultGoalMessage());
             goalSound = config.getString("goal-sound", getDefaultGoalSound());
-            permissions = new ArrayList<>(config.getStringList("Permissions"));
-            commands = new ArrayList<>(config.getStringList("Commands"));
+            permissions = new ArrayList<>(config.getStringList("permissions"));
+            commands = new ArrayList<>(config.getStringList("commands"));
             active = config.getBoolean("active", false);
         } else {
             goalMessage = getDefaultGoalMessage();
@@ -74,20 +74,26 @@ public class Goal {
                     "Set to 'true' to enable the goal and track player progress",
                     "Set to 'false' (default option) to disable the goal without deleting it",
                     "This is useful for:",
-                    "- Temporarily disabling goals without removing them",
-                    "- Testing new goals before making them live",
-                    "- Managing seasonal or event-specific goals",
+                    "* Temporarily disabling goals without removing them",
+                    "* Testing new goals before making them live",
+                    "* Managing seasonal or event-specific goals",
                     "---------------------------",
                     "permissions defines what permissions will be granted to a player when they reach this goal",
                     "You can specify multiple permissions and groups that will all be granted. The plugin will assume that",
-                    "the group has already been created using the permissions manager plugin specified in the main config."
+                    "the group has already been created using the permissions manager plugin specified in the main config.",
+                    "---------------------------",
+                    "commands defines a list of commands that will be executed when a player reaches this goal",
+                    "Available placeholders: %PLAYER_NAME%",
+                    "Example commands:",
+                    "- '/give %PLAYER_NAME% diamond 64'",
+                    "- '/broadcast %PLAYER_NAME% has reached an amazing milestone!'"
             ));
-            config.set("Time", time);
+            config.set("time", time);
             config.set("goal-sound", goalSound);
             config.set("goal-message", goalMessage);
             config.set("active", active);
-            config.set("Permissions", permissions);
-            config.set("Commands", commands);
+            config.set("permissions", permissions);
+            config.set("commands", commands);
             config.save(goalFile);
         } catch (IOException e) {
             plugin.getLogger().severe("Could not save goal file for " + name + ": " + e.getMessage());
@@ -102,6 +108,7 @@ public class Goal {
         }
     }
 
+    // Default values
     private String getDefaultGoalSound() {
         return "ENTITY_PLAYER_LEVELUP";
     }
@@ -110,6 +117,7 @@ public class Goal {
         return "[§6PlayTime§eManager§f]§7 Congratulations §e%PLAYER_NAME%§7 you have reached §6%TIME_REQUIRED%§7 of playtime!";
     }
 
+    // Basic getters
     public String getName() {
         return name;
     }
@@ -118,70 +126,75 @@ public class Goal {
         return time;
     }
 
+    public String getGoalMessage() {
+        return goalMessage;
+    }
+
+    public String getGoalSound() {
+        return goalSound;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public ArrayList<String> getCommands() {
+        return commands;
+    }
+
+    public ArrayList<String> getPermissions() {
+        return permissions;
+    }
+
+    // Setters and modifiers
     public void setTime(long time) {
         this.time = time;
         saveToFile();
     }
 
-    public String getGoalMessage(){
-        return goalMessage;
-    }
-
-    public String getGoalSound(){
-        return goalSound;
-    }
-
-    public void setGoalMessage(String goalMessage){
+    public void setGoalMessage(String goalMessage) {
         this.goalMessage = goalMessage;
         saveToFile();
     }
 
-    public void setGoalSound(String goalSound){
+    public void setGoalSound(String goalSound) {
         this.goalSound = goalSound;
         saveToFile();
     }
 
-    public void setActivation(boolean activation){
+    public void setActivation(boolean activation) {
         this.active = activation;
         saveToFile();
     }
 
-    public boolean isActive(){ return active; }
+    public void addCommand(String command) {
+        commands.add(command);
+        saveToFile();
+    }
 
+    public void removeCommand(String command) {
+        commands.remove(command);
+        saveToFile();
+    }
+
+    public void addPermission(String permission) {
+        permissions.add(permission);
+        saveToFile();
+    }
+
+    public void removePermission(String permission) {
+        permissions.remove(permission);
+        saveToFile();
+    }
+
+    // Management methods
     public void kill() {
         DBUsersManager.getInstance().removeGoalFromAllUsers(name);
         GoalsManager.removeGoal(this);
         deleteFile();
     }
 
-    public ArrayList<String> getCommands(){
-        return commands;
-    }
-
-    public void addCommand(String command){
-        commands.add(command);
-        saveToFile();
-    }
-
-    public void removeCommand(String command){
-        commands.remove(command);
-        saveToFile();
-    }
-
-    public ArrayList<String> getPermissions(){
-        return permissions;
-    }
-
-    public void addPermission(String permission){
-        permissions.add(permission);
-        saveToFile();
-    }
-
-    public void removePermission(String permission){
-        permissions.remove(permission);
-        saveToFile();
-    }
-
+    // Object overrides
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -200,6 +213,11 @@ public class Goal {
         return "Goal{" +
                 "name='" + name + '\'' +
                 ", time=" + time +
+                ", active=" + active +
+                ", permissions=" + permissions.size() +
+                ", commands=" + commands.size() +
+                ", message='" + goalMessage + '\'' +
+                ", sound='" + goalSound + '\'' +
                 '}';
     }
 }

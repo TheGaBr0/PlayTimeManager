@@ -85,12 +85,23 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         ));
 
         // Permissions button
+        List<TextComponent> lore = new ArrayList<>();
+        lore.add(Component.text("§7Currently §e" + goal.getPermissions().size() + "§7 " +
+                (goal.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")));
+
+        lore.add(Component.text("§7Click to change the permissions"));
+
+        if (!PlayTimeManager.getInstance().isPermissionsManagerConfigured()) {
+            lore.add(Component.text(""));
+            lore.add(Component.text("§4§lWARNING: §cNo permissions plugin detected!"));
+            lore.add(Component.text("§cPermissions will not be assigned"));
+        }
+
+
         inventory.setItem(Slots.GOAL_PERMISSIONS, createGuiItem(
                 Material.NAME_TAG,
                 Component.text("§e§lPermissions"),
-                Component.text("§7Currently §e" + goal.getPermissions().size() + "§7 " +
-                        (goal.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
-                Component.text("§7Click to change the permissions")
+                lore.toArray(new TextComponent[0])
         ));
 
         // Message button

@@ -20,12 +20,11 @@ public class OnlineUsersManager {
     protected final PlayTimeManager plugin = PlayTimeManager.getInstance();
     protected final ArrayList<OnlineUser> onlineUsers = new ArrayList<>();
     private final PlayTimeDatabase db = plugin.getDatabase();
-    private final LuckPermsManager luckPermsManager;
     private Map<String, String> goalMessageReplacements = new HashMap<>();
 
 
     public OnlineUsersManager() {
-        this.luckPermsManager = LuckPermsManager.getInstance(plugin);
+
         loadOnlineUsers();
         restartSchedule();
     }
@@ -72,29 +71,25 @@ public class OnlineUsersManager {
 
         schedule = new BukkitRunnable() {
             public void run() {
-                if (!plugin.isPermissionsManagerConfigured())
-                    return;
 
                 Player p;
                 PlayTimeDatabase db = plugin.getDatabase();
-                if (plugin.getConfiguration().getGoalsCheckVerbose())
-                    Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Goal check schedule started, refresh rate is "
-                            + convertTime(plugin.getConfiguration().getGoalsCheckRate()) +
-                            ".\n If you find this message annoying you can deactivate it by changing §6goal-check-verbose " +
-                            "§7in the config.yml");
+                if (plugin.getConfiguration().getGoalsCheckVerbose()) {
+                    plugin.getLogger().info("Goal check schedule started, refresh rate is " +
+                            convertTime(plugin.getConfiguration().getGoalsCheckRate()) +
+                            ". If you find this message annoying you can deactivate it by changing goal-check-verbose in the config.yml");
+                }
 
                 Set<Goal> goals = GoalsManager.getGoals();
 
                 if (goals.isEmpty()) {
                     schedule.cancel();
-                    Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 No goal has been detected, " +
-                            "goal check schedule canceled.");
+                    plugin.getLogger().info("No goal has been detected, goal check schedule canceled.");
                 }
 
                 if (GoalsManager.areAllInactive()) {
                     schedule.cancel();
-                    Bukkit.getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 There's no active goal, " +
-                            "goal check schedule canceled.");
+                    plugin.getLogger().info("There's no active goal, goal check schedule canceled.");
                 }
 
                 for (OnlineUser onlineUser : onlineUsers) {
@@ -112,7 +107,9 @@ public class OnlineUsersManager {
                                 // Mark goal as completed
                                 onlineUser.markGoalAsCompleted(goal.getName());
 
-                                assignPermissionsForGoal(onlineUser, goal);
+                                if (plugin.isPermissionsManagerConfigured()) {
+                                    assignPermissionsForGoal(onlineUser, goal);
+                                }
 
                                 executeCommands(goal, p);
 
@@ -133,9 +130,8 @@ public class OnlineUsersManager {
 
                                 p.sendMessage(configMessage);
 
-                                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 User §e"
-                                        + onlineUser.getNickname() + " §7has reached §6" +
-                                        convertTime(goal.getTime() / 20) + "§7!");
+                                plugin.getLogger().info("User " + onlineUser.getNickname() + " has reached " +
+                                        convertTime(goal.getTime() / 20) + "!");
                             }
                         }
                     }
@@ -148,9 +144,9 @@ public class OnlineUsersManager {
         ArrayList<String> permissions = goal.getPermissions();
         if (permissions != null && !permissions.isEmpty()) {
             try {
-                luckPermsManager.assignGoalPermissions(onlineUser.getUuid(), goal);
+                LuckPermsManager.getInstance(plugin).assignGoalPermissions(onlineUser.getUuid(), goal);
             } catch (Exception e) {
-                plugin.getLogger().severe("[§6PlayTime§eManager§f]§7 Failed to assign permissions for goal " +
+                plugin.getLogger().severe("Failed to assign permissions for goal " +
                         goal.getName() + " to player " + onlineUser.getNickname() + ": " + e.getMessage());
             }
         }
@@ -168,10 +164,11 @@ public class OnlineUsersManager {
                 formattedCommand = formattedCommand.replaceFirst("/", "");
                 try {
                     // Execute each command as the console
-                    plugin.getLogger().info("[§6PlayTime§eManager§f]§7 Executing command: " + formattedCommand);
+                    if (plugin.getConfiguration().getGoalsCheckVerbose())
+                        plugin.getLogger().info("Executing command: " + formattedCommand);
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), formattedCommand);
                 } catch (Exception e) {
-                    plugin.getLogger().severe("[§6PlayTime§eManager§f]§7 Failed to execute command: " + formattedCommand + " for goal " + goal.getName());
+                    plugin.getLogger().severe("Failed to execute command: " + formattedCommand + " for goal " + goal.getName());
                 }
             }
         }

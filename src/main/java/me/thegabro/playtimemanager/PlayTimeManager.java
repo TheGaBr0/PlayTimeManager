@@ -19,6 +19,7 @@ import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import ExternalPluginSupport.LuckPermsManager;
 
@@ -133,10 +134,24 @@ public class PlayTimeManager extends JavaPlugin{
         String configuredPlugin = config.getPermissionsManagerPlugin().toLowerCase();
 
         if ("luckperms".equals(configuredPlugin)) {
-            return LuckPermsManager.getInstance(this).initialize();
+            Plugin luckPerms = Bukkit.getPluginManager().getPlugin("LuckPerms");
+            if (luckPerms != null && luckPerms.isEnabled()) {
+                try {
+                    LuckPermsManager.getInstance(this);
+                    getLogger().info("LuckPerms detected! Launching related functions");
+                    return true;
+                } catch (Exception e) {
+                    getLogger().severe("ERROR: Failed to initialize LuckPerms API: " + e.getMessage());
+                    return false;
+                }
+            } else {
+                getLogger().warning(
+                        "Failed to initialize permissions system: LuckPerms plugin configured but not found! " +
+                                "\nUntil this is resolved, PlayTimeManager will not be able to manage permissions or groups"
+                );
+                return false;
+            }
         }
-
-        this.getLogger().severe("ERROR: Invalid permissions plugin configured: " + configuredPlugin + ". Goal check will not be started.");
         return false;
     }
 

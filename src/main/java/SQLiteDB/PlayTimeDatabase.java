@@ -544,7 +544,7 @@ public abstract class PlayTimeDatabase {
     }
 
 
-    //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
+
     public Map<String, Long> getAllGroupsData() {
         Map<String, Long> groups = new HashMap<>();
         try (Connection conn = getSQLConnection();
@@ -560,6 +560,7 @@ public abstract class PlayTimeDatabase {
         }
         return groups;
     }
+    //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
     public void dropGroupsTable() {
         String dropTableSQL = "DROP TABLE IF EXISTS groups;";
 

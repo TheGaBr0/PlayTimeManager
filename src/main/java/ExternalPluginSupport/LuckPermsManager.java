@@ -14,7 +14,7 @@ import java.util.UUID;
 
 public class LuckPermsManager {
     private final PlayTimeManager plugin;
-    private LuckPerms luckPermsApi;
+    private static LuckPerms luckPermsApi;
     private static LuckPermsManager instance;
 
     private LuckPermsManager(PlayTimeManager plugin) {
@@ -23,25 +23,10 @@ public class LuckPermsManager {
 
     public static LuckPermsManager getInstance(PlayTimeManager plugin) {
         if (instance == null) {
+            luckPermsApi = LuckPermsProvider.get();
             instance = new LuckPermsManager(plugin);
         }
         return instance;
-    }
-
-    public boolean initialize() {
-        if (Bukkit.getPluginManager().getPlugin("LuckPerms") != null) {
-            try {
-                luckPermsApi = LuckPermsProvider.get();
-                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 LuckPerms detected! Launching related functions");
-                return true;
-            } catch (Exception e) {
-                plugin.getLogger().severe("ERROR: Failed to initialize LuckPerms API: " + e.getMessage());
-                return false;
-            }
-        } else {
-            plugin.getLogger().severe("ERROR: LuckPerms is not installed! Goal check will be disabled.");
-            return false;
-        }
     }
 
     public LuckPerms getLuckPermsApi() {

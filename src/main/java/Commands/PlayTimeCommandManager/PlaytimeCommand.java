@@ -1,6 +1,7 @@
 package Commands.PlayTimeCommandManager;
 
 import Users.DBUser;
+import Users.DBUsersManager;
 import Users.OnlineUser;
 import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -14,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 public class PlaytimeCommand{
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final OnlineUsersManager onlineUsersManager = plugin.getUsersManager();
 
     public PlaytimeCommand(CommandSender sender, String[] args){
         execute(sender, args);
@@ -37,7 +37,7 @@ public class PlaytimeCommand{
             return false;
         }
 
-        OnlineUser onlineUser = onlineUsersManager.getOnlineUser(sender.getName());
+        OnlineUser onlineUser = plugin.getOnlineUsersManager().getOnlineUser(sender.getName());
 
         String formattedPlaytime = convertTime(onlineUser.getPlaytime() / 20);
         String message = replacePlaceholders(plugin.getConfiguration().getPlaytimeSelfMessage(), sender.getName(), formattedPlaytime);
@@ -50,10 +50,7 @@ public class PlaytimeCommand{
 
     private boolean handleOther(CommandSender sender, String playerName) {
 
-        DBUser user = onlineUsersManager.getOnlineUser(playerName);
-
-        if(user == null)
-            user = DBUser.fromNickname(playerName);
+        DBUser user = plugin.getDbUsersManager().getUserFromNickname(playerName);
 
         String formattedPlaytime = convertTime(user.getPlaytime() / 20);
         String message = replacePlaceholders(plugin.getConfiguration().getPlaytimeOthersMessage(), playerName, formattedPlaytime);

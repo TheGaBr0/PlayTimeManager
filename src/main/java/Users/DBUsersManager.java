@@ -10,10 +10,11 @@ public class DBUsersManager {
     private final PlayTimeDatabase db;
     private final PlayTimeManager plugin;
     private static DBUsersManager instance;
-
+    private OnlineUsersManager onlineUsersManager;
     private DBUsersManager() {
         this.plugin = PlayTimeManager.getInstance();
         this.db = plugin.getDatabase();
+        onlineUsersManager = plugin.getOnlineUsersManager();
     }
 
     public static DBUsersManager getInstance() {
@@ -21,6 +22,29 @@ public class DBUsersManager {
             instance = new DBUsersManager();
         }
         return instance;
+    }
+
+    public DBUser getUserFromNickname(String nickname) {
+
+        DBUser user = onlineUsersManager.getOnlineUser(nickname);
+        if(user == null)
+            user = DBUser.fromNickname(nickname);
+
+        return user;
+    }
+
+    public DBUser getUserFromUUID(String uuid) {
+
+        if(db.playerExists(uuid)){
+            DBUser user = onlineUsersManager.getOnlineUserByUUID(uuid);
+            if(user == null)
+                user = DBUser.fromUUID(uuid);
+
+            return user;
+        }
+
+        return null;
+
     }
 
     public void removeGoalFromAllUsers(String goalName) {

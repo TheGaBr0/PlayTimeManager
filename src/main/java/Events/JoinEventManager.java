@@ -1,6 +1,8 @@
 package Events;
 
+import Users.DBUsersManager;
 import Users.OnlineUser;
+import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -14,7 +16,7 @@ public class JoinEventManager implements Listener {
     public void onJoin(PlayerJoinEvent event){
 
             OnlineUser onlineUser = new OnlineUser(event.getPlayer());
-            plugin.getUsersManager().addOnlineUser(onlineUser);
+            plugin.getOnlineUsersManager().addOnlineUser(onlineUser);
 
     }
 

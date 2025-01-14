@@ -1,6 +1,7 @@
 package Events;
 
 import Users.OnlineUser;
+import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -13,9 +14,9 @@ public class QuitEventManager implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event){
 
-        OnlineUser onlineUser = plugin.getUsersManager().getOnlineUser(event.getPlayer().getName());
+        OnlineUser onlineUser = plugin.getOnlineUsersManager().getOnlineUser(event.getPlayer().getName());
         onlineUser.updatePlayTime();
-        plugin.getUsersManager().removeOnlineUser(onlineUser);
+        plugin.getOnlineUsersManager().removeOnlineUser(onlineUser);
     }
 
 }

@@ -15,22 +15,23 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class OnlineUsersManager {
+    private static OnlineUsersManager instance;
     private BukkitTask schedule;
     private String configSound, configMessage;
     protected final PlayTimeManager plugin = PlayTimeManager.getInstance();
     protected final ArrayList<OnlineUser> onlineUsers = new ArrayList<>();
-    private final PlayTimeDatabase db = plugin.getDatabase();
     private Map<String, String> goalMessageReplacements = new HashMap<>();
 
-
-    public OnlineUsersManager() {
-
+    private OnlineUsersManager() {
         loadOnlineUsers();
         restartSchedule();
     }
 
-    public boolean userExists(String nickname) {
-        return db.getUUIDFromNickname(nickname) != null;
+    public static OnlineUsersManager getInstance() {
+        if (instance == null) {
+            instance = new OnlineUsersManager();
+        }
+        return instance;
     }
 
     public void addOnlineUser(OnlineUser onlineUser) {
@@ -71,7 +72,6 @@ public class OnlineUsersManager {
 
         schedule = new BukkitRunnable() {
             public void run() {
-
                 Player p;
                 PlayTimeDatabase db = plugin.getDatabase();
                 if (plugin.getConfiguration().getGoalsCheckVerbose()) {
@@ -100,11 +100,9 @@ public class OnlineUsersManager {
                         p = Bukkit.getPlayerExact(onlineUser.getNickname());
 
                         if (p != null) {
-
                             if (!onlineUser.hasCompletedGoal(goal.getName())
                                     && onlineUser.getPlaytime() >= goal.getTime()) {
 
-                                // Mark goal as completed
                                 onlineUser.markGoalAsCompleted(goal.getName());
 
                                 if (plugin.isPermissionsManagerConfigured()) {
@@ -113,7 +111,6 @@ public class OnlineUsersManager {
 
                                 executeCommands(goal, p);
 
-                                // Play sound
                                 try {
                                     configSound = goal.getGoalSound();
                                     Sound sound = Sound.valueOf(configSound);
@@ -123,7 +120,6 @@ public class OnlineUsersManager {
                                             "setting in " + goal.getName() + ".yml");
                                 }
 
-                                // Send message
                                 goalMessageReplacements.put("%PLAYER_NAME%", p.getName());
                                 goalMessageReplacements.put("%TIME_REQUIRED%", convertTime(goal.getTime() / 20));
                                 configMessage = replacePlaceholders(goal.getGoalMessage());
@@ -153,17 +149,14 @@ public class OnlineUsersManager {
     }
 
     private void executeCommands(Goal goal, Player player) {
-        // Get the list of commands associated with the goal
         List<String> commands = goal.getCommands();
         String formattedCommand;
         if (commands != null && !commands.isEmpty()) {
             for (String command : commands) {
-                // Format the command to execute as the server console
                 goalMessageReplacements.put("PLAYER_NAME", player.getName());
                 formattedCommand = replacePlaceholders(command);
                 formattedCommand = formattedCommand.replaceFirst("/", "");
                 try {
-                    // Execute each command as the console
                     if (plugin.getConfiguration().getGoalsCheckVerbose())
                         plugin.getLogger().info("Executing command: " + formattedCommand);
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), formattedCommand);

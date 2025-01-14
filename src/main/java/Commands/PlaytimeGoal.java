@@ -3,6 +3,7 @@ package Commands;
 import GUIs.AllGoalsGui;
 import Goals.Goal;
 import Goals.GoalsManager;
+import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
@@ -15,7 +16,6 @@ public class PlaytimeGoal implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final String[] SUBCOMMANDS = {"set", "remove"};  // Removed "list" from subcommands
     private final String[] SUBSUBCOMMANDS = {"time:", "activate:"};
-
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
         if (!sender.hasPermission("playtime.goal")) {
@@ -146,14 +146,14 @@ public class PlaytimeGoal implements TabExecutor {
 
         sender.sendMessage(message.toString());
 
-        plugin.getUsersManager().restartSchedule();
+        plugin.getOnlineUsersManager().restartSchedule();
     }
 
     private void removeGoal(CommandSender sender, String goalName) {
         Goal g = GoalsManager.getGoal(goalName);
         if (g != null) {
             g.kill();
-            plugin.getUsersManager().restartSchedule();
+            plugin.getOnlineUsersManager().restartSchedule();
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The goal §e" + goalName + " §7has been removed!");
         } else {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The goal §e" + goalName + " §7doesn't exist!");

@@ -1,6 +1,8 @@
 package GUIs;
 
 import Goals.Goal;
+import Users.DBUser;
+import Users.DBUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -23,6 +25,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     private Inventory inventory;
     private Goal goal;
     private Object previousGui;
+    private PlayTimeManager plugin;
 
     private static final class Slots {
         static final int TIME_SETTING = 10;
@@ -32,6 +35,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         static final int GOAL_ACTIVATION_STATUS = 29;
         static final int GOAL_COMMANDS = 31;
         static final int DELETE_GOAL = 33;
+        static final int UNCOMPLETE_GOAL = 35; // New slot for uncomplete goal button
         static final int BACK_BUTTON = 44;
     }
 
@@ -41,6 +45,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         this.goal = goal;
         this.previousGui = previousGui;
         this.inventory = Bukkit.createInventory(this, GUI_SIZE, Component.text(goal.getName() + " - Settings"));
+        this.plugin = PlayTimeManager.getInstance();
     }
 
     @Override
@@ -146,6 +151,14 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text("§7Click to delete this goal")
         ));
 
+        // Add uncomplete goal button
+        inventory.setItem(Slots.UNCOMPLETE_GOAL, createGuiItem(
+                Material.PLAYER_HEAD,
+                Component.text("§e§lUncomplete Goal for Player"),
+                Component.text("§7Click to remove this goal's completion"),
+                Component.text("§7from a specific player")
+        ));
+
         // Back button
         inventory.setItem(Slots.BACK_BUTTON, createGuiItem(
                 Material.MAGENTA_GLAZED_TERRACOTTA,
@@ -209,6 +222,10 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 handleDeleteGoal(player);
                 break;
 
+            case Slots.UNCOMPLETE_GOAL:
+                openUncompleteGoalDialog(player);
+                break;
+
             case Slots.BACK_BUTTON:
                 handleBackButton(player);
                 break;
@@ -270,6 +287,52 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 })
                 .text(formatTime(goal.getTime()))
                 .title("Format: 1d, 2h, 3m, 4s")
+                .plugin(PlayTimeManager.getPlugin(PlayTimeManager.class))
+                .open(player);
+    }
+
+    private void openUncompleteGoalDialog(Player player) {
+        ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+        ItemMeta meta = item.getItemMeta();
+        meta.displayName(Component.text(" "));
+        item.setItemMeta(meta);
+
+        player.closeInventory();
+        new AnvilGUI.Builder()
+                .onClick((slot, stateSnapshot) -> {
+                    if (slot != AnvilGUI.Slot.OUTPUT) {
+                        return Collections.emptyList();
+                    }
+
+                    String playerName = stateSnapshot.getText().replace(" ", "");
+
+                    DBUser user = plugin.getDbUsersManager().getUserFromNickname(playerName);
+
+                    if(user == null){
+                        return Collections.singletonList(
+                                AnvilGUI.ResponseAction.updateTitle("Player not found!", true)
+                        );
+                    }
+
+                    if (user.hasCompletedGoal(goal.getName())) {
+                        user.unmarkGoalAsCompleted(goal.getName());
+                        player.sendMessage(Component.text("[§6PlayTime§eManager§f]§7 Successfully uncompleted goal §a" +
+                                goal.getName() + "§7 for player §a" + playerName));
+
+                        reopenMainGui(player);
+                        return Collections.singletonList(AnvilGUI.ResponseAction.close());
+                    } else {
+                        return Collections.singletonList(
+                                AnvilGUI.ResponseAction.updateTitle("Player hasn't reach that goal!", true)
+                        );
+                    }
+                })
+                .onClose(state -> {
+                    Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class),
+                            () -> openInventory(state.getPlayer()));
+                })
+                .itemLeft(item)
+                .title("Enter player name:")
                 .plugin(PlayTimeManager.getPlugin(PlayTimeManager.class))
                 .open(player);
     }

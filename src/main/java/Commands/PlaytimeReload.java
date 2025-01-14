@@ -1,5 +1,6 @@
 package Commands;
 
+import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import Goals.GoalsManager;
 import org.bukkit.command.Command;
@@ -10,7 +11,6 @@ import org.jetbrains.annotations.NotNull;
 public class PlaytimeReload implements CommandExecutor {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
         if (sender.hasPermission("playtime.reload")) {
@@ -23,7 +23,7 @@ public class PlaytimeReload implements CommandExecutor {
             GoalsManager.loadGoals();
 
             // Restart LuckPerms schedule if applicable
-            plugin.getUsersManager().restartSchedule();
+            plugin.getOnlineUsersManager().restartSchedule();
             sender.sendMessage("[§6PlayTime§eManager§f]§7 Goal check schedule has been restarted");
 
             return true;

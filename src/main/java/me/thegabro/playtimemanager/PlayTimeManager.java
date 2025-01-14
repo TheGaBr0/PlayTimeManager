@@ -31,12 +31,14 @@ import java.util.Objects;
 public class PlayTimeManager extends JavaPlugin{
 
     private static PlayTimeManager instance;
-    private OnlineUsersManager onlineUsersManager;
     private Configuration config;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
     private final String CONFIGVERSION = "3.2";
     private final String GOALSCONFIGVERSION = "1.0";
+    private OnlineUsersManager onlineUsersManager;
+    private DBUsersManager dbUsersManager;
+
 
     @Override
     public void onEnable() {
@@ -46,6 +48,8 @@ public class PlayTimeManager extends JavaPlugin{
         config = new Configuration(this.getDataFolder(), "config", true, true);
 
         LogFilter.registerFilter();
+
+
         this.db = new SQLite(this);
         this.db.load();
 
@@ -66,8 +70,8 @@ public class PlayTimeManager extends JavaPlugin{
 
         }
 
-
-        onlineUsersManager = new OnlineUsersManager();
+        onlineUsersManager = OnlineUsersManager.getInstance();
+        dbUsersManager = DBUsersManager.getInstance();
 
         permissionsManagerConfigured = checkPermissionsPlugin();
 
@@ -98,7 +102,7 @@ public class PlayTimeManager extends JavaPlugin{
 
         getLogger().info("has been enabled!");
 
-        getUsersManager().restartSchedule();
+        onlineUsersManager.restartSchedule();
 
     }
 
@@ -117,11 +121,17 @@ public class PlayTimeManager extends JavaPlugin{
         return instance;
     }
 
+    public OnlineUsersManager getOnlineUsersManager() {
+        return onlineUsersManager;
+    }
+
+    public DBUsersManager getDbUsersManager() {
+        return dbUsersManager;
+    }
+
     public Configuration getConfiguration() {
         return config;
     }
-
-    public OnlineUsersManager getUsersManager(){return onlineUsersManager;}
 
     public PlayTimeDatabase getDatabase() { return this.db; }
 

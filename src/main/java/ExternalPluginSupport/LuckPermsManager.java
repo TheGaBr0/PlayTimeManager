@@ -8,8 +8,6 @@ import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
 import net.luckperms.api.node.types.InheritanceNode;
-import org.bukkit.Bukkit;
-
 import java.util.UUID;
 
 public class LuckPermsManager {

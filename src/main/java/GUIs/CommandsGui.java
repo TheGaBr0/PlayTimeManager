@@ -34,13 +34,6 @@ public class CommandsGui implements InventoryHolder, Listener {
     private GoalSettingsGui parentGui;
     private int currentPage = 0;
     private ChatEventManager chatHandler;
-    private final Map<UUID, String> editingPlayers = new HashMap<>();
-    private final Map<UUID, CommandEditState> playerStates = new HashMap<>();
-
-    private enum CommandEditState {
-        ADDING,
-        EDITING
-    }
 
     private static final class Slots {
         static final int PREV_PAGE = 45;

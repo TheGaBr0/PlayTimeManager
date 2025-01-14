@@ -1,6 +1,7 @@
 package Commands.PlayTimeCommandManager;
 
 import SQLiteDB.PlayTimeDatabase;
+import Users.DBUsersManager;
 import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.command.Command;
@@ -17,13 +18,11 @@ import java.util.List;
 public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
     private final List<String> subCommands = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final OnlineUsersManager onlineUsersManager;
-    private final PlayTimeDatabase db = plugin.getDatabase();
+
 
     public PlayTimeCommandManager() {
         subCommands.add("add");
         subCommands.add("remove");
-        onlineUsersManager = plugin.getUsersManager();
     }
 
     @Override
@@ -35,7 +34,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
         if (!(sender instanceof Player) || sender.hasPermission("playtime")) {
             if(args.length <= 1){
                 if(args.length == 1){
-                    if(!onlineUsersManager.userExists(args[0])){
+                    if(plugin.getDbUsersManager().getUserFromNickname(args[0]) == null){
                         sender.sendMessage("[§6PlayTime§eManager§f]§7 The player §e" + args[0] + "§7 has never joined the server!");
                         return false;
                     }

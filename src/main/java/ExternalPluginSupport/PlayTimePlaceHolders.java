@@ -1,5 +1,6 @@
 package ExternalPluginSupport;
 import Users.DBUser;
+import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;
@@ -10,7 +11,6 @@ import java.util.concurrent.TimeUnit;
 public class PlayTimePlaceHolders extends PlaceholderExpansion{
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-
     @Override
     public @NotNull String getIdentifier() {
         return "PTM";
@@ -34,7 +34,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
     @Override
     public String onRequest(OfflinePlayer player, String params) {
         if(params.equalsIgnoreCase("PlayTime")){
-            return convertTime(plugin.getUsersManager().getOnlineUser(player.getName()).getPlaytime() / 20);
+            return convertTime(plugin.getOnlineUsersManager().getOnlineUser(player.getName()).getPlaytime() / 20);
         }
 
         if(params.toLowerCase().contains("PlayTime_Top_".toLowerCase())) {

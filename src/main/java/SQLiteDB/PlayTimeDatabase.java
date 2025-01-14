@@ -7,6 +7,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+import Users.DBUsersManager;
+import Users.OnlineUsersManager;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -19,7 +21,6 @@ public abstract class PlayTimeDatabase {
     PlayTimeManager plugin;
     Connection connection;
     protected static HikariDataSource dataSource;
-
     public PlayTimeDatabase(PlayTimeManager instance){
         plugin = instance;
     }
@@ -471,10 +472,7 @@ public abstract class PlayTimeDatabase {
         ArrayList<DBUser> topDBUsers = new ArrayList<>();
         DBUser user;
         for(String uuid : topPlayers){
-            user = plugin.getUsersManager().getOnlineUserByUUID(uuid);
-            if(user == null)
-                user = DBUser.fromUUID(uuid);
-
+            user = plugin.getDbUsersManager().getUserFromUUID(uuid);
             topDBUsers.add(user);
         }
 

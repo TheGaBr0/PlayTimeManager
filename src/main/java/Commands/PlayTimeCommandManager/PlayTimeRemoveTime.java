@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 
 public class PlayTimeRemoveTime {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final OnlineUsersManager onlineUsersManager =  plugin.getUsersManager();
 
     public PlayTimeRemoveTime(CommandSender sender, String[] args){
         execute(sender, args);
@@ -61,7 +60,7 @@ public class PlayTimeRemoveTime {
                 return;
             }
         }
-        DBUser user = onlineUsersManager.getOnlineUser(args[0]);
+        DBUser user = plugin.getDbUsersManager().getUserFromNickname(args[0]);
 
         if(user == null)
             user = DBUser.fromNickname(args[0]);

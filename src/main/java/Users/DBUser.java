@@ -40,6 +40,10 @@ public class DBUser {
     // Factory method to create DBUser by UUID
     public static DBUser fromUUID(String uuid) {
         String nickname = db.getNickname(uuid);
+
+        if(uuid == null)
+            return null;
+
         long playtime = db.getPlaytime(uuid);
         long artificialPlaytime = db.getArtificialPlaytime(uuid);
         ArrayList<String> completedGoals = db.getCompletedGoals(uuid);
@@ -49,6 +53,10 @@ public class DBUser {
     // Factory method to create DBUser by nickname
     public static DBUser fromNickname(String nickname) {
         String uuid = db.getUUIDFromNickname(nickname);
+
+        if(uuid == null)
+            return null;
+
         long playtime = db.getPlaytime(uuid);
         long artificialPlaytime = db.getArtificialPlaytime(uuid);
         ArrayList<String> completedGoals = db.getCompletedGoals(uuid);

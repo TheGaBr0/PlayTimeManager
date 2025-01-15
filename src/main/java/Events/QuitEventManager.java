@@ -15,7 +15,7 @@ public class QuitEventManager implements Listener {
     public void onQuit(PlayerQuitEvent event){
 
         OnlineUser onlineUser = plugin.getOnlineUsersManager().getOnlineUser(event.getPlayer().getName());
-        onlineUser.updatePlayTime();
+        onlineUser.updateDB();
         plugin.getOnlineUsersManager().removeOnlineUser(onlineUser);
     }
 

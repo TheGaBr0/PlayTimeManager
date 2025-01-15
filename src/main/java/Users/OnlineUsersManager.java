@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class OnlineUsersManager {
     private static OnlineUsersManager instance;
     private BukkitTask schedule;
+    private BukkitTask dbUpdateSchedule;
     private String configSound, configMessage;
     protected final PlayTimeManager plugin = PlayTimeManager.getInstance();
     protected final ArrayList<OnlineUser> onlineUsers = new ArrayList<>();
@@ -24,7 +25,8 @@ public class OnlineUsersManager {
 
     private OnlineUsersManager() {
         loadOnlineUsers();
-        restartSchedule();
+        startGoalCheckSchedule();
+        startDBUpdateSchedule();
     }
 
     public static OnlineUsersManager getInstance() {
@@ -65,12 +67,13 @@ public class OnlineUsersManager {
         return null;
     }
 
-    public void restartSchedule() {
+    public void startGoalCheckSchedule() {
         if (schedule != null) {
             schedule.cancel();
         }
 
         schedule = new BukkitRunnable() {
+            @Override
             public void run() {
                 Player p;
                 PlayTimeDatabase db = plugin.getDatabase();
@@ -134,6 +137,26 @@ public class OnlineUsersManager {
                 }
             }
         }.runTaskTimer(plugin, 0, plugin.getConfiguration().getGoalsCheckRate() * 20);
+    }
+
+    private void startDBUpdateSchedule() {
+        if (dbUpdateSchedule != null) {
+            dbUpdateSchedule.cancel();
+        }
+
+        dbUpdateSchedule = new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (OnlineUser user : onlineUsers) {
+                    try {
+                        user.updateDB();
+                    } catch (Exception e) {
+                        plugin.getLogger().severe("Failed to update playtime for online user " +
+                                user.getNickname() + ": " + e.getMessage());
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, (long) 300 * 20, (long) 300 * 20);  //each 5 minutes
     }
 
     private void assignPermissionsForGoal(OnlineUser onlineUser, Goal goal) {

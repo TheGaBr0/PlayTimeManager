@@ -3,29 +3,25 @@ package Users;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
-public class OnlineUser extends DBUser{
-
-    private long actualPlayTime;
+public class OnlineUser extends DBUser {
     private final Player p;
 
     public OnlineUser(Player p) {
         super(p);
         this.p = p;
-        fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
-
+        this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
     }
 
+    private long getCachedPlayTime() {
+        return DBplaytime + (p.getStatistic(Statistic.PLAY_ONE_MINUTE) - fromServerOnJoinPlayTime);
+    }
 
-    public void updatePlayTime(){
-        actualPlayTime =  DBplaytime + (p.getStatistic(Statistic.PLAY_ONE_MINUTE) - fromServerOnJoinPlayTime);
-        db.updatePlaytime(uuid, actualPlayTime);
-        actualPlayTime += db.getArtificialPlaytime(uuid);
+    public void updateDB() {
+        db.updatePlaytime(uuid, getCachedPlayTime());
     }
 
     @Override
-    public long getPlaytime(){
-        updatePlayTime();
-        return actualPlayTime;
+    public long getPlaytime() {
+        return getCachedPlayTime() + artificialPlaytime;
     }
-
 }

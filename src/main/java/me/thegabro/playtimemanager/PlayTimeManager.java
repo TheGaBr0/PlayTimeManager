@@ -102,7 +102,7 @@ public class PlayTimeManager extends JavaPlugin{
 
         getLogger().info("has been enabled!");
 
-        onlineUsersManager.restartSchedule();
+        onlineUsersManager.startGoalCheckSchedule();
 
     }
 

@@ -8,11 +8,10 @@ import java.util.List;
 
 public class DBUsersManager {
     private final PlayTimeDatabase db;
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private static DBUsersManager instance;
-    private OnlineUsersManager onlineUsersManager;
+    private final OnlineUsersManager onlineUsersManager;
     private DBUsersManager() {
-        this.plugin = PlayTimeManager.getInstance();
         this.db = plugin.getDatabase();
         onlineUsersManager = plugin.getOnlineUsersManager();
     }

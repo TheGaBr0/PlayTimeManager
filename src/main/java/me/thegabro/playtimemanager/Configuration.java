@@ -5,6 +5,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Objects;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class Configuration {
@@ -157,10 +158,7 @@ public class Configuration {
     public String getVersion(){
         String version = config.getString("config-version");
 
-        if(version == null)
-            return "null";
-        else
-            return version;
+        return Objects.requireNonNullElse(version, "null");
     }
 
     public String getGoalsVersion(){

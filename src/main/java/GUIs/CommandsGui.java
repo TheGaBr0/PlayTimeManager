@@ -2,7 +2,6 @@ package GUIs;
 
 import Events.ChatEventManager;
 import Goals.Goal;
-import me.thegabro.playtimemanager.PlayTimeManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -13,11 +12,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -194,8 +191,10 @@ public class CommandsGui implements InventoryHolder, Listener {
     private void startCommandAdd(Player player) {
         chatHandler.startChatInput(
                 player,
-                "\n§7Enter a command with '/' or type §ccancel§7 to exit.\n"
-                        + "You can use the §ePLAYER_NAME §7placeholder to refer to the player.",
+                """
+
+                        §7Enter a command with '/' or type §ccancel§7 to exit.
+                        You can use the §ePLAYER_NAME §7placeholder to refer to the player.""",
                 (p, input) -> {
                     if (input.equalsIgnoreCase("cancel")) {
                         p.sendMessage(Component.text("§7Command add cancelled"));
@@ -212,8 +211,10 @@ public class CommandsGui implements InventoryHolder, Listener {
     private void startCommandEdit(Player player, String oldCommand) {
         chatHandler.startChatInput(
                 player,
-                "\n§7Please type the new command in chat or type §ccancel§7 to exit.\n"
-                        + "You can also type §e/cancel §7to exit the process anytime.",
+                """
+
+                        §7Please type the new command in chat or type §ccancel§7 to exit.
+                        You can also type §e/cancel §7to exit the process anytime.""",
                 (p, input) -> {
                     if (input.equalsIgnoreCase("cancel")) {
                         p.sendMessage(Component.text("§cCommand edit cancelled"));

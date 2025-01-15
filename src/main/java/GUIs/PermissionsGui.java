@@ -97,10 +97,6 @@ public class PermissionsGui implements InventoryHolder, Listener {
                         PlayTimeManager.getInstance().getLuckPermsApi() != null &&
                         ExternalPluginSupport.LuckPermsManager.getInstance(PlayTimeManager.getInstance()).groupExists(groupName);
 
-                List<Component> lore = new ArrayList<>();
-                lore.add(Component.text("§7Click to edit"));
-                lore.add(Component.text("§cRight-click to remove"));
-                lore.add(Component.text("")); // Empty line for spacing
 
                 if (!groupExists) {
                     inventory.setItem(i, parentGui.createGuiItem(

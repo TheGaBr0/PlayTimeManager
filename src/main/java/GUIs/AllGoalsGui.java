@@ -99,7 +99,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
         ItemMeta meta = item.getItemMeta();
         meta.displayName(name);
 
-        ArrayList<Component> metalore = new ArrayList<Component>(Arrays.asList(lore));
+        ArrayList<Component> metalore = new ArrayList<>(Arrays.asList(lore));
 
         meta.lore(metalore);
         item.setItemMeta(meta);

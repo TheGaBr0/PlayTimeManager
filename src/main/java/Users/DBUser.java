@@ -1,6 +1,5 @@
 package Users;
 
-import Goals.Goal;
 import SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Statistic;

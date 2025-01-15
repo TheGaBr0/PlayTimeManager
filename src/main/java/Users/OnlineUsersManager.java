@@ -21,7 +21,7 @@ public class OnlineUsersManager {
     private String configSound, configMessage;
     protected final PlayTimeManager plugin = PlayTimeManager.getInstance();
     protected final ArrayList<OnlineUser> onlineUsers = new ArrayList<>();
-    private Map<String, String> goalMessageReplacements = new HashMap<>();
+    private final Map<String, String> goalMessageReplacements = new HashMap<>();
 
     private OnlineUsersManager() {
         loadOnlineUsers();
@@ -76,7 +76,6 @@ public class OnlineUsersManager {
             @Override
             public void run() {
                 Player p;
-                PlayTimeDatabase db = plugin.getDatabase();
                 if (plugin.getConfiguration().getGoalsCheckVerbose()) {
                     plugin.getLogger().info("Goal check schedule started, refresh rate is " +
                             convertTime(plugin.getConfiguration().getGoalsCheckRate()) +

@@ -71,9 +71,9 @@ public class PlayTimeManager extends JavaPlugin{
             Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ GOALSCONFIGVERSION);
         }
 
+        GoalsManager.initialize(this);
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
-        dbUsersManager.initialize();
 
         //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
         //-----------------------------
@@ -113,7 +113,6 @@ public class PlayTimeManager extends JavaPlugin{
         Objects.requireNonNull(getCommand("playtimereload")).setExecutor(new PlaytimeReload() {});
         //getCommand("playtimehelp").setExecutor(new PlaytimeHelp(this));
 
-        GoalsManager.initialize(this);
 
         getLogger().info("has been enabled!");
 

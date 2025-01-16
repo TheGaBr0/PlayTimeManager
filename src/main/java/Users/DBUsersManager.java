@@ -22,9 +22,6 @@ public class DBUsersManager {
         this.db = plugin.getDatabase();
         this.topPlayers = Collections.synchronizedList(new ArrayList<>());
         this.userCache = new ConcurrentHashMap<>();
-    }
-
-    public void initialize() {
         this.onlineUsersManager = plugin.getOnlineUsersManager();
         updateTopPlayersFromDB();
     }

@@ -1,8 +1,6 @@
 package Events;
 
-import Users.DBUsersManager;
 import Users.OnlineUser;
-import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -17,6 +15,7 @@ public class JoinEventManager implements Listener {
 
             OnlineUser onlineUser = new OnlineUser(event.getPlayer());
             plugin.getOnlineUsersManager().addOnlineUser(onlineUser);
+            plugin.getDbUsersManager().updateCachedTopPlayers(onlineUser);
 
     }
 

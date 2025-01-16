@@ -44,14 +44,14 @@ public class PlaytimeTop implements TabExecutor {
                             page = 1;
                         }
                         int numeroUtentiTotali = Integer.parseInt(args[0]);
-                        ArrayList<String> topPlayers = db.getTopPlayersByPlaytime(numeroUtentiTotali);
+                        plugin.getOnlineUsersManager().startDBUpdateSchedule();
+                        Map<String,String> topPlayers = db.getTopPlayersByPlaytime(numeroUtentiTotali);
                         ArrayList<DBUser> topDBUsers = new ArrayList<>();
-                        for(String uuid : topPlayers)
-                            topDBUsers.add(DBUser.fromUUID(uuid));
 
+                        for(String uuid : topPlayers.keySet()) {
+                            topDBUsers.add(plugin.getDbUsersManager().getUserFromUUID(uuid));
+                        }
                         if(!topDBUsers.isEmpty()){
-                            // Ottenere il numero totale degli utenti dal parametro args[0]
-
 
                             if(numeroUtentiTotali > topDBUsers.size())
                                 numeroUtentiTotali = topDBUsers.size();
@@ -78,7 +78,6 @@ public class PlaytimeTop implements TabExecutor {
                                             convertTime(topDBUsers.get(i).getPlaytime()/20));
                                 }
                             } else {
-                                // Pagina non valida
                                 sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid page!");
                             }
                         }else{

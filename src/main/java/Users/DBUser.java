@@ -37,7 +37,7 @@ public class DBUser {
     }
 
     // Factory method to create DBUser by UUID
-    public static DBUser fromUUID(String uuid) {
+    protected static DBUser fromUUID(String uuid) {
         String nickname = db.getNickname(uuid);
 
         if(uuid == null)
@@ -50,7 +50,7 @@ public class DBUser {
     }
 
     // Factory method to create DBUser by nickname
-    public static DBUser fromNickname(String nickname) {
+    protected static DBUser fromNickname(String nickname) {
         String uuid = db.getUUIDFromNickname(nickname);
 
         if(uuid == null)

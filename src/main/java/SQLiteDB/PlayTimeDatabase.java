@@ -430,15 +430,15 @@ public abstract class PlayTimeDatabase {
         return null;
     }
 
-    public ArrayList<String> getTopPlayersByPlaytime(int topN) {
+    public Map<String, String> getTopPlayersByPlaytime(int topN) {
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
-        ArrayList<String> topPlayers = new ArrayList<>();
+        Map<String, String> topPlayers = new LinkedHashMap<>();
         try {
             conn = getSQLConnection();
 
-            ps = conn.prepareStatement("SELECT uuid FROM play_time " +
+            ps = conn.prepareStatement("SELECT uuid,nickname FROM play_time " +
                     "ORDER BY (playtime + artificial_playtime) DESC LIMIT ?;");
 
             ps.setInt(1, topN);
@@ -448,7 +448,10 @@ public abstract class PlayTimeDatabase {
             while (rs.next()) {
 
                 String uuid = rs.getString("uuid");
-                topPlayers.add(uuid);
+                String nickname = rs.getString("nickname");
+
+                topPlayers.put(uuid, nickname != null ? nickname : uuid);
+
             }
         } catch (SQLException ex) {
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
@@ -465,22 +468,6 @@ public abstract class PlayTimeDatabase {
             }
         }
         return topPlayers;
-    }
-
-    public DBUser getTopPlayerAtPosition(int position){
-        ArrayList<String> topPlayers = getTopPlayersByPlaytime(position);
-        ArrayList<DBUser> topDBUsers = new ArrayList<>();
-        DBUser user;
-        for(String uuid : topPlayers){
-            user = plugin.getDbUsersManager().getUserFromUUID(uuid);
-            topDBUsers.add(user);
-        }
-
-        try{
-            return topDBUsers.get(position-1);
-        }catch(IndexOutOfBoundsException exp){
-            return null;
-        }
     }
 
     public ArrayList<String> getCompletedGoals(String uuid) {

@@ -39,7 +39,9 @@ public class PlayTimeManager extends JavaPlugin{
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
 
-
+    //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
+    private boolean updateDB = false;
+    //-------------------------
     @Override
     public void onEnable() {
 
@@ -59,7 +61,7 @@ public class PlayTimeManager extends JavaPlugin{
             updateConfigFile();
 
             Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ CONFIGVERSION);
-
+            updateDB = true;
         }
 
         if(!config.getGoalsVersion().equals(GOALSCONFIGVERSION)){
@@ -67,11 +69,24 @@ public class PlayTimeManager extends JavaPlugin{
             updateGoalsConfigFile();
 
             Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ GOALSCONFIGVERSION);
-
         }
 
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
+        dbUsersManager.initialize();
+
+        //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
+        //-----------------------------
+        if(updateDB){
+            for(Goal g : GoalsManager.getGoals()){
+                for(DBUser u : DBUsersManager.getInstance().getAllDBUsers()){
+                    if(u.getPlaytime() >= g.getTime())
+                        u.markGoalAsCompleted(g.getName());
+                }
+            }
+            getLogger().info("Database updated successfully!");
+        }
+        //-----------------------------
 
         permissionsManagerConfigured = checkPermissionsPlugin();
 
@@ -102,12 +117,11 @@ public class PlayTimeManager extends JavaPlugin{
 
         getLogger().info("has been enabled!");
 
-        onlineUsersManager.startGoalCheckSchedule();
-
     }
 
     @Override
     public void onDisable() {
+        onlineUsersManager.stopSchedules();
         for(Player p : Bukkit.getOnlinePlayers()){
             onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
         }
@@ -186,13 +200,6 @@ public class PlayTimeManager extends JavaPlugin{
 
         db.dropGroupsTable();
 
-        for(Goal g : GoalsManager.getGoals()){
-            for(DBUser u : DBUsersManager.getInstance().getAllDBUsers()){
-                if(u.getPlaytime() >= g.getTime())
-                    u.markGoalAsCompleted(g.getName());
-            }
-        }
-        getLogger().info("Database updated successfully!");
         //---------------------------------
 
         File configFile = new File(this.getDataFolder(), "config.yml");

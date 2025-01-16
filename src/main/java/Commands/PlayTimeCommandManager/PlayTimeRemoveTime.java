@@ -62,9 +62,6 @@ public class PlayTimeRemoveTime {
         }
         DBUser user = plugin.getDbUsersManager().getUserFromNickname(args[0]);
 
-        if(user == null)
-            user = DBUser.fromNickname(args[0]);
-
         long oldPlaytime = user.getPlaytime() / 20;
         String formattedOldPlaytime = convertTime(oldPlaytime);
         user.setArtificialPlaytime(user.getArtificialPlaytime() + timeToTicks);

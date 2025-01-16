@@ -41,7 +41,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
             int position;
             if(isStringInt(params.substring(13))){
                 position = Integer.parseInt(params.substring(13));
-                DBUser user = plugin.getDatabase().getTopPlayerAtPosition(position);
+                DBUser user = plugin.getDbUsersManager().getTopPlayerAtPosition(position);
 
                 if(user == null)
                     return "Error: wrong position?";
@@ -54,7 +54,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
             int position;
             if(isStringInt(params.substring(13))){
                 position = Integer.parseInt(params.substring(13));
-                DBUser user = plugin.getDatabase().getTopPlayerAtPosition(position);
+                DBUser user = plugin.getDbUsersManager().getTopPlayerAtPosition(position);
 
                 if(user == null)
                     return "Error: wrong position?";

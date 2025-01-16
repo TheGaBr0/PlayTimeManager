@@ -11,7 +11,7 @@ public class DBUsersManager {
     private final PlayTimeDatabase db;
     private final PlayTimeManager plugin;
     private static volatile DBUsersManager instance;
-    private OnlineUsersManager onlineUsersManager;
+    private final OnlineUsersManager onlineUsersManager;
     private final List<DBUser> topPlayers;
     private final Map<String, DBUser> userCache;
 
@@ -37,16 +37,9 @@ public class DBUsersManager {
         return instance;
     }
 
-    private OnlineUsersManager getOnlineUsersManager() {
-        if (onlineUsersManager == null) {
-            onlineUsersManager = plugin.getOnlineUsersManager();
-        }
-        return onlineUsersManager;
-    }
-
     public DBUser getUserFromNickname(String nickname) {
         // Check online users first
-        OnlineUser onlineUser = getOnlineUsersManager().getOnlineUser(nickname);
+        OnlineUser onlineUser = onlineUsersManager.getOnlineUser(nickname);
         if (onlineUser != null) {
             return onlineUser;
         }
@@ -57,7 +50,7 @@ public class DBUsersManager {
 
     public DBUser getUserFromUUID(String uuid) {
         // Check online users first
-        OnlineUser onlineUser = getOnlineUsersManager().getOnlineUserByUUID(uuid);
+        OnlineUser onlineUser = onlineUsersManager.getOnlineUserByUUID(uuid);
         if (onlineUser != null) {
             return onlineUser;
         }

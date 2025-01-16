@@ -35,7 +35,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         static final int GOAL_ACTIVATION_STATUS = 29;
         static final int GOAL_COMMANDS = 31;
         static final int DELETE_GOAL = 33;
-        static final int UNCOMPLETE_GOAL = 35; // New slot for uncomplete goal button
+        static final int UNCOMPLETE_GOAL = 36;
         static final int BACK_BUTTON = 44;
     }
 

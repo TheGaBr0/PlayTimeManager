@@ -24,6 +24,7 @@ public class DBUsersManager {
         this.userCache = new ConcurrentHashMap<>();
         this.onlineUsersManager = plugin.getOnlineUsersManager();
         updateTopPlayersFromDB();
+        startCacheMaintenanceTask();
     }
 
     public static DBUsersManager getInstance() {
@@ -35,6 +36,14 @@ public class DBUsersManager {
             }
         }
         return instance;
+    }
+
+    private void startCacheMaintenanceTask() {
+        long clearInterval = 6 * 60 * 60 * 20; //Clear every 6 hours (in ticks)
+        plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+            clearCache();
+            updateTopPlayersFromDB();
+        }, clearInterval, clearInterval);
     }
 
     public DBUser getUserFromNickname(String nickname) {

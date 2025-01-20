@@ -126,6 +126,7 @@ public class PlayTimeManager extends JavaPlugin{
         }
         db.close();
         HandlerList.unregisterAll(this);
+        dbUsersManager.clearCache();
         getLogger().info("has been disabled!");
     }
 

@@ -25,6 +25,8 @@ public class PlaytimeReload implements CommandExecutor {
             plugin.getOnlineUsersManager().startGoalCheckSchedule();
             sender.sendMessage("[§6PlayTime§eManager§f]§7 Goal check schedule has been restarted");
 
+            plugin.getDbUsersManager().updateTopPlayersFromDB();
+
             return true;
         } else {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have the permission to execute this command");

@@ -22,10 +22,10 @@ Both Paper and Spigot are supported.
 |---------|------------|---------|
 | `/playtime`<br><br>**Allows you to get your own playtime.** | playtime | yes |
 | `/playtime <playername>`<br><br>**Allows you to get other players' playtime.** | playtime.others | no |
-| `/playtime <playername> add|remove <time>`<br><br>**Allows you to modify other players' playtime.** | playtime.others.modify | no |
+| `/playtime <playername> add\remove <time>`<br><br>**Allows you to modify other players' playtime.** | playtime.others.modify | no |
 | `/playtime <playername> reset`<br><br>**Allows you to reset a player's data, including their playtime from the database, the time tracked by the server, and all goals reached.<br>You can replace `<playername>` with `*` to apply this action to all users, including those registered by the server as well as those in the database. THIS CAN'T BE UNDONE.** | playtime.others.modify | no |
 | `/playtimegoal`<br><br>**Launches the in-game goals management GUI.** | playtime.goal | no |
-| `/playtimegoal set <goalname> time:<time> [activate:true|false]` <br><br>**Adds or edits a goal with the specified name and time requirement.<br>The activate parameter is optional and defaults to false** | playtime.goal | no |
+| `/playtimegoal set <goalname> time:<time> [activate:true/false]` <br><br>**Adds or edits a goal with the specified name and time requirement.<br>The `activate` parameter is optional and defaults to `false`** | playtime.goal | no |
 | `/playtimegoal remove <goalname> `<br><br>**Removes an existing goal by name.** | playtime.goal | no |
 | `/playtimeaverage`<br><br>**Allows you to get the average playtime of all players stored.** | playtime.average | no |
 | `/playtimepercentage <time>`<br><br>**Allows you to get the percentage (and numbers) of players that have a playtime greater than or equal to the specified one.** | playtime.percentage | no |

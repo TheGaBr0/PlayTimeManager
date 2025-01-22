@@ -62,6 +62,21 @@ public class DBUser {
         return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals);
     }
 
+    public void reset() {
+        // Reset playtime statistics
+        this.DBplaytime = 0;
+        this.artificialPlaytime = 0;
+        this.fromServerOnJoinPlayTime = 0;
+
+        // Reset completed goals
+        this.completedGoals.clear();
+
+        // Update all values in database
+        db.updatePlaytime(uuid, 0);
+        db.updateArtificialPlaytime(uuid, 0);
+        db.updateCompletedGoals(uuid, completedGoals);
+    }
+
 
     public String getUuid() {
         return uuid;

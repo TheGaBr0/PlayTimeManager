@@ -9,7 +9,7 @@ softdepend: [PlaceholderAPI, LuckPerms]
 
 commands:
   playtime:
-    description: Command to get play time of players
+    description: Command to get/modify play time of players
     permission: playtime
     permission-message: You don't have the permission to execute this command!
   playtimeaverage:

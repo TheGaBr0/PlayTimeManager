@@ -61,6 +61,7 @@ public class DBUsersManager {
         // Check online users first
         OnlineUser onlineUser = onlineUsersManager.getOnlineUserByUUID(uuid);
         if (onlineUser != null) {
+            plugin.getLogger().info("run");
             return onlineUser;
         }
 
@@ -74,6 +75,9 @@ public class DBUsersManager {
     }
 
     public void updateTopPlayersFromDB() {
+
+        onlineUsersManager.updateAllOnlineUsersPlaytime();
+
         Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT);
 
         synchronized (topPlayers) {

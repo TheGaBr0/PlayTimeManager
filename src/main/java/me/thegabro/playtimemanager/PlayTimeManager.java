@@ -79,11 +79,12 @@ public class PlayTimeManager extends JavaPlugin{
         //-----------------------------
         if(updateDB){
             for(Goal g : GoalsManager.getGoals()){
-                for(DBUser u : DBUsersManager.getInstance().getAllDBUsers()){
+                for(DBUser u : dbUsersManager.getAllDBUsers()){
                     if(u.getPlaytime() >= g.getTime())
                         u.markGoalAsCompleted(g.getName());
                 }
             }
+            dbUsersManager.clearCache();
             getLogger().info("Database updated successfully!");
         }
         //-----------------------------

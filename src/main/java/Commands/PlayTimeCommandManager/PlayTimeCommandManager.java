@@ -23,6 +23,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
     public PlayTimeCommandManager() {
         subCommands.add("add");
         subCommands.add("remove");
+        subCommands.add("reset");
     }
 
     @Override
@@ -57,6 +58,9 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
                     return true;
                 } else if (subCommand.equals("remove")) {
                     new PlayTimeRemoveTime(sender, args);
+                    return true;
+                } else if (subCommand.equals("reset")) {
+                    new PlayTimeResetTime(sender, args);
                     return true;
                 }
             }

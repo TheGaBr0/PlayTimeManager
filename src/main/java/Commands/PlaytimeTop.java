@@ -44,7 +44,7 @@ public class PlaytimeTop implements TabExecutor {
                             page = 1;
                         }
                         int numeroUtentiTotali = Integer.parseInt(args[0]);
-                        plugin.getOnlineUsersManager().startDBUpdateSchedule();
+                        plugin.getOnlineUsersManager().updateAllOnlineUsersPlaytime();
                         Map<String,String> topPlayers = db.getTopPlayersByPlaytime(numeroUtentiTotali);
                         ArrayList<DBUser> topDBUsers = new ArrayList<>();
 

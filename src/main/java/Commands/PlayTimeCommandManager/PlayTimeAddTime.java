@@ -69,6 +69,7 @@ public class PlayTimeAddTime {
 
         sender.sendMessage("[§6PlayTime§eManager§f]§7 PlayTime of §e" + args[0] +
                 "§7 has been updated from §6" + formattedOldPlaytime + "§7 to §6" + formattedNewPlaytime +"!");
+        plugin.getDbUsersManager().updateTopPlayersFromDB();
 
     }
 

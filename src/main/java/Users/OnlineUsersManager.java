@@ -36,6 +36,7 @@ public class OnlineUsersManager {
         this.goalMessageReplacements = new HashMap<>();
         loadOnlineUsers();
         startGoalCheckSchedule();
+        startDBUpdateSchedule();
     }
 
     public static OnlineUsersManager getInstance() {
@@ -129,7 +130,7 @@ public class OnlineUsersManager {
                 onlineUser.getNickname(), convertTime(goal.getTime() / 20)));
     }
 
-    public void startDBUpdateSchedule() {
+    private void startDBUpdateSchedule() {
         if (dbUpdateSchedule != null) {
             dbUpdateSchedule.cancel();
         }
@@ -137,12 +138,12 @@ public class OnlineUsersManager {
         dbUpdateSchedule = new BukkitRunnable() {
             @Override
             public void run() {
-                updateAllUsersDB();
+                updateAllOnlineUsersPlaytime();
             }
         }.runTaskTimer(plugin, 0, DB_UPDATE_INTERVAL);
     }
 
-    private void updateAllUsersDB() {
+    public void updateAllOnlineUsersPlaytime() {
         onlineUsersByName.values().forEach(user -> {
             try {
                 user.updateDB();

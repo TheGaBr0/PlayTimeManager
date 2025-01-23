@@ -46,3 +46,4 @@ Example: <br>
 ## To do
 - Implement a placeholder to display the amount of time a user has been offline.
 - Rewrite time conversion format (e.g. so that after 365 days, it shows "1 year" instead of "365 days")
+- Add possibility to give custom items upon goal completion 

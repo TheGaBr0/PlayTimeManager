@@ -47,21 +47,21 @@ public class DBUsersManager {
     }
 
     public DBUser getUserFromNickname(String nickname) {
-        // Check online users first
-        OnlineUser onlineUser = onlineUsersManager.getOnlineUser(nickname);
-        if (onlineUser != null) {
-            return onlineUser;
+        // First, try to get UUID from database
+        String uuid = db.getUUIDFromNickname(nickname);
+
+        // If UUID exists, use it to retrieve or create the DBUser
+        if (uuid != null) {
+            return getUserFromUUID(uuid);
         }
 
-        // Check cache
-        return userCache.computeIfAbsent(nickname.toLowerCase(), k -> DBUser.fromNickname(nickname));
+        return null;
     }
 
     public DBUser getUserFromUUID(String uuid) {
         // Check online users first
         OnlineUser onlineUser = onlineUsersManager.getOnlineUserByUUID(uuid);
         if (onlineUser != null) {
-            plugin.getLogger().info("run");
             return onlineUser;
         }
 

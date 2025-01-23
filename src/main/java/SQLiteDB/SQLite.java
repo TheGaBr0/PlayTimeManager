@@ -34,7 +34,6 @@ public class SQLite extends PlayTimeDatabase {
             "PRIMARY KEY (uuid)" +
             ");";
 
-    // SQL creation stuff, You can leave the blow stuff untouched.
     public Connection getSQLConnection() {
         if (dataSource == null) {
             throw new IllegalStateException("DataSource not initialized");

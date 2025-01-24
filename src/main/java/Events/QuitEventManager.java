@@ -1,7 +1,6 @@
 package Events;
 
 import Users.OnlineUser;
-import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;

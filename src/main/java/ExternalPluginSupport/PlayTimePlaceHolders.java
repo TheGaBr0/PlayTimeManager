@@ -1,6 +1,5 @@
 package ExternalPluginSupport;
 import Users.DBUser;
-import Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.OfflinePlayer;

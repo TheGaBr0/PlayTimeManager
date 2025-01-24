@@ -2,19 +2,25 @@
 Hello and welcome to PlayTimeManager! I initially created this plugin for the server on which I am currently a developer. We don't have thousands or hundreds of players, but we had to find a way to track players' playtime to promote one whenever it reaches a certain amount. I looked around on the web, but I couldn't find any plugin that was able to satisfy our issue: we needed a playtime plugin, somewhat efficient, that could automatically execute a specific task like promoting a player through Luckperms. Well, that's what this plugin is supposed to do! <br> <br>
 I thought this could be useful to other server administrators as well, so I decided to share it on Spigot! If interest arises, I'll keep it updated happily :)
 ## What's PlayTimeManager?
-PlayTimeManager is a plugin that tracks and rewards player engagement through playtime monitoring using SQLite and HikariCP. It features a comprehensive **goal system** where you can:
--   Set custom playtime goals with configurable rewards
--   Grant automatic permissions and group promotions (Thanks to a LuckPerms integration)
--   Execute custom commands upon goal completion
--   Play celebration sounds
--   Display custom messages
+PlayTimeManager is a high-performance plugin that tracks and rewards player engagement through intelligent playtime monitoring. It features a comprehensive goal system where you can:
+-   **Set** custom playtime goals
+-   **Grant** automatic permissions and group promotions (Thanks to a LuckPerms integration)
+-   **Execute** custom commands upon goal completion
+-   **Play** celebration sounds
+-   **Display** custom messages
 
-Additionally, it supports PAPI, allowing you to create leaderboards or let players view their own playtime through the use of placeholders.
+The plugin's efficiency comes from smart technical strategies:
+- **Caching**: Intelligent in-memory caching reduces database calls and computational load.
+- **Database Optimization**: Uses lightweight SQLite for fast, low-impact storage with high-concurrency reads.
+- **Connection Management**: HikariCP ensures quick, pre-established database connections with no delays.
+This ensures lightning-fast performance with negligible server resource consumption.
+
+
+PlaceHoldersApi (PAPI) is supported, allowing you to create leaderboards or let players view their own playtime through the use of placeholders.
 
 While the plugin primarily supports English, player-facing messages can be customized in the config.yml. It also features an automatic configuration update system using a config-version field, ensuring that your config.yml stays current with the latest settings while preserving your customizations.
 
 Both Paper and Spigot are supported.
-
 
 
 ## Commands and permissions

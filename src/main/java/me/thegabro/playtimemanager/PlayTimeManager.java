@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager;
 
+import me.thegabro.playtimemanager.updaters.Version304To31Updater;
 import Commands.*;
 import Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import Events.ChatEventManager;
@@ -12,7 +13,6 @@ import SQLiteDB.LogFilter;
 import SQLiteDB.SQLite;
 import Events.QuitEventManager;
 import ExternalPluginSupport.PlayTimePlaceHolders;
-import Users.DBUser;
 import Users.DBUsersManager;
 import Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
@@ -23,9 +23,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import ExternalPluginSupport.LuckPermsManager;
 
-
-import java.io.File;
-import java.util.Map;
 import java.util.Objects;
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class PlayTimeManager extends JavaPlugin{
@@ -34,14 +31,11 @@ public class PlayTimeManager extends JavaPlugin{
     private Configuration config;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-    private final String CONFIGVERSION = "3.2";
-    private final String GOALSCONFIGVERSION = "1.0";
+    private final String CURRENTCONFIGVERSION = "3.2";
+    private final String CURRENTGOALSCONFIGVERSION = "1.0";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
 
-    //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
-    private boolean updateDB = false;
-    //-------------------------
     @Override
     public void onEnable() {
 
@@ -55,46 +49,15 @@ public class PlayTimeManager extends JavaPlugin{
         this.db = new SQLite(this);
         this.db.load();
 
-
-        if(!config.getVersion().equals(CONFIGVERSION)){
-            Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Old config version detected, updating it to the latest one...");
-            updateConfigFile();
-
-            Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ CONFIGVERSION);
-            updateDB = true;
-        }
-
-        if(!config.getGoalsVersion().equals(GOALSCONFIGVERSION)){
-            Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Old goals config version detected, updating it to the latest one...");
-            updateGoalsConfigFile();
-
-            Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ GOALSCONFIGVERSION);
-        }
-
         GoalsManager.initialize(this);
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
-
-        //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
-        //-----------------------------
-        if(updateDB){
-            for(Goal g : GoalsManager.getGoals()){
-                for(DBUser u : dbUsersManager.getAllDBUsers()){
-                    if(u.getPlaytime() >= g.getTime())
-                        u.markGoalAsCompleted(g.getName());
-                }
-            }
-            dbUsersManager.clearCache();
-            getLogger().info("Database updated successfully!");
-        }
-        //-----------------------------
 
         permissionsManagerConfigured = checkPermissionsPlugin();
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlayTimePlaceHolders().register();
         }
-
 
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
@@ -114,7 +77,23 @@ public class PlayTimeManager extends JavaPlugin{
         Objects.requireNonNull(getCommand("playtimereload")).setExecutor(new PlaytimeReload() {});
         //getCommand("playtimehelp").setExecutor(new PlaytimeHelp(this));
 
+        if(!config.getVersion().equals(CURRENTCONFIGVERSION)){
+            if(config.getVersion().equals("3.1")){
+                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.1 config version detected, updating it to the latest one...");
+                Version304To31Updater updater = new Version304To31Updater(this);
+                updater.performFullUpgrade();
+                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ CURRENTCONFIGVERSION);
+            }else{
+                this.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown config version detected! Something may break!");
+            }
 
+        }
+
+        if(!config.getGoalsVersion().equals(CURRENTGOALSCONFIGVERSION)){
+            this.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown goals config version detected! Something may break!");
+
+        }
+        dbUsersManager.updateTopPlayersFromDB();
         getLogger().info("has been enabled!");
 
     }
@@ -146,6 +125,10 @@ public class PlayTimeManager extends JavaPlugin{
 
     public Configuration getConfiguration() {
         return config;
+    }
+
+    public void setConfiguration(Configuration config) {
+        this.config = config;
     }
 
     public PlayTimeDatabase getDatabase() { return this.db; }
@@ -180,44 +163,4 @@ public class PlayTimeManager extends JavaPlugin{
         return false;
     }
 
-    private void updateConfigFile(){
-        String playtimeSelfMessage = config.getPlaytimeSelfMessage();
-        String playtimeOthersMessage = config.getPlaytimeOthersMessage();
-
-        //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
-        //---------------------------------
-        long goalsCheckRate = config.getLuckPermsCheckRate();
-        boolean goalsCheckVerbose = config.getLuckPermsCheckVerbose();
-
-        getLogger().info("Updating database, this may take some time...");
-        Map<String, Long> dbgroups = db.getAllGroupsData();
-
-        for (Map.Entry<String, Long> entry : dbgroups.entrySet()) {
-            String name = entry.getKey();   // goal name (String)
-            Long time = entry.getValue(); // goal time (Long)
-            Goal g = new Goal(this, name, time, true);
-            g.addPermission("group."+name);
-        }
-
-        db.dropGroupsTable();
-
-        //---------------------------------
-
-        File configFile = new File(this.getDataFolder(), "config.yml");
-        configFile.delete();
-
-        config = new Configuration(this.getDataFolder(), "config", true, true);
-
-
-        config.setPlaytimeOthersMessage(playtimeOthersMessage);
-        config.setPlaytimeSelfMessage(playtimeSelfMessage);
-        //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
-        //---------------------------------
-        config.setGoalsCheckRate(goalsCheckRate);
-        config.setGoalsCheckVerbose(goalsCheckVerbose);
-        //---------------------------------
-        config.reload();
-    }
-
-    private void updateGoalsConfigFile(){}
 }

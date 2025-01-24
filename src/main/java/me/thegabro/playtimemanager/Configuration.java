@@ -4,7 +4,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Objects;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -121,17 +120,6 @@ public class Configuration {
             save();
         }
     }
-
-    //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
-    //---------------------------------
-    public long getLuckPermsCheckRate(){
-        return config.getLong("luckperms-check-rate");
-    }
-
-    public boolean getLuckPermsCheckVerbose(){
-        return config.getBoolean("luckperms-check-verbose");
-    }
-    //---------------------------------
 
     public String getPlaytimeSelfMessage(){
         return playtimeSelfMessage;

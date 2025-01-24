@@ -7,12 +7,9 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import Users.DBUsersManager;
-import Users.OnlineUsersManager;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import Users.DBUser;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
 
@@ -545,15 +542,6 @@ public abstract class PlayTimeDatabase {
         }
         return groups;
     }
-    //planned for removal, upgrade from 3.0.4 to 3.1 due to groups being transformed into goals
-    public void dropGroupsTable() {
-        String dropTableSQL = "DROP TABLE IF EXISTS groups;";
 
-        try (Connection connection = getSQLConnection(); Statement statement = connection.createStatement()) {
-            statement.executeUpdate(dropTableSQL);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 
 }

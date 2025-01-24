@@ -23,7 +23,7 @@ public class DBUsersManager {
         this.topPlayers = Collections.synchronizedList(new ArrayList<>());
         this.userCache = new ConcurrentHashMap<>();
         this.onlineUsersManager = plugin.getOnlineUsersManager();
-        updateTopPlayersFromDB();
+
         startCacheMaintenanceTask();
     }
 
@@ -91,6 +91,11 @@ public class DBUsersManager {
 
     public void updateCachedTopPlayers(OnlineUser onlineUser) {
         synchronized (topPlayers) {
+
+            if(topPlayers.size() < TOP_PLAYERS_LIMIT){
+                topPlayers.add(getUserFromUUID(onlineUser.getUuid()));
+            }
+
             for (int i = 0; i < topPlayers.size(); i++) {
                 if (topPlayers.get(i).getUuid().equals(onlineUser.getUuid())) {
                     topPlayers.set(i, getUserFromUUID(onlineUser.getUuid()));

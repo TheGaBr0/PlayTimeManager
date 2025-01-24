@@ -32,20 +32,22 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
         if (!command.getName().equalsIgnoreCase("playtime")) {
             return false;
         }
-        if (!(sender instanceof Player) || sender.hasPermission("playtime")) {
-            if(args.length <= 1){
-                if(args.length == 1){
-                    if(plugin.getDbUsersManager().getUserFromNickname(args[0]) == null){
-                        sender.sendMessage("[§6PlayTime§eManager§f]§7 The player §e" + args[0] + "§7 has never joined the server!");
-                        return false;
-                    }
-                }
+        if (args.length > 0) {
+            String targetPlayerName = args[0];
+            if (plugin.getDbUsersManager().getUserFromNickname(targetPlayerName) == null) {
+                sender.sendMessage("[§6PlayTime§eManager§f]§7 The player §e" + targetPlayerName + "§7 has never joined the server!");
+                return false;
+            }
+        }
 
+        // Check permissions
+        if (!(sender instanceof Player) || sender.hasPermission("playtime")) {
+            if (args.length <= 1) {
                 new PlaytimeCommand(sender, args);
                 return true;
             }
 
-            if (sender.hasPermission("playtime.others.modify")){
+            if (sender.hasPermission("playtime.others.modify")) {
                 String subCommand = args[1];
 
                 if (!subCommands.contains(subCommand)) {
@@ -53,21 +55,20 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
                     return false;
                 }
 
-                if (subCommand.equals("add")) {
-                    new PlayTimeAddTime(sender, args);
-                    return true;
-                } else if (subCommand.equals("remove")) {
-                    new PlayTimeRemoveTime(sender, args);
-                    return true;
-                } else if (subCommand.equals("reset")) {
-                    new PlayTimeResetTime(sender, args);
-                    return true;
+                switch (subCommand) {
+                    case "add":
+                        new PlayTimeAddTime(sender, args);
+                        return true;
+                    case "remove":
+                        new PlayTimeRemoveTime(sender, args);
+                        return true;
+                    case "reset":
+                        new PlayTimeResetTime(sender, args);
+                        return true;
                 }
             }
-
-
         } else {
-            sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have permission to use this command");
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have permission to execute this command");
         }
 
         return false;

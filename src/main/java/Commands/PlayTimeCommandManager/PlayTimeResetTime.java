@@ -71,6 +71,8 @@ public class PlayTimeResetTime {
         // Single user reset remains synchronous
         DBUser user = plugin.getDbUsersManager().getUserFromNickname(args[0]);
 
+
+
         if (user instanceof OnlineUser) {
             Player p = Bukkit.getPlayerExact(args[0]);
             p.setStatistic(Statistic.PLAY_ONE_MINUTE, 0);

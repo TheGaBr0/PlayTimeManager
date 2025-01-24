@@ -19,14 +19,27 @@ public class PlaytimeCommand{
     }
 
     public boolean execute(CommandSender sender, String[] args) {
+        // Check base permissions first
         if (args.length == 0) {
+            if (!sender.hasPermission("playtime")) {
+                sender.sendMessage("§6[PlayTime§eManager§f]§7 You don't have permission to check playtime.");
+                return false;
+            }
             return handleSelf(sender);
-        } else if (args.length == 1 && sender.hasPermission("playtime.others")) {
-            return handleOther(sender, args[0]);
-        } else {
-            sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtime [player]");
-            return false;
         }
+
+        // Check other player playtime permissions
+        if (args.length == 1) {
+            if (!sender.hasPermission("playtime.others")) {
+                sender.sendMessage("§6[PlayTime§eManager§f]§7 You don't have permission to check other players' playtime.");
+                return false;
+            }
+            return handleOther(sender, args[0]);
+        }
+
+        // Invalid command usage
+        sender.sendMessage("§6[PlayTime§eManager§f]§7 Usage: /playtime [player]");
+        return false;
     }
 
     private boolean handleSelf(CommandSender sender) {

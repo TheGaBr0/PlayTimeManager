@@ -1,27 +1,26 @@
 package me.thegabro.playtimemanager;
 
 import me.thegabro.playtimemanager.updaters.Version304To31Updater;
-import Commands.*;
-import Commands.PlayTimeCommandManager.PlayTimeCommandManager;
-import Events.ChatEventManager;
-import Events.JoinEventManager;
-import GUIs.*;
-import Goals.Goal;
-import Goals.GoalsManager;
-import SQLiteDB.PlayTimeDatabase;
-import SQLiteDB.LogFilter;
-import SQLiteDB.SQLite;
-import Events.QuitEventManager;
-import ExternalPluginSupport.PlayTimePlaceHolders;
-import Users.DBUsersManager;
-import Users.OnlineUsersManager;
+import me.thegabro.playtimemanager.Commands.*;
+import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeCommandManager;
+import me.thegabro.playtimemanager.Events.ChatEventManager;
+import me.thegabro.playtimemanager.Events.JoinEventManager;
+import me.thegabro.playtimemanager.GUIs.*;
+import me.thegabro.playtimemanager.Goals.GoalsManager;
+import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
+import me.thegabro.playtimemanager.SQLiteDB.LogFilter;
+import me.thegabro.playtimemanager.SQLiteDB.SQLite;
+import me.thegabro.playtimemanager.Events.QuitEventManager;
+import me.thegabro.playtimemanager.ExternalPluginSupport.PlayTimePlaceHolders;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import ExternalPluginSupport.LuckPermsManager;
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
 
 import java.util.Objects;
 @SuppressWarnings("ResultOfMethodCallIgnored")

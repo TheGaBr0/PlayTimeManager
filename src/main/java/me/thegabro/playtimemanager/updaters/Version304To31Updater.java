@@ -2,10 +2,10 @@ package me.thegabro.playtimemanager.updaters;
 
 import me.thegabro.playtimemanager.Configuration;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import SQLiteDB.SQLite;
-import Goals.Goal;
-import Users.DBUser;
-import Users.DBUsersManager;
+import me.thegabro.playtimemanager.SQLiteDB.SQLite;
+import me.thegabro.playtimemanager.Goals.Goal;
+import me.thegabro.playtimemanager.Users.DBUser;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
 
 import java.io.File;
 import java.sql.Connection;
@@ -123,7 +123,7 @@ public class Version304To31Updater {
         for (DBUser user : dbUsersManager.getAllDBUsers()) {
             long userPlaytime = user.getPlaytime();
 
-            for (Goal goal : Goals.GoalsManager.getGoals()) {
+            for (Goal goal : me.thegabro.playtimemanager.Goals.GoalsManager.getGoals()) {
                 if (userPlaytime >= goal.getTime()) {
                     user.markGoalAsCompleted(goal.getName());
                 }

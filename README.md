@@ -2,7 +2,7 @@
 Hello and welcome to PlayTimeManager! I initially created this plugin for the server on which I am currently a developer. We don't have thousands or hundreds of players, but we had to find a way to track players' playtime to promote one whenever it reaches a certain amount. I looked around on the web, but I couldn't find any plugin that was able to satisfy our issue: we needed a playtime plugin, somewhat efficient, that could automatically execute a specific task like promoting a player through Luckperms. Well, that's what this plugin is supposed to do! <br> <br>
 I thought this could be useful to other server administrators as well, so I decided to share it on Spigot! If interest arises, I'll keep it updated happily :)
 ## What's PlayTimeManager?
-PlayTimeManager is a high-performance plugin that tracks and rewards player engagement through intelligent playtime monitoring. It features a comprehensive goal system where you can:
+PlayTimeManager is a high-performance plugin that tracks and rewards player engagement through efficient playtime monitoring. It features a comprehensive goal system where you can:
 -   **Set** custom playtime goals
 -   **Grant** automatic permissions and group promotions (Thanks to a LuckPerms integration)
 -   **Execute** custom commands upon goal completion

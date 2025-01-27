@@ -149,6 +149,11 @@ public class Configuration {
         return Objects.requireNonNullElse(version, "null");
     }
 
+    public void setVersion(float version){
+        config.set("config-version", version);
+        save();
+    }
+
     public String getGoalsVersion(){
         String version = config.getString("goals-config-version");
         if(version == null)

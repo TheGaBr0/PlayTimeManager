@@ -18,8 +18,8 @@ public class SQLite extends PlayTimeDatabase {
     }
 
     public String PlayTimeTable = "CREATE TABLE IF NOT EXISTS play_time (" +
-            "uuid VARCHAR(32) NOT NULL," +
-            "nickname VARCHAR(32) NOT NULL," +
+            "uuid VARCHAR(32) NOT NULL UNIQUE," +
+            "nickname VARCHAR(32) NOT NULL UNIQUE," +
             "playtime BIGINT NOT NULL," +
             "artificial_playtime BIGINT NOT NULL," +
             "completed_goals TEXT DEFAULT ''," +

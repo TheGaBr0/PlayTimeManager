@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.updaters;
+package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Configuration;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -29,7 +29,7 @@ public class Version304To31Updater {
         this.dbUsersManager = DBUsersManager.getInstance();
     }
 
-    public void performFullUpgrade() {
+    public void performUpgrade() {
         convertGroupsToGoals();
         performDatabaseMigration();
 

@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager;
 
-import me.thegabro.playtimemanager.updaters.Version304To31Updater;
+import me.thegabro.playtimemanager.Updates.Version304To31Updater;
 import me.thegabro.playtimemanager.Commands.*;
 import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
@@ -12,6 +12,7 @@ import me.thegabro.playtimemanager.SQLiteDB.LogFilter;
 import me.thegabro.playtimemanager.SQLiteDB.SQLite;
 import me.thegabro.playtimemanager.Events.QuitEventManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlayTimePlaceHolders;
+import me.thegabro.playtimemanager.Updates.Version31to311Updater;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
@@ -30,7 +31,7 @@ public class PlayTimeManager extends JavaPlugin{
     private Configuration config;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-    private final String CURRENTCONFIGVERSION = "3.2";
+    private final String CURRENTCONFIGVERSION = "3.3";
     private final String CURRENTGOALSCONFIGVERSION = "1.0";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
@@ -80,8 +81,16 @@ public class PlayTimeManager extends JavaPlugin{
             if(config.getVersion().equals("3.1")){
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.1 config version detected, updating it to the latest one...");
                 Version304To31Updater updater = new Version304To31Updater(this);
-                updater.performFullUpgrade();
+                updater.performUpgrade();
+
+                Version31to311Updater updater2 = new Version31to311Updater(this);
+                updater2.performUpgrade();
+
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ CURRENTCONFIGVERSION);
+            }else if (config.getVersion().equals("3.2")){
+                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.2 config version detected, updating it to the latest one...");
+                Version31to311Updater updater2 = new Version31to311Updater(this);
+                updater2.performUpgrade();
             }else{
                 this.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown config version detected! Something may break!");
             }
@@ -135,6 +144,7 @@ public class PlayTimeManager extends JavaPlugin{
     public LuckPerms getLuckPermsApi() {
         return LuckPermsManager.getInstance(this).getLuckPermsApi();
     }
+
     public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
 
     private boolean checkPermissionsPlugin() {

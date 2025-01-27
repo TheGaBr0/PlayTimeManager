@@ -101,16 +101,22 @@ public class DBUser {
         db.updateCompletedGoals(uuid, completedGoals);
     }
 
-    private void userMapping(){
-        //controllo se esiste già questo utente
-        if(db.playerExists(uuid)) {
-            //controllo se non ha cambiato nickname
-            if (!db.getNickname(uuid).equals(nickname)) {
-                //se ha cambiato nickname aggiorno i dati sul db
+    private void userMapping() {
+        boolean uuidExists = db.playerExists(uuid);
+        String existingNickname = uuidExists ? db.getNickname(uuid) : null;
+        String existingUUID = db.getUUIDFromNickname(nickname);
+
+        if (uuidExists) {
+            // Case 1: UUID exists in database
+            if (!nickname.equals(existingNickname)) {
+                // Same UUID but different nickname - update nickname
                 db.updateNickname(uuid, nickname);
             }
-        }else{
-            //se non esiste lo aggiungo, come tempo di gioco metto quello registrato dal server
+        } else if (existingUUID != null) {
+            // Case 2: Nickname exists but with different UUID
+            db.updateUUID(uuid, nickname);
+        } else {
+            // Case 3: New user - neither UUID nor nickname exists
             db.addNewPlayer(uuid, nickname, fromServerOnJoinPlayTime);
         }
     }

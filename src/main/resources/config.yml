@@ -15,7 +15,7 @@
 #To make such folder appear you need to create at least one goal -> /playtimegoal
 
 #Leave this untouched
-config-version: 3.2
+config-version: 3.3
 
 #Leave this untouched
 goals-config-version: 1.0

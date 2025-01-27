@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.updaters;
+package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
 

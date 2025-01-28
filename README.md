@@ -36,7 +36,7 @@ Both Paper and Spigot are supported.
 | `/playtimeaverage`<br><br>**Allows you to get the average playtime of all players stored.** | playtime.average | no |
 | `/playtimepercentage <time>`<br><br>**Allows you to get the percentage (and numbers) of players that have a playtime greater than or equal to the specified one.** | playtime.percentage | no |
 | `/playtimetop <amount of players> [page number]`<br><br>**Allows you to get the top n players with the highest playtime.** | playtime.top | no |
-| `/playtimereload`<br><br>**Allows you to reload the config.yml and restart the LuckPerms check schedule.** | playtime.reload | no |
+| `/playtimereload`<br><br>**Allows you to reload the config.yml, goals and restart the goals completion check schedule.** | playtime.reload | no |
 | `*`<br>**Gives you access to all permissions.** | playtime.* | op |
 
 ## PlaceHoldersApi

@@ -18,7 +18,7 @@ This ensures lightning-fast performance with negligible server resource consumpt
 
 PlaceHoldersApi (PAPI) is supported, allowing you to create leaderboards or let players view their own playtime through the use of placeholders.
 
-While the plugin primarily supports English, player-facing messages can be customized in the config.yml. It also features an automatic configuration update system using a config-version field, ensuring that your config.yml stays current with the latest settings while preserving your customizations.
+While the plugin primarily supports English, player-facing messages can be customized in the config.yml. It also includes an **automatic configuration update system** that utilizes a config-version field, ensuring your config.yml file stays up to date with the latest settings while preserving your customizations. Additionally, the plugin seamlessly manages database and file updates, with a **backup automatically created** before any updates to the database. This ensures that your data remains secure while benefiting from the latest features and improvements.
 
 Both Paper and Spigot are supported.
 
@@ -48,7 +48,7 @@ Example: <br>
 ## Examples of use
 * `/playtime TheGabro add 1d` -> This command will manually add 1 day of playtime to the specified player. <br> If a player with playtime.others.modify permission tries to get the playtime of TheGabro (who has a manually modified playtime), he will also be shown the added/removed time in addition to the normal time. <br> ![alt text](https://i.imgur.com/Aqd1Yh3.png "PlayTime addition example") <br> Multiple time formats at a time are supported (e.g. 1d,4h,3m,4s)
 * `/playtimepercentage 1d`: <br> ![alt text](https://i.imgur.com/wQndA7j.png "PlayTime percentage example") <br> Multiple time formats at a time are supported (e.g. 1d,4h,3m,4s)
-
+* `/playtimegoal veteran time:40d`: <br> ![alt text](https://i.imgur.com/1GQEfed.png "Goal creation example") <br> If not specified, the goal will be set to inactive by default. This means that the plugin will not check for its completion until it is set to active through GUI, command, or by editing the veteran.yaml config.
 ## To do
 - Implement a placeholder to display the amount of time a user has been offline.
 - Rewrite time conversion format (e.g. so that after 365 days, it shows "1 year" instead of "365 days")

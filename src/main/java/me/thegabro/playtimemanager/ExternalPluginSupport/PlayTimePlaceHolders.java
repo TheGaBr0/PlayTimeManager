@@ -2,10 +2,9 @@ package me.thegabro.playtimemanager.ExternalPluginSupport;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.concurrent.TimeUnit;
 
 public class PlayTimePlaceHolders extends PlaceholderExpansion{
 
@@ -33,7 +32,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
     @Override
     public String onRequest(OfflinePlayer player, String params) {
         if(params.equalsIgnoreCase("PlayTime")){
-            return convertTime(plugin.getOnlineUsersManager().getOnlineUser(player.getName()).getPlaytime() / 20);
+            return Utils.ticksToFormattedPlaytime(plugin.getOnlineUsersManager().getOnlineUser(player.getName()).getPlaytime());
         }
 
         if(params.toLowerCase().contains("PlayTime_Top_".toLowerCase())) {
@@ -45,7 +44,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
                 if(user == null)
                     return "Error: wrong position?";
                 else
-                    return convertTime(user.getPlaytime()/20);
+                    return Utils.ticksToFormattedPlaytime(user.getPlaytime());
             }
         }
 
@@ -74,30 +73,6 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
         } catch (NumberFormatException ex)
         {
             return false;
-        }
-    }
-
-    private String convertTime(long secondsx) {
-        int days = (int) TimeUnit.SECONDS.toDays(secondsx);
-        int hours = (int) (TimeUnit.SECONDS.toHours(secondsx) - TimeUnit.DAYS.toHours(days));
-        int minutes = (int) (TimeUnit.SECONDS.toMinutes(secondsx) - TimeUnit.HOURS.toMinutes(hours)
-                - TimeUnit.DAYS.toMinutes(days));
-        int seconds = (int) (TimeUnit.SECONDS.toSeconds(secondsx) - TimeUnit.MINUTES.toSeconds(minutes)
-                - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days));
-
-        if (days != 0) {
-            return days + "d, " + hours + "h, " + minutes + "m, " + seconds + "s";
-        } else {
-            if (hours != 0) {
-                return hours + "h, " + minutes + "m, " + seconds + "s";
-            } else {
-                if (minutes != 0) {
-                    return minutes + "m, " + seconds + "s";
-                } else {
-                    return seconds + "s";
-                }
-            }
-
         }
     }
 

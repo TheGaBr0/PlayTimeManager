@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager.GUIs;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.*;
@@ -17,7 +18,6 @@ import net.wesjd.anvilgui.AnvilGUI;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 public class GoalSettingsGui implements InventoryHolder, Listener {
     private static final int GUI_SIZE = 45;
@@ -84,7 +84,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         // Time setting button
         inventory.setItem(Slots.TIME_SETTING, createGuiItem(
                 Material.CLOCK,
-                Component.text("§e§lRequired Time: §6" + formatTime(goal.getTime())),
+                Component.text("§e§lRequired Time: §6" + Utils.ticksToFormattedPlaytime(goal.getTime())),
                 Component.text("§7Click to modify the required playtime")
         ));
 
@@ -268,9 +268,9 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                     }
 
                     String text = stateSnapshot.getText();
-                    long time = parseTimeFormat(text);
+                    long time = Utils.formattedPlaytimeToTicks(text);
 
-                    if (time != Long.MAX_VALUE) {
+                    if (time != -1L) {
                         goal.setTime(time);
                         reopenMainGui(player);
                         return Collections.singletonList(AnvilGUI.ResponseAction.close());
@@ -284,8 +284,8 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                     // Reopen the PermissionsGui when the anvil is closed
                     Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(state.getPlayer()));
                 })
-                .text(formatTime(goal.getTime()))
-                .title("Format: 1d, 2h, 3m, 4s")
+                .text(Utils.ticksToFormattedPlaytime(goal.getTime()))
+                .title("Format: 1y,2d,3h,4m,5s")
                 .plugin(PlayTimeManager.getPlugin(PlayTimeManager.class))
                 .open(player);
     }
@@ -343,66 +343,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         );
     }
 
-    private long parseTimeFormat(String input) {
-        input = input.replace(" ", "");
-        String[] timeParts = input.split(",");
-        long timeToTicks = 0;
-
-        Map<String, Integer> formatCounts = new HashMap<>();
-
-        for (String part : timeParts) {
-            try {
-                int time = Integer.parseInt(part.replaceAll("[^\\d.]", ""));
-                String format = part.replaceAll("\\d", "");
-
-                if (formatCounts.getOrDefault(format, 0) > 0) {
-                    continue;
-                }
-
-                switch (format) {
-                    case "d":
-                        timeToTicks += time * 1728000L;
-                        break;
-                    case "h":
-                        timeToTicks += time * 72000L;
-                        break;
-                    case "m":
-                        timeToTicks += time * 1200L;
-                        break;
-                    case "s":
-                        timeToTicks += time * 20L;
-                        break;
-                    default:
-                        return Long.MAX_VALUE;
-                }
-
-                formatCounts.put(format, 1);
-            } catch (NumberFormatException e) {
-                return Long.MAX_VALUE;
-            }
-        }
-        return timeToTicks;
-    }
-
-    private String formatTime(long ticks) {
-        if (ticks == Long.MAX_VALUE) {
-            return "None";
-        }
-
-        long seconds = ticks / 20;
-        long days = TimeUnit.SECONDS.toDays(seconds);
-        long hours = TimeUnit.SECONDS.toHours(seconds) - TimeUnit.DAYS.toHours(days);
-        long minutes = TimeUnit.SECONDS.toMinutes(seconds) - TimeUnit.HOURS.toMinutes(hours) - TimeUnit.DAYS.toMinutes(days);
-        long remainingSeconds = seconds - TimeUnit.MINUTES.toSeconds(minutes) - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days);
-
-        StringBuilder time = new StringBuilder();
-        if (days > 0) time.append(days).append("d, ");
-        if (hours > 0) time.append(hours).append("h, ");
-        if (minutes > 0) time.append(minutes).append("m, ");
-        time.append(remainingSeconds).append("s");
-
-        return time.toString();
-    }
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {

@@ -4,6 +4,7 @@ import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -12,7 +13,6 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 public class OnlineUsersManager {
     private static volatile OnlineUsersManager instance;
@@ -127,7 +127,7 @@ public class OnlineUsersManager {
         sendGoalMessage(player, goal);
 
         plugin.getLogger().info(String.format("User %s has reached %s!",
-                onlineUser.getNickname(), convertTime(goal.getTime() / 20)));
+                onlineUser.getNickname(), Utils.ticksToFormattedPlaytime(goal.getTime())));
     }
 
     private void startDBUpdateSchedule() {
@@ -201,26 +201,10 @@ public class OnlineUsersManager {
 
     private void sendGoalMessage(Player player, Goal goal) {
         goalMessageReplacements.put("%PLAYER_NAME%", player.getName());
-        goalMessageReplacements.put("%TIME_REQUIRED%", convertTime(goal.getTime() / 20));
+        goalMessageReplacements.put("%TIME_REQUIRED%", Utils.ticksToFormattedPlaytime(goal.getTime()));
         player.sendMessage(replacePlaceholders(goal.getGoalMessage()));
     }
 
-    private String convertTime(long seconds) {
-        int days = (int) TimeUnit.SECONDS.toDays(seconds);
-        int hours = (int) (TimeUnit.SECONDS.toHours(seconds) - TimeUnit.DAYS.toHours(days));
-        int minutes = (int) (TimeUnit.SECONDS.toMinutes(seconds) - TimeUnit.HOURS.toMinutes(hours) - TimeUnit.DAYS.toMinutes(days));
-        int secs = (int) (TimeUnit.SECONDS.toSeconds(seconds) - TimeUnit.MINUTES.toSeconds(minutes) - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days));
-
-        if (days > 0) {
-            return String.format(TIME_FORMAT_DAYS, days, hours, minutes, secs);
-        } else if (hours > 0) {
-            return String.format(TIME_FORMAT_HOURS, hours, minutes, secs);
-        } else if (minutes > 0) {
-            return String.format(TIME_FORMAT_MINUTES, minutes, secs);
-        } else {
-            return String.format(TIME_FORMAT_SECONDS, secs);
-        }
-    }
 
     private String replacePlaceholders(String input) {
         String result = input;
@@ -233,7 +217,7 @@ public class OnlineUsersManager {
 
     private void logVerboseInfo() {
         plugin.getLogger().info(String.format("Goal check schedule started, refresh rate is %s",
-                convertTime(plugin.getConfiguration().getGoalsCheckRate())));
+                Utils.ticksToFormattedPlaytime(plugin.getConfiguration().getGoalsCheckRate())));
     }
 
     public void stopSchedules() {

@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager.GUIs;
 
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
+import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -24,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 public class AllGoalsGui implements InventoryHolder, Listener {
 
@@ -72,7 +72,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 inv.setItem(slot, createGuiItem(
                         Material.EXPERIENCE_BOTTLE,
                         Component.text("§e" + goal.getName()),
-                        Component.text("§7Required Time: " + convertTime(goal.getTime())),
+                        Component.text("§7Required Time: " + Utils.ticksToFormattedPlaytime(goal.getTime())),
                         Component.text("§7Active: ")
                                 .append(Component.text(goal.isActive() ? "true" : "false")
                                         .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
@@ -180,36 +180,6 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                     e.setCancelled(true);
                 }
             }
-        }
-    }
-
-    private String convertTime(long secondsx) {
-
-        if(secondsx == Long.MAX_VALUE)
-            return "None";
-        else
-            secondsx/=20;
-
-        int days = (int) TimeUnit.SECONDS.toDays(secondsx);
-        int hours = (int) (TimeUnit.SECONDS.toHours(secondsx) - TimeUnit.DAYS.toHours(days));
-        int minutes = (int) (TimeUnit.SECONDS.toMinutes(secondsx) - TimeUnit.HOURS.toMinutes(hours)
-                - TimeUnit.DAYS.toMinutes(days));
-        int seconds = (int) (TimeUnit.SECONDS.toSeconds(secondsx) - TimeUnit.MINUTES.toSeconds(minutes)
-                - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days));
-
-        if (days != 0) {
-            return days + "d, " + hours + "h, " + minutes + "m, " + seconds + "s";
-        } else {
-            if (hours != 0) {
-                return hours + "h, " + minutes + "m, " + seconds + "s";
-            } else {
-                if (minutes != 0) {
-                    return minutes + "m, " + seconds + "s";
-                } else {
-                    return seconds + "s";
-                }
-            }
-
         }
     }
 }

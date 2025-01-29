@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager.Commands;
 import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -11,7 +12,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 public class PlaytimeTop implements TabExecutor {
 
@@ -68,14 +68,14 @@ public class PlaytimeTop implements TabExecutor {
                                 sender.sendMessage("[§6PlayTime§eManager§f]§7 Top "+numeroUtentiTotali+" players - page: "+page);
                                 for (int i = indiceInizio; i < indiceFine; i++) {
                                     sender.sendMessage("§7§l#"+(i+1)+" §e"+ topDBUsers.get(i).getNickname()+" §7- §d"+
-                                            convertTime(topDBUsers.get(i).getPlaytime()/20));
+                                            Utils.ticksToFormattedPlaytime(topDBUsers.get(i).getPlaytime()));
                                 }
                             } else if (page == 0) {
                                 // Mostra tutti i giocatori
                                 sender.sendMessage("[§6PlayTime§eManager§f]§7 Top "+numeroUtentiTotali+" players - page: 1");
                                 for (int i = 0; i <= numeroUtentiTotali; i++) {
                                     sender.sendMessage("§7§l#"+(i+1)+" §e"+ topDBUsers.get(i).getNickname()+" §7- §d"+
-                                            convertTime(topDBUsers.get(i).getPlaytime()/20));
+                                            Utils.ticksToFormattedPlaytime(topDBUsers.get(i).getPlaytime()));
                                 }
                             } else {
                                 sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid page!");
@@ -122,32 +122,6 @@ public class PlaytimeTop implements TabExecutor {
 
         return result;
     }
-
-    private String convertTime(long secondsx) {
-        int days = (int) TimeUnit.SECONDS.toDays(secondsx);
-        int hours = (int) (TimeUnit.SECONDS.toHours(secondsx) - TimeUnit.DAYS.toHours(days));
-        int minutes = (int) (TimeUnit.SECONDS.toMinutes(secondsx) - TimeUnit.HOURS.toMinutes(hours)
-                - TimeUnit.DAYS.toMinutes(days));
-        int seconds = (int) (TimeUnit.SECONDS.toSeconds(secondsx) - TimeUnit.MINUTES.toSeconds(minutes)
-                - TimeUnit.HOURS.toSeconds(hours) - TimeUnit.DAYS.toSeconds(days));
-
-        if (days != 0) {
-            return days + "d, " + hours + "h, " + minutes + "m, " + seconds + "s";
-        } else {
-            if (hours != 0) {
-                return hours + "h, " + minutes + "m, " + seconds + "s";
-            } else {
-                if (minutes != 0) {
-                    return minutes + "m, " + seconds + "s";
-                } else {
-                    return seconds + "s";
-                }
-            }
-
-        }
-    }
-
-
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {

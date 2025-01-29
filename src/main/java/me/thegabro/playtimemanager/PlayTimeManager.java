@@ -35,7 +35,7 @@ public class PlayTimeManager extends JavaPlugin{
     private final String CURRENTGOALSCONFIGVERSION = "1.0";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
-
+    
     @Override
     public void onEnable() {
 

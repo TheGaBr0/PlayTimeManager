@@ -88,8 +88,12 @@ public class PlayTimeManager extends JavaPlugin{
                 Version304To31Updater updater = new Version304To31Updater(this);
                 updater.performUpgrade();
 
+                getLogger().info(String.valueOf(GoalsManager.getGoal("membro").getPermissions()));
+
                 Version31to311Updater updater2 = new Version31to311Updater(this);
                 updater2.performUpgrade();
+
+                getLogger().info(String.valueOf(GoalsManager.getGoal("membro").getPermissions()));
 
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ CURRENTCONFIGVERSION);
             }else if (config.getVersion().equals("3.2")){

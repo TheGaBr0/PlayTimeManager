@@ -181,9 +181,6 @@ public class Version31to311Updater {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {
-                // Create backup before constraint addition
-                DatabaseBackupUtility backupUtility = new DatabaseBackupUtility(plugin);
-                backupUtility.createBackup("play_time", "Backup before 3.1.1 unique constraint addition");
 
                 // Create new table with indexes
                 s.executeUpdate("CREATE TABLE play_time_new (" +

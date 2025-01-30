@@ -558,27 +558,22 @@ public abstract class PlayTimeDatabase {
         try {
             conn = getSQLConnection();
 
-            // First, get all users with completed goals
             ps = conn.prepareStatement("SELECT uuid, completed_goals FROM play_time WHERE completed_goals IS NOT NULL AND completed_goals != '';");
             rs = ps.executeQuery();
 
-            // Prepare update statement outside the loop
             PreparedStatement updateStmt = conn.prepareStatement("UPDATE play_time SET completed_goals = ? WHERE uuid = ?;");
 
             while (rs.next()) {
                 String uuid = rs.getString("uuid");
                 String completedGoals = rs.getString("completed_goals");
 
-                // Skip if no completed goals
                 if (completedGoals == null || completedGoals.isEmpty()) {
                     continue;
                 }
 
-                // Split goals into array
                 String[] goals = completedGoals.split(",");
                 boolean needsUpdate = false;
 
-                // Replace old goal name with new one
                 for (int i = 0; i < goals.length; i++) {
                     if (goals[i].trim().equals(oldName)) {
                         goals[i] = newName;
@@ -586,7 +581,6 @@ public abstract class PlayTimeDatabase {
                     }
                 }
 
-                // If we found and replaced the old goal name, update the database
                 if (needsUpdate) {
                     String updatedGoals = String.join(",", goals);
                     updateStmt.setString(1, updatedGoals);
@@ -595,7 +589,6 @@ public abstract class PlayTimeDatabase {
                 }
             }
 
-            // Close the update statement
             updateStmt.close();
 
         } catch (SQLException ex) {
@@ -613,22 +606,5 @@ public abstract class PlayTimeDatabase {
             }
         }
     }
-
-    public Map<String, Long> getAllGroupsData() {
-        Map<String, Long> groups = new HashMap<>();
-        try (Connection conn = getSQLConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT group_name, playtime_required FROM groups;");
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                String groupName = rs.getString("group_name");
-                Long time = rs.getLong("playtime_required");
-                groups.put(groupName, time);
-            }
-        } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), e);
-        }
-        return groups;
-    }
-
 
 }

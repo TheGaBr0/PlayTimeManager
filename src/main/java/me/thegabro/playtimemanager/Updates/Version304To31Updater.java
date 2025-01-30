@@ -14,7 +14,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Map;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -30,7 +29,6 @@ public class Version304To31Updater {
     }
 
     public void performUpgrade() {
-        convertGroupsToGoals();
         performDatabaseMigration();
 
         recreateConfigFile();
@@ -50,13 +48,13 @@ public class Version304To31Updater {
             }
 
             // Migrate groups table data
-            migrateGroupsTableData(connection);
+            convertGroupsToGoals(connection);
         } catch (SQLException e) {
             plugin.getLogger().severe("Database migration failed: " + e.getMessage());
         }
     }
 
-    private void migrateGroupsTableData(Connection connection) throws SQLException {
+    private void convertGroupsToGoals(Connection connection) throws SQLException {
         try (Statement s = connection.createStatement();
              ResultSet rs = s.executeQuery("SELECT * FROM groups")) {
 
@@ -75,18 +73,6 @@ public class Version304To31Updater {
         // Drop groups table
         try (Statement s = connection.createStatement()) {
             s.executeUpdate("DROP TABLE IF EXISTS groups");
-        }
-    }
-
-    private void convertGroupsToGoals() {
-        Map<String, Long> existingGroups = database.getAllGroupsData();
-
-        for (Map.Entry<String, Long> groupEntry : existingGroups.entrySet()) {
-            String groupName = groupEntry.getKey();
-            Long playtime = groupEntry.getValue();
-
-            Goal newGoal = new Goal(plugin, groupName, playtime, true);
-            newGoal.addPermission("group." + groupName);
         }
     }
 

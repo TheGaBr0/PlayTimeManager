@@ -14,7 +14,7 @@ import java.util.Objects;
 public class Goal {
     // Fields
     private final PlayTimeManager plugin;
-    private final String name;
+    private String name;
     private long time;
     private final File goalFile;
     private ArrayList<String> permissions = new ArrayList<>();
@@ -68,7 +68,7 @@ public class Goal {
                     "A list of available sounds can be found here: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html",
                     "---------------------------",
                     "goal-message is showed to a player if it reaches the time specified in this config.",
-                    "Available placeholders: %TIME_REQUIRED%, %PLAYER_NAME%",
+                    "Available placeholders: %TIME_REQUIRED%, %PLAYER_NAME%. %GOAL_NAME%",
                     "---------------------------",
                     "active determines whether this goal is enabled and being checked by the plugin",
                     "Set to 'true' to enable the goal and track player progress",
@@ -144,6 +144,42 @@ public class Goal {
 
     public ArrayList<String> getPermissions() {
         return permissions;
+    }
+
+    public void rename(String newName) {
+        File oldFile = this.goalFile;
+
+        this.name = newName;
+
+        File newFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + newName + ".yml");
+
+        try {
+            // Create parent directories if they don't exist
+            if (!newFile.getParentFile().exists()) {
+                newFile.getParentFile().mkdirs();
+            }
+
+            // If old file exists, move it to new location
+            if (oldFile.exists()) {
+                if (!oldFile.renameTo(newFile)) {
+                    // If rename fails, try to copy and delete
+                    YamlConfiguration config = YamlConfiguration.loadConfiguration(oldFile);
+                    config.save(newFile);
+                    oldFile.delete();
+                }
+            }
+
+            // Save to ensure all data is current
+            saveToFile();
+
+            // Update the name in the database for all users
+            plugin.getDatabase().updateGoalName(oldFile.getName().replace(".yml", ""), newName);
+
+            oldFile.delete();
+
+        } catch (IOException e) {
+            plugin.getLogger().severe("Could not rename goal file from " + oldFile.getName() + " to " + newFile.getName() + ": " + e.getMessage());
+        }
     }
 
     // Setters and modifiers

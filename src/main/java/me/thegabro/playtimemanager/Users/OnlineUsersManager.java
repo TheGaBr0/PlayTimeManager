@@ -24,10 +24,6 @@ public class OnlineUsersManager {
     private final Map<String, String> goalMessageReplacements;
 
     private static final int DB_UPDATE_INTERVAL = 300 * 20; // 5 minutes in ticks
-    private static final String TIME_FORMAT_DAYS = "%dd, %dh, %dm, %ds";
-    private static final String TIME_FORMAT_HOURS = "%dh, %dm, %ds";
-    private static final String TIME_FORMAT_MINUTES = "%dm, %ds";
-    private static final String TIME_FORMAT_SECONDS = "%ds";
 
     private OnlineUsersManager() {
         this.plugin = PlayTimeManager.getInstance();
@@ -194,7 +190,7 @@ public class OnlineUsersManager {
             Sound sound = Sound.valueOf(goal.getGoalSound());
             player.playSound(player.getLocation(), sound, 10, 0);
         } catch (IllegalArgumentException e) {
-            plugin.getLogger().severe(String.format("%s is not a valid sound in %s.yml",
+            plugin.getLogger().severe(String.format("%s is not a valid sound in %s.yaml",
                     goal.getGoalSound(), goal.getName()));
         }
     }
@@ -202,6 +198,7 @@ public class OnlineUsersManager {
     private void sendGoalMessage(Player player, Goal goal) {
         goalMessageReplacements.put("%PLAYER_NAME%", player.getName());
         goalMessageReplacements.put("%TIME_REQUIRED%", Utils.ticksToFormattedPlaytime(goal.getTime()));
+        goalMessageReplacements.put("%GOAL_NAME%", goal.getName());
         player.sendMessage(replacePlaceholders(goal.getGoalMessage()));
     }
 

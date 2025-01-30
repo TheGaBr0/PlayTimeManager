@@ -551,7 +551,68 @@ public abstract class PlayTimeDatabase {
         }
     }
 
+    public void updateGoalName(String oldName, String newName) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = getSQLConnection();
 
+            // First, get all users with completed goals
+            ps = conn.prepareStatement("SELECT uuid, completed_goals FROM play_time WHERE completed_goals IS NOT NULL AND completed_goals != '';");
+            rs = ps.executeQuery();
+
+            // Prepare update statement outside the loop
+            PreparedStatement updateStmt = conn.prepareStatement("UPDATE play_time SET completed_goals = ? WHERE uuid = ?;");
+
+            while (rs.next()) {
+                String uuid = rs.getString("uuid");
+                String completedGoals = rs.getString("completed_goals");
+
+                // Skip if no completed goals
+                if (completedGoals == null || completedGoals.isEmpty()) {
+                    continue;
+                }
+
+                // Split goals into array
+                String[] goals = completedGoals.split(",");
+                boolean needsUpdate = false;
+
+                // Replace old goal name with new one
+                for (int i = 0; i < goals.length; i++) {
+                    if (goals[i].trim().equals(oldName)) {
+                        goals[i] = newName;
+                        needsUpdate = true;
+                    }
+                }
+
+                // If we found and replaced the old goal name, update the database
+                if (needsUpdate) {
+                    String updatedGoals = String.join(",", goals);
+                    updateStmt.setString(1, updatedGoals);
+                    updateStmt.setString(2, uuid);
+                    updateStmt.executeUpdate();
+                }
+            }
+
+            // Close the update statement
+            updateStmt.close();
+
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, "Error updating goal name from " + oldName + " to " + newName + ": " + ex.getMessage());
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
 
     public Map<String, Long> getAllGroupsData() {
         Map<String, Long> groups = new HashMap<>();

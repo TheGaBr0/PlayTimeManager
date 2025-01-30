@@ -14,7 +14,7 @@ import java.util.*;
 
 public class PlaytimeGoal implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final String[] SUBCOMMANDS = {"set", "remove"};  // Removed "list" from subcommands
+    private final String[] SUBCOMMANDS = {"set", "remove", "rename"};  // Removed "list" from subcommands
     private final String[] SUBSUBCOMMANDS = {"time:", "activate:"};
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
@@ -55,8 +55,8 @@ public class PlaytimeGoal implements TabExecutor {
                             sender.sendMessage("[§6PlayTime§eManager§f]§7 Missing time value!");
                             return false;
                         }
-                        long timeToTicks = parseTime(time);
-                        if (timeToTicks == -1) {
+                        long timeToTicks = Utils.formattedPlaytimeToTicks(time);
+                        if (timeToTicks == -1L) {
                             sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid time format!");
                             return false;
                         }
@@ -74,7 +74,7 @@ public class PlaytimeGoal implements TabExecutor {
                     }
                 }
 
-                setGoal(sender, goalName, time != null ? parseTime(time) : null, activate);
+                setGoal(sender, goalName, time != null ? Utils.formattedPlaytimeToTicks(time) : null, activate);
                 break;
             case "remove":
                 if (args.length < 2) {
@@ -84,6 +84,15 @@ public class PlaytimeGoal implements TabExecutor {
                 goalName = args[1];
                 removeGoal(sender, goalName);
                 break;
+            case "rename":
+                if (args.length != 3) {
+                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Usage: /playtimegoal rename <oldName> <newName>");
+                    return false;
+                }
+                String oldName = args[1];
+                String newName = args[2];
+                renameGoal(sender, oldName, newName);
+                break;
             default:
                 sender.sendMessage("[§6PlayTime§eManager§f]§7 Subcommand " + subCommand + " is not valid.");
                 return false;
@@ -92,34 +101,22 @@ public class PlaytimeGoal implements TabExecutor {
         return true;
     }
 
-    private long parseTime(String timeString) {
-        String[] timeParts = timeString.split(",");
-        long timeToTicks = 0;
-        for (String part : timeParts) {
-            try {
-                int time = Integer.parseInt(part.replaceAll("[^\\d.]", ""));
-                String format = part.replaceAll("\\d", "");
-                switch (format) {
-                    case "d":
-                        timeToTicks += time * 1728000L;
-                        break;
-                    case "h":
-                        timeToTicks += time * 72000L;
-                        break;
-                    case "m":
-                        timeToTicks += time * 1200L;
-                        break;
-                    case "s":
-                        timeToTicks += time * 20L;
-                        break;
-                    default:
-                        return -1; // Invalid format
-                }
-            } catch (NumberFormatException e) {
-                return -1; // Invalid number
-            }
+    private void renameGoal(CommandSender sender, String oldName, String newName) {
+        Goal oldGoal = GoalsManager.getGoal(oldName);
+        if (oldGoal == null) {
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 The goal §e" + oldName + " §7doesn't exist!");
+            return;
         }
-        return timeToTicks;
+
+        if (GoalsManager.getGoal(newName) != null) {
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 A goal with the name §e" + newName + " §7already exists!");
+            return;
+        }
+
+        oldGoal.rename(newName);
+
+        sender.sendMessage("[§6PlayTime§eManager§f]§7 Successfully renamed goal §e" + oldName + " §7to §e" + newName);
+
     }
 
     private void setGoal(CommandSender sender, String goalName, Long time, boolean activate) {
@@ -160,6 +157,7 @@ public class PlaytimeGoal implements TabExecutor {
         }
     }
 
+    @Override
     public List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, String[] args) {
         final List<String> completions = new ArrayList<>();
 
@@ -171,26 +169,28 @@ public class PlaytimeGoal implements TabExecutor {
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("set")) {
                 StringUtil.copyPartialMatches(args[1], GoalsManager.getGoalsNames(), completions);
-            } else if (args[0].equalsIgnoreCase("remove")) {
+            } else if (args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("rename")) {
                 StringUtil.copyPartialMatches(args[1], GoalsManager.getGoalsNames(), completions);
             }
             return completions;
         }
 
-        if (args.length >= 3 && args[0].equalsIgnoreCase("set")) {
-            List<String> availableSubSubCommands = new ArrayList<>(Arrays.asList(SUBSUBCOMMANDS));
+        if (args.length >= 3) {
+            if (args[0].equalsIgnoreCase("set")) {
+                List<String> availableSubSubCommands = new ArrayList<>(Arrays.asList(SUBSUBCOMMANDS));
 
-            // Remove already used arguments
-            for (int i = 2; i < args.length - 1; i++) {
-                for (String subSubCmd : SUBSUBCOMMANDS) {
-                    if (args[i].startsWith(subSubCmd)) {
-                        availableSubSubCommands.remove(subSubCmd);
+                // Remove already used arguments
+                for (int i = 2; i < args.length - 1; i++) {
+                    for (String subSubCmd : SUBSUBCOMMANDS) {
+                        if (args[i].startsWith(subSubCmd)) {
+                            availableSubSubCommands.remove(subSubCmd);
+                        }
                     }
                 }
-            }
 
-            StringUtil.copyPartialMatches(args[args.length - 1], availableSubSubCommands, completions);
-            return completions;
+                StringUtil.copyPartialMatches(args[args.length - 1], availableSubSubCommands, completions);
+                return completions;
+            }
         }
 
         return null;

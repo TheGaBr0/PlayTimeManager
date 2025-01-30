@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>me.TheGabro</groupId>
+  <groupId>me.theGabro</groupId>
   <artifactId>PlayTimeManager</artifactId>
   <version>3.1.1-dev</version>
   <build>
@@ -35,16 +35,11 @@
                   <pattern>net.wesjd.anvilgui</pattern>
                   <shadedPattern>me.thegabro.playtimemanager.anvilgui</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>com.jeff_media.updatechecker</pattern>
+                  <shadedPattern>me.thegabro.playtimemanager.updatechecker</shadedPattern>
+                </relocation>
               </relocations>
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludeDefaults>false</excludeDefaults>
-                  <includes>
-                    <include>net/wesjd/anvilgui/**</include>
-                  </includes>
-                </filter>
-              </filters>
             </configuration>
           </execution>
         </executions>
@@ -63,6 +58,10 @@
     <repository>
       <id>codemc-snapshots</id>
       <url>https://repo.codemc.io/repository/maven-snapshots/</url>
+    </repository>
+    <repository>
+      <id>jeff-media-public</id>
+      <url>https://repo.jeff-media.com/public/</url>
     </repository>
   </repositories>
   <dependencies>
@@ -86,7 +85,7 @@
     </dependency>
   </dependencies>
   <properties>
-    <java.version>1.8</java.version>
+    <java.version>17</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 </project>

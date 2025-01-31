@@ -14,6 +14,7 @@ public class JoinEventManager implements Listener {
     public void onJoin(PlayerJoinEvent event){
 
             OnlineUser onlineUser = new OnlineUser(event.getPlayer());
+            onlineUser.updateLastSeen();
             plugin.getOnlineUsersManager().addOnlineUser(onlineUser);
             plugin.getDbUsersManager().updateCachedTopPlayers(onlineUser);
 

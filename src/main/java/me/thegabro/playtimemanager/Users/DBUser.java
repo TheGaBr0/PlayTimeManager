@@ -5,6 +5,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 public class DBUser {
@@ -16,14 +17,17 @@ public class DBUser {
     protected long fromServerOnJoinPlayTime;
     protected ArrayList<String> completedGoals;
     protected static PlayTimeDatabase db = plugin.getDatabase();
+    protected LocalDateTime lastSeen;
+
 
     // Private constructor
-    private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, ArrayList<String> completedGoals) {
+    private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, ArrayList<String> completedGoals, LocalDateTime lastSeen) {
         this.uuid = uuid;
         this.nickname = nickname;
         this.DBplaytime = playtime;
         this.artificialPlaytime = artificialPlaytime;
         this.completedGoals = completedGoals;
+        this.lastSeen = lastSeen;
     }
 
     public DBUser(Player p) {
@@ -34,6 +38,7 @@ public class DBUser {
         this.DBplaytime = db.getPlaytime(uuid);
         this.artificialPlaytime = db.getArtificialPlaytime(uuid);
         this.completedGoals = db.getCompletedGoals(uuid);
+        this.lastSeen = db.getLastSeen(uuid);
     }
 
     // Factory method to create DBUser by UUID
@@ -46,7 +51,9 @@ public class DBUser {
         long playtime = db.getPlaytime(uuid);
         long artificialPlaytime = db.getArtificialPlaytime(uuid);
         ArrayList<String> completedGoals = db.getCompletedGoals(uuid);
-        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals);
+        LocalDateTime lastSeen = db.getLastSeen(uuid);
+
+        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals, lastSeen);
     }
 
     public void reset() {
@@ -54,6 +61,8 @@ public class DBUser {
         this.DBplaytime = 0;
         this.artificialPlaytime = 0;
         this.fromServerOnJoinPlayTime = 0;
+        this.lastSeen = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
+
 
         // Reset completed goals
         this.completedGoals.clear();
@@ -62,13 +71,14 @@ public class DBUser {
         db.updatePlaytime(uuid, 0);
         db.updateArtificialPlaytime(uuid, 0);
         db.updateCompletedGoals(uuid, completedGoals);
+        db.updateLastSeen(uuid, this.lastSeen);
     }
 
+    public LocalDateTime getLastSeen() { return lastSeen; }
 
     public String getUuid() {
         return uuid;
     }
-
 
     public String getNickname() {
         return nickname;

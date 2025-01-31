@@ -41,6 +41,7 @@ permissions:
       playtime: true
       playtime.others: true
       playtime.others.modify: true
+      playtime.others.offline: true
       playtime.average: true
       playtime.percentage: true
       playtime.top: true
@@ -51,6 +52,8 @@ permissions:
   playtime.others:
     default: false
   playtime.others.modify:
+    default: false
+  playtime.others.offline:
     default: false
   playtime.average:
     default: false

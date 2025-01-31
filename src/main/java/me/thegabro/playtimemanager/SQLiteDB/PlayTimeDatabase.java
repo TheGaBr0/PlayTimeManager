@@ -3,6 +3,8 @@ package me.thegabro.playtimemanager.SQLiteDB;
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -18,6 +20,7 @@ public abstract class PlayTimeDatabase {
     PlayTimeManager plugin;
     Connection connection;
     protected static HikariDataSource dataSource;
+
     public PlayTimeDatabase(PlayTimeManager instance){
         plugin = instance;
     }
@@ -605,6 +608,39 @@ public abstract class PlayTimeDatabase {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
+    }
+
+    public void updateLastSeen(String uuid, LocalDateTime lastSeen) {
+
+        plugin.getLogger().info("last seen: " + lastSeen);
+
+        try (Connection connection = getSQLConnection();
+             PreparedStatement ps = connection.prepareStatement("UPDATE play_time SET last_seen = ? WHERE uuid = ?")) {
+
+            // Convert LocalDateTime to Timestamp for SQL DATETIME storage
+            LocalDateTime truncated = lastSeen.truncatedTo(ChronoUnit.SECONDS);
+            ps.setTimestamp(1, Timestamp.valueOf(truncated));
+            ps.setString(2, uuid);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error updating last_seen time: " + e.getMessage());
+        }
+    }
+
+    public LocalDateTime getLastSeen(String uuid) {
+        try (Connection connection = getSQLConnection();
+             PreparedStatement ps = connection.prepareStatement("SELECT last_seen FROM play_time WHERE uuid = ?")) {
+            ps.setString(1, uuid);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                Timestamp timestamp = rs.getTimestamp("last_seen");
+                return timestamp != null ? timestamp.toLocalDateTime() : LocalDateTime.of(1970, 1, 1, 0, 0);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error getting last_seen time: " + e.getMessage());
+        }
+
+        return LocalDateTime.of(1970, 1, 1, 0, 0);
     }
 
 }

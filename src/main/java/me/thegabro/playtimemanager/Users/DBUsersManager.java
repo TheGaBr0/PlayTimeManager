@@ -131,6 +131,10 @@ public class DBUsersManager {
                 .collect(Collectors.toList());
     }
 
+    public void removeUserFromCache(String uuid) {
+        userCache.remove(uuid);
+    }
+
     public void clearCache() {
         userCache.clear();
     }

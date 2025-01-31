@@ -14,9 +14,16 @@ public class QuitEventManager implements Listener {
     public void onQuit(PlayerQuitEvent event){
 
         OnlineUser onlineUser = plugin.getOnlineUsersManager().getOnlineUser(event.getPlayer().getName());
+        onlineUser.updateLastSeen();
         onlineUser.updateDB();
         plugin.getOnlineUsersManager().removeOnlineUser(onlineUser);
+
+        // Remove the user from the cache to ensure fresh data on next access
+        // This prevents using stale cached data when the user rejoins
+        plugin.getDbUsersManager().removeUserFromCache(onlineUser.getUuid());
+
         plugin.getDbUsersManager().updateCachedTopPlayers(onlineUser);
+
     }
 
 }

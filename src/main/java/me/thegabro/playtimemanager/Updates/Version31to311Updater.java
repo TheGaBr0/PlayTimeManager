@@ -21,6 +21,7 @@ public class Version31to311Updater {
     public void performUpgrade() {
         handleDuplicates();
         updateUniqueDBEntries();
+        addLastSeenColumn();
         updateConfig();
     }
 
@@ -29,7 +30,6 @@ public class Version31to311Updater {
             return "";
         }
 
-        // Split all goals and add to a Set to remove duplicates
         Set<String> uniqueGoals = new LinkedHashSet<>();
         for (String goalList : goals.split(",")) {
             String goal = goalList.trim();
@@ -38,7 +38,6 @@ public class Version31to311Updater {
             }
         }
 
-        // Join the unique goals back together
         return String.join(",", uniqueGoals);
     }
 
@@ -46,12 +45,10 @@ public class Version31to311Updater {
         try (Connection connection = database.getSQLConnection()) {
             connection.setAutoCommit(false);
 
-            // Create backup before any modifications
             DatabaseBackupUtility backupUtility = new DatabaseBackupUtility(plugin);
             backupUtility.createBackup("play_time", generateReadmeContent());
 
             try (Statement s = connection.createStatement()) {
-                // Create temporary table with indexes for better performance
                 s.executeUpdate("CREATE TEMPORARY TABLE temp_merged_entries (" +
                         "uuid VARCHAR(32) NOT NULL," +
                         "nickname VARCHAR(32) NOT NULL," +
@@ -61,7 +58,6 @@ public class Version31to311Updater {
                         ")");
                 s.executeUpdate("CREATE INDEX idx_temp_uuid ON temp_merged_entries(uuid)");
 
-                // First, get all records grouped by UUID
                 ResultSet rs = s.executeQuery(
                         "SELECT uuid, " +
                                 "MAX(nickname) as nickname, " +
@@ -71,13 +67,11 @@ public class Version31to311Updater {
                                 "FROM play_time GROUP BY uuid"
                 );
 
-                // Prepare statement for inserting merged records
                 PreparedStatement insertStmt = connection.prepareStatement(
                         "INSERT INTO temp_merged_entries (uuid, nickname, playtime, artificial_playtime, completed_goals) " +
                                 "VALUES (?, ?, ?, ?, ?)"
                 );
 
-                // Process each group of records with the same UUID
                 while (rs.next()) {
                     String uuid = rs.getString("uuid");
                     String nickname = rs.getString("nickname");
@@ -85,10 +79,8 @@ public class Version31to311Updater {
                     long artificialPlaytime = rs.getLong("total_artificial_playtime");
                     String allGoals = rs.getString("all_goals");
 
-                    // Merge goals properly
                     String mergedGoals = mergeGoals(allGoals);
 
-                    // Insert merged record
                     insertStmt.setString(1, uuid);
                     insertStmt.setString(2, nickname);
                     insertStmt.setLong(3, playtime);
@@ -99,7 +91,6 @@ public class Version31to311Updater {
                 rs.close();
                 insertStmt.close();
 
-                // Create final table for nickname merging
                 s.executeUpdate("CREATE TABLE final_merged_entries (" +
                         "uuid VARCHAR(32) NOT NULL," +
                         "nickname VARCHAR(32) NOT NULL," +
@@ -108,7 +99,6 @@ public class Version31to311Updater {
                         "completed_goals TEXT DEFAULT ''" +
                         ")");
 
-                // Get records grouped by nickname
                 rs = s.executeQuery(
                         "SELECT MAX(uuid) as uuid, " +
                                 "nickname, " +
@@ -118,13 +108,11 @@ public class Version31to311Updater {
                                 "FROM temp_merged_entries GROUP BY nickname"
                 );
 
-                // Prepare statement for final merged records
                 insertStmt = connection.prepareStatement(
                         "INSERT INTO final_merged_entries (uuid, nickname, playtime, artificial_playtime, completed_goals) " +
                                 "VALUES (?, ?, ?, ?, ?)"
                 );
 
-                // Process each group of records with the same nickname
                 while (rs.next()) {
                     String uuid = rs.getString("uuid");
                     String nickname = rs.getString("nickname");
@@ -132,10 +120,8 @@ public class Version31to311Updater {
                     long artificialPlaytime = rs.getLong("total_artificial_playtime");
                     String allGoals = rs.getString("all_goals");
 
-                    // Merge goals properly
                     String mergedGoals = mergeGoals(allGoals);
 
-                    // Insert final merged record
                     insertStmt.setString(1, uuid);
                     insertStmt.setString(2, nickname);
                     insertStmt.setLong(3, playtime);
@@ -144,7 +130,6 @@ public class Version31to311Updater {
                     insertStmt.executeUpdate();
                 }
 
-                // Log the results
                 ResultSet countRs = s.executeQuery("SELECT COUNT(*) as total FROM play_time");
                 int originalCount = countRs.next() ? countRs.getInt("total") : 0;
                 countRs.close();
@@ -156,11 +141,9 @@ public class Version31to311Updater {
                 plugin.getLogger().info(String.format("Merged %d entries into %d unique entries",
                         originalCount, finalCount));
 
-                // Replace original table content
                 s.executeUpdate("DELETE FROM play_time");
                 s.executeUpdate("INSERT INTO play_time SELECT * FROM final_merged_entries");
 
-                // Clean up
                 s.executeUpdate("DROP TABLE IF EXISTS temp_merged_entries");
                 s.executeUpdate("DROP TABLE IF EXISTS final_merged_entries");
 
@@ -206,6 +189,26 @@ public class Version31to311Updater {
             }
         } catch (SQLException e) {
             plugin.getLogger().severe("Failed to add unique constraints: " + e.getMessage());
+        }
+    }
+
+    public void addLastSeenColumn() {
+        try (Connection connection = database.getSQLConnection()) {
+            connection.setAutoCommit(false);
+
+            try (Statement s = connection.createStatement()) {
+                // Alter the table to add the last_seen column
+                s.executeUpdate("ALTER TABLE play_time ADD COLUMN last_seen DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00'");
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to alter table: " + e.getMessage());
         }
     }
 

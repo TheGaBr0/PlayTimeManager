@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
     private final List<String> subCommands = new ArrayList<>();
@@ -99,10 +101,18 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
         final List<String> completions = new ArrayList<>();
 
-        if (args.length == 2) {
+        if (args.length == 1) {
+            List<String> playerNames = Bukkit.getOnlinePlayers()
+                    .stream()
+                    .map(Player::getName)
+                    .collect(Collectors.toList());
+
+            // Copy partial matches to the completions list
+            StringUtil.copyPartialMatches(args[0], playerNames, completions);
+        } else if (args.length == 2) {
             List<String> availableCommands = new ArrayList<>();
 
-            if (sender.hasPermission("playtime.others.offline")) {
+            if (sender.hasPermission("playtime.others.lastseen")) {
                 availableCommands.add("lastseen");
             }
             if (sender.hasPermission("playtime.others.modify")) {
@@ -112,8 +122,8 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
             }
 
             StringUtil.copyPartialMatches(args[1], availableCommands, completions);
-            return completions;
         }
-        return null;
+
+        return completions;
     }
 }

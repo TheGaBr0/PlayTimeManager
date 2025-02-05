@@ -2,14 +2,18 @@ package me.thegabro.playtimemanager.Commands;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
 public class PlaytimeReload implements CommandExecutor {
-
+    private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
+    private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
         if (sender.hasPermission("playtime.reload")) {
@@ -18,14 +22,14 @@ public class PlaytimeReload implements CommandExecutor {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The configuration file has been reloaded");
 
             // Reload goals
-            GoalsManager.clearGoals();
-            GoalsManager.loadGoals();
+            goalsManager.clearGoals();
+            goalsManager.loadGoals();
 
             // Restart LuckPerms schedule if applicable
-            plugin.getOnlineUsersManager().startGoalCheckSchedule();
+            onlineUsersManager.startGoalCheckSchedule();
             sender.sendMessage("[§6PlayTime§eManager§f]§7 Goal check schedule has been restarted");
 
-            plugin.getDbUsersManager().updateTopPlayersFromDB();
+            dbUsersManager.updateTopPlayersFromDB();
 
             return true;
         } else {

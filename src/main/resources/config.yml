@@ -12,7 +12,7 @@
 # ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
 
 #If you are looking for goals settings, please head to the "Goals" folder.
-#To make such folder appear you need to create at least one goal -> /playtimegoal
+#To make such folder appear you need to create at least one goal -> /playtimegoal set <goalname> time:<time>
 
 #Leave this untouched
 config-version: 3.3
@@ -41,5 +41,9 @@ goal-check-verbose: true
 #Available options: "luckperms"
 #Using a different permissions plugin? Let me know on my GitHub issues page!
 permissions-manager-plugin: "luckperms"
+
+# Define the format for displaying dates and times
+# Want a different format? You can create your own here: http://www.sdfonlinetester.info/
+datetime-format: "MMM dd, yyyy HH:mm:ss"
 
 

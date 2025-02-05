@@ -9,43 +9,54 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class GoalsManager {
-    private static final Set<Goal> goals = new HashSet<>();
-    private static PlayTimeManager plugin;
+    private static GoalsManager instance;
+    private final Set<Goal> goals = new HashSet<>();
+    private PlayTimeManager plugin;
 
-    public static void initialize(PlayTimeManager playTimeManager) {
-        plugin = playTimeManager;
+    private GoalsManager() {}
+
+    public static synchronized GoalsManager getInstance() {
+        if (instance == null) {
+            instance = new GoalsManager();
+        }
+        return instance;
+    }
+
+    public void initialize(PlayTimeManager playTimeManager) {
+        this.plugin = playTimeManager;
+        clearGoals();
         loadGoals();
     }
 
-    public static void addGoal(Goal goal) {
+    public void addGoal(Goal goal) {
         goals.add(goal);
     }
 
-    public static void removeGoal(Goal goal) {
+    public void removeGoal(Goal goal) {
         goals.remove(goal);
         goal.deleteFile();
     }
 
-    public static Goal getGoal(String name) {
+    public Goal getGoal(String name) {
         return goals.stream()
                 .filter(g -> g.getName().equals(name))
                 .findFirst()
                 .orElse(null);
     }
 
-    public static Set<Goal> getGoals() {
+    public Set<Goal> getGoals() {
         return new HashSet<>(goals);
     }
 
-    public static List<String> getGoalsNames() {
+    public List<String> getGoalsNames() {
         return goals.stream().map(Goal::getName).collect(Collectors.toList());
     }
 
-    public static void clearGoals() {
+    public void clearGoals() {
         goals.clear();
     }
 
-    public static void loadGoals() {
+    public void loadGoals() {
         File goalsFolder = new File(plugin.getDataFolder(), "Goals");
         if (goalsFolder.exists() && goalsFolder.isDirectory()) {
             File[] goalFiles = goalsFolder.listFiles((dir, name) -> name.endsWith(".yml"));
@@ -58,13 +69,11 @@ public class GoalsManager {
         }
     }
 
-    public static boolean areAllInactive(){
-
-        for(Goal g : goals)
-            if(g.isActive())
+    public boolean areAllInactive() {
+        for (Goal g : goals)
+            if (g.isActive())
                 return false;
 
         return true;
-
     }
 }

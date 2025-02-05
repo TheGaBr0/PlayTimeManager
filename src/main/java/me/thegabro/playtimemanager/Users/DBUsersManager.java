@@ -11,10 +11,9 @@ public class DBUsersManager {
     private final PlayTimeDatabase db;
     private final PlayTimeManager plugin;
     private static volatile DBUsersManager instance;
-    private final OnlineUsersManager onlineUsersManager;
     private final List<DBUser> topPlayers;
     private final Map<String, DBUser> userCache;
-
+    private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private static final int TOP_PLAYERS_LIMIT = 100;
 
     private DBUsersManager() {
@@ -22,7 +21,6 @@ public class DBUsersManager {
         this.db = plugin.getDatabase();
         this.topPlayers = Collections.synchronizedList(new ArrayList<>());
         this.userCache = new ConcurrentHashMap<>();
-        this.onlineUsersManager = plugin.getOnlineUsersManager();
 
         startCacheMaintenanceTask();
     }

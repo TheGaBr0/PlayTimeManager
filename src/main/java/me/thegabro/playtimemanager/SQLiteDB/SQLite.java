@@ -23,7 +23,7 @@ public class SQLite extends PlayTimeDatabase {
             "playtime BIGINT NOT NULL," +
             "artificial_playtime BIGINT NOT NULL," +
             "completed_goals TEXT DEFAULT ''," +
-            "last_seen DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00'," +
+            "last_seen DATETIME NOT NULL," +
             "PRIMARY KEY (uuid)" +
             ");";
 

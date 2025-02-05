@@ -19,6 +19,7 @@ public class OnlineUsersManager {
     private BukkitTask goalSchedule;
     private BukkitTask dbUpdateSchedule;
     private final PlayTimeManager plugin;
+    private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final Map<String, OnlineUser> onlineUsersByName;
     private final Map<String, OnlineUser> onlineUsersByUUID;
     private final Map<String, String> goalMessageReplacements;
@@ -31,6 +32,9 @@ public class OnlineUsersManager {
         this.onlineUsersByUUID = new ConcurrentHashMap<>();
         this.goalMessageReplacements = new HashMap<>();
         loadOnlineUsers();
+    }
+
+    public void initialize(){
         startGoalCheckSchedule();
         startDBUpdateSchedule();
     }
@@ -76,8 +80,8 @@ public class OnlineUsersManager {
             goalSchedule.cancel();
         }
 
-        Set<Goal> goals = GoalsManager.getGoals();
-        if (goals.isEmpty() || GoalsManager.areAllInactive()) {
+        Set<Goal> goals = goalsManager.getGoals();
+        if (goals.isEmpty() || goalsManager.areAllInactive()) {
             plugin.getLogger().info("No active goals found. Goal check schedule not started.");
             return;
         }

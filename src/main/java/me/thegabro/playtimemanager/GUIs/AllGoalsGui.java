@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager.GUIs;
 
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
+import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -30,7 +31,8 @@ public class AllGoalsGui implements InventoryHolder, Listener {
 
     private final Inventory inv;
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
-
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final GoalsManager goalsManager = GoalsManager.getInstance();
     public AllGoalsGui() {
         inv = Bukkit.createInventory(this, 54, Component.text("Goals"));
     }
@@ -44,7 +46,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
         int leftIndex = 9;
         int rightIndex = 17;
 
-        List<Goal> sortedGoals = GoalsManager.getGoals().stream()
+        List<Goal> sortedGoals = goalsManager.getGoals().stream()
                 .sorted(Comparator.comparing(Goal::getName)) // Sort by name
                 .toList();
 
@@ -160,7 +162,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             //if(action.equals(InventoryAction.PICKUP_HALF)){
 
             whoClicked.closeInventory();
-            GoalSettingsGui settingsGui = new GoalSettingsGui(GoalsManager.getGoal(goalName.substring(2)), this);
+            GoalSettingsGui settingsGui = new GoalSettingsGui(goalsManager.getGoal(goalName.substring(2)), this);
             settingsGui.openInventory(whoClicked);
 
         }

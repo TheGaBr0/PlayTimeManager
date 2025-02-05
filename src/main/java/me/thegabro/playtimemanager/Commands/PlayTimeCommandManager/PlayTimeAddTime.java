@@ -2,11 +2,14 @@ package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
 
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.command.CommandSender;
 
 public class PlayTimeAddTime {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     public PlayTimeAddTime(CommandSender sender, String[] args){
         execute(sender, args);
     }
@@ -24,7 +27,7 @@ public class PlayTimeAddTime {
             return;
         }
 
-        DBUser user = plugin.getDbUsersManager().getUserFromNickname(args[0]);
+        DBUser user = dbUsersManager.getUserFromNickname(args[0]);
         long oldPlaytime = user.getPlaytime();
 
         long newArtificialPlaytime = user.getArtificialPlaytime() + timeToTicks;
@@ -40,7 +43,7 @@ public class PlayTimeAddTime {
         sender.sendMessage("[§6PlayTime§eManager§f]§7 PlayTime of §e" + args[0] +
                 "§7 has been updated from §6" + formattedOldPlaytime + "§7 to §6" + formattedNewPlaytime +"!");
 
-        plugin.getDbUsersManager().updateTopPlayersFromDB();
+        dbUsersManager.updateTopPlayersFromDB();
 
     }
 

@@ -3,6 +3,8 @@ package me.thegabro.playtimemanager.Commands;
 import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -17,6 +19,8 @@ public class PlaytimeTop implements TabExecutor {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final PlayTimeDatabase db = plugin.getDatabase();
+    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
+    private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     public final int TOP_MAX = 100;
     int page;
 
@@ -44,12 +48,12 @@ public class PlaytimeTop implements TabExecutor {
                             page = 1;
                         }
                         int numeroUtentiTotali = Integer.parseInt(args[0]);
-                        plugin.getOnlineUsersManager().updateAllOnlineUsersPlaytime();
+                        onlineUsersManager.updateAllOnlineUsersPlaytime();
                         Map<String,String> topPlayers = db.getTopPlayersByPlaytime(numeroUtentiTotali);
                         ArrayList<DBUser> topDBUsers = new ArrayList<>();
 
                         for(String uuid : topPlayers.keySet()) {
-                            topDBUsers.add(plugin.getDbUsersManager().getUserFromUUID(uuid));
+                            topDBUsers.add(dbUsersManager.getUserFromUUID(uuid));
                         }
                         if(!topDBUsers.isEmpty()){
 

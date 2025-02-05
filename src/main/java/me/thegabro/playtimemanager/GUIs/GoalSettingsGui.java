@@ -3,6 +3,8 @@ package me.thegabro.playtimemanager.GUIs;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -25,7 +27,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     private Goal goal;
     private Object previousGui;
     private PlayTimeManager plugin;
-
+    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private static final class Slots {
         static final int TIME_SETTING = 10;
         static final int GOAL_PERMISSIONS = 12;
@@ -305,7 +307,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
                     String playerName = stateSnapshot.getText().replace(" ", "");
 
-                    DBUser user = plugin.getDbUsersManager().getUserFromNickname(playerName);
+                    DBUser user = dbUsersManager.getUserFromNickname(playerName);
 
                     if(user == null){
                         return Collections.singletonList(

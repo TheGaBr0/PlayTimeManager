@@ -21,6 +21,8 @@ public class Configuration {
     private String playtimeSelfMessage;
     private String playtimeOthersMessage;
     private String permissionsManagerPlugin;
+    private String datetimeFormat;
+
 
     public Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
         this.path = path;
@@ -53,6 +55,7 @@ public class Configuration {
         updateGoalsSettings();
         updateMessages();
         updatePermissionsSettings();
+        updateDateTimeSettings();
     }
 
     private void create() {
@@ -88,8 +91,35 @@ public class Configuration {
         this.permissionsManagerPlugin = config.getString("permissions-manager-plugin", "luckperms");
     }
 
+
     public long getGoalsCheckRate(){
         return goalsCheckRate;
+    }
+
+    private void updateDateTimeSettings() {
+        String configFormat = config.getString("datetime-format");
+        try {
+            // Attempt to create a SimpleDateFormat with the provided format
+            new java.text.SimpleDateFormat(configFormat);
+            this.datetimeFormat = configFormat;
+        } catch (IllegalArgumentException e) {
+            // If format is invalid, set to default and log a warning
+            this.datetimeFormat = "MMM dd, yyyy HH:mm:ss";
+            config.set("datetime-format", this.datetimeFormat);
+            save();
+            plugin.getLogger().warning("Invalid datetime format in config. Resetting to default: " + this.datetimeFormat);
+        }
+    }
+    public String getDateTimeFormat() {
+        return datetimeFormat;
+    }
+
+
+    public void setGoalsCheckVerbose(Boolean verbose){
+        if (verbose != null) {
+            config.set("goal-check-verbose", verbose);
+            save();
+        }
     }
 
     public void setGoalsCheckRate(Long rate){
@@ -103,12 +133,7 @@ public class Configuration {
         return goalsCheckVerbose;
     }
 
-    public void setGoalsCheckVerbose(Boolean verbose){
-        if (verbose != null) {
-            config.set("goal-check-verbose", verbose);
-            save();
-        }
-    }
+
 
     public String getPermissionsManagerPlugin() {
         return permissionsManagerPlugin;

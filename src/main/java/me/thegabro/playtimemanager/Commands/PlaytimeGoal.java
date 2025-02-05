@@ -4,6 +4,8 @@ import me.thegabro.playtimemanager.GUIs.AllGoalsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
@@ -16,6 +18,8 @@ public class PlaytimeGoal implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final String[] SUBCOMMANDS = {"set", "remove", "rename"};  // Removed "list" from subcommands
     private final String[] SUBSUBCOMMANDS = {"time:", "activate:"};
+    private final GoalsManager goalsManager = GoalsManager.getInstance();
+    private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
         if (!sender.hasPermission("playtime.goal")) {
@@ -102,13 +106,13 @@ public class PlaytimeGoal implements TabExecutor {
     }
 
     private void renameGoal(CommandSender sender, String oldName, String newName) {
-        Goal oldGoal = GoalsManager.getGoal(oldName);
+        Goal oldGoal = goalsManager.getGoal(oldName);
         if (oldGoal == null) {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The goal §e" + oldName + " §7doesn't exist!");
             return;
         }
 
-        if (GoalsManager.getGoal(newName) != null) {
+        if (goalsManager.getGoal(newName) != null) {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 A goal with the name §e" + newName + " §7already exists!");
             return;
         }
@@ -120,7 +124,7 @@ public class PlaytimeGoal implements TabExecutor {
     }
 
     private void setGoal(CommandSender sender, String goalName, Long time, boolean activate) {
-        Goal g = GoalsManager.getGoal(goalName);
+        Goal g = goalsManager.getGoal(goalName);
         StringBuilder message = new StringBuilder();
 
         if (g != null) {
@@ -143,14 +147,14 @@ public class PlaytimeGoal implements TabExecutor {
 
         sender.sendMessage(message.toString());
 
-        plugin.getOnlineUsersManager().startGoalCheckSchedule();
+        onlineUsersManager.startGoalCheckSchedule();
     }
 
     private void removeGoal(CommandSender sender, String goalName) {
-        Goal g = GoalsManager.getGoal(goalName);
+        Goal g = goalsManager.getGoal(goalName);
         if (g != null) {
             g.kill();
-            plugin.getOnlineUsersManager().startGoalCheckSchedule();
+            onlineUsersManager.startGoalCheckSchedule();
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The goal §e" + goalName + " §7has been removed!");
         } else {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 The goal §e" + goalName + " §7doesn't exist!");
@@ -168,9 +172,9 @@ public class PlaytimeGoal implements TabExecutor {
 
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("set")) {
-                StringUtil.copyPartialMatches(args[1], GoalsManager.getGoalsNames(), completions);
+                StringUtil.copyPartialMatches(args[1], goalsManager.getGoalsNames(), completions);
             } else if (args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("rename")) {
-                StringUtil.copyPartialMatches(args[1], GoalsManager.getGoalsNames(), completions);
+                StringUtil.copyPartialMatches(args[1], goalsManager.getGoalsNames(), completions);
             }
             return completions;
         }

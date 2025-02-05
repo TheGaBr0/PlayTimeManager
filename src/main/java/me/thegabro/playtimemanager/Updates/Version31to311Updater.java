@@ -3,6 +3,10 @@ package me.thegabro.playtimemanager.Updates;
 import me.thegabro.playtimemanager.Configuration;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.SQLiteDB.SQLite;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+
+import java.io.File;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -22,7 +26,7 @@ public class Version31to311Updater {
         handleDuplicates();
         updateUniqueDBEntries();
         addLastSeenColumn();
-        updateConfig();
+        recreateConfigFile();
     }
 
     private String mergeGoals(String goals) {
@@ -198,7 +202,7 @@ public class Version31to311Updater {
 
             try (Statement s = connection.createStatement()) {
                 // Alter the table to add the last_seen column
-                s.executeUpdate("ALTER TABLE play_time ADD COLUMN last_seen DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00'");
+                s.executeUpdate("ALTER TABLE play_time ADD COLUMN last_seen DATETIME DEFAULT NULL");
 
                 connection.commit();
             } catch (SQLException e) {
@@ -212,9 +216,33 @@ public class Version31to311Updater {
         }
     }
 
-    public void updateConfig() {
-        Configuration config = plugin.getConfiguration();
-        config.setVersion((float) 3.3);
+    private void recreateConfigFile() {
+
+        File configFile = new File(plugin.getDataFolder(), "config.yml");
+        FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+
+        String playtimeSelfMessage = config.getString("playtime-self-message");
+        String playtimeOthersMessage = config.getString("playtime-others-message");
+
+        long goalsCheckRate = config.getLong("goal-check-rate");
+        boolean goalsCheckVerbose = config.getBoolean("goal-check-verbose");
+
+        configFile.delete();
+
+        Configuration newConfig = new Configuration(
+                plugin.getDataFolder(),
+                "config",
+                true,
+                true
+        );
+
+        newConfig.setPlaytimeSelfMessage(playtimeSelfMessage);
+        newConfig.setPlaytimeOthersMessage(playtimeOthersMessage);
+        newConfig.setGoalsCheckRate(goalsCheckRate);
+        newConfig.setGoalsCheckVerbose(goalsCheckVerbose);
+        newConfig.reload();
+
+        plugin.setConfiguration(newConfig);
     }
 
     private String generateReadmeContent() {

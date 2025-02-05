@@ -20,12 +20,15 @@ import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
 
+import java.io.File;
 import java.util.Objects;
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class PlayTimeManager extends JavaPlugin{
@@ -38,6 +41,7 @@ public class PlayTimeManager extends JavaPlugin{
     private final String CURRENTGOALSCONFIGVERSION = "1.0";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
+    private GoalsManager goalsManager;
     private static final String SPIGOT_RESOURCE_ID = "118284";
 
 
@@ -46,15 +50,48 @@ public class PlayTimeManager extends JavaPlugin{
 
         instance = this;
 
-        config = new Configuration(this.getDataFolder(), "config", true, true);
-
         LogFilter.registerFilter();
-
 
         this.db = new SQLite(this);
         this.db.load();
 
-        GoalsManager.initialize(this);
+        File configFileTest = new File(getDataFolder(), "config.yml");
+
+
+        if(configFileTest.exists()){
+            FileConfiguration configTest = YamlConfiguration.loadConfiguration(configFileTest);
+            if(!configTest.getString("config-version").equals(CURRENTCONFIGVERSION)){
+                if(configTest.getString("config-version").equals("3.1")){
+                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.1 config version detected, updating it to the latest one...");
+                    Version304To31Updater updater = new Version304To31Updater(this);
+                    updater.performUpgrade();
+
+                    Version31to311Updater updater2 = new Version31to311Updater(this);
+                    updater2.performUpgrade();
+
+                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ CURRENTCONFIGVERSION);
+                }else if (configTest.getString("config-version").equals("3.2")){
+                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.2 config version detected, updating it to the latest one...");
+                    Version31to311Updater updater2 = new Version31to311Updater(this);
+                    updater2.performUpgrade();
+                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ CURRENTCONFIGVERSION);
+                }else{
+                    this.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown config version detected! Something may break!");
+                }
+
+            }
+            configFileTest = new File(getDataFolder(), "config.yml");
+            configTest = YamlConfiguration.loadConfiguration(configFileTest);
+            if(!configTest.getString("goals-config-version").equals(CURRENTGOALSCONFIGVERSION)){
+                this.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown goals config version detected! Something may break!");
+
+            }
+        }
+
+        config = new Configuration(this.getDataFolder(), "config", true, true);
+
+        goalsManager = GoalsManager.getInstance();
+        goalsManager.initialize(this);
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
 
@@ -82,36 +119,9 @@ public class PlayTimeManager extends JavaPlugin{
         Objects.requireNonNull(getCommand("playtimereload")).setExecutor(new PlaytimeReload() {});
         //getCommand("playtimehelp").setExecutor(new PlaytimeHelp(this));
 
-        if(!config.getVersion().equals(CURRENTCONFIGVERSION)){
-            if(config.getVersion().equals("3.1")){
-                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.1 config version detected, updating it to the latest one...");
-                Version304To31Updater updater = new Version304To31Updater(this);
-                updater.performUpgrade();
-
-                getLogger().info(String.valueOf(GoalsManager.getGoal("membro").getPermissions()));
-
-                Version31to311Updater updater2 = new Version31to311Updater(this);
-                updater2.performUpgrade();
-
-                getLogger().info(String.valueOf(GoalsManager.getGoal("membro").getPermissions()));
-
-                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ CURRENTCONFIGVERSION);
-            }else if (config.getVersion().equals("3.2")){
-                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.2 config version detected, updating it to the latest one...");
-                Version31to311Updater updater2 = new Version31to311Updater(this);
-                updater2.performUpgrade();
-                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ CURRENTCONFIGVERSION);
-            }else{
-                this.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown config version detected! Something may break!");
-            }
-
-        }
-
-        if(!config.getGoalsVersion().equals(CURRENTGOALSCONFIGVERSION)){
-            this.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown goals config version detected! Something may break!");
-
-        }
+        onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();
+
         getLogger().info("has been enabled!");
 
         new UpdateChecker(this, UpdateCheckSource.SPIGOT, SPIGOT_RESOURCE_ID)
@@ -138,14 +148,6 @@ public class PlayTimeManager extends JavaPlugin{
 
     public static PlayTimeManager getInstance() {
         return instance;
-    }
-
-    public OnlineUsersManager getOnlineUsersManager() {
-        return onlineUsersManager;
-    }
-
-    public DBUsersManager getDbUsersManager() {
-        return dbUsersManager;
     }
 
     public Configuration getConfiguration() {

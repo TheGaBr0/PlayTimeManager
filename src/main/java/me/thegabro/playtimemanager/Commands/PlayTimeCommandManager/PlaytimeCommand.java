@@ -1,8 +1,10 @@
 package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
 
 import me.thegabro.playtimemanager.Users.DBUser;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -13,7 +15,8 @@ import java.util.Map;
 public class PlaytimeCommand{
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-
+    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
+    private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     public PlaytimeCommand(CommandSender sender, String[] args){
         execute(sender, args);
     }
@@ -48,7 +51,7 @@ public class PlaytimeCommand{
             return false;
         }
 
-        OnlineUser onlineUser = plugin.getOnlineUsersManager().getOnlineUser(sender.getName());
+        OnlineUser onlineUser = onlineUsersManager.getOnlineUser(sender.getName());
 
         String formattedPlaytime = Utils.ticksToFormattedPlaytime(onlineUser.getPlaytime());
         String message = replacePlaceholders(plugin.getConfiguration().getPlaytimeSelfMessage(), sender.getName(), formattedPlaytime);
@@ -61,7 +64,7 @@ public class PlaytimeCommand{
 
     private boolean handleOther(CommandSender sender, String playerName) {
 
-        DBUser user = plugin.getDbUsersManager().getUserFromNickname(playerName);
+        DBUser user = dbUsersManager.getUserFromNickname(playerName);
 
         String formattedPlaytime = Utils.ticksToFormattedPlaytime(user.getPlaytime());
         String message = replacePlaceholders(plugin.getConfiguration().getPlaytimeOthersMessage(), playerName, formattedPlaytime);

@@ -14,6 +14,7 @@ import java.util.Objects;
 public class Goal {
     // Fields
     private final PlayTimeManager plugin;
+    private final GoalsManager goalsManager = GoalsManager.getInstance();
     private String name;
     private long time;
     private final File goalFile;
@@ -32,7 +33,7 @@ public class Goal {
         this.active = active;
         loadFromFile();
         saveToFile();
-        GoalsManager.addGoal(this);
+        goalsManager.addGoal(this);
     }
 
     // Core file operations
@@ -226,7 +227,7 @@ public class Goal {
     // Management methods
     public void kill() {
         DBUsersManager.getInstance().removeGoalFromAllUsers(name);
-        GoalsManager.removeGoal(this);
+        goalsManager.removeGoal(this);
         deleteFile();
     }
 

@@ -634,13 +634,12 @@ public abstract class PlayTimeDatabase {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 Timestamp timestamp = rs.getTimestamp("last_seen");
-                return timestamp != null ? timestamp.toLocalDateTime() : LocalDateTime.of(1970, 1, 1, 0, 0);
+                return timestamp != null ? timestamp.toLocalDateTime() : null;
             }
         } catch (SQLException e) {
-            plugin.getLogger().severe("Error getting last_seen time: " + e.getMessage());
+            return null;
         }
-
-        return LocalDateTime.of(1970, 1, 1, 0, 0);
+        return null;
     }
 
 }

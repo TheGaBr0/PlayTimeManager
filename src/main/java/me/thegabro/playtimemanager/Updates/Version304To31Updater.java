@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Configuration;
+import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.SQLiteDB.SQLite;
 import me.thegabro.playtimemanager.Goals.Goal;
@@ -14,17 +15,24 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 public class Version304To31Updater {
     private final PlayTimeManager plugin;
     private final SQLite database;
-    private final DBUsersManager dbUsersManager;
+    private DBUsersManager dbUsersManager;
+    private OnlineUsersManager onlineUsersManager;
+    private GoalsManager goalsManager;
 
     public Version304To31Updater(PlayTimeManager plugin) {
         this.plugin = plugin;
         this.database = (SQLite) plugin.getDatabase();
+        this.goalsManager = GoalsManager.getInstance();
+        goalsManager.initialize(plugin);
+        this.onlineUsersManager = OnlineUsersManager.getInstance();
         this.dbUsersManager = DBUsersManager.getInstance();
     }
 
@@ -79,7 +87,7 @@ public class Version304To31Updater {
     private void recreateConfigFile() {
 
         File configFile = new File(plugin.getDataFolder(), "config.yml");
-        FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);;
+        FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
         String playtimeSelfMessage = config.getString("playtime-self-message");
         String playtimeOthersMessage = config.getString("playtime-others-message");
@@ -106,10 +114,11 @@ public class Version304To31Updater {
     }
 
     private void migrateUserGoalData() {
+
         for (DBUser user : dbUsersManager.getAllDBUsers()) {
             long userPlaytime = user.getPlaytime();
 
-            for (Goal goal : me.thegabro.playtimemanager.Goals.GoalsManager.getGoals()) {
+            for (Goal goal : goalsManager.getGoals()) {
                 if (userPlaytime >= goal.getTime()) {
                     user.markGoalAsCompleted(goal.getName());
                 }

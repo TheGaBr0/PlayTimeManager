@@ -9,7 +9,7 @@ softdepend: [PlaceholderAPI, LuckPerms]
 
 commands:
   playtime:
-    description: Command to get/modify play time of players
+    description: Command to get/modify play time stats of players
     permission: playtime
     permission-message: You don't have the permission to execute this command!
   playtimeaverage:
@@ -41,7 +41,7 @@ permissions:
       playtime: true
       playtime.others: true
       playtime.others.modify: true
-      playtime.others.offline: true
+      playtime.others.lastseen: true
       playtime.average: true
       playtime.percentage: true
       playtime.top: true
@@ -53,7 +53,7 @@ permissions:
     default: false
   playtime.others.modify:
     default: false
-  playtime.others.offline:
+  playtime.others.lastseen:
     default: false
   playtime.average:
     default: false

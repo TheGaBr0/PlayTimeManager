@@ -2,6 +2,8 @@ package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.command.CommandSender;
 
@@ -10,11 +12,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 
-public class PlayTimeOffline {
+public class PlayTimeLastSeen {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-
-    public PlayTimeOffline(CommandSender sender, String[] args) {
-        DBUser user = plugin.getDbUsersManager().getUserFromNickname(args[0]);
+    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
+    public PlayTimeLastSeen(CommandSender sender, String[] args) {
+        DBUser user = dbUsersManager.getUserFromNickname(args[0]);
 
         if (user == null) {
             sender.sendMessage("[§6PlayTime§eManager§f]§7 Player not found!");
@@ -29,7 +31,7 @@ public class PlayTimeOffline {
         }
 
         // Format the last seen date
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
         String formattedDate = lastSeen.format(formatter);
 
         Duration duration = Duration.between(lastSeen, LocalDateTime.now());

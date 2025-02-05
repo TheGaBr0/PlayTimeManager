@@ -48,6 +48,10 @@ public class PlayTimeManager extends JavaPlugin{
     @Override
     public void onEnable() {
 
+        if (!getDataFolder().exists()) {
+            getDataFolder().mkdirs();
+        }
+
         instance = this;
 
         LogFilter.registerFilter();

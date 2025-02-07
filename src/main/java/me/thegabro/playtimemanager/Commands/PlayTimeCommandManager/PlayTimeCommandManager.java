@@ -100,17 +100,19 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {
         final List<String> completions = new ArrayList<>();
+        final List<String> availableCommands = new ArrayList<>();
 
         if (args.length == 1) {
-            List<String> playerNames = Bukkit.getOnlinePlayers()
-                    .stream()
-                    .map(Player::getName)
-                    .collect(Collectors.toList());
-
-            // Copy partial matches to the completions list
-            StringUtil.copyPartialMatches(args[0], playerNames, completions);
+            if (sender.hasPermission("playtime.others")){
+                List<String> playerNames = Bukkit.getOnlinePlayers()
+                        .stream()
+                        .map(Player::getName)
+                        .collect(Collectors.toList());
+                StringUtil.copyPartialMatches(args[0], playerNames, completions);
+            }else{
+                return new ArrayList<>();
+            }
         } else if (args.length == 2) {
-            List<String> availableCommands = new ArrayList<>();
 
             if (sender.hasPermission("playtime.others.lastseen")) {
                 availableCommands.add("lastseen");

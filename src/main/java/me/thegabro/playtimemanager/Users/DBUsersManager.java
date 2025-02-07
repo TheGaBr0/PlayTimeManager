@@ -89,8 +89,8 @@ public class DBUsersManager {
 
     public void updateCachedTopPlayers(OnlineUser onlineUser) {
         synchronized (topPlayers) {
-
-            if(topPlayers.size() < TOP_PLAYERS_LIMIT){
+            if (topPlayers.size() < TOP_PLAYERS_LIMIT &&
+                    topPlayers.stream().noneMatch(player -> player.getUuid().equals(onlineUser.getUuid()))) {
                 topPlayers.add(getUserFromUUID(onlineUser.getUuid()));
             }
 

@@ -33,6 +33,7 @@ For a complete list of commands, permissions, and placeholders, please visit the
 * `/playtimegoal set veteran time:40d`: <br> ![alt text](https://i.imgur.com/1GQEfed.png "Goal creation example") <br> If not specified, the goal will be set to inactive by default. This means that the plugin will not check for its completion until it is set to active through GUI, command, or by editing the veteran.yaml config.
 ### Placeholders
 ![alt text](https://i.imgur.com/tbK5mH4.gif "PlayTime Leaderboard example")
+<br>
 ![alt text](https://i.imgur.com/saWMotz.gif "PlayTime last seen stats example")
 
 

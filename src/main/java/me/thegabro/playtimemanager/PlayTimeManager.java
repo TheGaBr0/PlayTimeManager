@@ -60,8 +60,6 @@ public class PlayTimeManager extends JavaPlugin{
         this.db.load();
 
         File configFileTest = new File(getDataFolder(), "config.yml");
-
-
         if(configFileTest.exists()){
             FileConfiguration configTest = YamlConfiguration.loadConfiguration(configFileTest);
             if(!configTest.getString("config-version").equals(CURRENTCONFIGVERSION)){
@@ -121,7 +119,6 @@ public class PlayTimeManager extends JavaPlugin{
         Objects.requireNonNull(getCommand("playtimepercentage")).setExecutor(new PlaytimePercentage() {});
         Objects.requireNonNull(getCommand("playtimetop")).setExecutor(new PlaytimeTop() {});
         Objects.requireNonNull(getCommand("playtimereload")).setExecutor(new PlaytimeReload() {});
-        //getCommand("playtimehelp").setExecutor(new PlaytimeHelp(this));
 
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();

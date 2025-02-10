@@ -612,8 +612,6 @@ public abstract class PlayTimeDatabase {
 
     public void updateLastSeen(String uuid, LocalDateTime lastSeen) {
 
-        plugin.getLogger().info("last seen: " + lastSeen);
-
         try (Connection connection = getSQLConnection();
              PreparedStatement ps = connection.prepareStatement("UPDATE play_time SET last_seen = ? WHERE uuid = ?")) {
 

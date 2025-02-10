@@ -19,9 +19,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-/**
- * GUI for managing permissions associated with a goal
- */
 public class PermissionsGui implements InventoryHolder, Listener {
 
     private static final int GUI_SIZE = 54;

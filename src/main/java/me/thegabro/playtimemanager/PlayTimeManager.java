@@ -20,6 +20,7 @@ import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -48,6 +49,13 @@ public class PlayTimeManager extends JavaPlugin{
     @Override
     public void onEnable() {
 
+        new UpdateChecker(this, UpdateCheckSource.SPIGET, SPIGOT_RESOURCE_ID)
+                .setDownloadLink("https://www.spigotmc.org/resources/playtimemanager.118284/")
+                .setChangelogLink("https://www.spigotmc.org/resources/playtimemanager.118284/updates")
+                .setUserAgent(new UserAgentBuilder().addPluginNameAndVersion())
+                .checkEveryXHours(24)
+                .checkNow();
+
         if (!getDataFolder().exists()) {
             getDataFolder().mkdirs();
         }
@@ -60,10 +68,10 @@ public class PlayTimeManager extends JavaPlugin{
         this.db.load();
 
         File configFileTest = new File(getDataFolder(), "config.yml");
-        if(configFileTest.exists()){
+        if (configFileTest.exists()) {
             FileConfiguration configTest = YamlConfiguration.loadConfiguration(configFileTest);
-            if(!configTest.getString("config-version").equals(CURRENTCONFIGVERSION)){
-                if(configTest.getString("config-version").equals("3.1")){
+            if (!configTest.getString("config-version").equals(CURRENTCONFIGVERSION)) {
+                if (configTest.getString("config-version").equals("3.1")) {
                     Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.1 config version detected, updating it to the latest one...");
                     Version304To31Updater updater = new Version304To31Updater(this);
                     updater.performUpgrade();
@@ -71,20 +79,20 @@ public class PlayTimeManager extends JavaPlugin{
                     Version31to311Updater updater2 = new Version31to311Updater(this);
                     updater2.performUpgrade();
 
-                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ CURRENTCONFIGVERSION);
-                }else if (configTest.getString("config-version").equals("3.2")){
+                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r" + CURRENTCONFIGVERSION);
+                } else if (configTest.getString("config-version").equals("3.2")) {
                     Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.2 config version detected, updating it to the latest one...");
                     Version31to311Updater updater2 = new Version31to311Updater(this);
                     updater2.performUpgrade();
-                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r"+ CURRENTCONFIGVERSION);
-                }else{
+                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r" + CURRENTCONFIGVERSION);
+                } else {
                     this.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown config version detected! Something may break!");
                 }
 
             }
             configFileTest = new File(getDataFolder(), "config.yml");
             configTest = YamlConfiguration.loadConfiguration(configFileTest);
-            if(!configTest.getString("goals-config-version").equals(CURRENTGOALSCONFIGVERSION)){
+            if (!configTest.getString("goals-config-version").equals(CURRENTGOALSCONFIGVERSION)) {
                 this.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown goals config version detected! Something may break!");
 
             }
@@ -99,7 +107,7 @@ public class PlayTimeManager extends JavaPlugin{
 
         permissionsManagerConfigured = checkPermissionsPlugin();
 
-        if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlayTimePlaceHolders().register();
         }
 
@@ -114,23 +122,22 @@ public class PlayTimeManager extends JavaPlugin{
         Bukkit.getPluginManager().registerEvents(new ConfirmationGui(), this);
 
         Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeGoal());
-        Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {});
-        Objects.requireNonNull(getCommand("playtimeaverage")).setExecutor(new PlaytimeAverage() {});
-        Objects.requireNonNull(getCommand("playtimepercentage")).setExecutor(new PlaytimePercentage() {});
-        Objects.requireNonNull(getCommand("playtimetop")).setExecutor(new PlaytimeTop() {});
-        Objects.requireNonNull(getCommand("playtimereload")).setExecutor(new PlaytimeReload() {});
+        Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {
+        });
+        Objects.requireNonNull(getCommand("playtimeaverage")).setExecutor(new PlaytimeAverage() {
+        });
+        Objects.requireNonNull(getCommand("playtimepercentage")).setExecutor(new PlaytimePercentage() {
+        });
+        Objects.requireNonNull(getCommand("playtimetop")).setExecutor(new PlaytimeTop() {
+        });
+        Objects.requireNonNull(getCommand("playtimereload")).setExecutor(new PlaytimeReload() {
+        });
 
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();
 
         getLogger().info("has been enabled!");
 
-        new UpdateChecker(this, UpdateCheckSource.SPIGOT, SPIGOT_RESOURCE_ID)
-                .setDownloadLink("https://www.spigotmc.org/resources/playtimemanager.118284/")
-                .setChangelogLink("https://www.spigotmc.org/resources/playtimemanager.118284/updates")
-                .setUserAgent(new UserAgentBuilder().addPluginNameAndVersion())
-                .checkEveryXHours(24)
-                .checkNow();
 
     }
 

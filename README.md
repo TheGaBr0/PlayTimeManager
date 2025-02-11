@@ -1,4 +1,15 @@
 ![alt text](https://i.imgur.com/cMGDraE.png "PlayTime Logo")
+<div align="center">
+  <a href="https://discordapp.com/users/166601586854985729">
+    <img src="https://i.imgur.com/Vd5Rfxy.png" alt="Discord">
+  </a>
+  <a href="https://github.com/TheGaBr0/PlayTimeManager/wiki">
+    <img src="https://i.imgur.com/PU7u3HM.png" alt="Wiki">
+  </a>
+</div>
+
+
+<br>
 Hello and welcome to PlayTimeManager! I initially created this plugin for the server on which I am currently a developer. We don't have thousands or hundreds of players, but we had to find a way to track players' playtime to promote one whenever it reaches a certain amount. I looked around on the web, but I couldn't find any plugin that was able to satisfy our issue: we needed a playtime plugin, somewhat efficient, that could automatically execute a specific task like promoting a player through Luckperms. Well, that's what this plugin is supposed to do! <br> <br>
 I thought this could be useful to other server administrators as well, so I decided to share it on Spigot! If interest arises, I'll keep it updated happily :)
 ## What's PlayTimeManager?

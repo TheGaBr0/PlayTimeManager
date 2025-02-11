@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>me.theGabro</groupId>
   <artifactId>PlayTimeManager</artifactId>
-  <version>3.1</version>
+  <version>3.2.2-dev</version>
   <build>
     <resources>
       <resource>
@@ -38,6 +38,10 @@
                 <relocation>
                   <pattern>com.jeff_media.updatechecker</pattern>
                   <shadedPattern>me.thegabro.playtimemanager.updatechecker</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.bstats</pattern>
+                  <shadedPattern>me.thegabro.playtimemanager.bstats</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>

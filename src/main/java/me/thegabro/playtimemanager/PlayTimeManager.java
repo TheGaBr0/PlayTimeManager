@@ -19,6 +19,7 @@ import me.thegabro.playtimemanager.Updates.Version31to311Updater;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -44,10 +45,12 @@ public class PlayTimeManager extends JavaPlugin{
     private DBUsersManager dbUsersManager;
     private GoalsManager goalsManager;
     private static final String SPIGOT_RESOURCE_ID = "118284";
-
+    private final int BSTATS_PLUGIN_ID = 24739;
 
     @Override
     public void onEnable() {
+
+        Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
 
         new UpdateChecker(this, UpdateCheckSource.SPIGET, SPIGOT_RESOURCE_ID)
                 .setDownloadLink("https://www.spigotmc.org/resources/playtimemanager.118284/")

@@ -37,8 +37,16 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
         if (args.length > 0) {
             String targetPlayerName = args[0];
-            if (dbUsersManager.getUserFromNickname(targetPlayerName) == null) {
-                sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " The player §e" + targetPlayerName + "§7 has never joined the server!"));
+
+            // Check if it's a reset command with '*' or '+' wildcard
+            boolean isWildcardReset = args.length > 1 &&
+                    args[1].equals("reset") &&
+                    (targetPlayerName.equals("*") || targetPlayerName.equals("+"));
+
+            // Only validate player existence if it's not a wildcard reset
+            if (!isWildcardReset && dbUsersManager.getUserFromNickname(targetPlayerName) == null) {
+                sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() +
+                        " The player §e" + targetPlayerName + "§7 has never joined the server!"));
                 return false;
             }
         }

@@ -611,19 +611,24 @@ public abstract class PlayTimeDatabase {
     }
 
     public void updateLastSeen(String uuid, LocalDateTime lastSeen) {
-
         try (Connection connection = getSQLConnection();
              PreparedStatement ps = connection.prepareStatement("UPDATE play_time SET last_seen = ? WHERE uuid = ?")) {
 
-            // Convert LocalDateTime to Timestamp for SQL DATETIME storage
-            LocalDateTime truncated = lastSeen.truncatedTo(ChronoUnit.SECONDS);
-            ps.setTimestamp(1, Timestamp.valueOf(truncated));
+            if (lastSeen != null) {
+                // Convert LocalDateTime to Timestamp for SQL DATETIME storage
+                LocalDateTime truncated = lastSeen.truncatedTo(ChronoUnit.SECONDS);
+                ps.setTimestamp(1, Timestamp.valueOf(truncated));
+            } else {
+                ps.setNull(1, Types.TIMESTAMP); // Handle null case properly
+            }
+
             ps.setString(2, uuid);
             ps.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().severe("Error updating last_seen time: " + e.getMessage());
         }
     }
+
 
     public LocalDateTime getLastSeen(String uuid) {
         try (Connection connection = getSQLConnection();
@@ -644,15 +649,21 @@ public abstract class PlayTimeDatabase {
         try (Connection connection = getSQLConnection();
              PreparedStatement ps = connection.prepareStatement("UPDATE play_time SET first_join = ? WHERE uuid = ?")) {
 
-            // Convert LocalDateTime to Timestamp for SQL DATETIME storage
-            LocalDateTime truncated = firstJoin.truncatedTo(ChronoUnit.SECONDS);
-            ps.setTimestamp(1, Timestamp.valueOf(truncated));
+            if (firstJoin != null) {
+                // Convert LocalDateTime to Timestamp for SQL DATETIME storage
+                LocalDateTime truncated = firstJoin.truncatedTo(ChronoUnit.SECONDS);
+                ps.setTimestamp(1, Timestamp.valueOf(truncated));
+            } else {
+                ps.setNull(1, Types.TIMESTAMP); // Handle null case properly
+            }
+
             ps.setString(2, uuid);
             ps.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().severe("Error updating first_join time: " + e.getMessage());
         }
     }
+
 
     public LocalDateTime getFirstJoin(String uuid) {
         try (Connection connection = getSQLConnection();

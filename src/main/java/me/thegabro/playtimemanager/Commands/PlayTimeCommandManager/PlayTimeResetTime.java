@@ -24,7 +24,7 @@ public class PlayTimeResetTime {
     public void execute(CommandSender sender, String[] args) {
 
         if (args[0].equals("*")) {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Starting reset of all players' data..."));
+            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Starting reset of all players' data, this will take some time..."));
 
             // Run the reset process async
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {

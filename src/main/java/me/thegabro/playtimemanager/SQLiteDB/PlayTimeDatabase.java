@@ -640,4 +640,35 @@ public abstract class PlayTimeDatabase {
         return null;
     }
 
+    public void updateFirstJoin(String uuid, LocalDateTime firstJoin) {
+        try (Connection connection = getSQLConnection();
+             PreparedStatement ps = connection.prepareStatement("UPDATE play_time SET first_join = ? WHERE uuid = ?")) {
+
+            // Convert LocalDateTime to Timestamp for SQL DATETIME storage
+            LocalDateTime truncated = firstJoin.truncatedTo(ChronoUnit.SECONDS);
+            ps.setTimestamp(1, Timestamp.valueOf(truncated));
+            ps.setString(2, uuid);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error updating first_join time: " + e.getMessage());
+        }
+    }
+
+    public LocalDateTime getFirstJoin(String uuid) {
+        try (Connection connection = getSQLConnection();
+             PreparedStatement ps = connection.prepareStatement("SELECT first_join FROM play_time WHERE uuid = ?")) {
+            ps.setString(1, uuid);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                Timestamp timestamp = rs.getTimestamp("first_join");
+                return timestamp != null ? timestamp.toLocalDateTime() : null;
+            }
+        } catch (SQLException e) {
+            return null;
+        }
+        return null;
+    }
+
+
+
 }

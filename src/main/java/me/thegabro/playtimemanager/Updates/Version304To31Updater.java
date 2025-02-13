@@ -138,7 +138,7 @@ public class Version304To31Updater {
         readme.append("============================\n\n");
         readme.append("!!! IMPORTANT VERSION UPGRADE NOTICE !!!\n");
         readme.append("=====================================\n");
-        readme.append("This backup was automatically created during the upgrade from version 3.0.4 to 3.1.\n");
+        readme.append("This backup was automatically created during the upgrade from version 3.0.4 to 3.1\n");
         readme.append("This is a critical backup as the upgrade transforms the groups system into goals.\n\n");
 
         readme.append("Backup Information:\n");

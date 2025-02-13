@@ -18,16 +18,19 @@ public class DBUser {
     protected ArrayList<String> completedGoals;
     protected static PlayTimeDatabase db = plugin.getDatabase();
     protected LocalDateTime lastSeen;
+    protected LocalDateTime firstJoin;
 
 
     // Private constructor
-    private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, ArrayList<String> completedGoals, LocalDateTime lastSeen) {
+    private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime,
+                   ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin) {
         this.uuid = uuid;
         this.nickname = nickname;
         this.DBplaytime = playtime;
         this.artificialPlaytime = artificialPlaytime;
         this.completedGoals = completedGoals;
         this.lastSeen = lastSeen;
+        this.firstJoin = firstJoin;
     }
 
     public DBUser(Player p) {
@@ -39,6 +42,11 @@ public class DBUser {
         this.artificialPlaytime = db.getArtificialPlaytime(uuid);
         this.completedGoals = db.getCompletedGoals(uuid);
         this.lastSeen = db.getLastSeen(uuid);
+        this.firstJoin = db.getFirstJoin(uuid);
+        if(firstJoin == null){
+            firstJoin = LocalDateTime.now();
+            db.updateFirstJoin(uuid, firstJoin);
+        }
     }
 
     // Factory method to create DBUser by UUID
@@ -52,8 +60,9 @@ public class DBUser {
         long artificialPlaytime = db.getArtificialPlaytime(uuid);
         ArrayList<String> completedGoals = db.getCompletedGoals(uuid);
         LocalDateTime lastSeen = db.getLastSeen(uuid);
+        LocalDateTime firstJoin = db.getFirstJoin(uuid);
 
-        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals, lastSeen);
+        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals, lastSeen, firstJoin);
     }
 
     public void reset() {
@@ -61,7 +70,8 @@ public class DBUser {
         this.DBplaytime = 0;
         this.artificialPlaytime = 0;
         this.fromServerOnJoinPlayTime = 0;
-        this.lastSeen = LocalDateTime.of(1970, 1, 1, 0, 0, 0);
+        this.lastSeen = null;
+        this.firstJoin = null;
 
 
         // Reset completed goals
@@ -72,7 +82,10 @@ public class DBUser {
         db.updateArtificialPlaytime(uuid, 0);
         db.updateCompletedGoals(uuid, completedGoals);
         db.updateLastSeen(uuid, this.lastSeen);
+        db.updateFirstJoin(uuid, this.firstJoin);
     }
+
+    public LocalDateTime getFirstJoin(){ return firstJoin; }
 
     public LocalDateTime getLastSeen() { return lastSeen; }
 
@@ -95,6 +108,10 @@ public class DBUser {
     public void setArtificialPlaytime(long artificialPlaytime) {
         this.artificialPlaytime = artificialPlaytime;
         db.updateArtificialPlaytime(uuid, artificialPlaytime);
+    }
+
+    public ArrayList<String> getCompletedGoals(){
+        return completedGoals;
     }
 
     public boolean hasCompletedGoal(String goalName){

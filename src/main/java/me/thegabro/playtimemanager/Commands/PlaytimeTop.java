@@ -80,15 +80,18 @@ public class PlaytimeTop implements TabExecutor {
                                     message = message.append(Component.text("§7§l#" + (i + 1) + " "));
 
                                     // Add prefix if enabled
-                                    if (plugin.isPermissionsManagerConfigured() && plugin.getConfiguration().arePrefixesAllowed()) {
+                                    if (plugin.isPermissionsManagerConfigured() &&
+                                            luckPermsManager.isLuckPermsUserLoaded(user.getUuid()) &&
+                                                plugin.getConfiguration().arePrefixesAllowed()) {
                                         String prefix = luckPermsManager.getPrefix(user.getUuid());
                                         if (prefix != null && !prefix.isEmpty()) {
                                             message = message.append(Utils.parseComplexHex(prefix));
+                                            message = message.append(Component.text(" "));
                                         }
                                     }
 
                                     // Add username and playtime
-                                    message = message.append(Component.text(" §e" + user.getNickname() + " §7- §d" +
+                                    message = message.append(Component.text("§e" + user.getNickname() + " §7- §d" +
                                             Utils.ticksToFormattedPlaytime(user.getPlaytime())));
 
                                     sender.sendMessage(message);

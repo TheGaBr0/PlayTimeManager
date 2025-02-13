@@ -255,7 +255,7 @@ public class Version31to32Updater {
         readme.append("============================\n\n");
         readme.append("!!! IMPORTANT VERSION UPGRADE NOTICE !!!\n");
         readme.append("=====================================\n");
-        readme.append("This backup was automatically created during the upgrade from version 3.1 to 3.1.1\n");
+        readme.append("This backup was automatically created during the upgrade from version 3.1 to 3.2\n");
         readme.append("This is a critical backup as the upgrade transforms the database adding strict rules regarding" +
                 "duplicates for the safeguard of data's integrity.\n\n");
 

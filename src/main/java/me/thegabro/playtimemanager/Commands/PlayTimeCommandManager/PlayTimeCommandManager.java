@@ -23,7 +23,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
         subCommands.add("add");
         subCommands.add("remove");
         subCommands.add("reset");
-        subCommands.add("lastseen");
+        subCommands.add("stats");
     }
 
     @Override
@@ -53,12 +53,12 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
             }
 
             switch (subCommand) {
-                case "lastseen":
-                    if (!sender.hasPermission("playtime.others.lastseen")) {
+                case "stats":
+                    if (!sender.hasPermission("playtime.others.stats")) {
                         sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have permission to execute this command");
                         return false;
                     }
-                    new PlayTimeLastSeen(sender, args);
+                    new PlayTimeStats(sender, args);
                     return true;
 
                 case "add":
@@ -113,8 +113,8 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
             }
         } else if (args.length == 2) {
 
-            if (sender.hasPermission("playtime.others.lastseen")) {
-                availableCommands.add("lastseen");
+            if (sender.hasPermission("playtime.others.stats")) {
+                availableCommands.add("stats");
             }
             if (sender.hasPermission("playtime.others.modify")) {
                 availableCommands.add("add");

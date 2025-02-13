@@ -7,6 +7,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -20,11 +21,31 @@ public class Version321to322Updater {
     }
 
     public void performUpgrade() {
+        addFirstJoinColumn();
         recreateConfigFile();
     }
 
-    private void recreateConfigFile() {
+    public void addFirstJoinColumn() {
+        try (Connection connection = database.getSQLConnection()) {
+            connection.setAutoCommit(false);
 
+            try (Statement s = connection.createStatement()) {
+                // Alter the table to add the first_join column
+                s.executeUpdate("ALTER TABLE play_time ADD COLUMN first_join DATETIME DEFAULT NULL");
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to alter table: " + e.getMessage());
+        }
+    }
+
+    private void recreateConfigFile() {
         File configFile = new File(plugin.getDataFolder(), "config.yml");
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
@@ -58,7 +79,6 @@ public class Version321to322Updater {
     }
 
     private String generateReadmeContent() {
-
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
         String timestamp = dateFormat.format(new Date());
 
@@ -67,9 +87,8 @@ public class Version321to322Updater {
         readme.append("============================\n\n");
         readme.append("!!! IMPORTANT VERSION UPGRADE NOTICE !!!\n");
         readme.append("=====================================\n");
-        readme.append("This backup was automatically created during the upgrade from version 3.1 to 3.1.1\n");
-        readme.append("This is a critical backup as the upgrade transforms the database adding strict rules regarding" +
-                "duplicates for the safeguard of data's integrity.\n\n");
+        readme.append("This backup was automatically created during the upgrade from version 3.2.1 to 3.2.2\n");
+        readme.append("This is a critical backup as the upgrade adds a new first join field.\n\n");
 
         readme.append("Backup Information:\n");
         readme.append("------------------\n");
@@ -88,7 +107,7 @@ public class Version321to322Updater {
         readme.append("6. Start your server\n\n");
 
         readme.append("Warning: This backup contains data from before the data integrity changes.\n");
-        readme.append("Restoring this backup will revert your data to the 3.1 format.\n");
+        readme.append("Restoring this backup will revert your data to the 3.2.1 format.\n");
 
         return readme.toString();
     }

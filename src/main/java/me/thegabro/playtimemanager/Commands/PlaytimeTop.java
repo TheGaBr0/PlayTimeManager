@@ -20,7 +20,6 @@ import java.util.*;
 public class PlaytimeTop implements TabExecutor {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final PlayTimeDatabase db = plugin.getDatabase();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final LuckPermsManager luckPermsManager = LuckPermsManager.getInstance(plugin);
@@ -52,15 +51,11 @@ public class PlaytimeTop implements TabExecutor {
                         }
                         int numeroUtentiTotali = Integer.parseInt(args[0]);
                         onlineUsersManager.updateAllOnlineUsersPlaytime();
-                        Map<String,String> topPlayers = db.getTopPlayersByPlaytime(numeroUtentiTotali);
-                        ArrayList<DBUser> topDBUsers = new ArrayList<>();
+                        List<DBUser> topPlayers = dbUsersManager.getTopPlayers();
 
-                        for(String uuid : topPlayers.keySet()) {
-                            topDBUsers.add(dbUsersManager.getUserFromUUID(uuid));
-                        }
-                        if (!topDBUsers.isEmpty()) {
-                            if (numeroUtentiTotali > topDBUsers.size())
-                                numeroUtentiTotali = topDBUsers.size();
+                        if (!topPlayers.isEmpty()) {
+                            if (numeroUtentiTotali > topPlayers.size())
+                                numeroUtentiTotali = topPlayers.size();
 
                             int numeroPagine = (int) Math.ceil((double) (numeroUtentiTotali + 1) / 10);
 
@@ -73,7 +68,7 @@ public class PlaytimeTop implements TabExecutor {
                                         numeroUtentiTotali + " players - page: " + page);
 
                                 for (int i = indiceInizio; i < indiceFine; i++) {
-                                    DBUser user = topDBUsers.get(i);
+                                    DBUser user = topPlayers.get(i);
                                     Component message = Component.empty();
 
                                     // Add rank number

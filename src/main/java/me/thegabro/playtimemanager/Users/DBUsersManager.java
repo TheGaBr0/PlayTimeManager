@@ -116,6 +116,14 @@ public class DBUsersManager {
         }
     }
 
+    public List<DBUser> getTopPlayers(){
+        synchronized (topPlayers) {
+            return topPlayers.stream()
+                    .sorted(Comparator.comparing(DBUser::getPlaytime).reversed())
+                    .collect(Collectors.toList());
+        }
+    }
+
     public void removeGoalFromAllUsers(String goalName) {
         db.getAllNicknames().stream()
                 .map(this::getUserFromNickname)

@@ -45,7 +45,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
             // Only validate player existence if it's not a wildcard reset
             if (!isWildcardReset && dbUsersManager.getUserFromNickname(targetPlayerName) == null) {
-                sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() +
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
                         " The player §e" + targetPlayerName + "§7 has never joined the server!"));
                 return false;
             }
@@ -59,14 +59,14 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
             String subCommand = args[1];
             if (!subCommands.contains(subCommand)) {
-                sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Unknown subcommand: " + subCommand));
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Unknown subcommand: " + subCommand));
                 return false;
             }
 
             switch (subCommand) {
                 case "stats":
                     if (!sender.hasPermission("playtime.others.stats")) {
-                        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
                         return false;
                     }
                     new PlayTimeStats(sender, args);
@@ -74,7 +74,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
                 case "add":
                     if (!sender.hasPermission("playtime.others.modify")) {
-                        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
                         return false;
                     }
                     new PlayTimeAddTime(sender, args);
@@ -82,7 +82,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
                 case "remove":
                     if (!sender.hasPermission("playtime.others.modify")) {
-                        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
                         return false;
                     }
                     new PlayTimeRemoveTime(sender, args);
@@ -90,18 +90,18 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
                 case "reset":
                     if (!sender.hasPermission("playtime.others.modify")) {
-                        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
                         return false;
                     }
                     new PlayTimeResetTime(sender, args);
                     return true;
 
                 default:
-                    sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Unknown subcommand: " + subCommand));
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Unknown subcommand: " + subCommand));
                     return false;
             }
         } else {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
         }
 
         return false;

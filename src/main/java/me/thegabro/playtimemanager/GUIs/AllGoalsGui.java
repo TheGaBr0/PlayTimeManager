@@ -126,7 +126,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             whoClicked.closeInventory();
 
             // Create the base message
-            Component baseMessage = Component.text(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix()) + """
+            Component baseMessage = Component.text(Utils.parseColors(plugin.getConfiguration().getPluginPrefix()) + """
                 To create a goal use:
                 
                 /playtimegoal set §e<name> §7time:§e<time> §7[activate:§etrue§7|§efalse§7]

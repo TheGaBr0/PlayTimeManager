@@ -24,14 +24,14 @@ public class PlaytimeGoal implements TabExecutor {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
         if (!sender.hasPermission("playtime.goal")) {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
             return false;
         }
 
         // If no arguments provided and sender is a player, open GUI
         if (args.length == 0) {
             if (!(sender instanceof Player)) {
-                sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Only players can use the GUI!"));
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Only players can use the GUI!"));
                 return false;
             }
             AllGoalsGui gui = new AllGoalsGui();
@@ -44,7 +44,7 @@ public class PlaytimeGoal implements TabExecutor {
         switch (subCommand) {
             case "set":
                 if (args.length < 2) {
-                    sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal set <goalName> [time:<time>] [activate:true|false]"));
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal set <goalName> [time:<time>] [activate:true|false]"));
                     return false;
                 }
 
@@ -57,12 +57,12 @@ public class PlaytimeGoal implements TabExecutor {
                     if (args[i].startsWith("time:")) {
                         time = args[i].substring(5);
                         if (time.isEmpty()) {
-                            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Missing time value!"));
+                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Missing time value!"));
                             return false;
                         }
                         long timeToTicks = Utils.formattedPlaytimeToTicks(time);
                         if (timeToTicks == -1L) {
-                            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Invalid time format!"));
+                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid time format!"));
                             return false;
                         }
                     } else if (args[i].startsWith("activate:")) {
@@ -70,11 +70,11 @@ public class PlaytimeGoal implements TabExecutor {
                         if (activateValue.equals("true")) {
                             activate = true;
                         } else if (!activateValue.equals("false")) {
-                            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Invalid activate value! Use true or false"));
+                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid activate value! Use true or false"));
                             return false;
                         }
                     } else {
-                        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Invalid argument: " + args[i]));
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid argument: " + args[i]));
                         return false;
                     }
                 }
@@ -83,7 +83,7 @@ public class PlaytimeGoal implements TabExecutor {
                 break;
             case "remove":
                 if (args.length < 2) {
-                    sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal remove <goalName>"));
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal remove <goalName>"));
                     return false;
                 }
                 goalName = args[1];
@@ -91,7 +91,7 @@ public class PlaytimeGoal implements TabExecutor {
                 break;
             case "rename":
                 if (args.length != 3) {
-                    sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal rename <oldName> <newName>"));
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal rename <oldName> <newName>"));
                     return false;
                 }
                 String oldName = args[1];
@@ -99,7 +99,7 @@ public class PlaytimeGoal implements TabExecutor {
                 renameGoal(sender, oldName, newName);
                 break;
             default:
-                sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Subcommand " + subCommand + " is not valid."));
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Subcommand " + subCommand + " is not valid."));
                 return false;
         }
 
@@ -109,17 +109,17 @@ public class PlaytimeGoal implements TabExecutor {
     private void renameGoal(CommandSender sender, String oldName, String newName) {
         Goal oldGoal = goalsManager.getGoal(oldName);
         if (oldGoal == null) {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " The goal §e" + oldName + " §7doesn't exist!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The goal §e" + oldName + " §7doesn't exist!"));
             return;
         }
 
         if (goalsManager.getGoal(newName) != null) {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " A goal with the name §e" + newName + " §7already exists!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " A goal with the name §e" + newName + " §7already exists!"));
             return;
         }
 
         oldGoal.rename(newName);
-        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Successfully renamed goal §e" + oldName + " §7to §e" + newName));
+        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Successfully renamed goal §e" + oldName + " §7to §e" + newName));
     }
 
     private void setGoal(CommandSender sender, String goalName, Long time, boolean activate) {
@@ -144,7 +144,7 @@ public class PlaytimeGoal implements TabExecutor {
             message.append("§7- Required time to reach the goal: §6").append(Utils.ticksToFormattedPlaytime(gTime)).append("\n");
         message.append("§7- Active: ").append(activate ? "§a" : "§c").append(activate).append("\n");
 
-        sender.sendMessage(Utils.parseComplexHex(message.toString()));
+        sender.sendMessage(Utils.parseColors(message.toString()));
         onlineUsersManager.startGoalCheckSchedule();
     }
 
@@ -153,9 +153,9 @@ public class PlaytimeGoal implements TabExecutor {
         if (g != null) {
             g.kill();
             onlineUsersManager.startGoalCheckSchedule();
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " The goal §e" + goalName + " §7has been removed!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The goal §e" + goalName + " §7has been removed!"));
         } else {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " The goal §e" + goalName + " §7doesn't exist!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The goal §e" + goalName + " §7doesn't exist!"));
         }
     }
 

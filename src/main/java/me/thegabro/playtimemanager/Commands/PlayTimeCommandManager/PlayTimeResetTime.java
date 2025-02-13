@@ -24,7 +24,7 @@ public class PlayTimeResetTime {
     public void execute(CommandSender sender, String[] args) {
 
         if (args[0].equals("*")) {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Starting reset of all players' data, this will take some time..."));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Starting reset of all players' data, this will take some time..."));
 
             // Run the reset process async
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -66,7 +66,7 @@ public class PlayTimeResetTime {
                 // Switch back to main thread for final operations
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     dbUsersManager.clearCache();
-                    sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " All players' playtime data and goals have been reset!"));
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " All players' playtime data and goals have been reset!"));
                     dbUsersManager.updateTopPlayersFromDB();
                 });
             });
@@ -88,7 +88,7 @@ public class PlayTimeResetTime {
             user.reset();
         }
 
-        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Reset playtime data and goals for player §e" + args[0] + "§7"));
+        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Reset playtime data and goals for player §e" + args[0] + "§7"));
         dbUsersManager.updateTopPlayersFromDB();
     }
 }

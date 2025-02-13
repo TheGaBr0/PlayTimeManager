@@ -17,13 +17,13 @@ public class PlayTimeRemoveTime {
     public void execute(CommandSender sender, String[] args){
 
         if(args.length < 3){
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Too few arguments!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Too few arguments!"));
             return;
         }
 
         long timeToTicks = Utils.formattedPlaytimeToTicks(args[2]);
         if (timeToTicks == -1L) {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Invalid time format: " + args[2]));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid time format: " + args[2]));
             return;
         }
 
@@ -35,7 +35,7 @@ public class PlayTimeRemoveTime {
 
         long newArtificialPlaytime = user.getArtificialPlaytime() + timeToTicks;
         if (oldPlaytime + timeToTicks < 0) {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Error: Cannot remove more time than the user has!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Error: Cannot remove more time than the user has!"));
             return;
         }
 
@@ -43,7 +43,7 @@ public class PlayTimeRemoveTime {
         user.setArtificialPlaytime(newArtificialPlaytime);
         String formattedNewPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime + timeToTicks);
 
-        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " PlayTime of §e" + args[0] +
+        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " PlayTime of §e" + args[0] +
                 "§7 has been updated from §6" + formattedOldPlaytime + "§7 to §6" + formattedNewPlaytime + "!"));
 
         dbUsersManager.updateTopPlayersFromDB();

@@ -22,7 +22,7 @@ public class PlaytimeReload implements CommandExecutor {
         if (sender.hasPermission("playtime.reload")) {
             // Reload configuration
             plugin.getConfiguration().reload();
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " The configuration file has been reloaded"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The configuration file has been reloaded"));
 
             // Reload goals
             goalsManager.clearGoals();
@@ -30,13 +30,13 @@ public class PlaytimeReload implements CommandExecutor {
 
             // Restart LuckPerms schedule if applicable
             onlineUsersManager.startGoalCheckSchedule();
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Goal check schedule has been restarted"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Goal check schedule has been restarted"));
 
             dbUsersManager.updateTopPlayersFromDB();
 
             return true;
         } else {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
         }
         return false;
     }

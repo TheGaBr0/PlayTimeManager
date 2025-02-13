@@ -26,7 +26,7 @@ public class PlaytimeCommand {
         // Check base permissions first
         if (args.length == 0) {
             if (!sender.hasPermission("playtime")) {
-                sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to check playtime."));
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to check playtime."));
                 return false;
             }
             return handleSelf(sender);
@@ -35,21 +35,21 @@ public class PlaytimeCommand {
         // Check other player playtime permissions
         if (args.length == 1) {
             if (!sender.hasPermission("playtime.others")) {
-                sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to check other players' playtime."));
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to check other players' playtime."));
                 return false;
             }
             return handleOther(sender, args[0]);
         }
 
         // Invalid command usage
-        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtime [player]"));
+        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtime [player]"));
         return false;
     }
 
     private boolean handleSelf(CommandSender sender) {
 
         if (!(sender instanceof Player)) {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You must be a player to execute this command"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You must be a player to execute this command"));
             return false;
         }
 
@@ -61,7 +61,7 @@ public class PlaytimeCommand {
             message = message + " (" + Utils.ticksToFormattedPlaytime(onlineUser.getArtificialPlaytime()) + ")";
         }
 
-        sender.sendMessage(Utils.parseComplexHex(message));
+        sender.sendMessage(Utils.parseColors(message));
         return true;
     }
 
@@ -73,7 +73,7 @@ public class PlaytimeCommand {
         if (sender.hasPermission("playtime.others.modify")) {
             message = message + " (" + Utils.ticksToFormattedPlaytime(user.getArtificialPlaytime()) + ")";
         }
-        sender.sendMessage(Utils.parseComplexHex(message));
+        sender.sendMessage(Utils.parseColors(message));
         return true;
     }
 

@@ -31,6 +31,33 @@ public class LuckPermsManager {
         return luckPermsApi;
     }
 
+    public boolean isLuckPermsUserLoaded(String uuid) {
+        try {
+            User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));
+            return user != null;
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error checking LuckPerms user existence for UUID " + uuid + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    public String getPrefix(String uuid) {
+        try {
+            User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));
+            if (user == null) {
+                plugin.getLogger().warning("Failed to find LuckPerms user with UUID: " + uuid);
+                return "";
+            }
+
+            // Get the cached metadata
+            String prefix = user.getCachedData().getMetaData().getPrefix();
+            return prefix != null ? prefix : "";
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to get prefix for UUID " + uuid + ": " + e.getMessage());
+            return "";
+        }
+    }
+
     public void assignPermission(String uuid, String permission) {
         try {
             User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));

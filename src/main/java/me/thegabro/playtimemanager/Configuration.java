@@ -22,6 +22,7 @@ public class Configuration {
     private String playtimeOthersMessage;
     private String permissionsManagerPlugin;
     private String datetimeFormat;
+    private boolean prefixesAllowed;
 
 
     public Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
@@ -56,6 +57,7 @@ public class Configuration {
         updateMessages();
         updatePermissionsSettings();
         updateDateTimeSettings();
+        updatePrefixesSettings();
     }
 
     private void create() {
@@ -91,6 +93,19 @@ public class Configuration {
         this.permissionsManagerPlugin = config.getString("permissions-manager-plugin", "luckperms");
     }
 
+    private void updatePrefixesSettings(){
+        this.prefixesAllowed = config.getBoolean("allow-prefixes-in-playtimetop", true);
+    }
+
+    public boolean arePrefixesAllowed(){
+        return prefixesAllowed;
+    }
+
+    public void setPrefixes(boolean allowed){
+        this.prefixesAllowed = allowed;
+        config.set("allow-prefixes-in-playtimetop", allowed);
+        save();
+    }
 
     public long getGoalsCheckRate(){
         return goalsCheckRate;
@@ -114,6 +129,11 @@ public class Configuration {
         return datetimeFormat;
     }
 
+    public void setDateTimeFormat(String format){
+        this.datetimeFormat = format;
+        config.set("datetime-format", format);
+        save();
+    }
 
     public void setGoalsCheckVerbose(Boolean verbose){
         if (verbose != null) {

@@ -3,7 +3,7 @@ package me.thegabro.playtimemanager;
 import com.jeff_media.updatechecker.UpdateCheckSource;
 import com.jeff_media.updatechecker.UpdateChecker;
 import com.jeff_media.updatechecker.UserAgentBuilder;
-import me.thegabro.playtimemanager.Updates.Version304To31Updater;
+import me.thegabro.playtimemanager.Updates.UpdateManager;
 import me.thegabro.playtimemanager.Commands.*;
 import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
@@ -15,13 +15,11 @@ import me.thegabro.playtimemanager.SQLiteDB.LogFilter;
 import me.thegabro.playtimemanager.SQLiteDB.SQLite;
 import me.thegabro.playtimemanager.Events.QuitEventManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlayTimePlaceHolders;
-import me.thegabro.playtimemanager.Updates.Version31to311Updater;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -39,7 +37,7 @@ public class PlayTimeManager extends JavaPlugin{
     private Configuration config;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-    private final String CURRENTCONFIGVERSION = "3.3";
+    private final String CURRENTCONFIGVERSION = "3.4";
     private final String CURRENTGOALSCONFIGVERSION = "1.0";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
@@ -70,34 +68,15 @@ public class PlayTimeManager extends JavaPlugin{
         this.db = new SQLite(this);
         this.db.load();
 
-        File configFileTest = new File(getDataFolder(), "config.yml");
-        if (configFileTest.exists()) {
-            FileConfiguration configTest = YamlConfiguration.loadConfiguration(configFileTest);
-            if (!configTest.getString("config-version").equals(CURRENTCONFIGVERSION)) {
-                if (configTest.getString("config-version").equals("3.1")) {
-                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.1 config version detected, updating it to the latest one...");
-                    Version304To31Updater updater = new Version304To31Updater(this);
-                    updater.performUpgrade();
+        UpdateManager updateManager = UpdateManager.getInstance(this);
+        updateManager.initialize();
 
-                    Version31to311Updater updater2 = new Version31to311Updater(this);
-                    updater2.performUpgrade();
-
-                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r" + CURRENTCONFIGVERSION);
-                } else if (configTest.getString("config-version").equals("3.2")) {
-                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.2 config version detected, updating it to the latest one...");
-                    Version31to311Updater updater2 = new Version31to311Updater(this);
-                    updater2.performUpgrade();
-                    Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r" + CURRENTCONFIGVERSION);
-                } else {
-                    this.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown config version detected! Something may break!");
-                }
-
-            }
-            configFileTest = new File(getDataFolder(), "config.yml");
-            configTest = YamlConfiguration.loadConfiguration(configFileTest);
-            if (!configTest.getString("goals-config-version").equals(CURRENTGOALSCONFIGVERSION)) {
-                this.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown goals config version detected! Something may break!");
-
+        // Check config version and perform updates if needed
+        File configFile = new File(getDataFolder(), "config.yml");
+        if (configFile.exists()) {
+            FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+            if (!config.getString("config-version").equals(CURRENTCONFIGVERSION)) {
+                updateManager.performVersionUpdate(config.getString("config-version"), CURRENTCONFIGVERSION);
             }
         }
 

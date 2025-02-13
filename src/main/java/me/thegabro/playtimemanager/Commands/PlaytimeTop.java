@@ -6,6 +6,8 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
+import net.kyori.adventure.text.Component;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
@@ -21,6 +23,7 @@ public class PlaytimeTop implements TabExecutor {
     private final PlayTimeDatabase db = plugin.getDatabase();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+    private final LuckPermsManager luckPermsManager = LuckPermsManager.getInstance(plugin);
     public final int TOP_MAX = 100;
     int page;
 
@@ -55,31 +58,40 @@ public class PlaytimeTop implements TabExecutor {
                         for(String uuid : topPlayers.keySet()) {
                             topDBUsers.add(dbUsersManager.getUserFromUUID(uuid));
                         }
-                        if(!topDBUsers.isEmpty()){
-
-                            if(numeroUtentiTotali > topDBUsers.size())
+                        if (!topDBUsers.isEmpty()) {
+                            if (numeroUtentiTotali > topDBUsers.size())
                                 numeroUtentiTotali = topDBUsers.size();
 
-                            // Calcolare il numero di pagine
                             int numeroPagine = (int) Math.ceil((double) (numeroUtentiTotali + 1) / 10);
 
                             if (page > 0 && page <= numeroPagine) {
-                                // Calcolare l'indice di partenza e l'indice di fine per la pagina specificata
                                 int indiceInizio = (page - 1) * 10;
                                 int indiceFine = Math.min(page * 10, numeroUtentiTotali);
 
-                                // Stampa i giocatori della pagina specificata
-                                sender.sendMessage("[§6PlayTime§eManager§f]§7 Top "+numeroUtentiTotali+" players - page: "+page);
+                                // Send header message
+                                sender.sendMessage("[§6PlayTime§eManager§f]§7 Top " +
+                                        numeroUtentiTotali + " players - page: " + page);
+
                                 for (int i = indiceInizio; i < indiceFine; i++) {
-                                    sender.sendMessage("§7§l#"+(i+1)+" §e"+ topDBUsers.get(i).getNickname()+" §7- §d"+
-                                            Utils.ticksToFormattedPlaytime(topDBUsers.get(i).getPlaytime()));
-                                }
-                            } else if (page == 0) {
-                                // Mostra tutti i giocatori
-                                sender.sendMessage("[§6PlayTime§eManager§f]§7 Top "+numeroUtentiTotali+" players - page: 1");
-                                for (int i = 0; i <= numeroUtentiTotali; i++) {
-                                    sender.sendMessage("§7§l#"+(i+1)+" §e"+ topDBUsers.get(i).getNickname()+" §7- §d"+
-                                            Utils.ticksToFormattedPlaytime(topDBUsers.get(i).getPlaytime()));
+                                    DBUser user = topDBUsers.get(i);
+                                    Component message = Component.empty();
+
+                                    // Add rank number
+                                    message = message.append(Component.text("§7§l#" + (i + 1) + " "));
+
+                                    // Add prefix if enabled
+                                    if (plugin.isPermissionsManagerConfigured() && plugin.getConfiguration().arePrefixesAllowed()) {
+                                        String prefix = luckPermsManager.getPrefix(user.getUuid());
+                                        if (prefix != null && !prefix.isEmpty()) {
+                                            message = message.append(Utils.parseComplexHex(prefix));
+                                        }
+                                    }
+
+                                    // Add username and playtime
+                                    message = message.append(Component.text(" §e" + user.getNickname() + " §7- §d" +
+                                            Utils.ticksToFormattedPlaytime(user.getPlaytime())));
+
+                                    sender.sendMessage(message);
                                 }
                             } else {
                                 sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid page!");
@@ -102,8 +114,6 @@ public class PlaytimeTop implements TabExecutor {
         }
         return false;
     }
-
-
 
     public boolean isStringInt(String s)
     {
@@ -129,7 +139,6 @@ public class PlaytimeTop implements TabExecutor {
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
-
         final List<String> completions = new ArrayList<>();
 
         if(args.length>1 && isStringInt(args[0])){

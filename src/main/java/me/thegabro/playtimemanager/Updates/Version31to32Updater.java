@@ -13,11 +13,11 @@ import java.util.*;
 import java.util.Date;
 import java.util.logging.Level;
 
-public class Version31to311Updater {
+public class Version31to32Updater {
     private final PlayTimeManager plugin;
     private final SQLite database;
 
-    public Version31to311Updater(PlayTimeManager plugin) {
+    public Version31to32Updater(PlayTimeManager plugin) {
         this.plugin = plugin;
         this.database = (SQLite) plugin.getDatabase();
     }

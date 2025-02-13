@@ -1,5 +1,13 @@
 package me.thegabro.playtimemanager;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.md_5.bungee.api.ChatColor;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class Utils {
     // Constants for tick conversions
     private static final long TICKS_PER_SECOND = 20L;
@@ -7,7 +15,47 @@ public class Utils {
     private static final long TICKS_PER_HOUR = TICKS_PER_MINUTE * 60;
     private static final long TICKS_PER_DAY = TICKS_PER_HOUR * 24;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
+    private static final Pattern HEX_PATTERN = Pattern.compile("&#([0-9A-Fa-f]{6})([^&]+)");
 
+    public static Component parseComplexHex(String input) {
+        if (input == null || input.isEmpty()) {
+            return Component.empty();
+        }
+
+        Component message = Component.empty();
+        Matcher matcher = HEX_PATTERN.matcher(input);
+        int lastEnd = 0;
+
+        while (matcher.find()) {
+            // Add any text before the color code
+            if (matcher.start() > lastEnd) {
+                message = message.append(
+                        Component.text(input.substring(lastEnd, matcher.start()))
+                );
+            }
+
+            // Extract color and text
+            String hex = matcher.group(1);
+            String text = matcher.group(2);
+
+            // Create colored component
+            TextColor color = TextColor.fromHexString("#" + hex);
+            message = message.append(
+                    Component.text(text).color(color)
+            );
+
+            lastEnd = matcher.end();
+        }
+
+        // Add any remaining text
+        if (lastEnd < input.length()) {
+            message = message.append(
+                    Component.text(input.substring(lastEnd))
+            );
+        }
+
+        return message;
+    }
 
     private static long safeAdd(long a, long b) {
         if (a > 0 && b > Long.MAX_VALUE - a) return -1L; // Positive overflow

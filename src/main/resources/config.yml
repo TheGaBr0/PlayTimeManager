@@ -15,7 +15,7 @@
 #To make such folder appear you need to create at least one goal -> /playtimegoal set <goalname> time:<time>
 
 #Leave this untouched
-config-version: 3.3
+config-version: 3.4
 
 #Leave this untouched
 goals-config-version: 1.0
@@ -41,6 +41,11 @@ goal-check-verbose: true
 #Available options: "luckperms"
 #Using a different permissions plugin? Let me know on my GitHub issues page!
 permissions-manager-plugin: "luckperms"
+
+#If enabled, players in the /playtimetop command will be shown with their prefixes
+#Currently only LuckPerms prefixes are supported
+#Default: true
+allow-prefixes-in-playtimetop: true
 
 # Define the format for displaying dates and times
 # Want a different format? You can create your own here: http://www.sdfonlinetester.info/

@@ -17,6 +17,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+    private final LuckPermsManager luckPermsManager = LuckPermsManager.getInstance(plugin);
     @Override
     public @NotNull String getIdentifier() {
         return "PTM";
@@ -39,6 +40,24 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
 
     @Override
     public String onRequest(OfflinePlayer player, String params) {
+
+        if(params.toLowerCase().contains("LP_prefix_Top_".toLowerCase())) {
+            int position;
+            if(isStringInt(params.substring(14))){
+                position = Integer.parseInt(params.substring(14));
+                DBUser user = dbUsersManager.getTopPlayerAtPosition(position);
+
+                if(user == null)
+                    return "Error: wrong top position?";
+                else {
+                    if(plugin.isPermissionsManagerConfigured() && luckPermsManager.isLuckPermsUserLoaded(user.getUuid())){
+                        return luckPermsManager.getPrefix(user.getUuid());
+                    } else {
+                        return "";
+                    }
+                }
+            }
+        }
 
         if(params.toLowerCase().contains("Lastseen_Elapsed_Top_".toLowerCase())) {
             int position;
@@ -89,8 +108,9 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
 
                 if(user == null)
                     return "Error: wrong top position?";
-                else
+                else{
                     return user.getNickname();
+                }
             }
         }
 

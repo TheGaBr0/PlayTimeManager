@@ -9,6 +9,7 @@ import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
 import net.luckperms.api.node.types.InheritanceNode;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class LuckPermsManager {
     private final PlayTimeManager plugin;
@@ -31,30 +32,15 @@ public class LuckPermsManager {
         return luckPermsApi;
     }
 
-    public boolean isLuckPermsUserLoaded(String uuid) {
+    public CompletableFuture<String> getPrefixAsync(String uuid) {
         try {
-            User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));
-            return user != null;
+            return luckPermsApi.getUserManager().loadUser(UUID.fromString(uuid))
+                    .thenApplyAsync(user -> {
+                        String prefix = user.getCachedData().getMetaData().getPrefix();
+                        return prefix != null ? prefix : "";
+                    }).exceptionally(throwable -> "");
         } catch (Exception e) {
-            plugin.getLogger().warning("Error checking LuckPerms user existence for UUID " + uuid + ": " + e.getMessage());
-            return false;
-        }
-    }
-
-    public String getPrefix(String uuid) {
-        try {
-            User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));
-            if (user == null) {
-                plugin.getLogger().warning("Failed to find LuckPerms user with UUID: " + uuid);
-                return "";
-            }
-
-            // Get the cached metadata
-            String prefix = user.getCachedData().getMetaData().getPrefix();
-            return prefix != null ? prefix : "";
-        } catch (Exception e) {
-            plugin.getLogger().severe("Failed to get prefix for UUID " + uuid + ": " + e.getMessage());
-            return "";
+            return CompletableFuture.completedFuture("");
         }
     }
 
@@ -62,7 +48,6 @@ public class LuckPermsManager {
         try {
             User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));
             if (user == null) {
-                plugin.getLogger().warning("Failed to find LuckPerms user with UUID: " + uuid);
                 return;
             }
 
@@ -80,7 +65,6 @@ public class LuckPermsManager {
     private void assignGroup(User user, String groupName) {
         Group group = luckPermsApi.getGroupManager().getGroup(groupName);
         if (group == null) {
-            plugin.getLogger().warning("Group " + groupName + " does not exist in LuckPerms");
             return;
         }
 
@@ -127,7 +111,6 @@ public class LuckPermsManager {
         try {
             return luckPermsApi.getGroupManager().getGroup(groupName) != null;
         } catch (Exception e) {
-            plugin.getLogger().warning("Error checking if group exists: " + groupName + " - " + e.getMessage());
             return false;
         }
     }

@@ -1,8 +1,7 @@
 package me.thegabro.playtimemanager.Commands;
 
-import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
-import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
@@ -18,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 
 public class PlaytimeTop implements TabExecutor {
@@ -32,63 +32,92 @@ public class PlaytimeTop implements TabExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
-        if (sender.hasPermission("playtime.top")) {
-            if (args.length > 0) {
-                if (pagePattern.matcher(args[0]).matches()) {
-                    if (getPages().contains(args[0])) {
-                        page = Integer.parseInt(args[0].substring(1));
-                    } else {
-                        sender.sendMessage("[§6PlayTime§eManager§f]§7 Page " + args[0].substring(1) + " doesn't exist!");
-                        return false;
-                    }
+        if (!sender.hasPermission("playtime.top")) {
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have the permission to execute this command");
+            return false;
+        }
+
+        // Parse page number
+        if (args.length > 0) {
+            if (pagePattern.matcher(args[0]).matches()) {
+                if (getPages().contains(args[0])) {
+                    page = Integer.parseInt(args[0].substring(1));
                 } else {
-                    sender.sendMessage("[§6PlayTime§eManager§f]§7 The argument is not valid! Use p1, p2, etc.");
+                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Page " + args[0].substring(1) + " doesn't exist!");
                     return false;
                 }
             } else {
-                page = 1;
+                sender.sendMessage("[§6PlayTime§eManager§f]§7 The argument is not valid! Use p1, p2, etc.");
+                return false;
             }
+        } else {
+            page = 1;
+        }
 
-            int totalUsers = TOP_MAX;
-            onlineUsersManager.updateAllOnlineUsersPlaytime();
-            List<DBUser> topPlayers = dbUsersManager.getTopPlayers();
+        // Update and get top players
+        onlineUsersManager.updateAllOnlineUsersPlaytime();
+        List<DBUser> topPlayers = dbUsersManager.getTopPlayers();
 
-            if (!topPlayers.isEmpty()) {
-                if (totalUsers > topPlayers.size())
-                    totalUsers = topPlayers.size();
+        if (topPlayers.isEmpty()) {
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 No players joined!");
+            return false;
+        }
 
-                int totalPages = (int) Math.ceil(Float.parseFloat(String.valueOf(totalUsers)) / 10);
+        int totalUsers = Math.min(TOP_MAX, topPlayers.size());
+        int totalPages = (int) Math.ceil(Float.parseFloat(String.valueOf(totalUsers)) / 10);
 
-                if (page > 0 && page <= totalPages) {
-                    int startIndex = (page - 1) * 10;
-                    int endIndex = Math.min(page * 10, totalUsers);
+        if (page <= 0 || page > totalPages) {
+            sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid page!");
+            return false;
+        }
 
-                    // Send header message
-                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Top " + totalUsers + " players - page: " + page);
+        // Send header message
+        sender.sendMessage("[§6PlayTime§eManager§f]§7 Top " + totalUsers + " players - page: " + page);
 
-                    for (int i = startIndex; i < endIndex; i++) {
-                        DBUser user = topPlayers.get(i);
-                        Component message = Component.empty();
+        int startIndex = (page - 1) * 10;
+        int endIndex = Math.min(page * 10, totalUsers);
 
-                        // Add rank number
-                        message = message.append(Component.text("§7§l#" + (i + 1) + " "));
+        // Create an array to store messages in order
+        CompletableFuture<Component>[] messageFutures = new CompletableFuture[endIndex - startIndex];
 
-                        // Add prefix if enabled
-                        if (plugin.isPermissionsManagerConfigured() &&
-                                luckPermsManager.isLuckPermsUserLoaded(user.getUuid()) &&
-                                plugin.getConfiguration().arePrefixesAllowed()) {
-                            String prefix = luckPermsManager.getPrefix(user.getUuid());
+        // Process each player in the page range
+        for (int i = startIndex; i < endIndex; i++) {
+            final int rank = i + 1;
+            final int arrayIndex = i - startIndex;
+            DBUser user = topPlayers.get(i);
+
+            if (plugin.isPermissionsManagerConfigured() && plugin.getConfiguration().arePrefixesAllowed()) {
+                messageFutures[arrayIndex] = luckPermsManager.getPrefixAsync(user.getUuid())
+                        .thenApply(prefix -> {
+                            Component message = Component.empty()
+                                    .append(Component.text("§7§l#" + rank + " "));
+
                             if (prefix != null && !prefix.isEmpty()) {
-                                message = message.append(Utils.parseComplexHex(prefix));
-                                message = message.append(Component.text(" "));
+                                message = message.append(Utils.parseComplexHex(prefix))
+                                        .append(Component.text(" "));
                             }
-                        }
 
-                        // Add username and playtime
-                        message = message.append(Component.text("§e" + user.getNickname() + " §7- §d" +
-                                Utils.ticksToFormattedPlaytime(user.getPlaytime())));
+                            message = message.append(Component.text("§e" + user.getNickname() + " §7- §d" +
+                                    Utils.ticksToFormattedPlaytime(user.getPlaytime())));
 
-                        sender.sendMessage(message);
+                            return message;
+                        });
+            } else {
+                messageFutures[arrayIndex] = CompletableFuture.completedFuture(
+                        Component.empty()
+                                .append(Component.text("§7§l#" + rank + " "))
+                                .append(Component.text("§e" + user.getNickname() + " §7- §d" +
+                                        Utils.ticksToFormattedPlaytime(user.getPlaytime())))
+                );
+            }
+        }
+
+        // Wait for all messages to be prepared, then send them in order
+        CompletableFuture.allOf(messageFutures)
+                .thenRun(() -> {
+                    // Send all messages in order
+                    for (CompletableFuture<Component> future : messageFutures) {
+                        sender.sendMessage(future.join());
                     }
 
                     // Add navigation arrows
@@ -118,19 +147,15 @@ public class PlaytimeTop implements TabExecutor {
                     }
 
                     sender.sendMessage(navigationMessage);
+                });
 
-                } else {
-                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid page!");
-                }
-            } else {
-                sender.sendMessage("[§6PlayTime§eManager§f]§7 No players joined!");
-            }
-        } else {
-            sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have the permission to execute this command");
-        }
-        return false;
+        return true;
     }
 
+    /**
+     * Gets a list of all possible page numbers in the format "p1", "p2", etc.
+     * @return List of page numbers as strings
+     */
     public List<String> getPages() {
         List<String> result = new ArrayList<>();
         for (int i = 0; i < Math.ceil(Float.parseFloat(String.valueOf(TOP_MAX)) / 10); i++) {

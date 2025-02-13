@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.ExecutionException;
 
 public class PlayTimePlaceHolders extends PlaceholderExpansion{
 
@@ -18,6 +19,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final LuckPermsManager luckPermsManager = LuckPermsManager.getInstance(plugin);
+
     @Override
     public @NotNull String getIdentifier() {
         return "PTM";
@@ -35,25 +37,31 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
 
     @Override
     public boolean persist() {
-        return true; // This is required or else PlaceholderAPI will unregister the Expansion on reload
+        return true;
     }
 
     @Override
     public String onRequest(OfflinePlayer player, String params) {
+        boolean showErrors = plugin.getConfiguration().isPlaceholdersEnableErrors();
+        String defaultErrorMessage = plugin.getConfiguration().getPlaceholdersDefaultMessage();
 
         if(params.toLowerCase().contains("LP_prefix_Top_".toLowerCase())) {
             int position;
-            if(isStringInt(params.substring(14))){
+            if(isStringInt(params.substring(14))) {
                 position = Integer.parseInt(params.substring(14));
                 DBUser user = dbUsersManager.getTopPlayerAtPosition(position);
 
                 if(user == null)
-                    return "Error: wrong top position?";
+                    return showErrors ? "Error: wrong top position?" : "";
                 else {
-                    if(plugin.isPermissionsManagerConfigured() && luckPermsManager.isLuckPermsUserLoaded(user.getUuid())){
-                        return luckPermsManager.getPrefix(user.getUuid());
+                    if(plugin.isPermissionsManagerConfigured()) {
+                        try {
+                            return luckPermsManager.getPrefixAsync(user.getUuid()).get();
+                        } catch (InterruptedException | ExecutionException e) {
+                            return showErrors ? "Error: luckperms retrieve unsuccessful" : "";
+                        }
                     } else {
-                        return "";
+                        return showErrors ? "Error: luckperms not loaded" : "";
                     }
                 }
             }
@@ -61,43 +69,31 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
 
         if(params.toLowerCase().contains("Lastseen_Elapsed_Top_".toLowerCase())) {
             int position;
-            long seconds;
-            Duration duration;
             if(isStringInt(params.substring(21))){
                 position = Integer.parseInt(params.substring(21));
                 DBUser user = dbUsersManager.getTopPlayerAtPosition(position);
 
                 if(user == null)
-                    return "Error: wrong top position?";
-                else {
-                    if(user.getLastSeen() == null)
-                        return "Error: last seen data missing";
+                    return showErrors ? "Error: wrong top position?" : defaultErrorMessage;
+                else if(user.getLastSeen() == null)
+                    return showErrors ? "Error: last seen data missing" : defaultErrorMessage;
 
-                    duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
-                    seconds = duration.getSeconds();
-                    return Utils.ticksToFormattedPlaytime(seconds * 20);
-                }
+                Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
+                return Utils.ticksToFormattedPlaytime(duration.getSeconds() * 20);
             }
         }
 
         if(params.toLowerCase().contains("Lastseen_Elapsed_".toLowerCase())) {
-            String nickname;
-            Duration duration;
-            long seconds;
-            nickname = params.substring(17);
+            String nickname = params.substring(17);
             DBUser user = dbUsersManager.getUserFromNickname(nickname);
 
             if(user == null)
-                return "Error: wrong nickname?";
-            else{
+                return showErrors ? "Error: wrong nickname?" : defaultErrorMessage;
+            else if(user.getLastSeen() == null)
+                return showErrors ? "Error: last seen data missing" : defaultErrorMessage;
 
-                if(user.getLastSeen() == null)
-                    return "Error: last seen data missing";
-
-                duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
-                seconds = duration.getSeconds();
-                return Utils.ticksToFormattedPlaytime(seconds * 20);
-            }
+            Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
+            return Utils.ticksToFormattedPlaytime(duration.getSeconds() * 20);
         }
 
         if(params.toLowerCase().contains("Nickname_Top_".toLowerCase())) {
@@ -106,11 +102,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
                 position = Integer.parseInt(params.substring(13));
                 DBUser user = dbUsersManager.getTopPlayerAtPosition(position);
 
-                if(user == null)
-                    return "Error: wrong top position?";
-                else{
-                    return user.getNickname();
-                }
+                return user != null ? user.getNickname() : showErrors ? "Error: wrong top position?" : defaultErrorMessage;
             }
         }
 
@@ -120,22 +112,15 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
                 position = Integer.parseInt(params.substring(13));
                 DBUser user = dbUsersManager.getTopPlayerAtPosition(position);
 
-                if(user == null)
-                    return "Error: wrong top position?";
-                else
-                    return Utils.ticksToFormattedPlaytime(user.getPlaytime());
+                return user != null ? Utils.ticksToFormattedPlaytime(user.getPlaytime()) : showErrors ? "Error: wrong top position?" : defaultErrorMessage;
             }
         }
 
         if(params.toLowerCase().contains("PlayTime_".toLowerCase())) {
-            String nickname;
-            nickname = params.substring(9);
+            String nickname = params.substring(9);
             DBUser user = dbUsersManager.getUserFromNickname(nickname);
 
-            if(user == null)
-                return "Error: wrong nickname?";
-            else
-                return Utils.ticksToFormattedPlaytime(user.getPlaytime());
+            return user != null ? Utils.ticksToFormattedPlaytime(user.getPlaytime()) : showErrors ? "Error: wrong nickname?" : defaultErrorMessage;
         }
 
         if(params.equalsIgnoreCase("PlayTime")){
@@ -147,15 +132,14 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
             if(isStringInt(params.substring(13))){
                 position = Integer.parseInt(params.substring(13));
                 DBUser user = dbUsersManager.getTopPlayerAtPosition(position);
+
                 if(user == null)
-                    return "Error: wrong top position?";
-                else{
-                    LocalDateTime lastSeen = user.getLastSeen();
-                    if(user.getLastSeen() == null)
-                        return "Error: last seen data missing";
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
-                    return lastSeen.format(formatter);
-                }
+                    return showErrors ? "Error: wrong top position?" : defaultErrorMessage;
+                else if(user.getLastSeen() == null)
+                    return showErrors ? "Error: last seen data missing" : defaultErrorMessage;
+
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+                return user.getLastSeen().format(formatter);
             }
         }
 
@@ -164,30 +148,23 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
             DBUser user = dbUsersManager.getUserFromNickname(nickname);
 
             if(user == null)
-                return "Error: wrong nickname?";
-            else {
-                LocalDateTime lastSeen = user.getLastSeen();
-                if(lastSeen == null)
-                    return "Error: last seen data missing";
+                return showErrors ? "Error: wrong nickname?" : defaultErrorMessage;
+            else if(user.getLastSeen() == null)
+                return showErrors ? "Error: last seen data missing" : defaultErrorMessage;
 
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
-                return lastSeen.format(formatter);
-            }
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+            return user.getLastSeen().format(formatter);
         }
 
         return null;
     }
 
-    public boolean isStringInt(String s)
-    {
-        try
-        {
+    public boolean isStringInt(String s) {
+        try {
             Integer.parseInt(s);
             return true;
-        } catch (NumberFormatException ex)
-        {
+        } catch (NumberFormatException ex) {
             return false;
         }
     }
-
 }

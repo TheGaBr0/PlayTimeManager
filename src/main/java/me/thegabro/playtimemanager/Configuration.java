@@ -23,7 +23,8 @@ public class Configuration {
     private String permissionsManagerPlugin;
     private String datetimeFormat;
     private boolean prefixesAllowed;
-
+    private boolean placeholdersEnableErrors;
+    private String placeholdersDefaultMessage;
 
     public Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
         this.path = path;
@@ -58,6 +59,7 @@ public class Configuration {
         updatePermissionsSettings();
         updateDateTimeSettings();
         updatePrefixesSettings();
+        updatePlaceholdersSettings();
     }
 
     private void create() {
@@ -97,6 +99,11 @@ public class Configuration {
         this.prefixesAllowed = config.getBoolean("allow-prefixes-in-playtimetop", true);
     }
 
+    private void updatePlaceholdersSettings(){
+        this.placeholdersEnableErrors = config.getBoolean("placeholders.enable-errors", false);
+        this.placeholdersDefaultMessage = config.getString("placeholders.default-message", "No data");
+    }
+
     public boolean arePrefixesAllowed(){
         return prefixesAllowed;
     }
@@ -107,6 +114,26 @@ public class Configuration {
         save();
     }
 
+    public boolean isPlaceholdersEnableErrors() {
+        return placeholdersEnableErrors;
+    }
+
+    public void setPlaceholdersEnableErrors(boolean enableErrors) {
+        this.placeholdersEnableErrors = enableErrors;
+        config.set("placeholders.enable-errors", enableErrors);
+        save();
+    }
+
+    public String getPlaceholdersDefaultMessage() {
+        return placeholdersDefaultMessage;
+    }
+
+    public void setPlaceholdersDefaultMessage(String message) {
+        this.placeholdersDefaultMessage = message;
+        config.set("placeholders.default-message", message);
+        save();
+    }
+
     public long getGoalsCheckRate(){
         return goalsCheckRate;
     }
@@ -114,17 +141,16 @@ public class Configuration {
     private void updateDateTimeSettings() {
         String configFormat = config.getString("datetime-format");
         try {
-            // Attempt to create a SimpleDateFormat with the provided format
             new java.text.SimpleDateFormat(configFormat);
             this.datetimeFormat = configFormat;
         } catch (IllegalArgumentException e) {
-            // If format is invalid, set to default and log a warning
             this.datetimeFormat = "MMM dd, yyyy HH:mm:ss";
             config.set("datetime-format", this.datetimeFormat);
             save();
             plugin.getLogger().warning("Invalid datetime format in config. Resetting to default: " + this.datetimeFormat);
         }
     }
+
     public String getDateTimeFormat() {
         return datetimeFormat;
     }
@@ -152,8 +178,6 @@ public class Configuration {
     public boolean getGoalsCheckVerbose(){
         return goalsCheckVerbose;
     }
-
-
 
     public String getPermissionsManagerPlugin() {
         return permissionsManagerPlugin;
@@ -186,24 +210,5 @@ public class Configuration {
             config.set("playtime-others-message", message);
             save();
         }
-    }
-
-    public String getVersion(){
-        String version = config.getString("config-version");
-
-        return Objects.requireNonNullElse(version, "null");
-    }
-
-    public void setVersion(float version){
-        config.set("config-version", version);
-        save();
-    }
-
-    public String getGoalsVersion(){
-        String version = config.getString("goals-config-version");
-        if(version == null)
-            return "null";
-        else
-            return version;
     }
 }

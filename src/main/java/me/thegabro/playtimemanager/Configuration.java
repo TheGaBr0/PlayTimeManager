@@ -25,6 +25,7 @@ public class Configuration {
     private boolean prefixesAllowed;
     private boolean placeholdersEnableErrors;
     private String placeholdersDefaultMessage;
+    private String pluginChatPrefix;
 
     public Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
         this.path = path;
@@ -97,6 +98,7 @@ public class Configuration {
 
     private void updatePrefixesSettings(){
         this.prefixesAllowed = config.getBoolean("allow-prefixes-in-playtimetop", true);
+        this.pluginChatPrefix = config.getString("prefix", "[§6PlayTime§eManager§f]§7");
     }
 
     private void updatePlaceholdersSettings(){
@@ -104,11 +106,21 @@ public class Configuration {
         this.placeholdersDefaultMessage = config.getString("placeholders.default-message", "No data");
     }
 
+    public String getPluginPrefix(){
+        return this.pluginChatPrefix;
+    }
+
+    public void setPluginChatPrefix(String prefix){
+        this.pluginChatPrefix = prefix;
+        config.set("prefix", prefix);
+        save();
+    }
+
     public boolean arePrefixesAllowed(){
         return prefixesAllowed;
     }
 
-    public void setPrefixes(boolean allowed){
+    public void setPlayTimeTopPrefixes(boolean allowed){
         this.prefixesAllowed = allowed;
         config.set("allow-prefixes-in-playtimetop", allowed);
         save();

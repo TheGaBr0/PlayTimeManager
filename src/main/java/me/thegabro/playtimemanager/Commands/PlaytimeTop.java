@@ -32,8 +32,9 @@ public class PlaytimeTop implements TabExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
+
         if (!sender.hasPermission("playtime.top")) {
-            sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have the permission to execute this command");
+            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
             return false;
         }
 
@@ -43,11 +44,11 @@ public class PlaytimeTop implements TabExecutor {
                 if (getPages().contains(args[0])) {
                     page = Integer.parseInt(args[0].substring(1));
                 } else {
-                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Page " + args[0].substring(1) + " doesn't exist!");
+                    sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Page " + args[0].substring(1) + " doesn't exist!"));
                     return false;
                 }
             } else {
-                sender.sendMessage("[§6PlayTime§eManager§f]§7 The argument is not valid! Use p1, p2, etc.");
+                sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " The argument is not valid! Use p1, p2, etc."));
                 return false;
             }
         } else {
@@ -59,7 +60,7 @@ public class PlaytimeTop implements TabExecutor {
         List<DBUser> topPlayers = dbUsersManager.getTopPlayers();
 
         if (topPlayers.isEmpty()) {
-            sender.sendMessage("[§6PlayTime§eManager§f]§7 No players joined!");
+            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " No players joined!"));
             return false;
         }
 
@@ -67,12 +68,12 @@ public class PlaytimeTop implements TabExecutor {
         int totalPages = (int) Math.ceil(Float.parseFloat(String.valueOf(totalUsers)) / 10);
 
         if (page <= 0 || page > totalPages) {
-            sender.sendMessage("[§6PlayTime§eManager§f]§7 Invalid page!");
+            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Invalid page!"));
             return false;
         }
 
         // Send header message
-        sender.sendMessage("[§6PlayTime§eManager§f]§7 Top " + totalUsers + " players - page: " + page);
+        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Top " + totalUsers + " players - page: " + page));
 
         int startIndex = (page - 1) * 10;
         int endIndex = Math.min(page * 10, totalUsers);
@@ -88,12 +89,12 @@ public class PlaytimeTop implements TabExecutor {
 
             if (plugin.isPermissionsManagerConfigured() && plugin.getConfiguration().arePrefixesAllowed()) {
                 messageFutures[arrayIndex] = luckPermsManager.getPrefixAsync(user.getUuid())
-                        .thenApply(prefix -> {
+                        .thenApply(LPprefix -> {
                             Component message = Component.empty()
                                     .append(Component.text("§7§l#" + rank + " "));
 
-                            if (prefix != null && !prefix.isEmpty()) {
-                                message = message.append(Utils.parseComplexHex(prefix))
+                            if (LPprefix != null && !LPprefix.isEmpty()) {
+                                message = message.append(Utils.parseComplexHex(LPprefix))
                                         .append(Component.text(" "));
                             }
 
@@ -152,10 +153,6 @@ public class PlaytimeTop implements TabExecutor {
         return true;
     }
 
-    /**
-     * Gets a list of all possible page numbers in the format "p1", "p2", etc.
-     * @return List of page numbers as strings
-     */
     public List<String> getPages() {
         List<String> result = new ArrayList<>();
         for (int i = 0; i < Math.ceil(Float.parseFloat(String.valueOf(TOP_MAX)) / 10); i++) {

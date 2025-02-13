@@ -126,11 +126,11 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             whoClicked.closeInventory();
 
             // Create the base message
-            Component baseMessage = Component.text("""
-                    [§6PlayTime§eManager§f]§7 To create a goal use:
-
-                    /playtimegoal set §e<name> §7time:§e<time> §7[activate:§etrue§7|§efalse§7]
-                    """);
+            Component baseMessage = Component.text(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix()) + """
+                To create a goal use:
+                
+                /playtimegoal set §e<name> §7time:§e<time> §7[activate:§etrue§7|§efalse§7]
+            """);
 
             // Create the command text
             String command = "/playtimegoal set goal1 time:1d,2h,3m,4s";

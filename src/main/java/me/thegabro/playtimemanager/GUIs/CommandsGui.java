@@ -252,7 +252,7 @@ public class CommandsGui implements InventoryHolder, Listener {
     private void handleDeleteAll(Player whoClicked) {
         ItemStack warningItem = parentGui.createGuiItem(
                 Material.BARRIER,
-                Component.text("§c§lDelete All me.thegabro.playtimemanager.Commands"),
+                Component.text("§c§lDelete All Commands"),
                 Component.text("§7This will remove all commands from this goal")
         );
 

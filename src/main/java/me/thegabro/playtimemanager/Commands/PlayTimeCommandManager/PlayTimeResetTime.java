@@ -4,6 +4,7 @@ import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
@@ -15,13 +16,15 @@ import java.util.List;
 public class PlayTimeResetTime {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
+
     public PlayTimeResetTime(CommandSender sender, String[] args){
         execute(sender, args);
     }
 
     public void execute(CommandSender sender, String[] args) {
+
         if (args[0].equals("*")) {
-            sender.sendMessage("§f[§6PlayTime§eManager§f]§7 Starting reset of all players' data...");
+            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Starting reset of all players' data..."));
 
             // Run the reset process async
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -63,7 +66,7 @@ public class PlayTimeResetTime {
                 // Switch back to main thread for final operations
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     dbUsersManager.clearCache();
-                    sender.sendMessage("§f[§6PlayTime§eManager§f]§7 All players' playtime data and goals have been reset!");
+                    sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " All players' playtime data and goals have been reset!"));
                     dbUsersManager.updateTopPlayersFromDB();
                 });
             });
@@ -72,8 +75,6 @@ public class PlayTimeResetTime {
 
         // Single user reset remains synchronous
         DBUser user = dbUsersManager.getUserFromNickname(args[0]);
-
-
 
         if (user instanceof OnlineUser) {
             Player p = Bukkit.getPlayerExact(args[0]);
@@ -87,8 +88,7 @@ public class PlayTimeResetTime {
             user.reset();
         }
 
-        sender.sendMessage("§f[§6PlayTime§eManager§f]§7 Reset playtime data and goals for player §e" + args[0] + "§7");
+        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Reset playtime data and goals for player §e" + args[0] + "§7"));
         dbUsersManager.updateTopPlayersFromDB();
-
     }
 }

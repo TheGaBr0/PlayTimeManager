@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -19,6 +20,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
     private final List<String> subCommands = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
+
     public PlayTimeCommandManager() {
         subCommands.add("add");
         subCommands.add("remove");
@@ -28,6 +30,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, Command command, @NotNull String label, String[] args) {
+
         if (!command.getName().equalsIgnoreCase("playtime")) {
             return false;
         }
@@ -35,7 +38,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
         if (args.length > 0) {
             String targetPlayerName = args[0];
             if (dbUsersManager.getUserFromNickname(targetPlayerName) == null) {
-                sender.sendMessage("[§6PlayTime§eManager§f]§7 The player §e" + targetPlayerName + "§7 has never joined the server!");
+                sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " The player §e" + targetPlayerName + "§7 has never joined the server!"));
                 return false;
             }
         }
@@ -48,14 +51,14 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
             String subCommand = args[1];
             if (!subCommands.contains(subCommand)) {
-                sender.sendMessage("[§6PlayTime§eManager§f]§7 Unknown subcommand: " + subCommand);
+                sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Unknown subcommand: " + subCommand));
                 return false;
             }
 
             switch (subCommand) {
                 case "stats":
                     if (!sender.hasPermission("playtime.others.stats")) {
-                        sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have permission to execute this command");
+                        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
                         return false;
                     }
                     new PlayTimeStats(sender, args);
@@ -63,7 +66,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
                 case "add":
                     if (!sender.hasPermission("playtime.others.modify")) {
-                        sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have permission to execute this command");
+                        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
                         return false;
                     }
                     new PlayTimeAddTime(sender, args);
@@ -71,7 +74,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
                 case "remove":
                     if (!sender.hasPermission("playtime.others.modify")) {
-                        sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have permission to execute this command");
+                        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
                         return false;
                     }
                     new PlayTimeRemoveTime(sender, args);
@@ -79,18 +82,18 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
                 case "reset":
                     if (!sender.hasPermission("playtime.others.modify")) {
-                        sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have permission to execute this command");
+                        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
                         return false;
                     }
                     new PlayTimeResetTime(sender, args);
                     return true;
 
                 default:
-                    sender.sendMessage("[§6PlayTime§eManager§f]§7 Unknown subcommand: " + subCommand);
+                    sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Unknown subcommand: " + subCommand));
                     return false;
             }
         } else {
-            sender.sendMessage("[§6PlayTime§eManager§f]§7 You don't have permission to execute this command");
+            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
         }
 
         return false;
@@ -102,17 +105,16 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
         final List<String> availableCommands = new ArrayList<>();
 
         if (args.length == 1) {
-            if (sender.hasPermission("playtime.others")){
+            if (sender.hasPermission("playtime.others")) {
                 List<String> playerNames = Bukkit.getOnlinePlayers()
                         .stream()
                         .map(Player::getName)
                         .collect(Collectors.toList());
                 StringUtil.copyPartialMatches(args[0], playerNames, completions);
-            }else{
+            } else {
                 return new ArrayList<>();
             }
         } else if (args.length == 2) {
-
             if (sender.hasPermission("playtime.others.stats")) {
                 availableCommands.add("stats");
             }

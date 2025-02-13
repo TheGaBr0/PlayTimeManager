@@ -26,6 +26,8 @@ public class Version321to322Updater {
     }
 
     public void addFirstJoinColumn() {
+        DatabaseBackupUtility backupUtility = new DatabaseBackupUtility(plugin);
+        backupUtility.createBackup("play_time", generateReadmeContent());
         try (Connection connection = database.getSQLConnection()) {
             connection.setAutoCommit(false);
 

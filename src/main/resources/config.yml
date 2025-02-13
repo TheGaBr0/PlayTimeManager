@@ -62,5 +62,5 @@ placeholders:
 # Hex colors are supported with the following format: &#rrggbb
 # where rr (red), gg (green) and bb (blue) are
 # hexadecimal values between 00 and ff (same as decimal 0-255)
-# avoid using & to display normal colors, use § instead.
+# Standard minecraft colors are still accepted both with classical & or § format.
 prefix: "[§6PlayTime§eManager§f]§7"

@@ -2,8 +2,6 @@ package me.thegabro.playtimemanager;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.md_5.bungee.api.ChatColor;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,47 +13,97 @@ public class Utils {
     private static final long TICKS_PER_HOUR = TICKS_PER_MINUTE * 60;
     private static final long TICKS_PER_DAY = TICKS_PER_HOUR * 24;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
-    private static final Pattern HEX_PATTERN = Pattern.compile("&#([0-9A-Fa-f]{6})([^&]+)");
+    // Previous constants remain the same...
+    private static final Pattern HEX_PATTERN = Pattern.compile("&#([0-9A-Fa-f]{6})([^&]*)");
+    private static final Pattern LEGACY_PATTERN = Pattern.compile("&([0-9a-fA-F])");
 
-    public static Component parseComplexHex(String input) {
+    public static Component parseColors(String input) {
         if (input == null || input.isEmpty()) {
             return Component.empty();
         }
 
         Component message = Component.empty();
-        Matcher matcher = HEX_PATTERN.matcher(input);
+        String remaining = input;
+
+        // First handle hex colors
+        Matcher hexMatcher = HEX_PATTERN.matcher(remaining);
         int lastEnd = 0;
 
-        while (matcher.find()) {
+        while (hexMatcher.find()) {
             // Add any text before the color code
-            if (matcher.start() > lastEnd) {
-                message = message.append(
-                        Component.text(input.substring(lastEnd, matcher.start()))
-                );
+            if (hexMatcher.start() > lastEnd) {
+                String beforeText = remaining.substring(lastEnd, hexMatcher.start());
+                message = message.append(parseLegacyColors(beforeText));
             }
 
             // Extract color and text
-            String hex = matcher.group(1);
-            String text = matcher.group(2);
+            String hex = hexMatcher.group(1);
+            String text = hexMatcher.group(2);
 
-            // Create colored component
-            TextColor color = TextColor.fromHexString("#" + hex);
-            message = message.append(
-                    Component.text(text).color(color)
-            );
+            // Create colored component (only if there's text to color)
+            if (!text.isEmpty()) {
+                TextColor color = TextColor.fromHexString("#" + hex);
+                message = message.append(
+                        Component.text(text).color(color)
+                );
+            }
 
-            lastEnd = matcher.end();
+            lastEnd = hexMatcher.end();
         }
 
-        // Add any remaining text
-        if (lastEnd < input.length()) {
-            message = message.append(
-                    Component.text(input.substring(lastEnd))
-            );
+        // Add any remaining text and parse it for legacy colors
+        if (lastEnd < remaining.length()) {
+            String remainingText = remaining.substring(lastEnd);
+            message = message.append(parseLegacyColors(remainingText));
         }
 
         return message;
     }
+
+    private static Component parseLegacyColors(String input) {
+        if (input == null || input.isEmpty()) {
+            return Component.empty();
+        }
+
+        Component message = Component.empty();
+        String[] parts = input.split("(?=&[0-9a-fA-F])");
+
+        for (String part : parts) {
+            if (part.startsWith("&") && part.length() >= 2) {
+                String colorCode = part.substring(1, 2);
+                String text = part.substring(2);
+                TextColor color = getLegacyColor(colorCode);
+                message = message.append(Component.text(text).color(color));
+            } else {
+                message = message.append(Component.text(part));
+            }
+        }
+
+        return message;
+    }
+
+    private static TextColor getLegacyColor(String code) {
+        return switch (code.toLowerCase()) {
+            case "0" -> TextColor.color(0, 0, 0);         // Black
+            case "1" -> TextColor.color(0, 0, 170);       // Dark Blue
+            case "2" -> TextColor.color(0, 170, 0);       // Dark Green
+            case "3" -> TextColor.color(0, 170, 170);     // Dark Aqua
+            case "4" -> TextColor.color(170, 0, 0);       // Dark Red
+            case "5" -> TextColor.color(170, 0, 170);     // Dark Purple
+            case "6" -> TextColor.color(255, 170, 0);     // Gold
+            case "7" -> TextColor.color(170, 170, 170);   // Gray
+            case "8" -> TextColor.color(85, 85, 85);      // Dark Gray
+            case "9" -> TextColor.color(85, 85, 255);     // Blue
+            case "a" -> TextColor.color(85, 255, 85);     // Green
+            case "b" -> TextColor.color(85, 255, 255);    // Aqua
+            case "c" -> TextColor.color(255, 85, 85);     // Red
+            case "d" -> TextColor.color(255, 85, 255);    // Light Purple
+            case "e" -> TextColor.color(255, 255, 85);    // Yellow
+            case "f" -> TextColor.color(255, 255, 255);   // White
+            default -> TextColor.color(255, 255, 255);    // Default to white
+        };
+    }
+
 
     private static long safeAdd(long a, long b) {
         if (a > 0 && b > Long.MAX_VALUE - a) return -1L; // Positive overflow

@@ -11,11 +11,11 @@ import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class Version321to322Updater {
+public class Version321to33Updater {
     private final PlayTimeManager plugin;
     private final SQLite database;
 
-    public Version321to322Updater(PlayTimeManager plugin) {
+    public Version321to33Updater(PlayTimeManager plugin) {
         this.plugin = plugin;
         this.database = (SQLite) plugin.getDatabase();
     }
@@ -89,7 +89,7 @@ public class Version321to322Updater {
         readme.append("============================\n\n");
         readme.append("!!! IMPORTANT VERSION UPGRADE NOTICE !!!\n");
         readme.append("=====================================\n");
-        readme.append("This backup was automatically created during the upgrade from version 3.2.1 to 3.2.2\n");
+        readme.append("This backup was automatically created during the upgrade from version 3.2.1 to 3.3\n");
         readme.append("This is a critical backup as the upgrade adds a new first join field.\n\n");
 
         readme.append("Backup Information:\n");
@@ -109,7 +109,7 @@ public class Version321to322Updater {
         readme.append("6. Start your server\n\n");
 
         readme.append("Warning: This backup contains data from before the data integrity changes.\n");
-        readme.append("Restoring this backup will revert your data to the 3.2.1 format.\n");
+        readme.append("Restoring this backup will revert your data to the 3.3 format.\n");
 
         return readme.toString();
     }

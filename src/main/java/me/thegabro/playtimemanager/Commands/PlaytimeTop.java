@@ -34,7 +34,7 @@ public class PlaytimeTop implements TabExecutor {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
         if (!sender.hasPermission("playtime.top")) {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
             return false;
         }
 
@@ -44,11 +44,11 @@ public class PlaytimeTop implements TabExecutor {
                 if (getPages().contains(args[0])) {
                     page = Integer.parseInt(args[0].substring(1));
                 } else {
-                    sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Page " + args[0].substring(1) + " doesn't exist!"));
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Page " + args[0].substring(1) + " doesn't exist!"));
                     return false;
                 }
             } else {
-                sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " The argument is not valid! Use p1, p2, etc."));
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The argument is not valid! Use p1, p2, etc."));
                 return false;
             }
         } else {
@@ -60,7 +60,7 @@ public class PlaytimeTop implements TabExecutor {
         List<DBUser> topPlayers = dbUsersManager.getTopPlayers();
 
         if (topPlayers.isEmpty()) {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " No players joined!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " No players joined!"));
             return false;
         }
 
@@ -68,12 +68,12 @@ public class PlaytimeTop implements TabExecutor {
         int totalPages = (int) Math.ceil(Float.parseFloat(String.valueOf(totalUsers)) / 10);
 
         if (page <= 0 || page > totalPages) {
-            sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Invalid page!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid page!"));
             return false;
         }
 
         // Send header message
-        sender.sendMessage(Utils.parseComplexHex(plugin.getConfiguration().getPluginPrefix() + " Top " + totalUsers + " players - page: " + page));
+        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Top " + totalUsers + " players - page: " + page));
 
         int startIndex = (page - 1) * 10;
         int endIndex = Math.min(page * 10, totalUsers);
@@ -94,12 +94,16 @@ public class PlaytimeTop implements TabExecutor {
                                     .append(Component.text("§7§l#" + rank + " "));
 
                             if (LPprefix != null && !LPprefix.isEmpty()) {
-                                message = message.append(Utils.parseComplexHex(LPprefix))
-                                        .append(Component.text(" "));
+                                // Create the complete message string first
+                                String fullMessage = LPprefix + " " + user.getNickname() + " §7- §d" +
+                                        Utils.ticksToFormattedPlaytime(user.getPlaytime());
+                                // Parse the entire message with hex colors
+                                message = message.append(Utils.parseColors(fullMessage));
+                            } else {
+                                // If no prefix, just color the nickname and playtime
+                                message = message.append(Component.text("§e" + user.getNickname() + " §7- §d" +
+                                        Utils.ticksToFormattedPlaytime(user.getPlaytime())));
                             }
-
-                            message = message.append(Component.text("§e" + user.getNickname() + " §7- §d" +
-                                    Utils.ticksToFormattedPlaytime(user.getPlaytime())));
 
                             return message;
                         });

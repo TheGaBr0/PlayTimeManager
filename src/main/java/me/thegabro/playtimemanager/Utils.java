@@ -1,7 +1,9 @@
 package me.thegabro.playtimemanager;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,9 +15,8 @@ public class Utils {
     private static final long TICKS_PER_HOUR = TICKS_PER_MINUTE * 60;
     private static final long TICKS_PER_DAY = TICKS_PER_HOUR * 24;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
-    // Previous constants remain the same...
+
     private static final Pattern HEX_PATTERN = Pattern.compile("&#([0-9A-Fa-f]{6})([^&]*)");
-    private static final Pattern LEGACY_PATTERN = Pattern.compile("&([0-9a-fA-F])");
 
     public static Component parseColors(String input) {
         if (input == null || input.isEmpty()) {
@@ -33,7 +34,7 @@ public class Utils {
             // Add any text before the color code
             if (hexMatcher.start() > lastEnd) {
                 String beforeText = remaining.substring(lastEnd, hexMatcher.start());
-                message = message.append(parseLegacyColors(beforeText));
+                message = message.append(parseLegacyFormatting(beforeText));
             }
 
             // Extract color and text
@@ -44,38 +45,63 @@ public class Utils {
             if (!text.isEmpty()) {
                 TextColor color = TextColor.fromHexString("#" + hex);
                 message = message.append(
-                        Component.text(text).color(color)
+                        parseLegacyFormatting(text).color(color)
                 );
             }
 
             lastEnd = hexMatcher.end();
         }
 
-        // Add any remaining text and parse it for legacy colors
+        // Add any remaining text and parse it for legacy colors and formatting
         if (lastEnd < remaining.length()) {
             String remainingText = remaining.substring(lastEnd);
-            message = message.append(parseLegacyColors(remainingText));
+            message = message.append(parseLegacyFormatting(remainingText));
         }
 
         return message;
     }
 
-    private static Component parseLegacyColors(String input) {
+    private static Component parseLegacyFormatting(String input) {
         if (input == null || input.isEmpty()) {
             return Component.empty();
         }
 
         Component message = Component.empty();
-        String[] parts = input.split("(?=&[0-9a-fA-F])");
+        String[] parts = input.split("(?=&[0-9a-fk-orA-FK-OR])");
+
+        Style currentStyle = Style.empty();
 
         for (String part : parts) {
             if (part.startsWith("&") && part.length() >= 2) {
-                String colorCode = part.substring(1, 2);
+                String code = part.substring(1, 2).toLowerCase();
                 String text = part.substring(2);
-                TextColor color = getLegacyColor(colorCode);
-                message = message.append(Component.text(text).color(color));
+
+                // Handle reset
+                if (code.equals("r")) {
+                    currentStyle = Style.empty();
+                    if (!text.isEmpty()) {
+                        message = message.append(Component.text(text, currentStyle));
+                    }
+                    continue;
+                }
+
+                // Handle colors
+                TextColor color = getLegacyColor(code);
+                if (color != null) {
+                    currentStyle = currentStyle.color(color);
+                }
+
+                // Handle formatting
+                TextDecoration decoration = getLegacyFormatting(code);
+                if (decoration != null) {
+                    currentStyle = currentStyle.decoration(decoration, true);
+                }
+
+                if (!text.isEmpty()) {
+                    message = message.append(Component.text(text, currentStyle));
+                }
             } else {
-                message = message.append(Component.text(part));
+                message = message.append(Component.text(part, currentStyle));
             }
         }
 
@@ -100,7 +126,18 @@ public class Utils {
             case "d" -> TextColor.color(255, 85, 255);    // Light Purple
             case "e" -> TextColor.color(255, 255, 85);    // Yellow
             case "f" -> TextColor.color(255, 255, 255);   // White
-            default -> TextColor.color(255, 255, 255);    // Default to white
+            default -> null;                              // Not a color code
+        };
+    }
+
+    private static TextDecoration getLegacyFormatting(String code) {
+        return switch (code.toLowerCase()) {
+            case "k" -> TextDecoration.OBFUSCATED;    // Obfuscated
+            case "l" -> TextDecoration.BOLD;          // Bold
+            case "m" -> TextDecoration.STRIKETHROUGH; // Strikethrough
+            case "n" -> TextDecoration.UNDERLINED;    // Underline
+            case "o" -> TextDecoration.ITALIC;        // Italic
+            default -> null;                          // Not a formatting code
         };
     }
 
@@ -239,5 +276,22 @@ public class Utils {
         }
 
         return result.toString();
+    }
+
+    public static long ticksToTimeUnit(long ticks, String unit) {
+        if (ticks < 0) {
+            return 0;
+        }
+
+        long seconds = ticks / TICKS_PER_SECOND;
+
+        return switch (unit.toLowerCase()) {
+            case "y" -> seconds / (365 * 24 * 60 * 60);
+            case "d" -> seconds / (24 * 60 * 60);
+            case "h" -> seconds / (60 * 60);
+            case "m" -> seconds / 60;
+            case "s" -> seconds;
+            default -> 0;
+        };
     }
 }

@@ -1,4 +1,5 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport;
+
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
@@ -13,12 +14,21 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutionException;
 
-public class PlayTimePlaceHolders extends PlaceholderExpansion{
+public class PlayTimePlaceHolders extends PlaceholderExpansion {
+    private static final String[] TIME_UNITS = {"s", "m", "h", "d", "y"};
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final LuckPermsManager luckPermsManager = LuckPermsManager.getInstance(plugin);
+
+    private final boolean showErrors;
+    private final String defaultErrorMessage;
+
+    public PlayTimePlaceHolders() {
+        this.showErrors = plugin.getConfiguration().isPlaceholdersEnableErrors();
+        this.defaultErrorMessage = plugin.getConfiguration().getPlaceholdersDefaultMessage();
+    }
 
     @Override
     public @NotNull String getIdentifier() {
@@ -32,7 +42,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
 
     @Override
     public @NotNull String getVersion() {
-        return "3.1.0";
+        return "3.2.0";
     }
 
     @Override
@@ -42,124 +52,232 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion{
 
     @Override
     public String onRequest(OfflinePlayer player, String params) {
-        boolean showErrors = plugin.getConfiguration().isPlaceholdersEnableErrors();
-        String defaultErrorMessage = plugin.getConfiguration().getPlaceholdersDefaultMessage();
+        if (params == null) return null;
 
-        if(params.toLowerCase().contains("LP_prefix_Top_".toLowerCase())) {
-            int position;
-            if(isStringInt(params.substring(14))) {
-                position = Integer.parseInt(params.substring(14));
-                DBUser user = dbUsersManager.getTopPlayerAtPosition(position);
+        // Handle basic playtime placeholders first
+        if (params.equalsIgnoreCase("playtime")) {
+            try {
+                return Utils.ticksToFormattedPlaytime(
+                        onlineUsersManager.getOnlineUser(player.getName()).getPlaytime()
+                );
+            } catch (Exception e) {
+                return getErrorMessage("couldn't get playtime");
+            }
+        }
 
-                if(user == null)
-                    return showErrors ? "Error: wrong top position?" : "";
-                else {
-                    if(plugin.isPermissionsManagerConfigured()) {
-                        try {
-                            return luckPermsManager.getPrefixAsync(user.getUuid()).get();
-                        } catch (InterruptedException | ExecutionException e) {
-                            return showErrors ? "Error: luckperms retrieve unsuccessful" : "";
-                        }
-                    } else {
-                        return showErrors ? "Error: luckperms not loaded" : "";
-                    }
+        // Handle unit-specific playtime placeholders
+        for (String unit : TIME_UNITS) {
+            if (params.equalsIgnoreCase("playtime_" + unit)) {
+                try {
+                    return String.valueOf(Utils.ticksToTimeUnit(
+                            onlineUsersManager.getOnlineUser(player.getName()).getPlaytime(),
+                            unit
+                    ));
+                } catch (Exception e) {
+                    return getErrorMessage("couldn't get playtime");
                 }
             }
         }
 
-        if(params.toLowerCase().contains("Lastseen_Elapsed_Top_".toLowerCase())) {
-            int position;
-            if(isStringInt(params.substring(21))){
-                position = Integer.parseInt(params.substring(21));
-                DBUser user = dbUsersManager.getTopPlayerAtPosition(position);
+        String paramLower = params.toLowerCase();
 
-                if(user == null)
-                    return showErrors ? "Error: wrong top position?" : defaultErrorMessage;
-                else if(user.getLastSeen() == null)
-                    return showErrors ? "Error: last seen data missing" : defaultErrorMessage;
+        // Handle LP prefix top
+        if (paramLower.startsWith("lp_prefix_top_")) {
+            return handleLPPrefixTop(params.substring(14));
+        }
 
-                Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
-                return Utils.ticksToFormattedPlaytime(duration.getSeconds() * 20);
+        // Handle last seen elapsed top with units
+        for (String unit : TIME_UNITS) {
+            String prefix = "lastseen_elapsed_top_" + unit.toLowerCase() + "_";
+            if (paramLower.startsWith(prefix)) {
+                return handleLastSeenElapsedTop(params.substring(prefix.length()), unit);
             }
         }
 
-        if(params.toLowerCase().contains("Lastseen_Elapsed_".toLowerCase())) {
-            String nickname = params.substring(17);
-            DBUser user = dbUsersManager.getUserFromNickname(nickname);
-
-            if(user == null)
-                return showErrors ? "Error: wrong nickname?" : defaultErrorMessage;
-            else if(user.getLastSeen() == null)
-                return showErrors ? "Error: last seen data missing" : defaultErrorMessage;
-
-            Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
-            return Utils.ticksToFormattedPlaytime(duration.getSeconds() * 20);
+        // Handle last seen elapsed top
+        if (paramLower.startsWith("lastseen_elapsed_top_")) {
+            return handleLastSeenElapsedTop(params.substring(21));
         }
 
-        if(params.toLowerCase().contains("Nickname_Top_".toLowerCase())) {
-            int position;
-            if(isStringInt(params.substring(13))){
-                position = Integer.parseInt(params.substring(13));
-                DBUser user = dbUsersManager.getTopPlayerAtPosition(position);
-
-                return user != null ? user.getNickname() : showErrors ? "Error: wrong top position?" : defaultErrorMessage;
+        // Handle last seen elapsed with units
+        for (String unit : TIME_UNITS) {
+            String prefix = "lastseen_elapsed_" + unit.toLowerCase() + "_";
+            if (paramLower.startsWith(prefix)) {
+                return handleLastSeenElapsed(params.substring(prefix.length()), unit);
             }
         }
 
-        if(params.toLowerCase().contains("PlayTime_Top_".toLowerCase())) {
-            int position;
-            if(isStringInt(params.substring(13))){
-                position = Integer.parseInt(params.substring(13));
-                DBUser user = dbUsersManager.getTopPlayerAtPosition(position);
+        // Handle other placeholders
+        if (paramLower.startsWith("lastseen_elapsed_")) {
+            return handleLastSeenElapsed(params.substring(17));
+        }
 
-                return user != null ? Utils.ticksToFormattedPlaytime(user.getPlaytime()) : showErrors ? "Error: wrong top position?" : defaultErrorMessage;
+        if (paramLower.startsWith("nickname_top_")) {
+            return handleNicknameTop(params.substring(13));
+        }
+
+        // Handle playtime top with units
+        for (String unit : TIME_UNITS) {
+            String prefix = "playtime_top_" + unit.toLowerCase() + "_";
+            if (paramLower.startsWith(prefix)) {
+                return handlePlayTimeTop(params.substring(prefix.length()), unit);
             }
         }
 
-        if(params.toLowerCase().contains("PlayTime_".toLowerCase())) {
-            String nickname = params.substring(9);
-            DBUser user = dbUsersManager.getUserFromNickname(nickname);
-
-            return user != null ? Utils.ticksToFormattedPlaytime(user.getPlaytime()) : showErrors ? "Error: wrong nickname?" : defaultErrorMessage;
+        if (paramLower.startsWith("playtime_top_")) {
+            return handlePlayTimeTop(params.substring(13));
         }
 
-        if(params.equalsIgnoreCase("PlayTime")){
-            return Utils.ticksToFormattedPlaytime(onlineUsersManager.getOnlineUser(player.getName()).getPlaytime());
-        }
-
-        if(params.toLowerCase().contains("Lastseen_Top_".toLowerCase())) {
-            int position;
-            if(isStringInt(params.substring(13))){
-                position = Integer.parseInt(params.substring(13));
-                DBUser user = dbUsersManager.getTopPlayerAtPosition(position);
-
-                if(user == null)
-                    return showErrors ? "Error: wrong top position?" : defaultErrorMessage;
-                else if(user.getLastSeen() == null)
-                    return showErrors ? "Error: last seen data missing" : defaultErrorMessage;
-
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
-                return user.getLastSeen().format(formatter);
+        // Handle playtime with units and nickname
+        for (String unit : TIME_UNITS) {
+            String prefix = "playtime_" + unit.toLowerCase() + "_";
+            if (paramLower.startsWith(prefix)) {
+                return handlePlayTime(params.substring(prefix.length()), unit);
             }
         }
 
-        if(params.toLowerCase().contains("Lastseen_".toLowerCase())) {
-            String nickname = params.substring(9);
-            DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        if (paramLower.startsWith("playtime_")) {
+            return handlePlayTime(params.substring(9));
+        }
 
-            if(user == null)
-                return showErrors ? "Error: wrong nickname?" : defaultErrorMessage;
-            else if(user.getLastSeen() == null)
-                return showErrors ? "Error: last seen data missing" : defaultErrorMessage;
+        if (paramLower.startsWith("lastseen_top_")) {
+            return handleLastSeenTop(params.substring(13));
+        }
 
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
-            return user.getLastSeen().format(formatter);
+        if (paramLower.startsWith("lastseen_")) {
+            return handleLastSeen(params.substring(9));
         }
 
         return null;
     }
 
-    public boolean isStringInt(String s) {
+    private String handleLPPrefixTop(String posStr) {
+        if (!isStringInt(posStr)) return getErrorMessage("wrong top position?");
+
+        DBUser user = dbUsersManager.getTopPlayerAtPosition(Integer.parseInt(posStr));
+        if (user == null) return getErrorMessage("wrong top position?");
+
+        if (!plugin.isPermissionsManagerConfigured()) {
+            return getErrorMessage("luckperms not loaded");
+        }
+
+        try {
+            return luckPermsManager.getPrefixAsync(user.getUuid()).get();
+        } catch (InterruptedException | ExecutionException e) {
+            return getErrorMessage("luckperms retrieve unsuccessful");
+        }
+    }
+
+    private String handleLastSeenElapsedTop(String posStr, String unit) {
+        if (!isStringInt(posStr)) return getErrorMessage("wrong top position?");
+
+        DBUser user = dbUsersManager.getTopPlayerAtPosition(Integer.parseInt(posStr));
+        if (user == null) return getErrorMessage("wrong top position?");
+        if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
+
+        Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
+        return String.valueOf(Utils.ticksToTimeUnit(duration.getSeconds() * 20, unit));
+    }
+
+    private String handleLastSeenElapsedTop(String posStr) {
+        if (!isStringInt(posStr)) return getErrorMessage("wrong top position?");
+
+        DBUser user = dbUsersManager.getTopPlayerAtPosition(Integer.parseInt(posStr));
+        if (user == null) return getErrorMessage("wrong top position?");
+        if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
+
+        Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
+        return Utils.ticksToFormattedPlaytime(duration.getSeconds() * 20);
+    }
+
+    private String handleLastSeenElapsed(String nickname, String unit) {
+        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        if (user == null) return getErrorMessage("wrong nickname?");
+        if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
+
+        Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
+        return String.valueOf(Utils.ticksToTimeUnit(duration.getSeconds() * 20, unit));
+    }
+
+    private String handleLastSeenElapsed(String nickname) {
+        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        if (user == null) return getErrorMessage("wrong nickname?");
+        if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
+
+        Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
+        return Utils.ticksToFormattedPlaytime(duration.getSeconds() * 20);
+    }
+
+    private String handleNicknameTop(String posStr) {
+        if (!isStringInt(posStr)) return getErrorMessage("wrong top position?");
+
+        DBUser user = dbUsersManager.getTopPlayerAtPosition(Integer.parseInt(posStr));
+        return user != null ? user.getNickname() : getErrorMessage("wrong top position?");
+    }
+
+    private String handlePlayTimeTop(String posStr, String unit) {
+        if (!isStringInt(posStr)) return getErrorMessage("wrong top position?");
+
+        DBUser user = dbUsersManager.getTopPlayerAtPosition(Integer.parseInt(posStr));
+        return user != null ?
+                String.valueOf(Utils.ticksToTimeUnit(user.getPlaytime(), unit)) :
+                getErrorMessage("wrong top position?");
+    }
+
+    private String handlePlayTimeTop(String posStr) {
+        if (!isStringInt(posStr)) return getErrorMessage("wrong top position?");
+
+        DBUser user = dbUsersManager.getTopPlayerAtPosition(Integer.parseInt(posStr));
+        return user != null ?
+                Utils.ticksToFormattedPlaytime(user.getPlaytime()) :
+                getErrorMessage("wrong top position?");
+    }
+
+    private String handlePlayTime(String nickname, String unit) {
+        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        return user != null ?
+                String.valueOf(Utils.ticksToTimeUnit(user.getPlaytime(), unit)) :
+                getErrorMessage("wrong nickname?");
+    }
+
+    private String handlePlayTime(String nickname) {
+        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        return user != null ?
+                Utils.ticksToFormattedPlaytime(user.getPlaytime()) :
+                getErrorMessage("wrong nickname?");
+    }
+
+    private String handleCurrentPlayerPlayTime(OfflinePlayer player) {
+        return Utils.ticksToFormattedPlaytime(
+                onlineUsersManager.getOnlineUser(player.getName()).getPlaytime()
+        );
+    }
+
+    private String handleLastSeenTop(String posStr) {
+        if (!isStringInt(posStr)) return getErrorMessage("wrong top position?");
+
+        DBUser user = dbUsersManager.getTopPlayerAtPosition(Integer.parseInt(posStr));
+        if (user == null) return getErrorMessage("wrong top position?");
+        if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+        return user.getLastSeen().format(formatter);
+    }
+
+    private String handleLastSeen(String nickname) {
+        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        if (user == null) return getErrorMessage("wrong nickname?");
+        if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+        return user.getLastSeen().format(formatter);
+    }
+
+    private String getErrorMessage(String error) {
+        return showErrors ? "Error: " + error : defaultErrorMessage;
+    }
+
+    private boolean isStringInt(String s) {
         try {
             Integer.parseInt(s);
             return true;

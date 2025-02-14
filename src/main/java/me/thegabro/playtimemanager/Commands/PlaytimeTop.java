@@ -95,7 +95,7 @@ public class PlaytimeTop implements TabExecutor {
 
                             if (LPprefix != null && !LPprefix.isEmpty()) {
                                 // Create the complete message string first
-                                String fullMessage = LPprefix + " " + user.getNickname() + " §7- §d" +
+                                String fullMessage = LPprefix + user.getNickname() + " §7- §d" +
                                         Utils.ticksToFormattedPlaytime(user.getPlaytime());
                                 // Parse the entire message with hex colors
                                 message = message.append(Utils.parseColors(fullMessage));

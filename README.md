@@ -1,6 +1,6 @@
 ![alt text](https://i.imgur.com/cMGDraE.png "PlayTime Logo")
 <div align="center">
-  <a href="https://discordapp.com/users/166601586854985729">
+  <a href="https://discord.gg/yRHpgsjtRK">
     <img src="https://i.imgur.com/Vd5Rfxy.png" alt="Discord">
   </a>
   <a href="https://github.com/TheGaBr0/PlayTimeManager/wiki">

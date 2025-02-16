@@ -22,7 +22,7 @@ public class Configuration {
     private String playtimeOthersMessage;
     private String permissionsManagerPlugin;
     private String datetimeFormat;
-    private boolean prefixesAllowed;
+    private String playtimetopLeaderboardFormat;
     private boolean placeholdersEnableErrors;
     private String placeholdersDefaultMessage;
     private String pluginChatPrefix;
@@ -61,6 +61,7 @@ public class Configuration {
         updateDateTimeSettings();
         updatePrefixesSettings();
         updatePlaceholdersSettings();
+        updatePlaytimetopSettings();
     }
 
     private void create() {
@@ -96,10 +97,6 @@ public class Configuration {
         this.permissionsManagerPlugin = config.getString("permissions-manager-plugin", "luckperms");
     }
 
-    private void updatePrefixesSettings(){
-        this.prefixesAllowed = config.getBoolean("allow-prefixes-in-playtimetop", true);
-        this.pluginChatPrefix = config.getString("prefix", "[§6PlayTime§eManager§f]§7");
-    }
 
     private void updatePlaceholdersSettings(){
         this.placeholdersEnableErrors = config.getBoolean("placeholders.enable-errors", false);
@@ -116,15 +113,29 @@ public class Configuration {
         save();
     }
 
-    public boolean arePrefixesAllowed(){
-        return prefixesAllowed;
+    private void updatePrefixesSettings(){
+        this.pluginChatPrefix = config.getString("prefix", "[§6PlayTime§eManager§f]§7");
     }
 
-    public void setPlayTimeTopPrefixes(boolean allowed){
-        this.prefixesAllowed = allowed;
-        config.set("allow-prefixes-in-playtimetop", allowed);
-        save();
+    private void updatePlaytimetopSettings() {
+        this.playtimetopLeaderboardFormat = config.getString("playtimetop.leaderboard-format",
+                "&7&l#%POSITION%&r %PREFIX% &e%PLAYER_NAME% &7- &d%PLAYTIME%");
     }
+
+
+    public String getPlaytimetopLeaderboardFormat() {
+        return playtimetopLeaderboardFormat;
+    }
+
+    public void setPlaytimetopLeaderboardFormat(String format) {
+        if (format != null) {
+            this.playtimetopLeaderboardFormat = format;
+            config.set("playtimetop.leaderboard-format", format);
+            save();
+        }
+    }
+
+
 
     public boolean isPlaceholdersEnableErrors() {
         return placeholdersEnableErrors;

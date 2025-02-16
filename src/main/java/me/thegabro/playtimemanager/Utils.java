@@ -15,94 +15,64 @@ public class Utils {
     private static final long TICKS_PER_HOUR = TICKS_PER_MINUTE * 60;
     private static final long TICKS_PER_DAY = TICKS_PER_HOUR * 24;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
-
-    private static final Pattern HEX_PATTERN = Pattern.compile("&#([0-9A-Fa-f]{6})([^&]*)");
-
+    
     public static Component parseColors(String input) {
         if (input == null || input.isEmpty()) {
             return Component.empty();
         }
 
         Component message = Component.empty();
-        String remaining = input;
-
-        // First handle hex colors
-        Matcher hexMatcher = HEX_PATTERN.matcher(remaining);
-        int lastEnd = 0;
-
-        while (hexMatcher.find()) {
-            // Add any text before the color code
-            if (hexMatcher.start() > lastEnd) {
-                String beforeText = remaining.substring(lastEnd, hexMatcher.start());
-                message = message.append(parseLegacyFormatting(beforeText));
-            }
-
-            // Extract color and text
-            String hex = hexMatcher.group(1);
-            String text = hexMatcher.group(2);
-
-            // Create colored component (only if there's text to color)
-            if (!text.isEmpty()) {
-                TextColor color = TextColor.fromHexString("#" + hex);
-                message = message.append(
-                        parseLegacyFormatting(text).color(color)
-                );
-            }
-
-            lastEnd = hexMatcher.end();
-        }
-
-        // Add any remaining text and parse it for legacy colors and formatting
-        if (lastEnd < remaining.length()) {
-            String remainingText = remaining.substring(lastEnd);
-            message = message.append(parseLegacyFormatting(remainingText));
-        }
-
-        return message;
-    }
-
-    private static Component parseLegacyFormatting(String input) {
-        if (input == null || input.isEmpty()) {
-            return Component.empty();
-        }
-
-        Component message = Component.empty();
-        String[] parts = input.split("(?=&[0-9a-fk-orA-FK-OR])");
-
         Style currentStyle = Style.empty();
+        StringBuilder currentText = new StringBuilder();
 
-        for (String part : parts) {
-            if (part.startsWith("&") && part.length() >= 2) {
-                String code = part.substring(1, 2).toLowerCase();
-                String text = part.substring(2);
+        for (int i = 0; i < input.length(); i++) {
+            if (input.charAt(i) == '&' && i + 1 < input.length()) {
+                // If we have accumulated text, append it with current style
+                if (currentText.length() > 0) {
+                    message = message.append(Component.text(currentText.toString(), currentStyle));
+                    currentText.setLength(0);
+                }
 
-                // Handle reset
-                if (code.equals("r")) {
-                    currentStyle = Style.empty();
-                    if (!text.isEmpty()) {
-                        message = message.append(Component.text(text, currentStyle));
+                // Check for hex color
+                if (i + 7 < input.length() && input.charAt(i + 1) == '#') {
+                    String hexCode = input.substring(i + 2, i + 8);
+                    try {
+                        // Validate hex code
+                        if (hexCode.matches("[0-9A-Fa-f]{6}")) {
+                            currentStyle = currentStyle.color(TextColor.fromHexString("#" + hexCode));
+                            i += 7;  // Skip the hex code
+                            continue;
+                        }
+                    } catch (IllegalArgumentException e) {
+                        // Invalid hex code, treat as normal text
                     }
-                    continue;
                 }
 
-                // Handle colors
-                TextColor color = getLegacyColor(code);
-                if (color != null) {
-                    currentStyle = currentStyle.color(color);
+                // Handle legacy formatting
+                char formatCode = Character.toLowerCase(input.charAt(i + 1));
+
+                // Reset
+                if (formatCode == 'r') {
+                    currentStyle = Style.empty();
+                }
+                // Colors
+                else if (getLegacyColor(String.valueOf(formatCode)) != null) {
+                    currentStyle = currentStyle.color(getLegacyColor(String.valueOf(formatCode)));
+                }
+                // Formatting
+                else if (getLegacyFormatting(String.valueOf(formatCode)) != null) {
+                    currentStyle = currentStyle.decoration(getLegacyFormatting(String.valueOf(formatCode)), true);
                 }
 
-                // Handle formatting
-                TextDecoration decoration = getLegacyFormatting(code);
-                if (decoration != null) {
-                    currentStyle = currentStyle.decoration(decoration, true);
-                }
-
-                if (!text.isEmpty()) {
-                    message = message.append(Component.text(text, currentStyle));
-                }
+                i++; // Skip the format code
             } else {
-                message = message.append(Component.text(part, currentStyle));
+                currentText.append(input.charAt(i));
             }
+        }
+
+        // Append any remaining text
+        if (currentText.length() > 0) {
+            message = message.append(Component.text(currentText.toString(), currentStyle));
         }
 
         return message;

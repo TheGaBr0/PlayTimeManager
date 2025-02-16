@@ -32,7 +32,6 @@ public class PlaytimeTop implements TabExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
-
         if (!sender.hasPermission("playtime.top")) {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
             return false;
@@ -81,38 +80,36 @@ public class PlaytimeTop implements TabExecutor {
         // Create an array to store messages in order
         CompletableFuture<Component>[] messageFutures = new CompletableFuture[endIndex - startIndex];
 
+        // Get the format from config
+        String format = plugin.getConfiguration().getPlaytimetopLeaderboardFormat();
+        boolean usePrefixes = plugin.getConfiguration().getPlaytimetopLeaderboardFormat().contains("%PREFIX%") && plugin.isPermissionsManagerConfigured();
+
         // Process each player in the page range
         for (int i = startIndex; i < endIndex; i++) {
             final int rank = i + 1;
             final int arrayIndex = i - startIndex;
             DBUser user = topPlayers.get(i);
 
-            if (plugin.isPermissionsManagerConfigured() && plugin.getConfiguration().arePrefixesAllowed()) {
+            if (usePrefixes) {
                 messageFutures[arrayIndex] = luckPermsManager.getPrefixAsync(user.getUuid())
-                        .thenApply(LPprefix -> {
-                            Component message = Component.empty()
-                                    .append(Component.text("§7§l#" + rank + " "));
+                        .thenApply(prefix -> {
+                            String formattedMessage = format
+                                    .replace("%POSITION%", String.valueOf(rank))
+                                    .replace("%PREFIX%", prefix != null ? prefix : "")
+                                    .replace("%PLAYER_NAME%", user.getNickname())
+                                    .replace("%PLAYTIME%", Utils.ticksToFormattedPlaytime(user.getPlaytime()));
 
-                            if (LPprefix != null && !LPprefix.isEmpty()) {
-                                // Create the complete message string first
-                                String fullMessage = LPprefix + user.getNickname() + " §7- §d" +
-                                        Utils.ticksToFormattedPlaytime(user.getPlaytime());
-                                // Parse the entire message with hex colors
-                                message = message.append(Utils.parseColors(fullMessage));
-                            } else {
-                                // If no prefix, just color the nickname and playtime
-                                message = message.append(Component.text("§e" + user.getNickname() + " §7- §d" +
-                                        Utils.ticksToFormattedPlaytime(user.getPlaytime())));
-                            }
-
-                            return message;
+                            return Component.empty().append(Utils.parseColors(formattedMessage));
                         });
             } else {
+                String formattedMessage = format
+                        .replace("%POSITION%", String.valueOf(rank))
+                        .replace("%PREFIX%", "")
+                        .replace("%PLAYER_NAME%", user.getNickname())
+                        .replace("%PLAYTIME%", Utils.ticksToFormattedPlaytime(user.getPlaytime()));
+
                 messageFutures[arrayIndex] = CompletableFuture.completedFuture(
-                        Component.empty()
-                                .append(Component.text("§7§l#" + rank + " "))
-                                .append(Component.text("§e" + user.getNickname() + " §7- §d" +
-                                        Utils.ticksToFormattedPlaytime(user.getPlaytime())))
+                        Component.empty().append(Utils.parseColors(formattedMessage))
                 );
             }
         }

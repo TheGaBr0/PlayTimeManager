@@ -99,6 +99,9 @@ public class PlaytimeTop implements TabExecutor {
                                     .replace("%PLAYER_NAME%", user.getNickname())
                                     .replace("%PLAYTIME%", Utils.ticksToFormattedPlaytime(user.getPlaytime()));
 
+                            // Normalize multiple spaces to single space after all replacements
+                            formattedMessage = formattedMessage.replaceAll("\\s+", " ");
+
                             return Component.empty().append(Utils.parseColors(formattedMessage));
                         });
             } else {
@@ -106,7 +109,8 @@ public class PlaytimeTop implements TabExecutor {
                         .replace("%POSITION%", String.valueOf(rank))
                         .replace("%PREFIX%", "")
                         .replace("%PLAYER_NAME%", user.getNickname())
-                        .replace("%PLAYTIME%", Utils.ticksToFormattedPlaytime(user.getPlaytime()));
+                        .replace("%PLAYTIME%", Utils.ticksToFormattedPlaytime(user.getPlaytime()))
+                        .replaceAll("\\s+", " "); // Normalize multiple spaces to single space
 
                 messageFutures[arrayIndex] = CompletableFuture.completedFuture(
                         Component.empty().append(Utils.parseColors(formattedMessage))

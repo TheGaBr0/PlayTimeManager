@@ -25,10 +25,20 @@ public class PlaytimeTop implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
-    private final LuckPermsManager luckPermsManager = LuckPermsManager.getInstance(plugin);
+    private LuckPermsManager luckPermsManager = null;
     private final int TOP_MAX = 100;
     private final Pattern pagePattern = Pattern.compile("p\\d+");
     private int page;
+
+    public PlaytimeTop() {
+        if (plugin.isPermissionsManagerConfigured()) {
+            try {
+                this.luckPermsManager = LuckPermsManager.getInstance(plugin);
+            } catch (NoClassDefFoundError e) {
+                // LuckPerms is not loaded, leave luckPermsManager as null
+            }
+        }
+    }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {

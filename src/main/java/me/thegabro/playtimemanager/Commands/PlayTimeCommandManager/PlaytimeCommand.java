@@ -19,9 +19,16 @@ public class PlaytimeCommand {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
-    private final LuckPermsManager luckPermsManager = LuckPermsManager.getInstance(plugin);
+    private LuckPermsManager luckPermsManager = null;
 
     public PlaytimeCommand(CommandSender sender, String[] args) {
+        if (plugin.isPermissionsManagerConfigured()) {
+            try {
+                this.luckPermsManager = LuckPermsManager.getInstance(plugin);
+            } catch (NoClassDefFoundError e) {
+                // LuckPerms is not loaded, leave luckPermsManager as null
+            }
+        }
         execute(sender, args);
     }
 

@@ -20,14 +20,17 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
-    private final LuckPermsManager luckPermsManager = LuckPermsManager.getInstance(plugin);
-
-    private final boolean showErrors;
-    private final String defaultErrorMessage;
+    private LuckPermsManager luckPermsManager = null;
 
     public PlayTimePlaceHolders() {
-        this.showErrors = plugin.getConfiguration().isPlaceholdersEnableErrors();
-        this.defaultErrorMessage = plugin.getConfiguration().getPlaceholdersDefaultMessage();
+
+        if (plugin.isPermissionsManagerConfigured()) {
+            try {
+                this.luckPermsManager = LuckPermsManager.getInstance(plugin);
+            } catch (NoClassDefFoundError e) {
+                // LuckPerms is not loaded, leave luckPermsManager as null
+            }
+        }
     }
 
     @Override
@@ -274,7 +277,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     }
 
     private String getErrorMessage(String error) {
-        return showErrors ? "Error: " + error : defaultErrorMessage;
+        return plugin.getConfiguration().isPlaceholdersEnableErrors() ? "Error: " + error :  plugin.getConfiguration().getPlaceholdersDefaultMessage();
     }
 
     private boolean isStringInt(String s) {

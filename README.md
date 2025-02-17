@@ -32,9 +32,6 @@ PlaceHoldersApi (PAPI) is supported, allowing you to create leaderboards or let 
 
 While the plugin primarily supports English, player-facing messages can be customized in the config.yml. It also includes an **automatic configuration update system** that utilizes a config-version field, ensuring your config.yml file stays up to date with the latest settings while preserving your customizations. Additionally, the plugin seamlessly manages database and file updates, with a **backup automatically created** before any updates to the database. This ensures that your data remains secure while benefiting from the latest features and improvements.
 
-Both Paper and Spigot are supported.
-
-
 ## Commands and permissions
 For a complete list of commands, permissions, and placeholders, please visit the [PlayTimeManager Wiki](https://github.com/TheGaBr0/PlayTimeManager/wiki).
 

@@ -82,7 +82,7 @@ placeholders:
   # If enabled, errors in placeholders will be displayed
   # If disabled, the text in 'default-message' will be shown instead of error messages
   enable-errors: false
-  # The default message to display when placeholder data is unavailable or an error occurs
+  # The default message to display when 'enable-errors' is set to false
   default-message: "No data"
 
 

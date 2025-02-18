@@ -191,11 +191,35 @@ public class OnlineUsersManager {
 
     private void playGoalSound(Player player, Goal goal) {
         try {
-            Sound sound = Sound.valueOf(goal.getGoalSound());
-            player.playSound(player.getLocation(), sound, 10, 0);
-        } catch (IllegalArgumentException e) {
-            plugin.getLogger().severe(String.format("%s is not a valid sound in %s.yaml",
-                    goal.getGoalSound(), goal.getName()));
+            // Get the sound name from the goal
+            String soundName = goal.getGoalSound();
+
+            // First try to get the sound directly from the Sound enum
+            Sound sound = null;
+            try {
+                // Use the static Sound class to get the enum value
+                sound = Sound.class.getField(soundName).get(null) instanceof Sound ?
+                        (Sound) Sound.class.getField(soundName).get(null) : null;
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                // If the direct field access fails, try alternative methods
+                for (Sound s : Sound.values()) {
+                    if (s.toString().equals(soundName)) {
+                        sound = s;
+                        break;
+                    }
+                }
+            }
+
+            // Check if we found a valid sound
+            if (sound != null) {
+                player.playSound(player.getLocation(), sound, 10, 0);
+            } else {
+                plugin.getLogger().warning(String.format("Could not find sound '%s' for goal '%s'",
+                        soundName, goal.getName()));
+            }
+        } catch (Exception e) {
+            plugin.getLogger().severe(String.format("Failed to play sound '%s' for goal '%s': %s",
+                    goal.getGoalSound(), goal.getName(), e.getMessage()));
         }
     }
 

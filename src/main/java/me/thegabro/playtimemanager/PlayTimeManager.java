@@ -42,20 +42,12 @@ public class PlayTimeManager extends JavaPlugin{
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private GoalsManager goalsManager;
-    private static final String SPIGOT_RESOURCE_ID = "118284";
     private final int BSTATS_PLUGIN_ID = 24739;
 
     @Override
     public void onEnable() {
 
         Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
-
-        new UpdateChecker(this, UpdateCheckSource.SPIGET, SPIGOT_RESOURCE_ID)
-                .setDownloadLink("https://www.spigotmc.org/resources/playtimemanager.118284/")
-                .setChangelogLink("https://www.spigotmc.org/resources/playtimemanager.118284/updates")
-                .setUserAgent(new UserAgentBuilder().addPluginNameAndVersion())
-                .checkEveryXHours(24)
-                .checkNow();
 
         if (!getDataFolder().exists()) {
             getDataFolder().mkdirs();

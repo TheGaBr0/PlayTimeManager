@@ -6,6 +6,8 @@ import com.jeff_media.updatechecker.UserAgentBuilder;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 
+import java.util.Arrays;
+
 public class UpdateManager {
     private static UpdateManager instance;
     private final PlayTimeManager plugin;
@@ -25,23 +27,17 @@ public class UpdateManager {
 
     public void initialize() {
         setupUpdateChecker();
-        checkForUpdates();
     }
 
     private void setupUpdateChecker() {
-        updateChecker = new UpdateChecker(plugin, UpdateCheckSource.SPIGET, SPIGOT_RESOURCE_ID)
-                .setDownloadLink("https://www.spigotmc.org/resources/playtimemanager.118284/")
-                .setChangelogLink("https://www.spigotmc.org/resources/playtimemanager.118284/updates")
-                .setUserAgent(new UserAgentBuilder().addPluginNameAndVersion());
-    }
-
-    public void checkForUpdates() {
-        if (updateChecker != null) {
-            updateChecker.checkEveryXHours(24)
-                    .checkNow();
-        } else {
-            plugin.getLogger().warning("Update checker not properly initialized!");
-        }
+        updateChecker = new UpdateChecker(plugin, UpdateCheckSource.HANGAR, "TheGaBr0/PlayTimeManager/Release")
+                .setUserAgent(new UserAgentBuilder().addPluginNameAndVersion())
+                .checkEveryXHours(24)
+                .onSuccess((commandSenders, latestVersion) -> {
+                    updateChecker.setDownloadLink("https://hangar.papermc.io/TheGabro/PlayTimeManager/versions/" + latestVersion);
+                    updateChecker.setChangelogLink("https://hangar.papermc.io/TheGabro/PlayTimeManager/versions/" + latestVersion);
+                })
+                .checkNow();
     }
 
     public void performVersionUpdate(String currentVersion, String targetVersion) {
@@ -68,5 +64,4 @@ public class UpdateManager {
 
         Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r" + targetVersion);
     }
-
 }

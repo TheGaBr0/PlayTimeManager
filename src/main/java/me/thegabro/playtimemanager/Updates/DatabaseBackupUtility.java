@@ -52,6 +52,7 @@ public class DatabaseBackupUtility {
     private void addFileToZip(File file, String entryName, ZipOutputStream zos) throws IOException {
         byte[] buffer = new byte[BUFFER_SIZE];
 
+
         try (FileInputStream fis = new FileInputStream(file)) {
             ZipEntry ze = new ZipEntry(entryName);
             zos.putNextEntry(ze);

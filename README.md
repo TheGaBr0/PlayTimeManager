@@ -13,37 +13,63 @@
 Hello and welcome to PlayTimeManager! I initially created this plugin for the server on which I am currently a developer. We don't have thousands or hundreds of players, but we had to find a way to track players' playtime to promote one whenever it reaches a certain amount. I looked around on the web, but I couldn't find any plugin that was able to satisfy our issue: we needed a playtime plugin, somewhat efficient, that could automatically execute a specific task like promoting a player through Luckperms. Well, that's what this plugin is supposed to do! <br> <br>
 I thought this could be useful to other server administrators as well, so I decided to share it on Spigot! If interest arises, I'll keep it updated happily :)
 
-## What's PlayTimeManager?
-PlayTimeManager is a high-performance plugin that tracks and rewards player engagement through efficient playtime monitoring. It features a comprehensive goal system where you can:
--   **Set** custom playtime goals
--   **Grant** automatic permissions and group promotions (Thanks to a LuckPerms integration)
--   **Execute** custom commands upon goal completion
--   **Play** celebration sounds
--   **Display** custom messages
+---
 
-The plugin's efficiency comes from smart technical strategies:
-- **Caching**: Intelligent in-memory caching reduces database calls and computational load.
-- **Database Optimization**: Uses lightweight SQLite for fast, low-impact storage with high-concurrency reads.
-- **Connection Management**: HikariCP ensures quick, pre-established database connections with no delays.
-This ensures lightning-fast performance with negligible server resource consumption.
+> PlayTimeManager is optimized for Paper due to its superior performance, flexibility, and additional features not available on Spigot. These enhancements allow PlayTimeManager to run more efficiently and provide a better  experience for both server administrators and players. As a result, **Spigot is no longer supported**.
+
+![alt text](https://i.imgur.com/ViNDStn.png "Divider 1")
+
+PlayTimeManager is designed to work seamlessly with **both offline and online servers**, ensuring optimal compatibility for server administrators. **Data integrity is a top priority**, with robust techniques in place to safeguard player statistics and prevent data loss or alteration. 
+
+The plugin features an **automatic update system** that ensures database and configuration files transition smoothly across versions while preserving previous settings. 
+
+Additionally, **player data is not strictly tied to the server’s statistics**, providing flexibility for importing, exporting, and modifying records. When a player joins, PlayTimeManager initially retrieves their playtime from the server’s built-in statistics as a starting point. From there, the plugin tracks and stores all additional increments in its database, ensuring accurate and persistent records. This approach allows data to remain intact and transferable, even when upgrading your server’s jar file or making adjustments to player statistics.
+
+![alt text](https://i.imgur.com/hpgk2V5.png "Divider 2")
+
+<div align="center">
+  <img src="https://i.imgur.com/Pr4a2KF.png" alt="Customization Preview">
+  <br>
+  <img src="https://i.imgur.com/Zhlb2GI.png" alt="Customization Example">
+</div> 
+
+PlayTimeManager aims to provide a highly customizable experience, allowing you to tailor its features to match your server’s unique style. It supports **hex colors alongside legacy formatting and styles**, ensuring vibrant and personalized text displays. 
+
+Player-facing messages can be fully customized, with plans to expand customization options even further—your suggestions are always welcome! The plugin also includes **specific placeholders** for displaying formatted playtime, converting it into different time units, or simplifying it for easier readability. 
+
+Additionally, you can create a **customizable playtime leaderboard**, both in chat and through placeholders, with support for **LuckPerms prefixes**, making rankings even more dynamic and visually appealing.
+
+<div align="center">
+  <img src="https://i.imgur.com/0zAmQde.gif" alt="Formatted Playtime Example" width="45%">
+  <img src="https://i.imgur.com/saWMotz.gif" alt="Playtime Stats Example" width="45%">
+</div>
+
+![alt text](https://i.imgur.com/2WSm6SA.png "Divider 3")
+
+PlayTimeManager is designed to run efficiently with minimal impact on server resources. It utilizes **in-memory caching** to reduce database queries and improve processing speed, with an automatic reset system to prevent memory leaks. The plugin also leverages **lightweight SQLite** for low-overhead storage, ensuring smooth performance even with multiple concurrent reads. To further optimize efficiency, **HikariCP connection management** keeps database connections readily available, reducing delays.  
 
 
-PlaceHoldersApi (PAPI) is supported, allowing you to create leaderboards or let players view their own playtime through the use of placeholders.
+These optimizations help PlayTimeManager run smoothly and responsively while keeping resource usage low.
+![alt text](https://i.imgur.com/Y8PlFeG.png "Divider 4")
 
-While the plugin primarily supports English, player-facing messages can be customized in the config.yml. It also includes an **automatic configuration update system** that utilizes a config-version field, ensuring your config.yml file stays up to date with the latest settings while preserving your customizations. Additionally, the plugin seamlessly manages database and file updates, with a **backup automatically created** before any updates to the database. This ensures that your data remains secure while benefiting from the latest features and improvements.
+<div align="center">
+  <img src="https://i.imgur.com/NJYGLGF.png" alt="Goals GUI Preview">
+</div> 
+
+
+PlayTimeManager's comprehensive **goal system** enables server administrators to create meaningful engagement through customizable playtime milestones. When players achieve designated playtime thresholds, the system can automatically:
+- Grant specialized permissions
+- Assign new ranks through LuckPerms integration
+- Execute configured server commands
+- Display personalized achievement messages
+- Play celebration sounds
+
+
+This robust reward structure allows administrators to recognize player dedication and enhance their server experience through automated progression mechanics, everything through a simple and user-friendly GUI directly in-game.
+
 
 ## Commands and permissions
 For a complete list of commands, permissions, and placeholders, please visit the [PlayTimeManager Wiki](https://github.com/TheGaBr0/PlayTimeManager/wiki).
-
-## Examples of use
-### Commands
-* `/playtime TheGabro add 1d` -> This command will manually add 1 day of playtime to the specified player. <br> If a player with playtime.others.modify permission tries to get the playtime of TheGabro (who has a manually modified playtime), he will also be shown the added/removed time in addition to the normal time. <br> ![alt text](https://i.imgur.com/Aqd1Yh3.png "PlayTime addition example") <br> Multiple time formats at a time are supported (e.g. 1d,4h,3m,4s)
-* `/playtimepercentage 1d`: <br> ![alt text](https://i.imgur.com/wQndA7j.png "PlayTime percentage example") <br> Multiple time formats at a time are supported (e.g. 1d,4h,3m,4s)
-* `/playtimegoal set veteran time:40d`: <br> ![alt text](https://i.imgur.com/1GQEfed.png "Goal creation example") <br> If not specified, the goal will be set to inactive by default. This means that the plugin will not check for its completion until it is set to active through GUI, command, or by editing the veteran.yaml config.
-### Placeholders
-![alt text](https://i.imgur.com/tbK5mH4.gif "PlayTime Leaderboard example")
-<br>
-![alt text](https://i.imgur.com/saWMotz.gif "PlayTime last seen stats example")
 
 
 ## To do

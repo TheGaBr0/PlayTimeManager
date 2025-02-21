@@ -43,11 +43,14 @@ public class PlayTimeManager extends JavaPlugin{
     private DBUsersManager dbUsersManager;
     private GoalsManager goalsManager;
     private final int BSTATS_PLUGIN_ID = 24739;
+    private final String serverVersion = Bukkit.getBukkitVersion().split("-")[0];
 
     @Override
     public void onEnable() {
 
         Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
+
+
 
         if (!getDataFolder().exists()) {
             getDataFolder().mkdirs();
@@ -147,6 +150,8 @@ public class PlayTimeManager extends JavaPlugin{
     }
 
     public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
+
+    public String getServerVersion() { return serverVersion; }
 
     private boolean checkPermissionsPlugin() {
         String configuredPlugin = config.getPermissionsManagerPlugin().toLowerCase();

@@ -10,6 +10,8 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -195,28 +197,21 @@ public class OnlineUsersManager {
 
     private void playGoalSound(Player player, Goal goal) {
         try {
-            // Get the sound name from the goal
             String soundName = goal.getGoalSound();
-
-            // First try to get the sound directly from the Sound enum
             Sound sound = null;
+
+            // Simple direct field access - most efficient when the name matches exactly
             try {
-                // Use the static Sound class to get the enum value
-                sound = Sound.class.getField(soundName).get(null) instanceof Sound ?
-                        (Sound) Sound.class.getField(soundName).get(null) : null;
+                sound = (Sound) Sound.class.getField(soundName).get(null);
             } catch (NoSuchFieldException | IllegalAccessException e) {
-                // If the direct field access fails, try alternative methods
-                for (Sound s : Sound.values()) {
-                    if (s.toString().equals(soundName)) {
-                        sound = s;
-                        break;
-                    }
+                // Log the actual error for debugging if verbose is enabled
+                if (plugin.getConfiguration().getGoalsCheckVerbose()) {
+                    plugin.getLogger().info("Could not find sound directly, attempting fallback: " + e.getMessage());
                 }
             }
 
-            // Check if we found a valid sound
             if (sound != null) {
-                player.playSound(player.getLocation(), sound, 10, 0);
+                player.playSound(player.getLocation(), sound, 10.0f, 0.0f);
             } else {
                 plugin.getLogger().warning(String.format("Could not find sound '%s' for goal '%s'",
                         soundName, goal.getName()));

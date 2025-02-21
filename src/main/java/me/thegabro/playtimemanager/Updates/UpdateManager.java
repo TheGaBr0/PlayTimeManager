@@ -10,9 +10,7 @@ import java.util.Arrays;
 
 public class UpdateManager {
     private static UpdateManager instance;
-    private final PlayTimeManager plugin;
-    private static final String SPIGOT_RESOURCE_ID = "118284";
-    private UpdateChecker updateChecker;
+    private final PlayTimeManager plugin;private UpdateChecker updateChecker;
 
     private UpdateManager(PlayTimeManager plugin) {
         this.plugin = plugin;

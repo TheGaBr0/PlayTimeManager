@@ -123,11 +123,15 @@ public class OnlineUsersManager {
         }
 
         executeCommands(goal, player);
-        playGoalSound(player, goal);
         sendGoalMessage(player, goal);
 
-        plugin.getLogger().info(String.format("User %s has reached %s!",
-                onlineUser.getNickname(), Utils.ticksToFormattedPlaytime(goal.getTime())));
+        if(plugin.getConfiguration().getGoalsCheckVerbose()){
+            plugin.getLogger().info(String.format("User %s has reached the goal %s which requires %s!",
+                    onlineUser.getNickname(), goal.getName(),Utils.ticksToFormattedPlaytime(goal.getTime())));
+        }
+
+
+        playGoalSound(player, goal);
     }
 
     private void startDBUpdateSchedule() {

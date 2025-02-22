@@ -123,6 +123,8 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Material.NOTE_BLOCK,
                 Component.text("§e§lGoal Sound"),
                 Component.text("§7Current: §f" + goal.getGoalSound()),
+                Component.text("§7Right click to play the sound."),
+                Component.text(""),
                 Component.text("§cTo update this setting, please edit the"),
                 Component.text("§c'" + goal.getName() + ".yml' configuration file."),
                 Component.text("§cModification via GUI is not currently supported.")
@@ -184,7 +186,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         player.openInventory(inventory);
     }
 
-    public void onGUIClick(Player player, int slot, ItemStack clickedItem, InventoryAction action) {
+    public void onGUIClick(Player player, int slot, ItemStack clickedItem, ClickType clickType) {
         if (clickedItem == null || clickedItem.getType().equals(Material.AIR)
                 || clickedItem.getType().equals(Material.BLACK_STAINED_GLASS_PANE)) {
             return;
@@ -205,6 +207,9 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 break;
 
             case Slots.GOAL_SOUND:
+                if(clickType == ClickType.RIGHT){
+                    playGoalSound(player);
+                }
                 // TODO: Implement sound editing
                 break;
 
@@ -229,6 +234,33 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
             case Slots.BACK_BUTTON:
                 handleBackButton(player);
                 break;
+        }
+    }
+
+    private void playGoalSound(Player player) {
+        try {
+            String soundName = goal.getGoalSound();
+            Sound sound = null;
+
+            // Simple direct field access - most efficient when the name matches exactly
+            try {
+                sound = (Sound) Sound.class.getField(soundName).get(null);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                // Log the actual error for debugging if verbose is enabled
+                if (plugin.getConfiguration().getGoalsCheckVerbose()) {
+                    plugin.getLogger().info("Could not find sound directly, attempting fallback: " + e.getMessage());
+                }
+            }
+
+            if (sound != null) {
+                player.playSound(player.getLocation(), sound, 10.0f, 0.0f);
+            } else {
+                plugin.getLogger().warning(String.format("Could not find sound '%s' for goal '%s'",
+                        soundName, goal.getName()));
+            }
+        } catch (Exception e) {
+            plugin.getLogger().severe(String.format("Failed to play sound '%s' for goal '%s': %s",
+                    goal.getGoalSound(), goal.getName(), e.getMessage()));
         }
     }
 
@@ -351,7 +383,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
             if((e.getRawSlot() < e.getInventory().getSize())) {
                 e.setCancelled(true);
                 GoalSettingsGui gui = (GoalSettingsGui) e.getInventory().getHolder();
-                gui.onGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getAction());
+                gui.onGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getClick());
             }
         }
     }

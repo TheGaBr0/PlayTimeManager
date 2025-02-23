@@ -272,11 +272,19 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
         ConfirmationGui confirmationGui = new ConfirmationGui(goalItem, (confirmed) -> {
             if (confirmed) {
-                goal.kill();
-                if (previousGui != null) {
-                    ((AllGoalsGui) previousGui).openInventory(player);
-                }
+                // Run deletion async
+                Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
+                    goal.kill();
+
+                    // Switch back to main thread for UI updates
+                    Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
+                        if (previousGui != null) {
+                            ((AllGoalsGui) previousGui).openInventory(player);
+                        }
+                    });
+                });
             } else {
+                // No need for async here since we're just handling UI
                 openInventory(player);
             }
         });

@@ -6,6 +6,7 @@ import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
@@ -118,8 +119,15 @@ public class PlaytimeGoal implements TabExecutor {
             return;
         }
 
-        oldGoal.rename(newName);
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Successfully renamed goal §e" + oldName + " §7to §e" + newName));
+        // Run the rename process async
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            oldGoal.rename(newName);
+
+            // Switch back to main thread for UI update
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Successfully renamed goal §e" + oldName + " §7to §e" + newName));
+            });
+        });
     }
 
     private void setGoal(CommandSender sender, String goalName, Long time, boolean activate) {
@@ -149,14 +157,22 @@ public class PlaytimeGoal implements TabExecutor {
     }
 
     private void removeGoal(CommandSender sender, String goalName) {
-        Goal g = goalsManager.getGoal(goalName);
-        if (g != null) {
-            g.kill();
-            onlineUsersManager.startGoalCheckSchedule();
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The goal §e" + goalName + " §7has been removed!"));
-        } else {
+        Goal goal = goalsManager.getGoal(goalName);
+        if (goal == null) {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The goal §e" + goalName + " §7doesn't exist!"));
+            return;
         }
+
+        // Run the removal process async
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            goal.kill();
+
+            // Switch back to main thread for UI updates and schedule changes
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                onlineUsersManager.startGoalCheckSchedule();
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The goal §e" + goalName + " §7has been removed!"));
+            });
+        });
     }
 
     @Override

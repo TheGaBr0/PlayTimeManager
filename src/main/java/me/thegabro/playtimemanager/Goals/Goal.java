@@ -235,8 +235,8 @@ public class Goal {
     }
 
     public void kill() {
-        DBUsersManager.getInstance().removeGoalFromAllUsers(name);
         goalsManager.removeGoal(this);
+        DBUsersManager.getInstance().removeGoalFromAllUsers(name);
         deleteFile();
     }
 

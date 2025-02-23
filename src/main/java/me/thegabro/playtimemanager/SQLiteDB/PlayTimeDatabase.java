@@ -78,7 +78,7 @@ public abstract class PlayTimeDatabase {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return null; 
+        return null;
     }
 
     public Long getPlaytime(String uuid) {
@@ -141,7 +141,7 @@ public abstract class PlayTimeDatabase {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return null; 
+        return null;
     }
 
     public String getUUIDFromNickname(String nickname) {
@@ -206,7 +206,7 @@ public abstract class PlayTimeDatabase {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return nicknames; 
+        return nicknames;
     }
 
     public void updatePlaytime(String uuid, long newPlaytime) {
@@ -494,6 +494,66 @@ public abstract class PlayTimeDatabase {
             }
         }
         return topPlayers;
+    }
+
+    public void removeGoalFromAllUsers(String goalToRemove) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = getSQLConnection();
+
+            // First, get all players who have completed goals
+            ps = conn.prepareStatement("SELECT uuid, completed_goals FROM play_time WHERE completed_goals IS NOT NULL AND completed_goals != '';");
+            rs = ps.executeQuery();
+
+            PreparedStatement updateStmt = conn.prepareStatement("UPDATE play_time SET completed_goals = ? WHERE uuid = ?;");
+
+            while (rs.next()) {
+                String uuid = rs.getString("uuid");
+                String completedGoals = rs.getString("completed_goals");
+
+                if (completedGoals == null || completedGoals.isEmpty()) {
+                    continue;
+                }
+
+                // Convert to ArrayList, remove the goal, and convert back to string
+                ArrayList<String> goals = new ArrayList<>();
+                for (String goal : completedGoals.split(",")) {
+                    String trimmedGoal = goal.trim();
+                    if (!trimmedGoal.isEmpty() && !trimmedGoal.equals(goalToRemove)) {
+                        goals.add(trimmedGoal);
+                    }
+                }
+
+                // Convert back to comma-separated string
+                String updatedGoals = goals.stream()
+                        .map(String::trim)
+                        .filter(goal -> !goal.isEmpty())
+                        .collect(Collectors.joining(","));
+
+                // Update the database
+                updateStmt.setString(1, updatedGoals);
+                updateStmt.setString(2, uuid);
+                updateStmt.executeUpdate();
+            }
+
+            updateStmt.close();
+
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, "Error removing goal " + goalToRemove + " from all players: " + ex.getMessage());
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
     }
 
     public ArrayList<String> getCompletedGoals(String uuid) {

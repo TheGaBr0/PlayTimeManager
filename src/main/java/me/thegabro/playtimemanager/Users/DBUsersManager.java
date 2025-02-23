@@ -125,10 +125,10 @@ public class DBUsersManager {
     }
 
     public void removeGoalFromAllUsers(String goalName) {
-        db.getAllNicknames().stream()
-                .map(this::getUserFromNickname)
-                .filter(user -> user.hasCompletedGoal(goalName))
-                .forEach(user -> user.unmarkGoalAsCompleted(goalName));
+        for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
+            user.unmarkGoalAsCompleted(goalName);
+        }
+        db.removeGoalFromAllUsers(goalName);
     }
 
     public List<DBUser> getAllDBUsers() {

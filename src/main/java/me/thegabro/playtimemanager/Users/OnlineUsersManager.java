@@ -52,6 +52,10 @@ public class OnlineUsersManager {
         return instance;
     }
 
+    public Map<String, OnlineUser> getOnlineUsersByUUID(){
+        return onlineUsersByUUID;
+    }
+
     public void addOnlineUser(OnlineUser onlineUser) {
         onlineUsersByName.put(onlineUser.getNickname().toLowerCase(), onlineUser);
         onlineUsersByUUID.put(onlineUser.getUuid(), onlineUser);

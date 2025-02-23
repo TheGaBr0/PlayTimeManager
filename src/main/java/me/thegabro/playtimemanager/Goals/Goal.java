@@ -2,6 +2,8 @@ package me.thegabro.playtimemanager.Goals;
 
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.OnlineUser;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -15,6 +17,7 @@ public class Goal {
     // Fields
     private final PlayTimeManager plugin;
     private final GoalsManager goalsManager = GoalsManager.getInstance();
+    private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private String name;
     private long time;
     private final File goalFile;
@@ -152,6 +155,11 @@ public class Goal {
     public void rename(String newName) {
         File oldFile = this.goalFile;
 
+        for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
+            user.unmarkGoalAsCompleted(name);
+            user.markGoalAsCompleted(newName);
+        }
+
         this.name = newName;
 
         File newFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + newName + ".yml");
@@ -226,14 +234,12 @@ public class Goal {
         saveToFile();
     }
 
-    // Management methods
     public void kill() {
         DBUsersManager.getInstance().removeGoalFromAllUsers(name);
         goalsManager.removeGoal(this);
         deleteFile();
     }
 
-    // Object overrides
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

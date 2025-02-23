@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager.Users;
 
 import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import org.bukkit.Bukkit;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -73,18 +74,19 @@ public class DBUsersManager {
     }
 
     public void updateTopPlayersFromDB() {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            onlineUsersManager.updateAllOnlineUsersPlaytime();
 
-        onlineUsersManager.updateAllOnlineUsersPlaytime();
+            Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT);
 
-        Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT);
-
-        synchronized (topPlayers) {
-            topPlayers.clear();
-            dbTopPlayers.entrySet().stream()
-                    .map(entry -> getUserFromUUID(entry.getKey()))
-                    .filter(Objects::nonNull)
-                    .forEach(topPlayers::add);
-        }
+            synchronized (topPlayers) {
+                topPlayers.clear();
+                dbTopPlayers.entrySet().stream()
+                        .map(entry -> getUserFromUUID(entry.getKey()))
+                        .filter(Objects::nonNull)
+                        .forEach(topPlayers::add);
+            }
+        });
     }
 
     public void updateCachedTopPlayers(OnlineUser onlineUser) {

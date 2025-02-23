@@ -154,13 +154,15 @@ public class OnlineUsersManager {
     }
 
     public void updateAllOnlineUsersPlaytime() {
-        onlineUsersByName.values().forEach(user -> {
-            try {
-                user.updateDB();
-            } catch (Exception e) {
-                plugin.getLogger().severe(String.format("Failed to update playtime for user %s: %s",
-                        user.getNickname(), e.getMessage()));
-            }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            onlineUsersByName.values().forEach(user -> {
+                try {
+                    user.updateDB();
+                } catch (Exception e) {
+                    plugin.getLogger().severe(String.format("Failed to update playtime for user %s: %s",
+                            user.getNickname(), e.getMessage()));
+                }
+            });
         });
     }
 

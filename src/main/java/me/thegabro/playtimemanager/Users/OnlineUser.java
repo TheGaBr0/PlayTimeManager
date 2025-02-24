@@ -28,7 +28,6 @@ public class OnlineUser extends DBUser {
 
     }
 
-
     @Override
     public long getPlaytime() {
         return getCachedPlayTime() + artificialPlaytime;

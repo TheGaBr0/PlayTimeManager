@@ -44,6 +44,8 @@ public abstract class PlayTimeDatabase {
         config.setDriverClassName("org.sqlite.JDBC");
         config.setMaximumPoolSize(20);
         config.setConnectionTestQuery("SELECT 1");
+        config.addDataSourceProperty("journal_mode", "WAL");
+        config.addDataSourceProperty("busy_timeout", "30000");
 
         dataSource = new HikariDataSource(config);
     }

@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Users;
 
+import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Statistic;
@@ -19,7 +20,7 @@ public class DBUser {
     protected static PlayTimeDatabase db = plugin.getDatabase();
     protected LocalDateTime lastSeen;
     protected LocalDateTime firstJoin;
-
+    protected final GoalsManager goalsManager = GoalsManager.getInstance();
 
     // Private constructor
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime,
@@ -41,6 +42,7 @@ public class DBUser {
         this.DBplaytime = db.getPlaytime(uuid);
         this.artificialPlaytime = db.getArtificialPlaytime(uuid);
         this.completedGoals = db.getCompletedGoals(uuid);
+        fixGhostGoals();
         this.lastSeen = db.getLastSeen(uuid);
         this.firstJoin = db.getFirstJoin(uuid);
         if(firstJoin == null){
@@ -126,6 +128,24 @@ public class DBUser {
     public void unmarkGoalAsCompleted(String goalName){
         completedGoals.remove(goalName);
         db.updateCompletedGoals(uuid, completedGoals);
+    }
+
+
+    // Ensures that every goal in the database is loaded.
+    // If a goal is missing, it is removed from the player's completed goals in the database record.
+    private void fixGhostGoals() {
+        // Create a new ArrayList to store goals that need to be removed, this avoids ConcurrentModificationException
+        ArrayList<String> goalsToRemove = new ArrayList<>();
+
+        for (String completedGoal : completedGoals) {
+            if (goalsManager.getGoal(completedGoal) == null) {
+                goalsToRemove.add(completedGoal);
+            }
+        }
+
+        for (String goalToRemove : goalsToRemove) {
+            unmarkGoalAsCompleted(goalToRemove);
+        }
     }
 
     private void userMapping() {

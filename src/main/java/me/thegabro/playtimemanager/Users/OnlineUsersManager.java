@@ -66,7 +66,7 @@ public class OnlineUsersManager {
         onlineUsersByUUID.remove(onlineUser.getUuid());
     }
 
-    private void loadOnlineUsers() {
+    public void loadOnlineUsers() {
         Bukkit.getOnlinePlayers().forEach(player -> {
             OnlineUser onlineUser = new OnlineUser(player);
             addOnlineUser(onlineUser);

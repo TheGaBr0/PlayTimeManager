@@ -30,6 +30,7 @@ public class DBUser {
         this.DBplaytime = playtime;
         this.artificialPlaytime = artificialPlaytime;
         this.completedGoals = completedGoals;
+        fixGhostGoals();
         this.lastSeen = lastSeen;
         this.firstJoin = firstJoin;
     }
@@ -74,7 +75,6 @@ public class DBUser {
         this.fromServerOnJoinPlayTime = 0;
         this.lastSeen = null;
         this.firstJoin = null;
-
 
         // Reset completed goals
         this.completedGoals.clear();
@@ -129,7 +129,6 @@ public class DBUser {
         completedGoals.remove(goalName);
         db.updateCompletedGoals(uuid, completedGoals);
     }
-
 
     // Ensures that every goal in the database is loaded.
     // If a goal is missing, it is removed from the player's completed goals in the database record.

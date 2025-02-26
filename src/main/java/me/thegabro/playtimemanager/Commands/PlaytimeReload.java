@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager.Commands;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
@@ -33,10 +34,17 @@ public class PlaytimeReload implements CommandExecutor {
             goalsManager.loadGoals();
 
             //reload online users data
-            for(Player p : Bukkit.getOnlinePlayers()){
-                onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
+            for(Player p : Bukkit.getOnlinePlayers()) {
+                OnlineUser user = onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName());
+                if (user != null) {
+                    // Update DB with the latest playtime before removing
+                    user.updateDB();
+                    // Now remove the user
+                    onlineUsersManager.removeOnlineUser(user);
+                }
             }
             onlineUsersManager.loadOnlineUsers();
+
 
             // Restart LuckPerms schedule if applicable
             onlineUsersManager.startGoalCheckSchedule();

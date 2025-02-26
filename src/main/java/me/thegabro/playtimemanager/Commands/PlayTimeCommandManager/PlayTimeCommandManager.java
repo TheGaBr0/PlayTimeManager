@@ -20,13 +20,20 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
     private final List<String> subCommands = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
+    private final List<String> resetOptions = new ArrayList<>();
 
     public PlayTimeCommandManager() {
         subCommands.add("add");
         subCommands.add("remove");
         subCommands.add("reset");
         subCommands.add("stats");
+
+        resetOptions.add("db");
+        resetOptions.add("stats");
+        resetOptions.add("all");
     }
+
+
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, Command command, @NotNull String label, String[] args) {
@@ -133,6 +140,8 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
             }
 
             StringUtil.copyPartialMatches(args[1], availableCommands, completions);
+        } else if (args.length == 3 && args[1].equalsIgnoreCase("reset") && sender.hasPermission("playtime.others.modify")) {
+            StringUtil.copyPartialMatches(args[2], resetOptions, completions);
         }
 
         return completions;

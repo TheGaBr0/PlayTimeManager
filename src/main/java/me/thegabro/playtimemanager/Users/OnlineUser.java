@@ -37,4 +37,28 @@ public class OnlineUser extends DBUser {
     public LocalDateTime getLastSeen() {
         return LocalDateTime.now();
     }
+
+    public void refreshFromServerOnJoinPlayTime(){
+        this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
+
+    }
+
+    @Override
+    public void reset() {
+        this.DBplaytime = 0;
+        this.artificialPlaytime = 0;
+        this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
+        this.lastSeen = null;
+        this.firstJoin = null;
+
+        // Reset completed goals
+        this.completedGoals.clear();
+
+        // Update all values in database
+        db.updatePlaytime(uuid, 0);
+        db.updateArtificialPlaytime(uuid, 0);
+        db.updateCompletedGoals(uuid, completedGoals);
+        db.updateLastSeen(uuid, this.lastSeen);
+        db.updateFirstJoin(uuid, this.firstJoin);
+    }
 }

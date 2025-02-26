@@ -69,7 +69,6 @@ public class DBUser {
     }
 
     public void reset() {
-        // Reset playtime statistics
         this.DBplaytime = 0;
         this.artificialPlaytime = 0;
         this.fromServerOnJoinPlayTime = 0;

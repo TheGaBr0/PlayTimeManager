@@ -32,6 +32,10 @@ commands:
     description: Command to reload the main config
     permission: playtime.reload
     permission-message: You don't have the permission to execute this command!
+  playtimebackup:
+    description: Command to create a backup of the play_time.db file
+    permission: playtime.backup
+    permission-message: You don't have the permission to execute this command!
 
 permissions:
   playtime.*:
@@ -41,17 +45,21 @@ permissions:
       playtime: true
       playtime.others: true
       playtime.others.modify: true
+      playtime.others.modify.all: true
       playtime.others.stats: true
       playtime.average: true
       playtime.percentage: true
       playtime.top: true
       playtime.goal: true
       playtime.reload: true
+      playtime.backup: true
   playtime:
     default: true
   playtime.others:
     default: false
   playtime.others.modify:
+    default: false
+  playtime.others.modify.all:
     default: false
   playtime.others.stats:
     default: false
@@ -64,4 +72,6 @@ permissions:
   playtime.goal:
     default: false
   playtime.reload:
+    default: false
+  playtime.backup:
     default: false

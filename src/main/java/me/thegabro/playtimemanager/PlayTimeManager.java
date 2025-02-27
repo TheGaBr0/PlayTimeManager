@@ -109,6 +109,8 @@ public class PlayTimeManager extends JavaPlugin{
         });
         Objects.requireNonNull(getCommand("playtimereload")).setExecutor(new PlaytimeReload() {
         });
+        Objects.requireNonNull(getCommand("playtimebackup")).setExecutor(new PlayTimeBackup() {
+        });
 
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();

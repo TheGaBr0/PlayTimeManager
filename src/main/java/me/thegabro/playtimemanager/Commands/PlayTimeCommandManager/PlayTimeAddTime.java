@@ -40,8 +40,8 @@ public class PlayTimeAddTime {
         user.setArtificialPlaytime(newArtificialPlaytime);
         String formattedNewPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime + timeToTicks);
 
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " PlayTime of §e" + args[0] +
-                "§7 has been updated from §6" + formattedOldPlaytime + "§7 to §6" + formattedNewPlaytime + "!"));
+        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " PlayTime of &e" + args[0] +
+                "&7 has been updated from &6" + formattedOldPlaytime + "&7 to &6" + formattedNewPlaytime + "!"));
 
         dbUsersManager.updateTopPlayersFromDB();
     }

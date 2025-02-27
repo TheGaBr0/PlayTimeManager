@@ -53,7 +53,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
             // Only validate player existence if it's not a wildcard reset
             if (!isWildcardReset && dbUsersManager.getUserFromNickname(targetPlayerName) == null) {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                        " The player §e" + targetPlayerName + "§7 has never joined the server!"));
+                        " The player &e" + targetPlayerName + "&7 has never joined the server!"));
                 return false;
             }
         }

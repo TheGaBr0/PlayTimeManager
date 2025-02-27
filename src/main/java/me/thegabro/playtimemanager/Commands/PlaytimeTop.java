@@ -141,25 +141,25 @@ public class PlaytimeTop implements TabExecutor {
 
                     // Previous page arrow
                     if (page > 1) {
-                        Component previousArrow = Component.text("§6«")
+                        Component previousArrow = Component.text("&6«")
                                 .clickEvent(ClickEvent.runCommand("/playtimetop p" + (page - 1)))
-                                .hoverEvent(HoverEvent.showText(Component.text("§7Click to go to previous page")));
+                                .hoverEvent(HoverEvent.showText(Component.text("&7Click to go to previous page")));
                         navigationMessage = navigationMessage.append(previousArrow);
                     } else {
-                        navigationMessage = navigationMessage.append(Component.text("§7«"));
+                        navigationMessage = navigationMessage.append(Component.text("&7«"));
                     }
 
                     // Page indicator
-                    navigationMessage = navigationMessage.append(Component.text(" §7Page " + page + "/" + totalPages + " "));
+                    navigationMessage = navigationMessage.append(Component.text(" &7Page " + page + "/" + totalPages + " "));
 
                     // Next page arrow
                     if (page < totalPages) {
-                        Component nextArrow = Component.text("§6»")
+                        Component nextArrow = Component.text("&6»")
                                 .clickEvent(ClickEvent.runCommand("/playtimetop p" + (page + 1)))
-                                .hoverEvent(HoverEvent.showText(Component.text("§7Click to go to next page")));
+                                .hoverEvent(HoverEvent.showText(Component.text("&7Click to go to next page")));
                         navigationMessage = navigationMessage.append(nextArrow);
                     } else {
-                        navigationMessage = navigationMessage.append(Component.text("§7»"));
+                        navigationMessage = navigationMessage.append(Component.text("&7»"));
                     }
 
                     sender.sendMessage(navigationMessage);

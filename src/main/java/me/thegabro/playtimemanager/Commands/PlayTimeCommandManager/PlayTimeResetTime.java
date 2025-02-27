@@ -12,20 +12,41 @@ import org.bukkit.Statistic;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
 
 public class PlayTimeResetTime {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+
+    // Map to store pending confirmations with a timestamp
+    private static final Map<UUID, PendingReset> pendingResets = new HashMap<>();
+    // Timeout for confirmation (60 seconds)
+    private static final long CONFIRMATION_TIMEOUT_SECONDS = 60;
+
+    // Class to store pending reset information
+    private static class PendingReset {
+        final String resetType;
+        final long timestamp;
+
+        PendingReset(String resetType) {
+            this.resetType = resetType;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        boolean isExpired() {
+            return System.currentTimeMillis() - timestamp > TimeUnit.SECONDS.toMillis(CONFIRMATION_TIMEOUT_SECONDS);
+        }
+    }
 
     public PlayTimeResetTime(CommandSender sender, String[] args) {
         execute(sender, args);
@@ -42,11 +63,65 @@ public class PlayTimeResetTime {
         }
 
         if (args[0].equals("*")) {
-            resetAllPlayers(sender, resetType);
+            // Handle reset all players with confirmation
+            handleResetAllConfirmation(sender, resetType);
             return;
         }
 
         resetSinglePlayer(sender, args[0], resetType);
+    }
+
+    private void handleResetAllConfirmation(CommandSender sender, String resetType) {
+        UUID senderUUID;
+
+        // Get UUID based on sender type
+        if (sender instanceof Player) {
+            senderUUID = ((Player) sender).getUniqueId();
+        } else {
+            // For console commands, use a fixed UUID
+            senderUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+        }
+
+        // Check if there's a pending confirmation
+        if (pendingResets.containsKey(senderUUID)) {
+            PendingReset pendingReset = pendingResets.get(senderUUID);
+
+            // Check if the confirmation has expired
+            if (pendingReset.isExpired()) {
+                pendingResets.remove(senderUUID);
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                        " Your previous reset confirmation has expired. Please try again."));
+                requestConfirmation(sender, senderUUID, resetType);
+                return;
+            }
+
+            // If reset type doesn't match, require a new confirmation
+            if (!pendingReset.resetType.equals(resetType)) {
+                pendingResets.remove(senderUUID);
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                        " Reset type has changed. Please confirm again."));
+                requestConfirmation(sender, senderUUID, resetType);
+                return;
+            }
+
+            // Confirmed, proceed with reset
+            pendingResets.remove(senderUUID);
+            resetAllPlayers(sender, resetType);
+        } else {
+            // No pending confirmation, request one
+            requestConfirmation(sender, senderUUID, resetType);
+        }
+    }
+
+    private void requestConfirmation(CommandSender sender, UUID senderUUID, String resetType) {
+        pendingResets.put(senderUUID, new PendingReset(resetType));
+
+        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                " &c&lWARNING&r&7: You are about to reset " + getResetTypeDescription(resetType) +
+                " for &e&lALL players&7!"));
+        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                " &7This action cannot be undone. Run the command again within " +
+                CONFIRMATION_TIMEOUT_SECONDS + " seconds to confirm."));
     }
 
     private void resetAllPlayers(CommandSender sender, String resetType) {
@@ -193,8 +268,8 @@ public class PlayTimeResetTime {
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
                             " All players' " + getResetTypeDescription(resetType) +
-                            " have been reset! Total: §e" + totalPlayersReset +
-                            "§7 players with §e" + Utils.ticksToFormattedPlaytime(totalPlaytimeReset.get()) + "§7 of playtime"));
+                            " have been reset! Total: &e" + totalPlayersReset +
+                            "&7 players with &e" + Utils.ticksToFormattedPlaytime(totalPlaytimeReset.get()) + "&7 of playtime"));
                 });
             });
         });
@@ -205,7 +280,7 @@ public class PlayTimeResetTime {
 
         if (user == null) {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                    " The player §e" + playerName + "§7 has never joined the server!"));
+                    " The player &e" + playerName + "&7 has never joined the server!"));
             return;
         }
 
@@ -284,8 +359,8 @@ public class PlayTimeResetTime {
                 // Final notification on main thread
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                            " Reset " + getResetTypeDescription(resetType) + " for player §e" + playerName +
-                            "§7 (Removed §e" + Utils.ticksToFormattedPlaytime(totalPlaytimeReset.get()) + "§7 of playtime)"));
+                            " Reset " + getResetTypeDescription(resetType) + " for player &e" + playerName +
+                            "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(totalPlaytimeReset.get()) + "&7 of playtime)"));
                 });
             });
         });
@@ -299,7 +374,12 @@ public class PlayTimeResetTime {
                 return "in-game statistics";
             case "all":
             default:
-                return "playtime data and goals";
+                return "database records and in-game statistics";
         }
+    }
+
+    // Method to clean up expired confirmations (call this periodically from your plugin)
+    public static void cleanupExpiredConfirmations() {
+        pendingResets.entrySet().removeIf(entry -> entry.getValue().isExpired());
     }
 }

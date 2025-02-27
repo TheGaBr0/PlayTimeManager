@@ -110,12 +110,12 @@ public class PlaytimeGoal implements TabExecutor {
     private void renameGoal(CommandSender sender, String oldName, String newName) {
         Goal oldGoal = goalsManager.getGoal(oldName);
         if (oldGoal == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The goal §e" + oldName + " §7doesn't exist!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The goal &e" + oldName + " &7doesn't exist!"));
             return;
         }
 
         if (goalsManager.getGoal(newName) != null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " A goal with the name §e" + newName + " §7already exists!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " A goal with the name &e" + newName + " &7already exists!"));
             return;
         }
 
@@ -125,7 +125,7 @@ public class PlaytimeGoal implements TabExecutor {
 
             // Switch back to main thread for UI update
             Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Successfully renamed goal §e" + oldName + " §7to §e" + newName));
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Successfully renamed goal &e" + oldName + " &7to &e" + newName));
             });
         });
     }
@@ -135,22 +135,22 @@ public class PlaytimeGoal implements TabExecutor {
         StringBuilder message = new StringBuilder();
 
         if (g != null) {
-            message.append(plugin.getConfiguration().getPluginPrefix()).append(" Goal §e").append(goalName).append(" §7updated:\n");
+            message.append(plugin.getConfiguration().getPluginPrefix()).append(" Goal &e").append(goalName).append(" &7updated:\n");
             if(time != null)
                 g.setTime(time);
         } else {
             g = new Goal(plugin, goalName, time, activate);
-            message.append(plugin.getConfiguration().getPluginPrefix()).append(" Goal §e").append(goalName).append(" §7created:\n");
+            message.append(plugin.getConfiguration().getPluginPrefix()).append(" Goal &e").append(goalName).append(" &7created:\n");
         }
 
         g.setActivation(activate);
 
         long gTime = g.getTime();
         if(gTime == Long.MAX_VALUE)
-            message.append("§7- Required time to reach the goal: §6None\n");
+            message.append("&7- Required time to reach the goal: &6None\n");
         else
-            message.append("§7- Required time to reach the goal: §6").append(Utils.ticksToFormattedPlaytime(gTime)).append("\n");
-        message.append("§7- Active: ").append(activate ? "§a" : "§c").append(activate).append("\n");
+            message.append("&7- Required time to reach the goal: &6").append(Utils.ticksToFormattedPlaytime(gTime)).append("\n");
+        message.append("&7- Active: ").append(activate ? "&a" : "&c").append(activate).append("\n");
 
         sender.sendMessage(Utils.parseColors(message.toString()));
         onlineUsersManager.startGoalCheckSchedule();
@@ -159,7 +159,7 @@ public class PlaytimeGoal implements TabExecutor {
     private void removeGoal(CommandSender sender, String goalName) {
         Goal goal = goalsManager.getGoal(goalName);
         if (goal == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The goal §e" + goalName + " §7doesn't exist!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The goal &e" + goalName + " &7doesn't exist!"));
             return;
         }
 
@@ -170,7 +170,7 @@ public class PlaytimeGoal implements TabExecutor {
             // Switch back to main thread for UI updates and schedule changes
             Bukkit.getScheduler().runTask(plugin, () -> {
                 onlineUsersManager.startGoalCheckSchedule();
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The goal §e" + goalName + " §7has been removed!"));
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The goal &e" + goalName + " &7has been removed!"));
             });
         });
     }

@@ -34,8 +34,8 @@ public class PlaytimePercentage implements CommandExecutor {
                 onlineUsersManager.updateAllOnlineUsersPlaytime();
                 Object[] result = plugin.getDatabase().getPercentageOfPlayers(timeToTicks);
                 String formattedNumber = df.format(result[0]);
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The players with playtime greater than or equal to §6" + args[0] +
-                        " §7are §6" + result[1] + " §7and represent §6" + formattedNumber + "% §7of the §6" + result[2] + " §7players stored"));
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The players with playtime greater than or equal to &6" + args[0] +
+                        " &7are &6" + result[1] + " &7and represent &6" + formattedNumber + "% &7of the &6" + result[2] + " &7players stored"));
                 return true;
             } else {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Missing arguments"));

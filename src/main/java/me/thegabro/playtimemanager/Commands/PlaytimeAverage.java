@@ -17,7 +17,7 @@ public class PlaytimeAverage implements CommandExecutor {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
         if (sender.hasPermission("playtime.average")){
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The average play time is:&6 " + Utils.ticksToFormattedPlaytime((long) (Math.ceil(db.getAveragePlaytime())))));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The average playtime is:&6 " + Utils.ticksToFormattedPlaytime((long) (Math.ceil(db.getAveragePlaytime())))));
             return true;
         } else {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));

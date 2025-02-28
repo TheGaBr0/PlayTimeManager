@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
 public class PlaytimeTop implements TabExecutor {
@@ -64,106 +65,121 @@ public class PlaytimeTop implements TabExecutor {
             page = 1;
         }
 
-        // Update and get top players
-        onlineUsersManager.updateAllOnlineUsersPlaytime();
-        List<DBUser> topPlayers = dbUsersManager.getTopPlayers();
+        // Process asynchronously
+        org.bukkit.Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                // Wait for update to complete
+                onlineUsersManager.updateAllOnlineUsersPlaytime().get();
 
-        if (topPlayers.isEmpty()) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " No players joined!"));
-            return false;
-        }
+                // Now get top players
+                List<DBUser> topPlayers = dbUsersManager.getTopPlayers();
 
-        int totalUsers = Math.min(TOP_MAX, topPlayers.size());
-        int totalPages = (int) Math.ceil(Float.parseFloat(String.valueOf(totalUsers)) / 10);
+                org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (topPlayers.isEmpty()) {
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " No players joined!"));
+                        return;
+                    }
 
-        if (page <= 0 || page > totalPages) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid page!"));
-            return false;
-        }
+                    int totalUsers = Math.min(TOP_MAX, topPlayers.size());
+                    int totalPages = (int) Math.ceil(Float.parseFloat(String.valueOf(totalUsers)) / 10);
 
-        // Send header message
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Top " + totalUsers + " players - page: " + page));
+                    if (page <= 0 || page > totalPages) {
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid page!"));
+                        return;
+                    }
 
-        int startIndex = (page - 1) * 10;
-        int endIndex = Math.min(page * 10, totalUsers);
+                    // Send header message
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Top " + totalUsers + " players - page: " + page));
 
-        // Create an array to store messages in order
-        CompletableFuture<Component>[] messageFutures = new CompletableFuture[endIndex - startIndex];
+                    int startIndex = (page - 1) * 10;
+                    int endIndex = Math.min(page * 10, totalUsers);
 
-        // Get the format from config
-        String format = plugin.getConfiguration().getPlaytimetopLeaderboardFormat();
-        boolean usePrefixes = plugin.getConfiguration().getPlaytimetopLeaderboardFormat().contains("%PREFIX%") && plugin.isPermissionsManagerConfigured();
+                    // Create an array to store messages in order
+                    CompletableFuture<Component>[] messageFutures = new CompletableFuture[endIndex - startIndex];
 
-        // Process each player in the page range
-        for (int i = startIndex; i < endIndex; i++) {
-            final int rank = i + 1;
-            final int arrayIndex = i - startIndex;
-            DBUser user = topPlayers.get(i);
+                    // Get the format from config
+                    String format = plugin.getConfiguration().getPlaytimetopLeaderboardFormat();
+                    boolean usePrefixes = plugin.getConfiguration().getPlaytimetopLeaderboardFormat().contains("%PREFIX%") && plugin.isPermissionsManagerConfigured();
 
-            if (usePrefixes) {
-                messageFutures[arrayIndex] = luckPermsManager.getPrefixAsync(user.getUuid())
-                        .thenApply(prefix -> {
+                    // Process each player in the page range
+                    for (int i = startIndex; i < endIndex; i++) {
+                        final int rank = i + 1;
+                        final int arrayIndex = i - startIndex;
+                        DBUser user = topPlayers.get(i);
+
+                        if (usePrefixes) {
+                            messageFutures[arrayIndex] = luckPermsManager.getPrefixAsync(user.getUuid())
+                                    .thenApply(prefix -> {
+                                        String formattedMessage = format
+                                                .replace("%POSITION%", String.valueOf(rank))
+                                                .replace("%PREFIX%", prefix != null ? prefix : "")
+                                                .replace("%PLAYER_NAME%", user.getNickname())
+                                                .replace("%PLAYTIME%", Utils.ticksToFormattedPlaytime(user.getPlaytime()));
+
+                                        // Normalize multiple spaces to single space after all replacements
+                                        formattedMessage = formattedMessage.replaceAll("\\s+", " ");
+
+                                        return Component.empty().append(Utils.parseColors(formattedMessage));
+                                    });
+                        } else {
                             String formattedMessage = format
                                     .replace("%POSITION%", String.valueOf(rank))
-                                    .replace("%PREFIX%", prefix != null ? prefix : "")
+                                    .replace("%PREFIX%", "")
                                     .replace("%PLAYER_NAME%", user.getNickname())
-                                    .replace("%PLAYTIME%", Utils.ticksToFormattedPlaytime(user.getPlaytime()));
+                                    .replace("%PLAYTIME%", Utils.ticksToFormattedPlaytime(user.getPlaytime()))
+                                    .replaceAll("\\s+", " "); // Normalize multiple spaces to single space
 
-                            // Normalize multiple spaces to single space after all replacements
-                            formattedMessage = formattedMessage.replaceAll("\\s+", " ");
-
-                            return Component.empty().append(Utils.parseColors(formattedMessage));
-                        });
-            } else {
-                String formattedMessage = format
-                        .replace("%POSITION%", String.valueOf(rank))
-                        .replace("%PREFIX%", "")
-                        .replace("%PLAYER_NAME%", user.getNickname())
-                        .replace("%PLAYTIME%", Utils.ticksToFormattedPlaytime(user.getPlaytime()))
-                        .replaceAll("\\s+", " "); // Normalize multiple spaces to single space
-
-                messageFutures[arrayIndex] = CompletableFuture.completedFuture(
-                        Component.empty().append(Utils.parseColors(formattedMessage))
-                );
-            }
-        }
-
-        // Wait for all messages to be prepared, then send them in order
-        CompletableFuture.allOf(messageFutures)
-                .thenRun(() -> {
-                    // Send all messages in order
-                    for (CompletableFuture<Component> future : messageFutures) {
-                        sender.sendMessage(future.join());
+                            messageFutures[arrayIndex] = CompletableFuture.completedFuture(
+                                    Component.empty().append(Utils.parseColors(formattedMessage))
+                            );
+                        }
                     }
 
-                    // Add navigation arrows
-                    Component navigationMessage = Component.empty();
+                    // Wait for all messages to be prepared, then send them in order
+                    CompletableFuture.allOf(messageFutures)
+                            .thenRun(() -> {
+                                // Send all messages in order
+                                for (CompletableFuture<Component> future : messageFutures) {
+                                    sender.sendMessage(future.join());
+                                }
 
-                    // Previous page arrow
-                    if (page > 1) {
-                        Component previousArrow = Component.text("&6«")
-                                .clickEvent(ClickEvent.runCommand("/playtimetop p" + (page - 1)))
-                                .hoverEvent(HoverEvent.showText(Component.text("&7Click to go to previous page")));
-                        navigationMessage = navigationMessage.append(previousArrow);
-                    } else {
-                        navigationMessage = navigationMessage.append(Component.text("&7«"));
-                    }
+                                // Add navigation arrows
+                                Component navigationMessage = Component.empty();
 
-                    // Page indicator
-                    navigationMessage = navigationMessage.append(Component.text(" &7Page " + page + "/" + totalPages + " "));
+                                // Previous page arrow
+                                if (page > 1) {
+                                    Component previousArrow = Utils.parseColors("&6«")
+                                            .clickEvent(ClickEvent.runCommand("/playtimetop p" + (page - 1)))
+                                            .hoverEvent(HoverEvent.showText(Utils.parseColors("&7Click to go to previous page")));
+                                    navigationMessage = navigationMessage.append(previousArrow);
+                                } else {
+                                    navigationMessage = navigationMessage.append(Utils.parseColors("&7«"));
+                                }
 
-                    // Next page arrow
-                    if (page < totalPages) {
-                        Component nextArrow = Component.text("&6»")
-                                .clickEvent(ClickEvent.runCommand("/playtimetop p" + (page + 1)))
-                                .hoverEvent(HoverEvent.showText(Component.text("&7Click to go to next page")));
-                        navigationMessage = navigationMessage.append(nextArrow);
-                    } else {
-                        navigationMessage = navigationMessage.append(Component.text("&7»"));
-                    }
+                                // Page indicator
+                                navigationMessage = navigationMessage.append(Utils.parseColors(" &7Page " + page + "/" + totalPages + " "));
 
-                    sender.sendMessage(navigationMessage);
+                                // Next page arrow
+                                if (page < totalPages) {
+                                    Component nextArrow = Utils.parseColors("&6»")
+                                            .clickEvent(ClickEvent.runCommand("/playtimetop p" + (page + 1)))
+                                            .hoverEvent(HoverEvent.showText(Utils.parseColors("&7Click to go to next page")));
+                                    navigationMessage = navigationMessage.append(nextArrow);
+                                } else {
+                                    navigationMessage = navigationMessage.append(Utils.parseColors("&7»"));
+                                }
+
+                                sender.sendMessage(navigationMessage);
+                            });
                 });
+            } catch (InterruptedException | ExecutionException e) {
+                org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                            " Error while loading top players: " + e.getMessage()));
+                });
+                plugin.getLogger().severe("Error in PlaytimeTop command: " + e.getMessage());
+            }
+        });
 
         return true;
     }

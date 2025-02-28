@@ -14,6 +14,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class OnlineUsersManager {
@@ -153,17 +154,26 @@ public class OnlineUsersManager {
         }.runTaskTimer(plugin, 0, DB_UPDATE_INTERVAL);
     }
 
-    public void updateAllOnlineUsersPlaytime() {
+    public CompletableFuture<Void> updateAllOnlineUsersPlaytime() {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            onlineUsersByName.values().forEach(user -> {
-                try {
-                    user.updateDB();
-                } catch (Exception e) {
-                    plugin.getLogger().severe(String.format("Failed to update playtime for user %s: %s",
-                            user.getNickname(), e.getMessage()));
-                }
-            });
+            try {
+                onlineUsersByName.values().forEach(user -> {
+                    try {
+                        user.updateDB();
+                    } catch (Exception e) {
+                        plugin.getLogger().severe(String.format("Failed to update playtime for user %s: %s",
+                                user.getNickname(), e.getMessage()));
+                    }
+                });
+                future.complete(null);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
         });
+
+        return future;
     }
 
     private void assignPermissionsForGoal(OnlineUser onlineUser, Goal goal) {

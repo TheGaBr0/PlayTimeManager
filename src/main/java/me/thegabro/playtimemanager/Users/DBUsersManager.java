@@ -5,7 +5,9 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 public class DBUsersManager {
@@ -75,16 +77,22 @@ public class DBUsersManager {
 
     public void updateTopPlayersFromDB() {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            onlineUsersManager.updateAllOnlineUsersPlaytime();
+            try {
+                // Wait for all online users to be updated
+                onlineUsersManager.updateAllOnlineUsersPlaytime().get();
 
-            Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT);
+                // Now that updates are complete, get the top players
+                Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT);
 
-            synchronized (topPlayers) {
-                topPlayers.clear();
-                dbTopPlayers.entrySet().stream()
-                        .map(entry -> getUserFromUUID(entry.getKey()))
-                        .filter(Objects::nonNull)
-                        .forEach(topPlayers::add);
+                synchronized (topPlayers) {
+                    topPlayers.clear();
+                    dbTopPlayers.entrySet().stream()
+                            .map(entry -> getUserFromUUID(entry.getKey()))
+                            .filter(Objects::nonNull)
+                            .forEach(topPlayers::add);
+                }
+            } catch (InterruptedException | ExecutionException e) {
+                plugin.getLogger().severe("Error updating top players: " + e.getMessage());
             }
         });
     }

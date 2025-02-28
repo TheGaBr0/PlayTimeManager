@@ -74,4 +74,5 @@ For a complete list of commands, permissions, and placeholders, please visit the
 
 ## To do
 - Anti-afk system?
-- Add possibility to give custom items upon goal completion 
+- Add possibility to give custom items upon goal completion
+- Daily login rewards/join streak rewards

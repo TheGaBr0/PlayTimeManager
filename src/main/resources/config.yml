@@ -23,7 +23,7 @@
 # Standard minecraft colors are still accepted both with classical & or § format. Please avoid mixing & and §, take only one format.
 
 #Leave this untouched
-config-version: 3.4
+config-version: 3.5
 
 #Leave this untouched
 goals-config-version: 1.0
@@ -73,6 +73,16 @@ goal-check-rate: 900
 #Enable or disable debug logging in the console
 #Default: true
 goal-check-verbose: true
+
+#=================================================================
+#                           JOIN STREAK
+#=================================================================
+
+# Time in seconds between logins to maintain a player's login streak
+# Default: 24 hours (86400s)
+# If a player logs in within this time after their last login, their streak increases
+# If they fail to log in within this interval, their streak resets to 0
+streak-interval: 86400
 
 #=================================================================
 #                           PLACEHOLDERS

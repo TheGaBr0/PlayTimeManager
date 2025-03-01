@@ -232,7 +232,7 @@ public class PlayTimeResetTime {
                     for (OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()) {
                         try {
                             // Update to DB
-                            user.updateDB();
+                            user.updatePlayTime();
                         } catch (Exception e) {
                             plugin.getLogger().severe(String.format("Failed to update playtime for user %s: %s",
                                     user.getNickname(), e.getMessage()));
@@ -346,7 +346,7 @@ public class PlayTimeResetTime {
                 // If the user is online, update their DB entry first
                 if (user instanceof OnlineUser) {
                     try {
-                        ((OnlineUser) user).updateDB();
+                        ((OnlineUser) user).updatePlayTime();
                     } catch (Exception e) {
                         plugin.getLogger().severe(String.format("Failed to update playtime for user %s: %s",
                                 user.getNickname(), e.getMessage()));

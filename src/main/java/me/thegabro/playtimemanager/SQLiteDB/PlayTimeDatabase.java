@@ -21,7 +21,7 @@ public abstract class PlayTimeDatabase {
     Connection connection;
     protected static HikariDataSource dataSource;
 
-    public PlayTimeDatabase(PlayTimeManager instance){
+    public PlayTimeDatabase(PlayTimeManager instance) {
         plugin = instance;
     }
 
@@ -434,7 +434,7 @@ public abstract class PlayTimeDatabase {
                 int greaterPlayers = rsGreater.getInt("greater_players");
 
                 if (totalPlayers > 0) {
-                    return new Object[] {(greaterPlayers * 100.0) / totalPlayers , greaterPlayers, totalPlayers};
+                    return new Object[]{(greaterPlayers * 100.0) / totalPlayers, greaterPlayers, totalPlayers};
                 }
             }
         } catch (SQLException ex) {
@@ -742,6 +742,153 @@ public abstract class PlayTimeDatabase {
         return null;
     }
 
+    public int getJoinStreak(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT join_streak FROM play_time WHERE uuid = ?;");
+            ps.setString(1, uuid);
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("join_streak");
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+        return 0; // Default return value if player not found or error occurs
+    }
+
+    public void incrementJoinStreak(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET join_streak = join_streak + 1 WHERE uuid = ?;");
+            ps.setString(1, uuid);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public void resetJoinStreak(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET join_streak = 0 WHERE uuid = ?;");
+            ps.setString(1, uuid);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public Set<String> getPlayersWithinTimeInterval(long intervalSeconds) {
+        Set<String> players = new HashSet<>();
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getSQLConnection();
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime cutoffTime = now.minusSeconds(intervalSeconds);
+
+            // Use timestamp comparison directly
+            ps = conn.prepareStatement(
+                    "SELECT uuid FROM play_time WHERE last_seen IS NOT NULL AND " +
+                            "last_seen >= ?");
+
+            ps.setTimestamp(1, Timestamp.valueOf(cutoffTime));
+
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                players.add(rs.getString("uuid"));
+            }
+
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+
+        return players;
+    }
+
+    public Set<String> getPlayersWithActiveStreaks() {
+        Set<String> players = new HashSet<>();
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT uuid FROM play_time WHERE join_streak > 0;");
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                players.add(rs.getString("uuid"));
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+
+        return players;
+    }
 
 
 }

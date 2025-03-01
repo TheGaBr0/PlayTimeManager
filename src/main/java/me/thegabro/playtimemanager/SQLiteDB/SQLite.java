@@ -25,6 +25,7 @@ public class SQLite extends PlayTimeDatabase {
             "completed_goals TEXT DEFAULT ''," +
             "last_seen DATETIME DEFAULT NULL,"+
             "first_join DATETIME DEFAULT NULL,"+
+            "join_streak INT DEFAULT 1,"+
             "PRIMARY KEY (uuid)" +
             ");";
 

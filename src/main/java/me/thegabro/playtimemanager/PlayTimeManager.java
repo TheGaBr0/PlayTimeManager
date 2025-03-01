@@ -1,8 +1,6 @@
 package me.thegabro.playtimemanager;
 
-import com.jeff_media.updatechecker.UpdateCheckSource;
-import com.jeff_media.updatechecker.UpdateChecker;
-import com.jeff_media.updatechecker.UserAgentBuilder;
+import me.thegabro.playtimemanager.JoinStreaks.JoinStreaksManager;
 import me.thegabro.playtimemanager.Updates.UpdateManager;
 import me.thegabro.playtimemanager.Commands.*;
 import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeCommandManager;
@@ -37,17 +35,16 @@ public class PlayTimeManager extends JavaPlugin{
     private Configuration config;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-    private final String CURRENTCONFIGVERSION = "3.4";
+    private final String CURRENTCONFIGVERSION = "3.5";
     private final String CURRENTGOALSCONFIGVERSION = "1.0";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
-    private GoalsManager goalsManager;
-    private final int BSTATS_PLUGIN_ID = 24739;
     private final String serverVersion = Bukkit.getBukkitVersion().split("-")[0];
 
     @Override
     public void onEnable() {
 
+        int BSTATS_PLUGIN_ID = 24739;
         Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
 
 
@@ -77,8 +74,12 @@ public class PlayTimeManager extends JavaPlugin{
 
         config = new Configuration(this.getDataFolder(), "config", true, true);
 
-        goalsManager = GoalsManager.getInstance();
+        JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
+        joinStreaksManager.initialize(this);
+
+        GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(this);
+
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
 

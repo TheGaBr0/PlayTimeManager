@@ -21,10 +21,10 @@ public class DBUser {
     protected LocalDateTime lastSeen;
     protected LocalDateTime firstJoin;
     protected final GoalsManager goalsManager = GoalsManager.getInstance();
-
+    protected int joinStreak;
     // Private constructor
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime,
-                   ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin) {
+                   ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int joinStreak) {
         this.uuid = uuid;
         this.nickname = nickname;
         this.DBplaytime = playtime;
@@ -33,6 +33,7 @@ public class DBUser {
         fixGhostGoals();
         this.lastSeen = lastSeen;
         this.firstJoin = firstJoin;
+        this.joinStreak = joinStreak;
     }
 
     public DBUser(Player p) {
@@ -49,7 +50,9 @@ public class DBUser {
         if(firstJoin == null){
             firstJoin = LocalDateTime.now();
             db.updateFirstJoin(uuid, firstJoin);
+            db.incrementJoinStreak(uuid);
         }
+        this.joinStreak = db.getJoinStreak(uuid);
     }
 
     // Factory method to create DBUser by UUID
@@ -64,8 +67,9 @@ public class DBUser {
         ArrayList<String> completedGoals = db.getCompletedGoals(uuid);
         LocalDateTime lastSeen = db.getLastSeen(uuid);
         LocalDateTime firstJoin = db.getFirstJoin(uuid);
+        int joinStreak = db.getJoinStreak(uuid);
 
-        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals, lastSeen, firstJoin);
+        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals, lastSeen, firstJoin, joinStreak);
     }
 
     public void reset() {
@@ -74,6 +78,7 @@ public class DBUser {
         this.fromServerOnJoinPlayTime = 0;
         this.lastSeen = null;
         this.firstJoin = null;
+        this.joinStreak = 0;
 
         // Reset completed goals
         this.completedGoals.clear();
@@ -84,6 +89,7 @@ public class DBUser {
         db.updateCompletedGoals(uuid, completedGoals);
         db.updateLastSeen(uuid, this.lastSeen);
         db.updateFirstJoin(uuid, this.firstJoin);
+        db.resetJoinStreak(uuid);
     }
 
     public LocalDateTime getFirstJoin(){ return firstJoin; }
@@ -127,6 +133,15 @@ public class DBUser {
     public void unmarkGoalAsCompleted(String goalName){
         completedGoals.remove(goalName);
         db.updateCompletedGoals(uuid, completedGoals);
+    }
+
+    public int getJoinStreak(){
+        return joinStreak;
+    }
+
+    public void resetJoinStreak(){
+        this.joinStreak = 0;
+        db.resetJoinStreak(uuid);
     }
 
     // Ensures that every goal in the database is loaded.

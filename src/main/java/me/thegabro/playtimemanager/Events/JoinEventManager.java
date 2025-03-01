@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Events;
 
+import me.thegabro.playtimemanager.JoinStreaks.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -13,12 +14,14 @@ public class JoinEventManager implements Listener {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+    private final JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
     @EventHandler
     public void onJoin(PlayerJoinEvent event){
 
             OnlineUser onlineUser = new OnlineUser(event.getPlayer());
-            onlineUser.updateLastSeen();
             onlineUsersManager.addOnlineUser(onlineUser);
+            onlineUser.updateLastSeen();
+            joinStreaksManager.isItAStreak(onlineUser);
             dbUsersManager.updateCachedTopPlayers(onlineUser);
 
     }

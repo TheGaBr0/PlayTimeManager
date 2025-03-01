@@ -25,6 +25,7 @@ public class Configuration {
     private boolean placeholdersEnableErrors;
     private String placeholdersDefaultMessage;
     private String pluginChatPrefix;
+    private long streakInterval;
 
     public Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
         this.path = path;
@@ -54,13 +55,7 @@ public class Configuration {
     public void reload() {
         reloadFile();
         reloadConfig();
-        updateGoalsSettings();
-        updateMessages();
-        updatePermissionsSettings();
-        updateDateTimeSettings();
-        updatePrefixesSettings();
-        updatePlaceholdersSettings();
-        updatePlaytimetopSettings();
+        updateAllSettings();
     }
 
     private void create() {
@@ -82,45 +77,54 @@ public class Configuration {
         }
     }
 
-    private void updateMessages(){
-        this.playtimeSelfMessage = config.getString("playtime-self-message");
-        this.playtimeOthersMessage = config.getString("playtime-others-message");
-    }
-
-    private void updateGoalsSettings(){
+    private void updateAllSettings() {
+        // Update goals settings
         this.goalsCheckRate = config.getLong("goal-check-rate");
         this.goalsCheckVerbose = config.getBoolean("goal-check-verbose");
-    }
 
-    private void updatePermissionsSettings() {
+        // Update messages
+        this.playtimeSelfMessage = config.getString("playtime-self-message");
+        this.playtimeOthersMessage = config.getString("playtime-others-message");
+
+        // Update permissions settings
         this.permissionsManagerPlugin = config.getString("permissions-manager-plugin", "luckperms");
-    }
 
+        // Update datetime settings
+        String configFormat = config.getString("datetime-format");
+        try {
+            new java.text.SimpleDateFormat(configFormat);
+            this.datetimeFormat = configFormat;
+        } catch (IllegalArgumentException e) {
+            this.datetimeFormat = "MMM dd, yyyy HH:mm:ss";
+            config.set("datetime-format", this.datetimeFormat);
+            save();
+            plugin.getLogger().warning("Invalid datetime format in config. Resetting to default: " + this.datetimeFormat);
+        }
 
-    private void updatePlaceholdersSettings(){
+        // Update prefixes settings
+        this.pluginChatPrefix = config.getString("prefix", "[§6PlayTime§eManager§f]§7");
+
+        // Update placeholders settings
         this.placeholdersEnableErrors = config.getBoolean("placeholders.enable-errors", false);
         this.placeholdersDefaultMessage = config.getString("placeholders.default-message", "No data");
+
+        // Update playtimetop settings
+        this.playtimetopLeaderboardFormat = config.getString("playtimetop.leaderboard-format",
+                "&7&l#%POSITION%&r %PREFIX% &e%PLAYER_NAME% &7- &d%PLAYTIME%");
+
+        // Update streak settings
+        this.streakInterval = config.getLong("streak-interval", 86400);
     }
 
-    public String getPluginPrefix(){
+    public String getPluginPrefix() {
         return this.pluginChatPrefix;
     }
 
-    public void setPluginChatPrefix(String prefix){
+    public void setPluginChatPrefix(String prefix) {
         this.pluginChatPrefix = prefix;
         config.set("prefix", prefix);
         save();
     }
-
-    private void updatePrefixesSettings(){
-        this.pluginChatPrefix = config.getString("prefix", "[§6PlayTime§eManager§f]§7");
-    }
-
-    private void updatePlaytimetopSettings() {
-        this.playtimetopLeaderboardFormat = config.getString("playtimetop.leaderboard-format",
-                "&7&l#%POSITION%&r %PREFIX% &e%PLAYER_NAME% &7- &d%PLAYTIME%");
-    }
-
 
     public String getPlaytimetopLeaderboardFormat() {
         return playtimetopLeaderboardFormat;
@@ -133,8 +137,6 @@ public class Configuration {
             save();
         }
     }
-
-
 
     public boolean isPlaceholdersEnableErrors() {
         return placeholdersEnableErrors;
@@ -156,48 +158,47 @@ public class Configuration {
         save();
     }
 
-    public long getGoalsCheckRate(){
-        return goalsCheckRate;
+    public long getStreakInterval() {
+        return streakInterval;
     }
 
-    private void updateDateTimeSettings() {
-        String configFormat = config.getString("datetime-format");
-        try {
-            new java.text.SimpleDateFormat(configFormat);
-            this.datetimeFormat = configFormat;
-        } catch (IllegalArgumentException e) {
-            this.datetimeFormat = "MMM dd, yyyy HH:mm:ss";
-            config.set("datetime-format", this.datetimeFormat);
-            save();
-            plugin.getLogger().warning("Invalid datetime format in config. Resetting to default: " + this.datetimeFormat);
-        }
+    public void setStreakInterval(long streakInterval) {
+        this.streakInterval = streakInterval;
+        config.set("streak-interval", streakInterval);
+        save();
+    }
+
+    public long getGoalsCheckRate() {
+        return goalsCheckRate;
     }
 
     public String getDateTimeFormat() {
         return datetimeFormat;
     }
 
-    public void setDateTimeFormat(String format){
+    public void setDateTimeFormat(String format) {
         this.datetimeFormat = format;
         config.set("datetime-format", format);
         save();
     }
 
-    public void setGoalsCheckVerbose(Boolean verbose){
+    public void setGoalsCheckVerbose(Boolean verbose) {
         if (verbose != null) {
+            this.goalsCheckVerbose = verbose;
             config.set("goal-check-verbose", verbose);
             save();
         }
     }
 
-    public void setGoalsCheckRate(Long rate){
+    public void setGoalsCheckRate(Long rate) {
         if (rate != null) {
+            this.goalsCheckRate = rate;
             config.set("goal-check-rate", rate);
             save();
         }
     }
 
-    public boolean getGoalsCheckVerbose(){
+    public boolean getGoalsCheckVerbose() {
         return goalsCheckVerbose;
     }
 
@@ -207,28 +208,31 @@ public class Configuration {
 
     public void setPermissionsManagerPlugin(String plugin) {
         if (plugin != null) {
+            this.permissionsManagerPlugin = plugin.toLowerCase();
             config.set("permissions-manager-plugin", plugin.toLowerCase());
             save();
         }
     }
 
-    public String getPlaytimeSelfMessage(){
+    public String getPlaytimeSelfMessage() {
         return playtimeSelfMessage;
     }
 
-    public void setPlaytimeSelfMessage(String message){
+    public void setPlaytimeSelfMessage(String message) {
         if (message != null) {
+            this.playtimeSelfMessage = message;
             config.set("playtime-self-message", message);
             save();
         }
     }
 
-    public String getPlaytimeOthersMessage(){
+    public String getPlaytimeOthersMessage() {
         return playtimeOthersMessage;
     }
 
-    public void setPlaytimeOthersMessage(String message){
+    public void setPlaytimeOthersMessage(String message) {
         if (message != null) {
+            this.playtimeOthersMessage = message;
             config.set("playtime-others-message", message);
             save();
         }

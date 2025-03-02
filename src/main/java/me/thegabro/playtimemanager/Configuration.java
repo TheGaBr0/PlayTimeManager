@@ -26,6 +26,13 @@ public class Configuration {
     private String placeholdersDefaultMessage;
     private String pluginChatPrefix;
     private long streakInterval;
+    private String playtimetopHeader;
+    private String playtimetopPreviousPageExists;
+    private String playtimetopPreviousPageNotExists;
+    private String playtimetopPreviousPageOverText;
+    private String playtimetopNextPageExists;
+    private String playtimetopNextPageNotExists;
+    private String playtimetopNextPageOverText;
 
     public Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
         this.path = path;
@@ -109,8 +116,18 @@ public class Configuration {
         this.placeholdersDefaultMessage = config.getString("placeholders.default-message", "No data");
 
         // Update playtimetop settings
+        this.playtimetopHeader = config.getString("playtimetop.header",
+                "[&6PlayTime&eManager&f]&7 Top 100 players - page: %PAGE_NUMBER%");
         this.playtimetopLeaderboardFormat = config.getString("playtimetop.leaderboard-format",
                 "&7&l#%POSITION%&r %PREFIX% &e%PLAYER_NAME% &7- &d%PLAYTIME%");
+        this.playtimetopPreviousPageExists = config.getString("playtimetop.footer.previous-page.text-if-page-exists", "&6«");
+        this.playtimetopPreviousPageNotExists = config.getString("playtimetop.footer.previous-page.text-if-page-not-exists", "&7«");
+        this.playtimetopPreviousPageOverText = config.getString("playtimetop.footer.previous-page.over-text",
+                "&7Click to go to previous page");
+        this.playtimetopNextPageExists = config.getString("playtimetop.footer.next-page.text-if-page-exists", "&6»");
+        this.playtimetopNextPageNotExists = config.getString("playtimetop.footer.next-page.text-if-page-not-exists", "&7»");
+        this.playtimetopNextPageOverText = config.getString("playtimetop.footer.next-page.over-text",
+                "&7Click to go to next page");
 
         // Update streak settings
         this.streakInterval = config.getLong("streak-interval", 86400);
@@ -126,6 +143,18 @@ public class Configuration {
         save();
     }
 
+    public String getPlaytimetopHeader() {
+        return playtimetopHeader;
+    }
+
+    public void setPlaytimetopHeader(String header) {
+        if (header != null) {
+            this.playtimetopHeader = header;
+            config.set("playtimetop.header", header);
+            save();
+        }
+    }
+
     public String getPlaytimetopLeaderboardFormat() {
         return playtimetopLeaderboardFormat;
     }
@@ -134,6 +163,78 @@ public class Configuration {
         if (format != null) {
             this.playtimetopLeaderboardFormat = format;
             config.set("playtimetop.leaderboard-format", format);
+            save();
+        }
+    }
+
+    public String getPlaytimetopPreviousPageExists() {
+        return playtimetopPreviousPageExists;
+    }
+
+    public void setPlaytimetopPreviousPageExists(String text) {
+        if (text != null) {
+            this.playtimetopPreviousPageExists = text;
+            config.set("playtimetop.footer.previous-page.text-if-page-exists", text);
+            save();
+        }
+    }
+
+    public String getPlaytimetopPreviousPageNotExists() {
+        return playtimetopPreviousPageNotExists;
+    }
+
+    public void setPlaytimetopPreviousPageNotExists(String text) {
+        if (text != null) {
+            this.playtimetopPreviousPageNotExists = text;
+            config.set("playtimetop.footer.previous-page.text-if-page-not-exists", text);
+            save();
+        }
+    }
+
+    public String getPlaytimetopPreviousPageOverText() {
+        return playtimetopPreviousPageOverText;
+    }
+
+    public void setPlaytimetopPreviousPageOverText(String text) {
+        if (text != null) {
+            this.playtimetopPreviousPageOverText = text;
+            config.set("playtimetop.footer.previous-page.over-text", text);
+            save();
+        }
+    }
+
+    public String getPlaytimetopNextPageExists() {
+        return playtimetopNextPageExists;
+    }
+
+    public void setPlaytimetopNextPageExists(String text) {
+        if (text != null) {
+            this.playtimetopNextPageExists = text;
+            config.set("playtimetop.footer.next-page.text-if-page-exists", text);
+            save();
+        }
+    }
+
+    public String getPlaytimetopNextPageNotExists() {
+        return playtimetopNextPageNotExists;
+    }
+
+    public void setPlaytimetopNextPageNotExists(String text) {
+        if (text != null) {
+            this.playtimetopNextPageNotExists = text;
+            config.set("playtimetop.footer.next-page.text-if-page-not-exists", text);
+            save();
+        }
+    }
+
+    public String getPlaytimetopNextPageOverText() {
+        return playtimetopNextPageOverText;
+    }
+
+    public void setPlaytimetopNextPageOverText(String text) {
+        if (text != null) {
+            this.playtimetopNextPageOverText = text;
+            config.set("playtimetop.footer.next-page.over-text", text);
             save();
         }
     }

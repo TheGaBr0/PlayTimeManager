@@ -89,7 +89,9 @@ public class PlaytimeTop implements TabExecutor {
                     }
 
                     // Send header message
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Top " + totalUsers + " players - page: " + page));
+                    String headerFormat = plugin.getConfiguration().getPlaytimetopHeader();
+                    String header = headerFormat.replace("%PAGE_NUMBER%", String.valueOf(page));
+                    sender.sendMessage(Utils.parseColors(header));
 
                     int startIndex = (page - 1) * 10;
                     int endIndex = Math.min(page * 10, totalUsers);
@@ -143,17 +145,20 @@ public class PlaytimeTop implements TabExecutor {
                                     sender.sendMessage(future.join());
                                 }
 
-                                // Add navigation arrows
                                 Component navigationMessage = Component.empty();
 
                                 // Previous page arrow
                                 if (page > 1) {
-                                    Component previousArrow = Utils.parseColors("&6«")
+                                    String prevPageText = plugin.getConfiguration().getPlaytimetopPreviousPageExists();
+                                    String prevPageHoverText = plugin.getConfiguration().getPlaytimetopPreviousPageOverText();
+
+                                    Component previousArrow = Utils.parseColors(prevPageText)
                                             .clickEvent(ClickEvent.runCommand("/playtimetop p" + (page - 1)))
-                                            .hoverEvent(HoverEvent.showText(Utils.parseColors("&7Click to go to previous page")));
+                                            .hoverEvent(HoverEvent.showText(Utils.parseColors(prevPageHoverText)));
                                     navigationMessage = navigationMessage.append(previousArrow);
                                 } else {
-                                    navigationMessage = navigationMessage.append(Utils.parseColors("&7«"));
+                                    String prevPageNotExistsText = plugin.getConfiguration().getPlaytimetopPreviousPageNotExists();
+                                    navigationMessage = navigationMessage.append(Utils.parseColors(prevPageNotExistsText));
                                 }
 
                                 // Page indicator
@@ -161,12 +166,16 @@ public class PlaytimeTop implements TabExecutor {
 
                                 // Next page arrow
                                 if (page < totalPages) {
-                                    Component nextArrow = Utils.parseColors("&6»")
+                                    String nextPageText = plugin.getConfiguration().getPlaytimetopNextPageExists();
+                                    String nextPageHoverText = plugin.getConfiguration().getPlaytimetopNextPageOverText();
+
+                                    Component nextArrow = Utils.parseColors(nextPageText)
                                             .clickEvent(ClickEvent.runCommand("/playtimetop p" + (page + 1)))
-                                            .hoverEvent(HoverEvent.showText(Utils.parseColors("&7Click to go to next page")));
+                                            .hoverEvent(HoverEvent.showText(Utils.parseColors(nextPageHoverText)));
                                     navigationMessage = navigationMessage.append(nextArrow);
                                 } else {
-                                    navigationMessage = navigationMessage.append(Utils.parseColors("&7»"));
+                                    String nextPageNotExistsText = plugin.getConfiguration().getPlaytimetopNextPageNotExists();
+                                    navigationMessage = navigationMessage.append(Utils.parseColors(nextPageNotExistsText));
                                 }
 
                                 sender.sendMessage(navigationMessage);

@@ -106,6 +106,10 @@ goal-check-verbose: true
 # If they fail to log in within this interval, their streak resets to 0
 streak-interval: 86400
 
+#Enable or disable debug logging in the console
+#Default: true
+streak-check-verbose: true
+
 #=================================================================
 #                           PLACEHOLDERS
 #=================================================================

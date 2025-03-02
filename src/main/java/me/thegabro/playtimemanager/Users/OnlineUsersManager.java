@@ -255,8 +255,7 @@ public class OnlineUsersManager {
     }
 
     private void logVerboseInfo() {
-        plugin.getLogger().info(String.format("Goal check schedule started, refresh rate is %s",
-                Utils.ticksToFormattedPlaytime(plugin.getConfiguration().getGoalsCheckRate())));
+        plugin.getLogger().info(String.format("Goal check schedule started, refresh rate is %ss", plugin.getConfiguration().getGoalsCheckRate()));
     }
 
     public void stopSchedules() {

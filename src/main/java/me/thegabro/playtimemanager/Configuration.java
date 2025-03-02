@@ -26,6 +26,7 @@ public class Configuration {
     private String placeholdersDefaultMessage;
     private String pluginChatPrefix;
     private long streakInterval;
+    private boolean streakCheckVerbose;
     private String playtimetopHeader;
     private String playtimetopPreviousPageExists;
     private String playtimetopPreviousPageNotExists;
@@ -87,18 +88,20 @@ public class Configuration {
 
     private void updateAllSettings() {
         // Update goals settings
-        this.goalsCheckRate = config.getLong("goal-check-rate");
-        this.goalsCheckVerbose = config.getBoolean("goal-check-verbose");
+        this.goalsCheckRate = config.getLong("goal-check-rate", 900);
+        this.goalsCheckVerbose = config.getBoolean("goal-check-verbose", true);
 
         // Update messages
-        this.playtimeSelfMessage = config.getString("playtime-self-message");
-        this.playtimeOthersMessage = config.getString("playtime-others-message");
+        this.playtimeSelfMessage = config.getString("playtime-self-message",
+                "[&6PlayTime&eManager&f]&7 Your playtime is &6%PLAYTIME%");
+        this.playtimeOthersMessage = config.getString("playtime-others-message",
+                "[&6PlayTime&eManager&f]&7 The playtime of &e%PLAYER_NAME%&7 is &6%PLAYTIME%");
 
         // Update permissions settings
         this.permissionsManagerPlugin = config.getString("permissions-manager-plugin", "luckperms");
 
         // Update datetime settings
-        String configFormat = config.getString("datetime-format");
+        String configFormat = config.getString("datetime-format", "MMM dd, yyyy HH:mm:ss");
         try {
             new java.text.SimpleDateFormat(configFormat);
             this.datetimeFormat = configFormat;
@@ -134,6 +137,8 @@ public class Configuration {
 
         // Update streak settings
         this.streakInterval = config.getLong("streak-interval", 86400);
+        this.streakCheckVerbose = config.getBoolean("streak-check-verbose", true);
+
     }
 
     public String getPluginPrefix() {
@@ -282,6 +287,18 @@ public class Configuration {
         this.streakInterval = streakInterval;
         config.set("streak-interval", streakInterval);
         save();
+    }
+
+    public void setStreakCheckVerbose(Boolean verbose) {
+        if (verbose != null) {
+            this.streakCheckVerbose = verbose;
+            config.set("streak-check-verbose", verbose);
+            save();
+        }
+    }
+
+    public boolean getStreakCheckVerbose() {
+        return streakCheckVerbose;
     }
 
     public long getGoalsCheckRate() {

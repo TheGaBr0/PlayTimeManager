@@ -5,6 +5,9 @@ import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -13,7 +16,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 public class JoinStreaksManager {
     private static JoinStreaksManager instance;
@@ -22,6 +24,7 @@ public class JoinStreaksManager {
     private PlayTimeManager plugin;
     private static PlayTimeDatabase db;
     private DBUsersManager dbUsersManager = DBUsersManager.getInstance();
+    private OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private BukkitTask intervalTask;
 
     private JoinStreaksManager() {}
@@ -49,7 +52,8 @@ public class JoinStreaksManager {
         joinedDuringCurrentInterval.clear();
         joinedDuringCurrentInterval.addAll(recentPlayers);
 
-        plugin.getLogger().info("Populated join streak interval tracking with " +
+        if(plugin.getConfiguration().getStreakCheckVerbose())
+            plugin.getLogger().info("Populated join streak interval tracking with " +
                 joinedDuringCurrentInterval.size() + " players who joined within the configured interval.");
     }
 
@@ -67,9 +71,10 @@ public class JoinStreaksManager {
                 // Reset streaks for players who didn't join during this interval
                 resetMissingPlayerStreaks();
 
-                // Reset the set of users who joined during the interval
-                plugin.getLogger().info("Resetting join streak interval tracking. Cleared " +
+                if(plugin.getConfiguration().getStreakCheckVerbose())
+                    plugin.getLogger().info("Resetting join streak interval tracking. Cleared " +
                         joinedDuringCurrentInterval.size() + " tracked players.");
+
                 joinedDuringCurrentInterval.clear();
             }
         }.runTaskTimer(plugin, intervalTicks, intervalTicks);
@@ -83,6 +88,12 @@ public class JoinStreaksManager {
         // Find players with streaks who didn't join during this interval
         playersWithStreaks.removeAll(joinedDuringCurrentInterval);
 
+        //do not reset online users during time interval expiring, instead increment their joinstreak
+        for(OnlineUser onlineUser : onlineUsersManager.getOnlineUsersByUUID().values()){
+            playersWithStreaks.remove(onlineUser.getUuid());
+            onlineUser.incrementJoinStreak();
+        }
+
         // Reset streaks for all missing players
         for (String playerUUID : playersWithStreaks) {
             // Retrieve player data and reset streak
@@ -95,7 +106,8 @@ public class JoinStreaksManager {
             }
         }
 
-        plugin.getLogger().info("Reset join streaks for " + playersWithStreaks.size() +
+        if(plugin.getConfiguration().getStreakCheckVerbose())
+            plugin.getLogger().info("Reset join streaks for " + playersWithStreaks.size() +
                 " players who missed the current interval");
     }
 

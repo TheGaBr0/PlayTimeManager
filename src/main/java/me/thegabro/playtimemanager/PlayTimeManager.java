@@ -74,14 +74,14 @@ public class PlayTimeManager extends JavaPlugin{
 
         config = new Configuration(this.getDataFolder(), "config", true, true);
 
-        JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
-        joinStreaksManager.initialize(this);
-
         GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(this);
 
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
+
+        JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
+        joinStreaksManager.initialize(this);
 
         permissionsManagerConfigured = checkPermissionsPlugin();
 

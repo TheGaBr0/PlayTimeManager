@@ -5,6 +5,7 @@ import me.thegabro.playtimemanager.Goals.Goal;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -30,7 +31,7 @@ public class CommandsGui implements InventoryHolder, Listener {
     private Goal goal;
     private GoalSettingsGui parentGui;
     private int currentPage = 0;
-    private ChatEventManager chatHandler;
+    private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
 
     private static final class Slots {
         static final int PREV_PAGE = 45;
@@ -45,7 +46,6 @@ public class CommandsGui implements InventoryHolder, Listener {
     public CommandsGui(Goal goal, GoalSettingsGui parentGui) {
         this.goal = goal;
         this.parentGui = parentGui;
-        this.chatHandler = new ChatEventManager();
         this.inventory = Bukkit.createInventory(this, GUI_SIZE, Component.text("§6Commands Editor"));
     }
 
@@ -189,12 +189,48 @@ public class CommandsGui implements InventoryHolder, Listener {
     }
 
     private void startCommandAdd(Player player) {
-        chatHandler.startChatInput(
-                player,
-                """
 
-                        §7Enter a command with '/' or type §ccancel§7 to exit.
-                        You can use the §ePLAYER_NAME §7placeholder to refer to the player.""",
+        // Header with goal name
+        Component header = Component.text("✎ Commands Editor: ")
+                .color(NamedTextColor.GOLD)
+                .decoration(TextDecoration.BOLD, true)
+                .append(Component.text(goal.getName())
+                        .color(NamedTextColor.YELLOW));
+
+        // Divider for visual separation
+        Component divider = Component.text("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
+                .color(NamedTextColor.DARK_GRAY);
+
+        // Instructions with formatting
+        Component instructions = Component.text("Enter the new command for this goal.")
+                .color(NamedTextColor.WHITE)
+                .append(Component.newline())
+                .append(Component.text("• Commands must be valid and use '/' as a prefix.")
+                        .color(NamedTextColor.GRAY))
+                .append(Component.newline())
+                .append(Component.text("• Type ")
+                        .color(NamedTextColor.GRAY)
+                        .append(Component.text("cancel")
+                                .color(NamedTextColor.RED)
+                                .decoration(TextDecoration.ITALIC, true))
+                        .append(Component.text(" to exit")
+                                .color(NamedTextColor.GRAY)));
+
+        // Combine all components with proper spacing
+        Component fullMessage = Component.empty()
+                .append(header)
+                .append(Component.newline())
+                .append(divider)
+                .append(Component.newline())
+                .append(Component.newline())
+                .append(instructions)
+                .append(Component.newline())
+                .append(divider);
+
+        player.sendMessage(fullMessage);
+
+        chatEventManager.startCommandInput(
+                player,
                 (p, input) -> {
                     if (input.equalsIgnoreCase("cancel")) {
                         p.sendMessage(Component.text("§7Command add cancelled"));
@@ -209,12 +245,8 @@ public class CommandsGui implements InventoryHolder, Listener {
     }
 
     private void startCommandEdit(Player player, String oldCommand) {
-        chatHandler.startChatInput(
+        chatEventManager.startCommandInput(
                 player,
-                """
-
-                        §7Please type the new command in chat or type §ccancel§7 to exit.
-                        You can also type §e/cancel §7to exit the process anytime.""",
                 (p, input) -> {
                     if (input.equalsIgnoreCase("cancel")) {
                         p.sendMessage(Component.text("§cCommand edit cancelled"));

@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Events;
 
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import io.papermc.paper.event.player.AsyncChatEvent;
@@ -16,18 +17,32 @@ import java.util.UUID;
 import java.util.function.BiConsumer;
 
 public class ChatEventManager implements Listener {
+    private static ChatEventManager instance;
     private final Map<UUID, ChatInputSession> activeSessions = new HashMap<>();
     private final PlayTimeManager plugin;
 
+    // Private constructor to prevent instantiation
     public ChatEventManager() {
         this.plugin = PlayTimeManager.getInstance();
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
-    public void startChatInput(Player player, String prompt, BiConsumer<Player, String> callback) {
+    // Singleton accessor method
+    public static synchronized ChatEventManager getInstance() {
+        if (instance == null) {
+            instance = new ChatEventManager();
+        }
+        return instance;
+    }
+
+    public void startChatInput(Player player, BiConsumer<Player, String> callback) {
         UUID playerId = player.getUniqueId();
-        activeSessions.put(playerId, new ChatInputSession(callback));
-        player.sendMessage(Component.text(prompt));
+        activeSessions.put(playerId, new ChatInputSession(callback, false));
+    }
+
+    public void startCommandInput(Player player, BiConsumer<Player, String> callback) {
+        UUID playerId = player.getUniqueId();
+        activeSessions.put(playerId, new ChatInputSession(callback, true));
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -40,6 +55,10 @@ public class ChatEventManager implements Listener {
             return;
         }
 
+        if (!session.commandOnly()) {
+            return; // Let the chat handler process this if not command-only mode
+        }
+
         event.setCancelled(true);
         String command = event.getMessage();
 
@@ -48,7 +67,7 @@ public class ChatEventManager implements Listener {
             return;
         }
 
-        Bukkit.getScheduler().runTask(plugin, () -> handleChatMessage(player, command, session));
+        Bukkit.getScheduler().runTask(plugin, () -> handleInput(player, command, session));
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -64,24 +83,30 @@ public class ChatEventManager implements Listener {
         event.setCancelled(true);
         String message = PlainTextComponentSerializer.plainText().serialize(event.message());
 
-        if (!message.equalsIgnoreCase("cancel")) {
+        if (message.equalsIgnoreCase("cancel")) {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                session.callback().accept(player, "cancel");
+                activeSessions.remove(playerId);
+            });
+            return;
+        }
+
+        if (session.commandOnly() && !message.startsWith("/")) {
             player.sendMessage(Component.text("§cPlease enter a valid command starting with '/' or type 'cancel' to exit"));
             return;
         }
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            activeSessions.remove(player.getUniqueId());
-            session.callback().accept(player, message);
-        });
+        Bukkit.getScheduler().runTask(plugin, () -> handleInput(player, message, session));
     }
 
-    private void handleChatMessage(Player player, String message, ChatInputSession session) {
+    private void handleInput(Player player, String message, ChatInputSession session) {
         UUID playerId = player.getUniqueId();
         session.callback().accept(player, message);
         activeSessions.remove(playerId);
     }
 
     private record ChatInputSession(
-            BiConsumer<Player, String> callback
+            BiConsumer<Player, String> callback,
+            boolean commandOnly
     ) {}
 }

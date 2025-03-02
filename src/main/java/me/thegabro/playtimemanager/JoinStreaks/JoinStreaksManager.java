@@ -81,6 +81,10 @@ public class JoinStreaksManager {
     }
 
     private void resetMissingPlayerStreaks() {
+
+        if(plugin.getConfiguration().getStreakCheckVerbose())
+            plugin.getLogger().info(String.format("Join streak check schedule started, refresh rate is %ss", plugin.getConfiguration().getStreakInterval()));
+
         // Get all players from database who have active streaks
         Set<String> playersWithStreaks = db.getPlayersWithActiveStreaks();
 

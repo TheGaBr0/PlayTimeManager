@@ -91,7 +91,7 @@ public class PlayTimeManager extends JavaPlugin{
 
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
-        getServer().getPluginManager().registerEvents(new ChatEventManager(), this);
+        getServer().getPluginManager().registerEvents(ChatEventManager.getInstance(), this);
 
         Bukkit.getPluginManager().registerEvents(new AllGoalsGui(), this);
         Bukkit.getPluginManager().registerEvents(new GoalSettingsGui(), this);

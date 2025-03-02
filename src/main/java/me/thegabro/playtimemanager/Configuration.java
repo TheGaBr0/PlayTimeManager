@@ -30,6 +30,7 @@ public class Configuration {
     private String playtimetopPreviousPageExists;
     private String playtimetopPreviousPageNotExists;
     private String playtimetopPreviousPageOverText;
+    private String playtimetopMiddleText;
     private String playtimetopNextPageExists;
     private String playtimetopNextPageNotExists;
     private String playtimetopNextPageOverText;
@@ -124,6 +125,8 @@ public class Configuration {
         this.playtimetopPreviousPageNotExists = config.getString("playtimetop.footer.previous-page.text-if-page-not-exists", "&7«");
         this.playtimetopPreviousPageOverText = config.getString("playtimetop.footer.previous-page.over-text",
                 "&7Click to go to previous page");
+        this.playtimetopMiddleText = config.getString("playtimetop.footer.middle-text",
+                "&7Page %PAGE_NUMBER%/%TOTAL_PAGES%");
         this.playtimetopNextPageExists = config.getString("playtimetop.footer.next-page.text-if-page-exists", "&6»");
         this.playtimetopNextPageNotExists = config.getString("playtimetop.footer.next-page.text-if-page-not-exists", "&7»");
         this.playtimetopNextPageOverText = config.getString("playtimetop.footer.next-page.over-text",
@@ -199,6 +202,18 @@ public class Configuration {
         if (text != null) {
             this.playtimetopPreviousPageOverText = text;
             config.set("playtimetop.footer.previous-page.over-text", text);
+            save();
+        }
+    }
+
+    public String getPlaytimetopMiddleText() {
+        return playtimetopMiddleText;
+    }
+
+    public void setPlaytimetopMiddleText(String text) {
+        if (text != null) {
+            this.playtimetopMiddleText = text;
+            config.set("playtimetop.footer.middle-text", text);
             save();
         }
     }

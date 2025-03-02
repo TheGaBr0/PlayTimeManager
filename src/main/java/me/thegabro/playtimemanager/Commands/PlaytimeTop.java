@@ -161,8 +161,12 @@ public class PlaytimeTop implements TabExecutor {
                                     navigationMessage = navigationMessage.append(Utils.parseColors(prevPageNotExistsText));
                                 }
 
-                                // Page indicator
-                                navigationMessage = navigationMessage.append(Utils.parseColors(" &7Page " + page + "/" + totalPages + " "));
+                                // Middle text
+                                String middleTextFormat = plugin.getConfiguration().getPlaytimetopMiddleText();
+                                String middleText = middleTextFormat
+                                        .replace("%PAGE_NUMBER%", String.valueOf(page))
+                                        .replace("%TOTAL_PAGES%", String.valueOf(totalPages));
+                                navigationMessage = navigationMessage.append(Utils.parseColors(" " + middleText + " "));
 
                                 // Next page arrow
                                 if (page < totalPages) {

@@ -64,6 +64,7 @@ playtimetop:
   # %PLAYTIME% - Player's total playtime formatted
   leaderboard-format: "&7&l#%POSITION%&r &e%PLAYER_NAME% &7- &d%PLAYTIME%"
   footer:
+    middle-text: "&7Page %PAGE_NUMBER%/%TOTAL_PAGES%"
     # Configuration for the previous page button
     previous-page:
       # Text shown when there is a previous page available

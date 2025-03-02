@@ -120,7 +120,7 @@ public class Goal {
     }
 
     private String getDefaultGoalMessage() {
-        return "[§6PlayTime§eManager§f]§7 Congratulations §e%PLAYER_NAME%§7 you have reached §6%TIME_REQUIRED%§7 of playtime!";
+        return "[&6PlayTime&eManager&f]&7 Congratulations &e%PLAYER_NAME%&7 you have reached &6%TIME_REQUIRED%&7 of playtime!";
     }
 
     // Basic getters

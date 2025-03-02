@@ -36,7 +36,10 @@ commands:
     description: Command to create a backup of the play_time.db file
     permission: playtime.backup
     permission-message: You don't have the permission to execute this command!
-
+  playtimejoinstreak:
+    description: Command to manage join streak rewards
+    permission: playtime.joinstreak
+    permission-message: You don't have the permission to execute this command!
 permissions:
   playtime.*:
     default: op
@@ -53,6 +56,7 @@ permissions:
       playtime.goal: true
       playtime.reload: true
       playtime.backup: true
+      playtime.joinstreak: true
   playtime:
     default: true
   playtime.others:
@@ -74,4 +78,6 @@ permissions:
   playtime.reload:
     default: false
   playtime.backup:
+    default: false
+  playtime.joinstreak:
     default: false

@@ -18,8 +18,8 @@ public class JoinStreakReward {
     // Fields
     private final PlayTimeManager plugin;
     private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
-    private String name;
-    private long requiredJoins; // Number of joins required to receive the reward
+    private final int id;
+    private int requiredJoins; // Number of joins required to receive the reward
     private final File rewardFile;
     private ArrayList<String> permissions = new ArrayList<>();
     private ArrayList<String> commands = new ArrayList<>();
@@ -27,11 +27,11 @@ public class JoinStreakReward {
     private String rewardSound;
 
     // Constructor
-    public JoinStreakReward(PlayTimeManager plugin, String name, Long requiredJoins, boolean active) {
+    public JoinStreakReward(PlayTimeManager plugin, int id, int requiredJoins) {
         this.plugin = plugin;
-        this.name = name;
-        this.requiredJoins = requiredJoins == null ? Long.MAX_VALUE : requiredJoins;
-        this.rewardFile = new File(plugin.getDataFolder() + File.separator + "Rewards" + File.separator + name + ".yml");
+        this.id = id;
+        this.requiredJoins = requiredJoins;
+        this.rewardFile = new File(plugin.getDataFolder() + File.separator + "Rewards" + File.separator + id + ".yml");
         loadFromFile();
         saveToFile();
         rewardsManager.addReward(this);
@@ -41,7 +41,7 @@ public class JoinStreakReward {
     private void loadFromFile() {
         if (rewardFile.exists()) {
             FileConfiguration config = YamlConfiguration.loadConfiguration(rewardFile);
-            requiredJoins = config.getLong("required-joins", requiredJoins);
+            requiredJoins = config.getInt("required-joins", requiredJoins);
             rewardMessage = config.getString("reward-message", getDefaultRewardMessage());
             rewardSound = config.getString("reward-sound", getDefaultRewardSound());
             permissions = new ArrayList<>(config.getStringList("permissions"));
@@ -92,7 +92,7 @@ public class JoinStreakReward {
             config.set("commands", commands);
             config.save(rewardFile);
         } catch (IOException e) {
-            plugin.getLogger().severe("Could not save reward file for " + name + ": " + e.getMessage());
+            plugin.getLogger().severe("Could not save reward file for " + id + ": " + e.getMessage());
         }
     }
 
@@ -102,15 +102,15 @@ public class JoinStreakReward {
     }
 
     private String getDefaultRewardMessage() {
-        return "[§6PlayTime§eManager§f]§7 Congratulations §e%PLAYER_NAME%§7 you have reached §6%REQUIRED_JOINS%§7 joins!";
+        return "[&6PlayTime§eManager§f]&7 Congratulations &e%PLAYER_NAME%§7 you have reached &6%REQUIRED_JOINS%&7 joins!";
     }
 
     // Basic getters
-    public String getName() {
-        return name;
+    public int getId() {
+        return id;
     }
 
-    public long getRequiredJoins() {
+    public int getRequiredJoins() {
         return requiredJoins;
     }
 
@@ -131,8 +131,13 @@ public class JoinStreakReward {
     }
 
     // Setters and modifiers
-    public void setRequiredJoins(long requiredJoins) {
-        this.requiredJoins = requiredJoins;
+    public void setRequiredJoins(int requiredJoins) {
+
+        if(requiredJoins <= 0)
+            this.requiredJoins = 1;
+        else
+            this.requiredJoins = requiredJoins;
+
         saveToFile();
     }
 
@@ -176,18 +181,18 @@ public class JoinStreakReward {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         JoinStreakReward reward = (JoinStreakReward) o;
-        return Objects.equals(name, reward.name);
+        return Objects.equals(id, reward.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(id);
     }
 
     public void deleteFile() {
         if (rewardFile.exists()) {
             if (!rewardFile.delete()) {
-                plugin.getLogger().warning("Failed to delete reward file for " + name);
+                plugin.getLogger().warning("Failed to delete reward file for " + id);
             }
         }
     }
@@ -196,7 +201,7 @@ public class JoinStreakReward {
     @Override
     public String toString() {
         return "JoinStreakReward{" +
-                "name='" + name + '\'' +
+                "id='" + id + '\'' +
                 ", requiredJoins=" + requiredJoins +
                 ", permissions=" + permissions.size() +
                 ", commands=" + commands.size() +

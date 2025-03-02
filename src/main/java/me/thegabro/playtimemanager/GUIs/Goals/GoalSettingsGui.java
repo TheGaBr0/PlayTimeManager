@@ -1,6 +1,9 @@
-package me.thegabro.playtimemanager.GUIs;
+package me.thegabro.playtimemanager.GUIs.Goals;
 
 import me.thegabro.playtimemanager.Events.ChatEventManager;
+import me.thegabro.playtimemanager.GUIs.CommandsGui;
+import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
+import me.thegabro.playtimemanager.GUIs.PermissionsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -173,7 +176,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         ));
     }
 
-    protected ItemStack createGuiItem(Material material, @Nullable TextComponent name, @Nullable TextComponent... lore) {
+    public ItemStack createGuiItem(Material material, @Nullable TextComponent name, @Nullable TextComponent... lore) {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
         meta.displayName(name);
@@ -313,7 +316,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
         fullMessage = Component.empty()
                 .append(Component.text("\n"))
-                .append(preText)  // Added "You can" part
+                .append(preText)
                 .append(clickableText)
                 .append(Component.text(" to autocomplete the current message")
                         .color(TextColor.color(170,170,170)));  // Gray color

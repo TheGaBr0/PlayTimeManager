@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.GUIs;
 
+import me.thegabro.playtimemanager.GUIs.Goals.GoalSettingsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.kyori.adventure.text.Component;

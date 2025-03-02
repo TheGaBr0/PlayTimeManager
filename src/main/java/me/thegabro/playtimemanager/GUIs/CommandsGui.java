@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.GUIs;
 
 import me.thegabro.playtimemanager.Events.ChatEventManager;
+import me.thegabro.playtimemanager.GUIs.Goals.GoalSettingsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -273,7 +274,7 @@ public class CommandsGui implements InventoryHolder, Listener {
 
         Component fullMessage = Component.empty()
                 .append(Component.text("\n"))
-                .append(preText)  // Added "You can" part
+                .append(preText)  
                 .append(clickableText)
                 .append(Component.text(" to autocomplete the old command")
                         .color(TextColor.color(170,170,170)));  // Gray color

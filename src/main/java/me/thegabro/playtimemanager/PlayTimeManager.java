@@ -1,5 +1,9 @@
 package me.thegabro.playtimemanager;
 
+import me.thegabro.playtimemanager.GUIs.Goals.AllGoalsGui;
+import me.thegabro.playtimemanager.GUIs.Goals.GoalSettingsGui;
+import me.thegabro.playtimemanager.GUIs.JoinStreak.AllJoinStreakRewardsGui;
+import me.thegabro.playtimemanager.GUIs.JoinStreak.JoinStreakRewardSettingsGui;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreaksManager;
 import me.thegabro.playtimemanager.Updates.UpdateManager;
 import me.thegabro.playtimemanager.Commands.*;
@@ -98,6 +102,8 @@ public class PlayTimeManager extends JavaPlugin{
         Bukkit.getPluginManager().registerEvents(new PermissionsGui(), this);
         Bukkit.getPluginManager().registerEvents(new CommandsGui(), this);
         Bukkit.getPluginManager().registerEvents(new ConfirmationGui(), this);
+        Bukkit.getPluginManager().registerEvents(new JoinStreakRewardSettingsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new AllJoinStreakRewardsGui(), this);
 
         Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeGoal());
         Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {
@@ -111,6 +117,8 @@ public class PlayTimeManager extends JavaPlugin{
         Objects.requireNonNull(getCommand("playtimereload")).setExecutor(new PlaytimeReload() {
         });
         Objects.requireNonNull(getCommand("playtimebackup")).setExecutor(new PlayTimeBackup() {
+        });
+        Objects.requireNonNull(getCommand("playtimejoinstreak")).setExecutor(new PlayTimeJoinStreak() {
         });
 
         onlineUsersManager.initialize();

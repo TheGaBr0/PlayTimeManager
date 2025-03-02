@@ -57,6 +57,15 @@ public class JoinStreaksManager {
                 joinedDuringCurrentInterval.size() + " players who joined within the configured interval.");
     }
 
+    public int getNextRewardId() {
+        // Find the maximum ID from the rewards set, or 0 if the set is empty
+        return rewards.stream()
+                .mapToInt(JoinStreakReward::getId)  // Extract the IDs from rewards (as int)
+                .max()                              // Find the maximum ID
+                .orElse(0) + 1;                     // Default to 0 if empty, then add 1 for the next ID
+    }
+
+
     public void startIntervalTask() {
         // Cancel existing task if it exists
         if (intervalTask != null) {
@@ -149,9 +158,9 @@ public class JoinStreaksManager {
         reward.deleteFile();
     }
 
-    public JoinStreakReward getReward(String name) {
+    public JoinStreakReward getReward(int id) {
         return rewards.stream()
-                .filter(g -> g.getName().equals(name))
+                .filter(g -> g.getId() == id)
                 .findFirst()
                 .orElse(null);
     }
@@ -170,8 +179,8 @@ public class JoinStreaksManager {
             File[] RewardFiles = RewardsFolder.listFiles((dir, name) -> name.endsWith(".yml"));
             if (RewardFiles != null) {
                 for (File file : RewardFiles) {
-                    String RewardName = file.getName().replace(".yml", "");
-                    new JoinStreakReward(plugin, RewardName, 0L, false);
+                    String rewardID = file.getName().replace(".yml", "");
+                    new JoinStreakReward(plugin, Integer.parseInt(rewardID), -1);
                 }
             }
         }

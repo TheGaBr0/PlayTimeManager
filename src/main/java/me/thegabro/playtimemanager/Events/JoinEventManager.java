@@ -21,7 +21,7 @@ public class JoinEventManager implements Listener {
             OnlineUser onlineUser = new OnlineUser(event.getPlayer());
             onlineUsersManager.addOnlineUser(onlineUser);
             onlineUser.updateLastSeen();
-            joinStreaksManager.isItAStreak(onlineUser);
+            joinStreaksManager.isItAStreak(onlineUser, event.getPlayer());
             dbUsersManager.updateCachedTopPlayers(onlineUser);
 
     }

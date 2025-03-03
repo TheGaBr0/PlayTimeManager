@@ -26,6 +26,8 @@ public class SQLite extends PlayTimeDatabase {
             "last_seen DATETIME DEFAULT NULL,"+
             "first_join DATETIME DEFAULT NULL,"+
             "join_streak INT DEFAULT 1,"+
+            "received_rewards TEXT DEFAULT '',"+
+            "rewards_to_be_claimed TEXT DEFAULT '',"+
             "PRIMARY KEY (uuid)" +
             ");";
 

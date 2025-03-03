@@ -4,14 +4,20 @@ import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 public class OnlineUser extends DBUser {
-    private final Player p;
+    protected final Player p;
+    protected Set<Integer> receivedRewards = new HashSet<>();
+    protected Set<Integer> rewardsToBeClaimed = new HashSet<>();
 
     public OnlineUser(Player p) {
         super(p);
         this.p = p;
         this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
+        this.receivedRewards = db.getReceivedRewards(uuid);
+        this.rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
     }
 
     private long getCachedPlayTime() {
@@ -25,12 +31,15 @@ public class OnlineUser extends DBUser {
     public void updateLastSeen() {
         this.lastSeen = LocalDateTime.now();
         db.updateLastSeen(uuid, this.lastSeen);
-
     }
 
     public void incrementJoinStreak(){
         this.joinStreak++;
         db.incrementJoinStreak(uuid);
+    }
+
+    public Player getPlayer(){
+        return p;
     }
 
     @Override
@@ -45,7 +54,43 @@ public class OnlineUser extends DBUser {
 
     public void refreshFromServerOnJoinPlayTime(){
         this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
+    }
 
+    public boolean hasReceivedReward(int rewardId) {
+        return receivedRewards.contains(rewardId);
+    }
+
+    public void addReceivedReward(int rewardId) {
+        receivedRewards.add(rewardId);
+        db.updateReceivedRewards(uuid, receivedRewards);
+    }
+
+    public void resetReceivedRewards() {
+        this.receivedRewards.clear();
+        db.updateReceivedRewards(uuid, receivedRewards);
+    }
+
+    public void addRewardToBeClaimed(int rewardId) {
+        rewardsToBeClaimed.add(rewardId);
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    }
+
+
+    public boolean hasRewardToBeClaimed(int rewardId) {
+        return rewardsToBeClaimed.contains(rewardId);
+    }
+
+    public void removeRewardToBeClaimed(int rewardId) {
+        rewardsToBeClaimed.remove(rewardId);
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    }
+
+    public Set<Integer> getRewardsToBeClaimed() {
+        return new HashSet<>(rewardsToBeClaimed);
+    }
+
+    public Set<Integer> getReceivedRewards() {
+        return new HashSet<>(receivedRewards);
     }
 
     @Override
@@ -60,6 +105,10 @@ public class OnlineUser extends DBUser {
         // Reset completed goals
         this.completedGoals.clear();
 
+        // Reset rewards
+        this.receivedRewards.clear();
+        this.rewardsToBeClaimed.clear();
+
         // Update all values in database
         db.updatePlaytime(uuid, 0);
         db.updateArtificialPlaytime(uuid, 0);
@@ -67,5 +116,7 @@ public class OnlineUser extends DBUser {
         db.updateLastSeen(uuid, this.lastSeen);
         db.updateFirstJoin(uuid, this.firstJoin);
         db.resetJoinStreak(uuid);
+        db.updateReceivedRewards(uuid, receivedRewards);
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
     }
 }

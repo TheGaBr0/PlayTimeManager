@@ -26,6 +26,7 @@ public class Configuration {
     private String placeholdersDefaultMessage;
     private String pluginChatPrefix;
     private long streakInterval;
+    private String joinClaimMessage;
     private boolean streakCheckVerbose;
     private String playtimetopHeader;
     private String playtimetopPreviousPageExists;
@@ -137,6 +138,8 @@ public class Configuration {
 
         // Update streak settings
         this.streakInterval = config.getLong("streak-interval", 86400);
+        this.joinClaimMessage = config.getString("join-warn-claim-message", "[&6PlayTime&eManager&f]&7 Reward " +
+                "earned for your login streak! Use &e/joinstreak claim &7to collect it.");
         this.streakCheckVerbose = config.getBoolean("streak-check-verbose", true);
 
     }
@@ -287,6 +290,18 @@ public class Configuration {
         this.streakInterval = streakInterval;
         config.set("streak-interval", streakInterval);
         save();
+    }
+
+    public void setJoinClaimMessage(String autoclaim) {
+        if (autoclaim != null) {
+            this.joinClaimMessage = autoclaim;
+            config.set("join-warn-claim-message", autoclaim);
+            save();
+        }
+    }
+
+    public String getJoinClaimMessage() {
+        return joinClaimMessage;
     }
 
     public void setStreakCheckVerbose(Boolean verbose) {

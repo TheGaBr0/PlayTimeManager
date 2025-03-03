@@ -8,6 +8,8 @@ import org.bukkit.entity.Player;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class DBUser {
     protected String uuid;
@@ -22,6 +24,7 @@ public class DBUser {
     protected LocalDateTime firstJoin;
     protected final GoalsManager goalsManager = GoalsManager.getInstance();
     protected int joinStreak;
+
     // Private constructor
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime,
                    ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int joinStreak) {
@@ -34,6 +37,7 @@ public class DBUser {
         this.lastSeen = lastSeen;
         this.firstJoin = firstJoin;
         this.joinStreak = joinStreak;
+
     }
 
     public DBUser(Player p) {

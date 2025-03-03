@@ -40,6 +40,10 @@ commands:
     description: Command to manage join streak rewards
     permission: playtime.joinstreak
     permission-message: You don't have the permission to execute this command!
+  rewardclaim:
+    description: Command to claim join streak rewards
+    permission: playtime.joinstreak.claim
+    permission-message: You don't have the permission to execute this command!
 permissions:
   playtime.*:
     default: op
@@ -57,6 +61,7 @@ permissions:
       playtime.reload: true
       playtime.backup: true
       playtime.joinstreak: true
+      playtime.joinstreak.claim: true
   playtime:
     default: true
   playtime.others:
@@ -81,3 +86,5 @@ permissions:
     default: false
   playtime.joinstreak:
     default: false
+  playtime.joinstreak.claim:
+    default: true

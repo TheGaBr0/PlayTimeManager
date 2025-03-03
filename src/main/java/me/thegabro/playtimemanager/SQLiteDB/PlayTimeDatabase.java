@@ -890,5 +890,133 @@ public abstract class PlayTimeDatabase {
         return players;
     }
 
+    public Set<Integer> getReceivedRewards(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        Set<Integer> rewards = new HashSet<>();
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT received_rewards FROM play_time WHERE uuid = ?;");
+            ps.setString(1, uuid);
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                String rewardsStr = rs.getString("received_rewards");
+                if (rewardsStr != null && !rewardsStr.isEmpty()) {
+                    for (String reward : rewardsStr.split(",")) {
+                        try {
+                            rewards.add(Integer.parseInt(reward.trim()));
+                        } catch (NumberFormatException e) {
+                            plugin.getLogger().log(Level.WARNING, "Invalid reward ID format: " + reward);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (ps != null) ps.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+        return rewards;
+    }
+
+    public Set<Integer> getRewardsToBeClaimed(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        Set<Integer> rewards = new HashSet<>();
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT rewards_to_be_claimed FROM play_time WHERE uuid = ?;");
+            ps.setString(1, uuid);
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                String rewardsStr = rs.getString("rewards_to_be_claimed");
+                if (rewardsStr != null && !rewardsStr.isEmpty()) {
+                    for (String reward : rewardsStr.split(",")) {
+                        try {
+                            rewards.add(Integer.parseInt(reward.trim()));
+                        } catch (NumberFormatException e) {
+                            plugin.getLogger().log(Level.WARNING, "Invalid reward ID format: " + reward);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (ps != null) ps.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+        return rewards;
+    }
+
+    public void updateReceivedRewards(String uuid, Set<Integer> rewards) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET received_rewards = ? WHERE uuid = ?;");
+
+            String rewardsStr = rewards.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(","));
+
+            ps.setString(1, rewardsStr);
+            ps.setString(2, uuid);
+
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null) ps.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public void updateRewardsToBeClaimed(String uuid, Set<Integer> rewards) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET rewards_to_be_claimed = ? WHERE uuid = ?;");
+
+            String rewardsStr = rewards.stream()
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(","));
+
+            ps.setString(1, rewardsStr);
+            ps.setString(2, uuid);
+
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null) ps.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
 
 }

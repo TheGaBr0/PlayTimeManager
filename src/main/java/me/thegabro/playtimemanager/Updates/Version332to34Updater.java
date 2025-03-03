@@ -21,13 +21,16 @@ public class Version332to34Updater {
     }
 
     public void performUpgrade() {
+        DatabaseBackupUtility backupUtility = new DatabaseBackupUtility(plugin);
+        backupUtility.createBackup("play_time", generateReadmeContent());
         addJoinStreakColumn();
+        addReceivedRewardsColumn();
+        addRewardsToBeClaimedColumn();
         recreateConfigFile();
     }
 
     public void addJoinStreakColumn() {
-        DatabaseBackupUtility backupUtility = new DatabaseBackupUtility(plugin);
-        backupUtility.createBackup("play_time", generateReadmeContent());
+
         try (Connection connection = database.getSQLConnection()) {
             connection.setAutoCommit(false);
 
@@ -44,6 +47,50 @@ public class Version332to34Updater {
             }
         } catch (SQLException e) {
             plugin.getLogger().severe("Failed to alter table: " + e.getMessage());
+        }
+    }
+
+    public void addReceivedRewardsColumn() {
+
+        try (Connection connection = database.getSQLConnection()) {
+            connection.setAutoCommit(false);
+
+            try (Statement s = connection.createStatement()) {
+                // Alter the table to add the received_rewards column
+                s.executeUpdate("ALTER TABLE play_time ADD COLUMN received_rewards TEXT DEFAULT '';");
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                plugin.getLogger().severe("Failed to add received_rewards column: " + e.getMessage());
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Database error during received_rewards column addition: " + e.getMessage());
+        }
+    }
+
+    public void addRewardsToBeClaimedColumn() {
+
+        try (Connection connection = database.getSQLConnection()) {
+            connection.setAutoCommit(false);
+
+            try (Statement s = connection.createStatement()) {
+                // Alter the table to add the rewards_to_be_claimed column
+                s.executeUpdate("ALTER TABLE play_time ADD COLUMN rewards_to_be_claimed TEXT DEFAULT '';");
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                plugin.getLogger().severe("Failed to add rewards_to_be_claimed column: " + e.getMessage());
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Database error during rewards_to_be_claimed column addition: " + e.getMessage());
         }
     }
 
@@ -96,7 +143,7 @@ public class Version332to34Updater {
         readme.append("!!! IMPORTANT VERSION UPGRADE NOTICE !!!\n");
         readme.append("=====================================\n");
         readme.append("This backup was automatically created during the upgrade from version 3.3.2 to 3.4\n");
-        readme.append("This is a critical backup as the upgrade adds a new join streak field.\n\n");
+        readme.append("This is a critical backup as the upgrade adds new join streak fieldd.\n\n");
 
         readme.append("Backup Information:\n");
         readme.append("------------------\n");

@@ -73,7 +73,7 @@ public class JoinStreakReward {
                     "latest update of your version (e.g. '1.19' doesn't work and you need to use '1.19.4')",
                     "---------------------------",
                     "reward-message is showed to a player if it reaches the join streak specified in this config.",
-                    "Available placeholders: %REQUIRED_JOINS%, %PLAYER_NAME%. %REWARD_NAME%",
+                    "Available placeholders: %REQUIRED_JOINS%, %PLAYER_NAME%",
                     "---------------------------",
                     "permissions defines what permissions will be granted to a player when they reach this reward",
                     "You can specify multiple permissions and groups that will all be granted. The plugin will assume that",
@@ -102,7 +102,8 @@ public class JoinStreakReward {
     }
 
     private String getDefaultRewardMessage() {
-        return "[&6PlayTime§eManager§f]&7 Congratulations &e%PLAYER_NAME%§7 you have reached &6%REQUIRED_JOINS%&7 joins!";
+        return "&6[PlayTimeManager]&7 Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 times " +
+                "and unlocked a new reward! Use &e/claimreward&7 to collect it!";
     }
 
     // Basic getters

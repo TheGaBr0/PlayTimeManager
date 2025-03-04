@@ -34,7 +34,6 @@ public class GoalsManager {
 
     public void removeGoal(Goal goal) {
         goals.remove(goal);
-        goal.deleteFile();
     }
 
     public Goal getGoal(String name) {

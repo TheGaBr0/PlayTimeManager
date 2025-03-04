@@ -24,6 +24,8 @@ public class DBUser {
     protected LocalDateTime firstJoin;
     protected final GoalsManager goalsManager = GoalsManager.getInstance();
     protected int joinStreak;
+    protected Set<Integer> receivedRewards = new HashSet<>();
+    protected Set<Integer> rewardsToBeClaimed = new HashSet<>();
 
     // Private constructor
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime,

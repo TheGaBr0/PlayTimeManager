@@ -157,7 +157,6 @@ public class JoinStreaksManager {
 
     public void removeReward(JoinStreakReward reward) {
         rewards.remove(reward);
-        reward.deleteFile();
     }
 
     public JoinStreakReward getReward(int id) {

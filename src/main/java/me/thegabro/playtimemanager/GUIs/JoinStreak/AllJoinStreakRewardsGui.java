@@ -281,7 +281,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                 int id = Integer.parseInt(rewardID.substring(12));
                 JoinStreakReward rewardToDelete = rewardsManager.getReward(id);
                 if (rewardToDelete != null) {
-                    rewardsManager.removeReward(rewardToDelete);
+                    rewardToDelete.kill();
                     whoClicked.sendMessage(Utils.parseColors( plugin.getConfiguration().getPluginPrefix()+" §7Deleted reward &e&l#" + id));
                     initializeItems(); // Refresh the GUI
                     return;

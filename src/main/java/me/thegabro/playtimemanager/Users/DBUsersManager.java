@@ -141,6 +141,14 @@ public class DBUsersManager {
         db.removeGoalFromAllUsers(goalName);
     }
 
+    public void removeRewardFromAllUsers(int rewardID){
+        for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
+            user.removeReceivedReward(rewardID);
+            user.removeRewardToBeClaimed(rewardID);
+        }
+        db.removeRewardFromAllUsers(rewardID);
+    }
+
     public List<DBUser> getAllDBUsers() {
         return db.getAllNicknames().stream()
                 .map(this::getUserFromNickname)

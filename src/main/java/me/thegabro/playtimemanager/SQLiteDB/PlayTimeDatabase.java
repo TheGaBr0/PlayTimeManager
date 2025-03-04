@@ -1018,5 +1018,83 @@ public abstract class PlayTimeDatabase {
         }
     }
 
+    public void removeRewardFromAllUsers(int rewardID) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = getSQLConnection();
+
+            // First, get all players who have completed goals or have rewards to be claimed
+            ps = conn.prepareStatement("SELECT uuid, received_rewards, rewards_to_be_claimed FROM play_time WHERE " +
+                    "(received_rewards IS NOT NULL AND received_rewards != '') OR " +
+                    "(rewards_to_be_claimed IS NOT NULL AND rewards_to_be_claimed != '');");
+            rs = ps.executeQuery();
+
+            PreparedStatement updateStmt = conn.prepareStatement("UPDATE play_time SET received_rewards = ?, rewards_to_be_claimed = ? WHERE uuid = ?;");
+
+            while (rs.next()) {
+                String uuid = rs.getString("uuid");
+                String receivedRewards = rs.getString("received_rewards");
+                String rewardsToBeClaimed = rs.getString("rewards_to_be_claimed");
+
+                // Process received_rewards column
+                ArrayList<String> receivedGoals = new ArrayList<>();
+                if (receivedRewards != null && !receivedRewards.isEmpty()) {
+                    for (String goal : receivedRewards.split(",")) {
+                        String trimmedGoal = goal.trim();
+                        if (!trimmedGoal.isEmpty() && !trimmedGoal.equals(String.valueOf(rewardID))) {
+                            receivedGoals.add(trimmedGoal);
+                        }
+                    }
+                }
+
+                // Process rewards_to_be_claimed column
+                ArrayList<String> rewardsToBeClaimedList = new ArrayList<>();
+                if (rewardsToBeClaimed != null && !rewardsToBeClaimed.isEmpty()) {
+                    for (String reward : rewardsToBeClaimed.split(",")) {
+                        String trimmedReward = reward.trim();
+                        if (!trimmedReward.isEmpty() && !trimmedReward.equals(String.valueOf(rewardID))) {
+                            rewardsToBeClaimedList.add(trimmedReward);
+                        }
+                    }
+                }
+
+                // Convert back to comma-separated strings
+                String updatedReceivedRewards = receivedGoals.stream()
+                        .map(String::trim)
+                        .filter(goal -> !goal.isEmpty())
+                        .collect(Collectors.joining(","));
+
+                String updatedRewardsToBeClaimed = rewardsToBeClaimedList.stream()
+                        .map(String::trim)
+                        .filter(reward -> !reward.isEmpty())
+                        .collect(Collectors.joining(","));
+
+                // Update the database
+                updateStmt.setString(1, updatedReceivedRewards);
+                updateStmt.setString(2, updatedRewardsToBeClaimed);
+                updateStmt.setString(3, uuid);
+                updateStmt.executeUpdate();
+            }
+
+            updateStmt.close();
+
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, "Error removing reward " + rewardID + " from all players: " + ex.getMessage());
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
 
 }

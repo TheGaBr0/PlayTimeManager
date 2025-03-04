@@ -65,8 +65,8 @@ public class OnlineUser extends DBUser {
         db.updateReceivedRewards(uuid, receivedRewards);
     }
 
-    public void resetReceivedRewards() {
-        this.receivedRewards.clear();
+    public void removeReceivedReward(int rewardId) {
+        this.receivedRewards.remove(rewardId);
         db.updateReceivedRewards(uuid, receivedRewards);
     }
 

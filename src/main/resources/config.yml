@@ -28,6 +28,9 @@ config-version: 3.5
 #Leave this untouched
 goals-config-version: 1.0
 
+#Leave this untouched
+joinstreak-rewards-config-version: 1.0
+
 #Choose your permissions management plugin
 #Available options: "luckperms"
 #Using a different permissions plugin? Let me know on my GitHub issues page!
@@ -111,7 +114,7 @@ streak-interval: 86400
 streak-check-verbose: true
 
 # Message shown to players who earn a login streak reward but need to claim it manually
-# This appears when a player without the auto-claim permission (playtime.joinstreak.autoclaim) qualifies for a reward
+# This appears when a player without the auto-claim permission (playtime.joinstreak.claim.automatic) qualifies for a reward
 join-warn-claim-message: "[&6PlayTime&eManager&f]&7 Reward earned for your login streak! Use &e/joinstreak claim &7to collect it."
 
 

@@ -1,8 +1,8 @@
-package me.thegabro.playtimemanager.GUIs;
+package me.thegabro.playtimemanager.GUIs.JoinStreak;
 
 import me.thegabro.playtimemanager.Events.ChatEventManager;
-import me.thegabro.playtimemanager.GUIs.Goals.GoalSettingsGui;
-import me.thegabro.playtimemanager.Goals.Goal;
+import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
+import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -24,13 +24,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class CommandsGui implements InventoryHolder, Listener {
+public class JoinStreakCommandsGui implements InventoryHolder, Listener {
     private static final int GUI_SIZE = 54;
     private static final int COMMANDS_PER_PAGE = 45;
 
     private Inventory inventory;
-    private Goal goal;
-    private GoalSettingsGui parentGui;
+    private JoinStreakReward reward;
+    private JoinStreakRewardSettingsGui parentGui;
     private int currentPage = 0;
     private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
 
@@ -42,10 +42,10 @@ public class CommandsGui implements InventoryHolder, Listener {
         static final int DELETE_ALL = 50;
     }
 
-    public CommandsGui(){}
+    public JoinStreakCommandsGui() {}
 
-    public CommandsGui(Goal goal, GoalSettingsGui parentGui) {
-        this.goal = goal;
+    public JoinStreakCommandsGui(JoinStreakReward reward, JoinStreakRewardSettingsGui parentGui) {
+        this.reward = reward;
         this.parentGui = parentGui;
         this.inventory = Bukkit.createInventory(this, GUI_SIZE, Component.text("§6Commands Editor"));
     }
@@ -76,7 +76,7 @@ public class CommandsGui implements InventoryHolder, Listener {
     }
 
     private void updateCommandsPage() {
-        List<String> commands = goal.getCommands();
+        List<String> commands = reward.getCommands();
         int startIndex = currentPage * COMMANDS_PER_PAGE;
 
         for (int i = 0; i < COMMANDS_PER_PAGE; i++) {
@@ -104,7 +104,7 @@ public class CommandsGui implements InventoryHolder, Listener {
             ));
         }
 
-        if ((currentPage + 1) * COMMANDS_PER_PAGE < goal.getCommands().size()) {
+        if ((currentPage + 1) * COMMANDS_PER_PAGE < reward.getCommands().size()) {
             inventory.setItem(Slots.NEXT_PAGE, parentGui.createGuiItem(
                     Material.ARROW,
                     Component.text("§eNext Page")
@@ -131,10 +131,10 @@ public class CommandsGui implements InventoryHolder, Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
-        if (e.getInventory().getHolder() instanceof CommandsGui) {
+        if (e.getInventory().getHolder() instanceof JoinStreakCommandsGui) {
             if ((e.getRawSlot() < e.getInventory().getSize())) {
                 e.setCancelled(true);
-                CommandsGui gui = (CommandsGui) e.getInventory().getHolder();
+                JoinStreakCommandsGui gui = (JoinStreakCommandsGui) e.getInventory().getHolder();
                 gui.handleGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getAction());
             } else {
                 if (e.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
@@ -158,7 +158,7 @@ public class CommandsGui implements InventoryHolder, Listener {
                 }
             }
             case Slots.NEXT_PAGE -> {
-                if ((currentPage + 1) * COMMANDS_PER_PAGE < goal.getCommands().size()) {
+                if ((currentPage + 1) * COMMANDS_PER_PAGE < reward.getCommands().size()) {
                     currentPage++;
                     updateCommandsPage();
                 }
@@ -178,7 +178,7 @@ public class CommandsGui implements InventoryHolder, Listener {
                 if (slot < COMMANDS_PER_PAGE && clickedItem.getType() == Material.PAPER) {
                     String command = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName()).substring(2);
                     if (action.equals(InventoryAction.PICKUP_HALF)) {
-                        goal.removeCommand(command);
+                        reward.removeCommand(command);
                         updateCommandsPage();
                     } else {
                         whoClicked.closeInventory();
@@ -191,11 +191,10 @@ public class CommandsGui implements InventoryHolder, Listener {
 
     private void startCommandAdd(Player player) {
 
-        // Header with goal name
         Component header = Component.text("✎ Commands Editor: ")
                 .color(NamedTextColor.GOLD)
                 .decoration(TextDecoration.BOLD, true)
-                .append(Component.text(goal.getName())
+                .append(Component.text("Reward " + reward.getId())
                         .color(NamedTextColor.YELLOW));
 
         // Divider for visual separation
@@ -203,7 +202,7 @@ public class CommandsGui implements InventoryHolder, Listener {
                 .color(NamedTextColor.DARK_GRAY);
 
         // Instructions with formatting
-        Component instructions = Component.text("Enter the new command for this goal.")
+        Component instructions = Component.text("Enter the new command for this reward.")
                 .color(NamedTextColor.WHITE)
                 .append(Component.newline())
                 .append(Component.text("• Commands must be valid and use '/' as a prefix.")
@@ -238,8 +237,19 @@ public class CommandsGui implements InventoryHolder, Listener {
                         openInventory(p);
                         return;
                     }
-                    goal.addCommand(input);
-                    p.sendMessage(Component.text("§7Command §e" + input + " §7added. It will be executed when a player reaches the goal §e" + goal.getName()));
+
+                    reward.addCommand(input);
+
+                    String joinRequirement;
+                    if (reward.isSingleJoinReward()) {
+                        joinRequirement = "§e" + reward.getMinRequiredJoins() + " §7times";
+                    } else {
+                        joinRequirement = "between §e" + reward.getMinRequiredJoins() +
+                                " §7and §e" + reward.getMaxRequiredJoins() + " §7times";
+                    }
+
+                    p.sendMessage(Component.text("§7Command §e" + input + " §7added. It will be executed when " +
+                            "a player joins " + joinRequirement));
                     openInventory(p);
                 }
         );
@@ -255,8 +265,8 @@ public class CommandsGui implements InventoryHolder, Listener {
                         return;
                     }
 
-                    goal.removeCommand(oldCommand);
-                    goal.addCommand(input);
+                    reward.removeCommand(oldCommand);
+                    reward.addCommand(input);
                     p.sendMessage(Component.text("§aCommand edited successfully!"));
                     openInventory(p);
                 }
@@ -274,7 +284,7 @@ public class CommandsGui implements InventoryHolder, Listener {
 
         Component fullMessage = Component.empty()
                 .append(Component.text("\n"))
-                .append(preText)  
+                .append(preText)
                 .append(clickableText)
                 .append(Component.text(" to autocomplete the old command")
                         .color(TextColor.color(170,170,170)));  // Gray color
@@ -286,13 +296,13 @@ public class CommandsGui implements InventoryHolder, Listener {
         ItemStack warningItem = parentGui.createGuiItem(
                 Material.BARRIER,
                 Component.text("§c§lDelete All Commands"),
-                Component.text("§7This will remove all commands from this goal")
+                Component.text("§7This will remove all commands from this reward")
         );
 
         ConfirmationGui confirmationGui = new ConfirmationGui(warningItem, (confirmed) -> {
             if (confirmed) {
-                for(String cmd: new ArrayList<>(goal.getCommands())) {
-                    goal.removeCommand(cmd);
+                for(String cmd: new ArrayList<>(reward.getCommands())) {
+                    reward.removeCommand(cmd);
                 }
                 openInventory(whoClicked);
             } else {

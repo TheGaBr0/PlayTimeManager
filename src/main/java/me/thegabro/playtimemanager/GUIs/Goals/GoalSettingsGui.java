@@ -1,9 +1,7 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
 import me.thegabro.playtimemanager.Events.ChatEventManager;
-import me.thegabro.playtimemanager.GUIs.CommandsGui;
 import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
-import me.thegabro.playtimemanager.GUIs.PermissionsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -207,7 +205,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
             case Slots.GOAL_PERMISSIONS:
                 player.closeInventory();
-                new PermissionsGui(goal, this).openInventory(player);
+                new GoalPermissionsGui(goal, this).openInventory(player);
                 break;
 
             case Slots.GOAL_MESSAGE:
@@ -229,7 +227,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
             case Slots.GOAL_COMMANDS:
                 player.closeInventory();
-                new CommandsGui(goal, this).openInventory(player);
+                new GoalCommandsGui(goal, this).openInventory(player);
                 break;
 
             case Slots.GOAL_ACTIVATION_STATUS:

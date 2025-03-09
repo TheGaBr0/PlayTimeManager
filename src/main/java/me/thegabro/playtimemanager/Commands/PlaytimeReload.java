@@ -34,6 +34,9 @@ public class PlaytimeReload implements CommandExecutor {
             goalsManager.clearGoals();
             goalsManager.loadGoals();
 
+            joinStreaksManager.clearRewards();
+            joinStreaksManager.loadRewards();
+
             //reload online users data
             for(Player p : Bukkit.getOnlinePlayers()) {
                 OnlineUser user = onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName());

@@ -890,48 +890,13 @@ public abstract class PlayTimeDatabase {
         return players;
     }
 
-    public Set<Integer> getReceivedRewards(String uuid) {
+    public LinkedHashSet<Float> getRewardsToBeClaimed(String uuid) {
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
-        Set<Integer> rewards = new HashSet<>();
-        try {
-            conn = getSQLConnection();
-            ps = conn.prepareStatement("SELECT received_rewards FROM play_time WHERE uuid = ?;");
-            ps.setString(1, uuid);
 
-            rs = ps.executeQuery();
-            if (rs.next()) {
-                String rewardsStr = rs.getString("received_rewards");
-                if (rewardsStr != null && !rewardsStr.isEmpty()) {
-                    for (String reward : rewardsStr.split(",")) {
-                        try {
-                            rewards.add(Integer.parseInt(reward.trim()));
-                        } catch (NumberFormatException e) {
-                            plugin.getLogger().log(Level.WARNING, "Invalid reward ID format: " + reward);
-                        }
-                    }
-                }
-            }
-        } catch (SQLException ex) {
-            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
-        } finally {
-            try {
-                if (rs != null) rs.close();
-                if (ps != null) ps.close();
-                if (conn != null) conn.close();
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
-            }
-        }
-        return rewards;
-    }
+        LinkedHashSet<Float> rewards = new LinkedHashSet<>();
 
-    public Set<Integer> getRewardsToBeClaimed(String uuid) {
-        Connection conn = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        Set<Integer> rewards = new HashSet<>();
         try {
             conn = getSQLConnection();
             ps = conn.prepareStatement("SELECT rewards_to_be_claimed FROM play_time WHERE uuid = ?;");
@@ -941,11 +906,12 @@ public abstract class PlayTimeDatabase {
             if (rs.next()) {
                 String rewardsStr = rs.getString("rewards_to_be_claimed");
                 if (rewardsStr != null && !rewardsStr.isEmpty()) {
-                    for (String reward : rewardsStr.split(",")) {
+                    String[] rewardArray = rewardsStr.split(",");
+                    for (String reward : rewardArray) {
                         try {
-                            rewards.add(Integer.parseInt(reward.trim()));
+                            rewards.add(Float.parseFloat(reward.trim()));
                         } catch (NumberFormatException e) {
-                            plugin.getLogger().log(Level.WARNING, "Invalid reward ID format: " + reward);
+                            plugin.getLogger().warning("Invalid reward format: " + reward);
                         }
                     }
                 }
@@ -961,10 +927,52 @@ public abstract class PlayTimeDatabase {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
+
         return rewards;
     }
 
-    public void updateReceivedRewards(String uuid, Set<Integer> rewards) {
+    public LinkedHashSet<Float> getReceivedRewards(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        LinkedHashSet<Float> rewards = new LinkedHashSet<>();
+
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT received_rewards FROM play_time WHERE uuid = ?;");
+            ps.setString(1, uuid);
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                String rewardsStr = rs.getString("received_rewards");
+                if (rewardsStr != null && !rewardsStr.isEmpty()) {
+                    String[] rewardArray = rewardsStr.split(",");
+                    for (String reward : rewardArray) {
+                        try {
+                            rewards.add(Float.parseFloat(reward.trim()));
+                        } catch (NumberFormatException e) {
+                            plugin.getLogger().warning("Invalid reward format: " + reward);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (ps != null) ps.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+
+        return rewards;
+    }
+
+    public void updateReceivedRewards(String uuid, LinkedHashSet<Float> rewards) {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
@@ -991,7 +999,7 @@ public abstract class PlayTimeDatabase {
         }
     }
 
-    public void updateRewardsToBeClaimed(String uuid, Set<Integer> rewards) {
+    public void updateRewardsToBeClaimed(String uuid, LinkedHashSet<Float> rewards) {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
@@ -1025,7 +1033,7 @@ public abstract class PlayTimeDatabase {
         try {
             conn = getSQLConnection();
 
-            // First, get all players who have completed goals or have rewards to be claimed
+            // First, get all players who have received rewards or have rewards to be claimed
             ps = conn.prepareStatement("SELECT uuid, received_rewards, rewards_to_be_claimed FROM play_time WHERE " +
                     "(received_rewards IS NOT NULL AND received_rewards != '') OR " +
                     "(rewards_to_be_claimed IS NOT NULL AND rewards_to_be_claimed != '');");
@@ -1039,36 +1047,44 @@ public abstract class PlayTimeDatabase {
                 String rewardsToBeClaimed = rs.getString("rewards_to_be_claimed");
 
                 // Process received_rewards column
-                ArrayList<String> receivedGoals = new ArrayList<>();
+                LinkedHashSet<Float> receivedRewardsList = new LinkedHashSet<>();
                 if (receivedRewards != null && !receivedRewards.isEmpty()) {
-                    for (String goal : receivedRewards.split(",")) {
-                        String trimmedGoal = goal.trim();
-                        if (!trimmedGoal.isEmpty() && !trimmedGoal.equals(String.valueOf(rewardID))) {
-                            receivedGoals.add(trimmedGoal);
+                    for (String reward : receivedRewards.split(",")) {
+                        try {
+                            float rewardValue = Float.parseFloat(reward.trim());
+                            // Keep only if the integer part doesn't match the rewardID
+                            if (Math.floor(rewardValue) != rewardID) {
+                                receivedRewardsList.add(rewardValue);
+                            }
+                        } catch (NumberFormatException e) {
+                            // Skip invalid entries
                         }
                     }
                 }
 
                 // Process rewards_to_be_claimed column
-                ArrayList<String> rewardsToBeClaimedList = new ArrayList<>();
+                LinkedHashSet<Float> rewardsToBeClaimedList = new LinkedHashSet<>();
                 if (rewardsToBeClaimed != null && !rewardsToBeClaimed.isEmpty()) {
                     for (String reward : rewardsToBeClaimed.split(",")) {
-                        String trimmedReward = reward.trim();
-                        if (!trimmedReward.isEmpty() && !trimmedReward.equals(String.valueOf(rewardID))) {
-                            rewardsToBeClaimedList.add(trimmedReward);
+                        try {
+                            float rewardValue = Float.parseFloat(reward.trim());
+                            // Keep only if the integer part doesn't match the rewardID
+                            if (Math.floor(rewardValue) != rewardID) {
+                                rewardsToBeClaimedList.add(rewardValue);
+                            }
+                        } catch (NumberFormatException e) {
+                            // Skip invalid entries
                         }
                     }
                 }
 
                 // Convert back to comma-separated strings
-                String updatedReceivedRewards = receivedGoals.stream()
-                        .map(String::trim)
-                        .filter(goal -> !goal.isEmpty())
+                String updatedReceivedRewards = receivedRewardsList.stream()
+                        .map(String::valueOf)
                         .collect(Collectors.joining(","));
 
                 String updatedRewardsToBeClaimed = rewardsToBeClaimedList.stream()
-                        .map(String::trim)
-                        .filter(reward -> !reward.isEmpty())
+                        .map(String::valueOf)
                         .collect(Collectors.joining(","));
 
                 // Update the database

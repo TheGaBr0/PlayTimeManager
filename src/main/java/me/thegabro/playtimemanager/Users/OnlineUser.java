@@ -4,20 +4,14 @@ import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 public class OnlineUser extends DBUser {
     protected final Player p;
-    protected Set<Integer> receivedRewards = new HashSet<>();
-    protected Set<Integer> rewardsToBeClaimed = new HashSet<>();
 
     public OnlineUser(Player p) {
         super(p);
         this.p = p;
         this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
-        this.receivedRewards = db.getReceivedRewards(uuid);
-        this.rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
     }
 
     private long getCachedPlayTime() {
@@ -56,42 +50,14 @@ public class OnlineUser extends DBUser {
         this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
     }
 
-    public boolean hasReceivedReward(int rewardId) {
+    public boolean hasReceivedReward(float rewardId) {
         return receivedRewards.contains(rewardId);
     }
 
-    public void addReceivedReward(int rewardId) {
-        receivedRewards.add(rewardId);
-        db.updateReceivedRewards(uuid, receivedRewards);
-    }
-
-    public void removeReceivedReward(int rewardId) {
-        this.receivedRewards.remove(rewardId);
-        db.updateReceivedRewards(uuid, receivedRewards);
-    }
-
-    public void addRewardToBeClaimed(int rewardId) {
-        rewardsToBeClaimed.add(rewardId);
-        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
-    }
-
-
-    public boolean hasRewardToBeClaimed(int rewardId) {
+    public boolean hasRewardToBeClaimed(float rewardId) {
         return rewardsToBeClaimed.contains(rewardId);
     }
 
-    public void removeRewardToBeClaimed(int rewardId) {
-        rewardsToBeClaimed.remove(rewardId);
-        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
-    }
-
-    public Set<Integer> getRewardsToBeClaimed() {
-        return new HashSet<>(rewardsToBeClaimed);
-    }
-
-    public Set<Integer> getReceivedRewards() {
-        return new HashSet<>(receivedRewards);
-    }
 
     @Override
     public void reset() {

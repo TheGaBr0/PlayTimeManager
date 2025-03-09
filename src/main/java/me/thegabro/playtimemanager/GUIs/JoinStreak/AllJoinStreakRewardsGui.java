@@ -38,7 +38,6 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
     private final int NEXT_BUTTON_SLOT = 50;
     private final int PREV_BUTTON_SLOT = 48;
     private final int PAGE_INDICATOR_SLOT = 49;
-    private final int CLONE_BUTTON_SLOT = 5; // New slot for clone button
 
     public AllJoinStreakRewardsGui() {
         inv = Bukkit.createInventory(this, 54, Component.text("Join Streak Rewards"));
@@ -60,12 +59,18 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         int leftIndex = 9;
         int rightIndex = 17;
 
+
+        //This approach sorts primarily by minimum required joins, and for rewards that have the same minimum value,
+        // it then sorts by the maximum required joins.
         Set<JoinStreakReward> rewardsSet = rewardsManager.getRewards();
         sortedRewards = rewardsSet.stream()
-                .sorted(Comparator.comparing(
-                        JoinStreakReward::getRequiredJoins,
-                        Comparator.comparing(joins -> joins == -1 ? Integer.MAX_VALUE : joins)
-                ))
+                .sorted(
+                        Comparator.comparing(
+                                (JoinStreakReward r) -> r.getMinRequiredJoins() == -1 ? Integer.MAX_VALUE : r.getMinRequiredJoins()
+                        ).thenComparing(
+                                r -> r.getMaxRequiredJoins() == -1 ? Integer.MAX_VALUE : r.getMaxRequiredJoins()
+                        )
+                )
                 .toList();
 
         protectedSlots.clear();
@@ -88,31 +93,6 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                 Component.text("§7Click to create a new join streak reward")
         ));
         protectedSlots.add(4);
-
-        // Add "Clone Latest Reward" button
-        JoinStreakReward latestReward = getLatestReward();
-        Material cloneButtonMaterial = (latestReward != null) ? Material.GOLD_INGOT : Material.BARRIER;
-        String cloneButtonTitle = (latestReward != null)
-                ? "§e§lClone Latest Reward"
-                : "§c§lNo Rewards to Clone";
-        List<TextComponent> cloneButtonLore = new ArrayList<>();
-        if (latestReward != null) {
-            int newRequirement = (latestReward.getRequiredJoins() == -1) ? 1 : latestReward.getRequiredJoins() + 1;
-            cloneButtonLore.add(Component.text("§7Click to clone the latest reward"));
-            cloneButtonLore.add(Component.text("§7Clone will require §e" + newRequirement + " §7joins"));
-            cloneButtonLore.add(Component.text("§7(Original + 1 join requirement)"));
-            cloneButtonLore.add(Component.text("§7Latest: ID §e#" + latestReward.getId() + " §7requires §e" +
-                    (latestReward.getRequiredJoins() == -1 ? "-" : latestReward.getRequiredJoins()) + " §7joins"));
-        } else {
-            cloneButtonLore.add(Component.text("§7Create a reward first"));
-        }
-
-        inv.setItem(CLONE_BUTTON_SLOT, createGuiItem(
-                cloneButtonMaterial,
-                Component.text(cloneButtonTitle),
-                cloneButtonLore.toArray(new TextComponent[0])
-        ));
-        protectedSlots.add(CLONE_BUTTON_SLOT);
 
         // Add pagination controls if needed
         int totalPages = (int) Math.ceil((double) sortedRewards.size() / REWARDS_PER_PAGE);
@@ -172,9 +152,9 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
                 // Create reward item
                 inv.setItem(slot, createGuiItem(
-                        Material.SUNFLOWER,
+                        Material.valueOf(reward.getItemIcon()),
                         Component.text("§e§l#ID§r§e " + reward.getId()),
-                        Component.text("§7Required Joins: §e" + (reward.getRequiredJoins() == -1 ? "-" : reward.getRequiredJoins())),
+                        Component.text("§7Required Joins: §e" + (reward.getMinRequiredJoins() == -1 ? "-" : reward.getRequiredJoinsDisplay())),
                         Component.text("§e" + reward.getPermissions().size() + "§7 " +
                                 (reward.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
                         Component.text("§e" + reward.getCommands().size() + "§7 " +
@@ -233,34 +213,6 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             return;
         }
 
-        // Handle "Clone Latest Reward" button
-        if (slot == CLONE_BUTTON_SLOT && clickedItem.getType() == Material.GOLD_INGOT) {
-            JoinStreakReward latestReward = getLatestReward();
-            if (latestReward != null) {
-                whoClicked.closeInventory();
-                int newRequirement = (latestReward.getRequiredJoins() == -1) ? -1 : latestReward.getRequiredJoins() + 1;
-
-                JoinStreakReward newReward = new JoinStreakReward(plugin, rewardsManager.getNextRewardId(), newRequirement);
-
-                // Copy permissions and commands from the latest reward
-                for (String permission : latestReward.getPermissions()) {
-                    newReward.addPermission(permission);
-                }
-                for (String command : latestReward.getCommands()) {
-                    newReward.addCommand(command);
-                }
-
-                newReward.setRewardSound(latestReward.getRewardSound());
-                newReward.setRewardMessage(latestReward.getRewardMessage());
-
-                rewardsManager.addReward(newReward);
-                whoClicked.sendMessage("§a[PlayTimeManager] §7Cloned reward #" + latestReward.getId() +
-                        " with new ID #" + newReward.getId() + " and " + newRequirement + " required joins.");
-                openInventory(whoClicked);
-            }
-            return;
-        }
-
         // Handle pagination buttons
         if (slot == NEXT_BUTTON_SLOT && clickedItem.getType() == Material.ARROW) {
             openInventory(whoClicked, currentPage + 1);
@@ -273,7 +225,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         }
 
         // Handle clicking on a reward
-        if (clickedItem.getItemMeta().hasDisplayName() && clickedItem.getType() == Material.SUNFLOWER) {
+        if (clickedItem.getItemMeta().hasDisplayName()) {
             String rewardID = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName());
 
             // Check for shift-right-click to delete
@@ -281,10 +233,16 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                 int id = Integer.parseInt(rewardID.substring(12));
                 JoinStreakReward rewardToDelete = rewardsManager.getReward(id);
                 if (rewardToDelete != null) {
-                    rewardToDelete.kill();
-                    whoClicked.sendMessage(Utils.parseColors( plugin.getConfiguration().getPluginPrefix()+" §7Deleted reward &e&l#" + id));
-                    initializeItems(); // Refresh the GUI
-                    return;
+                    whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Deleting reward &e" + id + "&7..."));
+                    Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
+                        rewardToDelete.kill();
+
+                        // Switch back to main thread for UI updates
+                        Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
+                            whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7deleted reward &e" + id));
+                            openInventory(whoClicked);
+                        });
+                    });
                 }
             } else {
                 // Regular click - open settings GUI

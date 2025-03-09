@@ -1,10 +1,11 @@
-package me.thegabro.playtimemanager.GUIs;
+package me.thegabro.playtimemanager.GUIs.JoinStreak;
 
-import me.thegabro.playtimemanager.GUIs.Goals.GoalSettingsGui;
-import me.thegabro.playtimemanager.Goals.Goal;
+import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
+import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.wesjd.anvilgui.AnvilGUI;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -15,19 +16,20 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import net.wesjd.anvilgui.AnvilGUI;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-public class PermissionsGui implements InventoryHolder, Listener {
+public class JoinStreakPermissionsGui implements InventoryHolder, Listener {
 
     private static final int GUI_SIZE = 54;
     private static final int PERMISSIONS_PER_PAGE = 45;
 
     private Inventory inventory;
-    private Goal goal;
-    private GoalSettingsGui parentGui;
+    private JoinStreakReward reward;
+    private JoinStreakRewardSettingsGui parentGui;
     private int currentPage;
 
     private static final class Slots {
@@ -38,10 +40,10 @@ public class PermissionsGui implements InventoryHolder, Listener {
         static final int DELETE_ALL = 50;
     }
 
-    public PermissionsGui(){}
+    public JoinStreakPermissionsGui(){}
 
-    public PermissionsGui(Goal goal, GoalSettingsGui parentGui) {
-        this.goal = goal;
+    public JoinStreakPermissionsGui(JoinStreakReward reward, JoinStreakRewardSettingsGui parentGui) {
+        this.reward = reward;
         this.parentGui = parentGui;
         this.inventory = Bukkit.createInventory(this, GUI_SIZE, Component.text("§6Permissions Editor"));
         this.currentPage = 0;
@@ -76,7 +78,7 @@ public class PermissionsGui implements InventoryHolder, Listener {
     }
 
     private void updatePermissionsPage() {
-        List<String> permissions = goal.getPermissions();
+        List<String> permissions = reward.getPermissions();
         int startIndex = currentPage * PERMISSIONS_PER_PAGE;
 
         // Clear previous items
@@ -136,7 +138,7 @@ public class PermissionsGui implements InventoryHolder, Listener {
             ));
         }
 
-        if ((currentPage + 1) * PERMISSIONS_PER_PAGE < goal.getPermissions().size()) {
+        if ((currentPage + 1) * PERMISSIONS_PER_PAGE < reward.getPermissions().size()) {
             inventory.setItem(Slots.NEXT_PAGE, parentGui.createGuiItem(
                     Material.ARROW,
                     Component.text("§eNext Page")
@@ -178,7 +180,7 @@ public class PermissionsGui implements InventoryHolder, Listener {
                 }
             }
             case Slots.NEXT_PAGE -> {
-                if ((currentPage + 1) * PERMISSIONS_PER_PAGE < goal.getPermissions().size()) {
+                if ((currentPage + 1) * PERMISSIONS_PER_PAGE < reward.getPermissions().size()) {
                     currentPage++;
                     updatePermissionsPage();
                 }
@@ -199,7 +201,7 @@ public class PermissionsGui implements InventoryHolder, Listener {
                     String permission = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName()).substring(2); // Remove color codes
                     if (action.equals(InventoryAction.PICKUP_HALF)) {
                         // Remove permission (right-click)
-                        goal.removePermission(permission);
+                        reward.removePermission(permission);
                         updatePermissionsPage();
                     } else {
                         // Edit permission (left-click)
@@ -213,11 +215,11 @@ public class PermissionsGui implements InventoryHolder, Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
-        if (e.getInventory().getHolder() instanceof PermissionsGui) {
+        if (e.getInventory().getHolder() instanceof JoinStreakPermissionsGui) {
             if ((e.getRawSlot() < e.getInventory().getSize())) {
                 e.setCancelled(true);
 
-                PermissionsGui gui = (PermissionsGui) e.getInventory().getHolder();
+                JoinStreakPermissionsGui gui = (JoinStreakPermissionsGui) e.getInventory().getHolder();
                 gui.onGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getAction());
             } else {
                 if (e.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
@@ -235,7 +237,7 @@ public class PermissionsGui implements InventoryHolder, Listener {
 
                     String permission = state.getText();
                     if (!permission.isEmpty()) {
-                        goal.addPermission(permission);
+                        reward.addPermission(permission);
                     }
                     Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(player));
                     return Collections.singletonList(AnvilGUI.ResponseAction.close());
@@ -257,8 +259,8 @@ public class PermissionsGui implements InventoryHolder, Listener {
 
                     String newPermission = state.getText();
                     if (!newPermission.isEmpty()) {
-                        goal.removePermission(oldPermission);
-                        goal.addPermission(newPermission);
+                        reward.removePermission(oldPermission);
+                        reward.addPermission(newPermission);
                     }
                     Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(player));
                     return Collections.singletonList(AnvilGUI.ResponseAction.close());
@@ -277,13 +279,13 @@ public class PermissionsGui implements InventoryHolder, Listener {
         ItemStack warningItem = parentGui.createGuiItem(
                 Material.BARRIER,
                 Component.text("§c§lDelete All Permissions"),
-                Component.text("§7This will remove all permissions from this goal")
+                Component.text("§7This will remove all permissions from this reward")
         );
 
         ConfirmationGui confirmationGui = new ConfirmationGui(warningItem, (confirmed) -> {
             if (confirmed) {
-                for(String p: new ArrayList<>(goal.getPermissions())) {
-                    goal.removePermission(p);
+                for(String p: new ArrayList<>(reward.getPermissions())) {
+                    reward.removePermission(p);
                 }
                 openInventory(whoClicked);
             } else {

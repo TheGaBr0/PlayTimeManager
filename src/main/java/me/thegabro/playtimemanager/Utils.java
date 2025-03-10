@@ -111,6 +111,10 @@ public class Utils {
         };
     }
 
+    public static String stripColor(String text) {
+        return text.replaceAll("§[0-9a-fk-or]", "");
+    }
+
 
     private static long safeAdd(long a, long b) {
         if (a > 0 && b > Long.MAX_VALUE - a) return -1L; // Positive overflow

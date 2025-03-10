@@ -139,7 +139,7 @@ public class Configuration {
         // Update streak settings
         this.streakInterval = config.getLong("streak-interval", 86400);
         this.joinClaimMessage = config.getString("join-warn-claim-message", "[&6PlayTime&eManager&f]&7 Reward " +
-                "earned for your login streak! Use &e/joinstreak claim &7to collect it.");
+                "earned for your login streak! Use &e/claimrewards &7to collect it.");
         this.streakCheckVerbose = config.getBoolean("streak-check-verbose", true);
 
     }

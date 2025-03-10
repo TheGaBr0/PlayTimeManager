@@ -16,6 +16,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -249,30 +251,32 @@ public class JoinStreaksManager {
         int maxJoins = reward.getMaxRequiredJoins();
 
         // First, remove any existing entries for this reward
-        for (Map.Entry<Integer, LinkedHashSet<Float>> entry : new ArrayList<>(joinRewardsMap.entrySet())) {
-            int key = entry.getKey();
-            if (key == rewardId) {
-                joinRewardsMap.remove(key);
-            }
-        }
+        joinRewardsMap.entrySet().removeIf(entry -> entry.getKey() == rewardId);
 
-        if(minJoins == -1){
+        if (minJoins == -1) {
             joinRewardsMap.put(rewardId, new LinkedHashSet<>());
         }
-        // Then add new entries based on the updated range
+        // Single value case - add just one entry
         else if (minJoins == maxJoins) {
-            // Single value case - add just one entry
-            joinRewardsMap.put(rewardId, new LinkedHashSet<>(Collections.singleton(rewardId * 1.0f)));
-        } else {
-            // Range case - add entries for each join count in the range
+            joinRewardsMap.put(rewardId, new LinkedHashSet<>(Collections.singleton((float)rewardId)));
+        }
+        // Range case - add entries for each join count in the range
+        else {
             LinkedHashSet<Float> set = new LinkedHashSet<>();
-            for (int joinCount = 0; joinCount <= maxJoins-minJoins; joinCount++) {
-                float value = rewardId + (joinCount * 0.1f); // Increment by 0.1 each time
-                set.add(value);
+            int range = maxJoins - minJoins;
+
+            for (int joinCount = 0; joinCount <= range; joinCount++) {
+                // Use exact decimal string representation
+                BigDecimal base = BigDecimal.valueOf(rewardId);
+                BigDecimal increment = new BigDecimal("0.1").multiply(BigDecimal.valueOf(joinCount));
+                BigDecimal value = base.add(increment);
+
+                // Convert to string with proper scale and then back to float for guaranteed precision
+                value = new BigDecimal(value.setScale(1, RoundingMode.HALF_UP).toString());
+                set.add(value.floatValue());
             }
             joinRewardsMap.put(rewardId, set);
         }
-
     }
 
     public JoinStreakReward getReward(int id) {
@@ -330,7 +334,7 @@ public class JoinStreaksManager {
         if (player.hasPermission("playtime.joinstreak.claim.automatic")) {
             // Auto claim the reward with the specific key (not just the integer ID)
             onlineUser.addReceivedReward(rewardKey);
-            processCompletedReward(onlineUser, player, reward);
+            processCompletedReward(player, reward, rewardKey, false);
         } else {
             // Add to pending rewards with the specific key
             onlineUser.addRewardToBeClaimed(rewardKey);
@@ -341,15 +345,27 @@ public class JoinStreaksManager {
         }
     }
 
-    private void processCompletedReward(OnlineUser onlineUser, Player player, JoinStreakReward reward) {
-        onlineUser.addReceivedReward(reward.getId());
+    public void processCompletedReward(Player player, JoinStreakReward reward, float instance, boolean manualClaim) {
+
+        OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+
+        if(instance == 1.0f){
+            onlineUser.addReceivedReward(reward.getId());
+            onlineUser.removeRewardToBeClaimed(reward.getId());
+        }else{
+            onlineUser.addReceivedReward(instance);
+            onlineUser.removeRewardToBeClaimed(instance);
+        }
+
 
         if (plugin.isPermissionsManagerConfigured()) {
             assignPermissionsForReward(onlineUser, reward);
         }
 
         executeRewardCommands(reward, player);
-        sendRewardMessage(player, reward);
+
+        if(!manualClaim)
+            sendRewardMessage(player, reward);
 
         if(plugin.getConfiguration().getStreakCheckVerbose()){
             String joinRequirement;
@@ -443,5 +459,9 @@ public class JoinStreaksManager {
             result = result.replace(entry.getKey(), entry.getValue());
         }
         return result;
+    }
+
+    public Map<Integer, LinkedHashSet<Float>> getJoinRewardsMap(){
+        return joinRewardsMap;
     }
 }

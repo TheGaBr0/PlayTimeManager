@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui;
 import me.thegabro.playtimemanager.Utils;
@@ -10,7 +11,6 @@ import org.bukkit.entity.Player;
 
 public class ClaimRewards implements CommandExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-
 
     public ClaimRewards() {}
 
@@ -27,8 +27,9 @@ public class ClaimRewards implements CommandExecutor {
             return true;
         }
 
-        // Open the rewards inventory
-        RewardsInfoGui.openInventory(player);
+        // Open the rewards inventory (using our new instance-based approach)
+        RewardsInfoGui rewardsGui = new RewardsInfoGui(player);
+        rewardsGui.openInventory();
         return true;
     }
 }

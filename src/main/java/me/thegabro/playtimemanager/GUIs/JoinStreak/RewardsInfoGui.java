@@ -324,9 +324,9 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                 lore.add(Component.text("§7Required Joins: §e" +
                         (specificJoinCount == -1 ? "-" : specificJoinCount)));
                 lore.add(Component.text("§7Your current join streak: " +
-                        (dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getJoinStreak() < specificJoinCount
+                        (dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRelativeJoinStreak() < specificJoinCount
                                 ? "§c" : "§a") +
-                        dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getJoinStreak())
+                        dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRelativeJoinStreak())
                 );
 
                 if(!reward.getDescription().isEmpty()) {

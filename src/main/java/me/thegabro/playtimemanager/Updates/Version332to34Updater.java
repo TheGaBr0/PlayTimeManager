@@ -23,20 +23,42 @@ public class Version332to34Updater {
     public void performUpgrade() {
         DatabaseBackupUtility backupUtility = new DatabaseBackupUtility(plugin);
         backupUtility.createBackup("play_time", generateReadmeContent());
-        addJoinStreakColumn();
+        addRelativeJoinStreakColumn();
+        addAbsoluteJoinStreakColumn();
         addReceivedRewardsColumn();
         addRewardsToBeClaimedColumn();
         recreateConfigFile();
     }
 
-    public void addJoinStreakColumn() {
+    public void addRelativeJoinStreakColumn() {
 
         try (Connection connection = database.getSQLConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {
                 // Alter the table to add the first_join column
-                s.executeUpdate("ALTER TABLE play_time ADD COLUMN join_streak INT DEFAULT 0;");
+                s.executeUpdate("ALTER TABLE play_time ADD COLUMN relative_join_streak INT DEFAULT 0;");
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to alter table: " + e.getMessage());
+        }
+    }
+
+    public void addAbsoluteJoinStreakColumn() {
+
+        try (Connection connection = database.getSQLConnection()) {
+            connection.setAutoCommit(false);
+
+            try (Statement s = connection.createStatement()) {
+                // Alter the table to add the first_join column
+                s.executeUpdate("ALTER TABLE play_time ADD COLUMN absolute_join_streak INT DEFAULT 0;");
 
                 connection.commit();
             } catch (SQLException e) {

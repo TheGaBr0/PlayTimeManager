@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -251,11 +250,11 @@ public class PlayTimeReset {
             return;
         }
 
-        int joinStreakBeforeReset = user.getJoinStreak();
+        int joinStreakBeforeReset = user.getRelativeJoinStreak();
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             // Reset database record
-            user.resetJoinStreak();
+            user.resetJoinStreaks();
 
             // Notify on main thread
             Bukkit.getScheduler().runTask(plugin, () -> {
@@ -277,8 +276,8 @@ public class PlayTimeReset {
 
             // Process all users
             for (DBUser u : users) {
-                totalJoinStreakReset.addAndGet(u.getJoinStreak());
-                u.resetJoinStreak(); // Make sure this method is thread-safe!
+                totalJoinStreakReset.addAndGet(u.getRelativeJoinStreak());
+                u.resetJoinStreaks();
                 totalPlayersReset.getAndIncrement();
             }
 

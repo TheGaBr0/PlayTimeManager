@@ -30,7 +30,8 @@ public class PlayTimeStats {
         LocalDateTime firstJoin = user.getFirstJoin();
         long totalPlaytime = user.getPlaytime();
         long artificialPlaytime = user.getArtificialPlaytime();
-        int joinStreak = user.getJoinStreak();
+        int relativeJoinStreak = user.getRelativeJoinStreak();
+        int absoluteJoinStreak = user.getAbsoluteJoinStreak();
 
         // Header
         sender.sendMessage(Utils.parseColors("&8&l===============[ &6&lPlayer Stats &8&l]==============="));
@@ -62,7 +63,8 @@ public class PlayTimeStats {
 
         // Join Streak Information
         sender.sendMessage(Utils.parseColors("\n&6&lJoin Streak:"));
-        sender.sendMessage(Utils.parseColors("&7Current Streak: &e" + joinStreak));
+        sender.sendMessage(Utils.parseColors("&7Streak for the current cycle: &e" + relativeJoinStreak));
+        sender.sendMessage(Utils.parseColors("&7Total Streak: &e" + absoluteJoinStreak));
 
         // Goals Information
         sender.sendMessage(Utils.parseColors("\n&6&lCompleted Goals:"));

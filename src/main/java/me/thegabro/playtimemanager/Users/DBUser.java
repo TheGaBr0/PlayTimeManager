@@ -1,7 +1,6 @@
 package me.thegabro.playtimemanager.Users;
 
 import me.thegabro.playtimemanager.Goals.GoalsManager;
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreaksManager;
 import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Statistic;
@@ -25,14 +24,15 @@ public class DBUser {
     protected LocalDateTime lastSeen;
     protected LocalDateTime firstJoin;
     protected final GoalsManager goalsManager = GoalsManager.getInstance();
-    protected int joinStreak;
+    protected int relativeJoinStreak;
+    protected int absoluteJoinStreak;
     protected LinkedHashSet<String> receivedRewards = new LinkedHashSet<>();
     protected LinkedHashSet<String> rewardsToBeClaimed = new LinkedHashSet<>();
 
     // Private constructor
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime,
-                   ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int joinStreak,
-                   LinkedHashSet<String> receivedRewards, LinkedHashSet<String> rewardsToBeClaimed) {
+                   ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int relativeJoinStreak,
+                   int absoluteJoinStreak, LinkedHashSet<String> receivedRewards, LinkedHashSet<String> rewardsToBeClaimed) {
         this.uuid = uuid;
         this.nickname = nickname;
         this.DBplaytime = playtime;
@@ -40,7 +40,8 @@ public class DBUser {
         this.completedGoals = completedGoals;
         this.lastSeen = lastSeen;
         this.firstJoin = firstJoin;
-        this.joinStreak = joinStreak;
+        this.relativeJoinStreak = relativeJoinStreak;
+        this.absoluteJoinStreak = absoluteJoinStreak;
         this.receivedRewards = receivedRewards;
         this.rewardsToBeClaimed = rewardsToBeClaimed;
     }
@@ -70,12 +71,13 @@ public class DBUser {
         ArrayList<String> completedGoals = db.getCompletedGoals(uuid);
         LocalDateTime lastSeen = db.getLastSeen(uuid);
         LocalDateTime firstJoin = db.getFirstJoin(uuid);
-        int joinStreak = db.getJoinStreak(uuid);
+        int relativeJoinStreak = db.getRelativeJoinStreak(uuid);
+        int absoluteJoinStreak = db.getAbsoluteJoinStreak(uuid);
         LinkedHashSet<String> receivedRewards = db.getReceivedRewards(uuid);
         LinkedHashSet<String> rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
 
-        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals, lastSeen, firstJoin, joinStreak,
-                receivedRewards, rewardsToBeClaimed);
+        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals, lastSeen, firstJoin, relativeJoinStreak,
+                absoluteJoinStreak, receivedRewards, rewardsToBeClaimed);
     }
 
     // New method to load user data from database
@@ -85,7 +87,8 @@ public class DBUser {
         this.completedGoals = db.getCompletedGoals(uuid);
         this.lastSeen = db.getLastSeen(uuid);
         this.firstJoin = db.getFirstJoin(uuid);
-        this.joinStreak = db.getJoinStreak(uuid);
+        this.relativeJoinStreak = db.getRelativeJoinStreak(uuid);
+        this.absoluteJoinStreak = db.getRelativeJoinStreak(uuid);
         this.receivedRewards = db.getReceivedRewards(uuid);
         this.rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
     }
@@ -96,7 +99,8 @@ public class DBUser {
         this.fromServerOnJoinPlayTime = 0;
         this.lastSeen = null;
         this.firstJoin = null;
-        this.joinStreak = 0;
+        this.relativeJoinStreak = 0;
+        this.absoluteJoinStreak = 0;
 
         // Reset completed goals
         this.completedGoals.clear();
@@ -109,7 +113,8 @@ public class DBUser {
         db.updateCompletedGoals(uuid, completedGoals);
         db.updateLastSeen(uuid, null);
         db.updateFirstJoin(uuid, null);
-        db.resetJoinStreak(uuid);
+        db.resetJoinStreaks(uuid);
+        db.resetJoinStreaks(uuid);
         db.updateReceivedRewards(uuid, receivedRewards);
         db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
     }
@@ -157,13 +162,18 @@ public class DBUser {
         db.updateCompletedGoals(uuid, completedGoals);
     }
 
-    public int getJoinStreak(){
-        return joinStreak;
+    public int getAbsoluteJoinStreak(){
+        return absoluteJoinStreak;
     }
 
-    public void resetJoinStreak(){
-        this.joinStreak = 0;
-        db.resetJoinStreak(uuid);
+    public int getRelativeJoinStreak(){
+        return relativeJoinStreak;
+    }
+
+    public void resetJoinStreaks(){
+        this.relativeJoinStreak = 0;
+        this.absoluteJoinStreak = 0;
+        db.resetJoinStreaks(uuid);
     }
 
     public void unclaimReward(String rewardId) {

@@ -116,10 +116,10 @@ public class JoinStreaksManager {
             // Retrieve player data and reset streak
             DBUser user = dbUsersManager.getUserFromUUID(playerUUID);
             if (user != null) {
-                user.resetJoinStreak();
+                user.resetJoinStreaks();
             } else {
                 // If user data isn't loaded in memory, reset directly in database
-                db.resetJoinStreak(playerUUID);
+                db.resetJoinStreaks(playerUUID);
             }
         }
 
@@ -143,7 +143,7 @@ public class JoinStreaksManager {
             }
         } else {
             // Too much time has passed, reset streak
-            user.resetJoinStreak();
+            user.resetJoinStreaks();
             // Add to tracking set to prevent multiple increments if they join again soon
             joinedDuringCurrentInterval.add(playerUUID);
         }
@@ -269,7 +269,7 @@ public class JoinStreaksManager {
 
     private void checkRewardsForUser(OnlineUser onlineUser, Player player) {
         // Get the current join streak count
-        int currentStreak = onlineUser.getJoinStreak();
+        int currentStreak = onlineUser.getRelativeJoinStreak();
 
         // Get all rewards that match this specific join count
         LinkedHashSet<String> unclaimedRewards = getRewardIdsForJoinCount(currentStreak, onlineUser);

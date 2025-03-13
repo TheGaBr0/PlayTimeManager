@@ -304,7 +304,7 @@ public class JoinStreakReward {
 
     public void kill() {
         rewardsManager.removeReward(this);
-        DBUsersManager.getInstance().removeRewardFromAllUsers(id);
+        DBUsersManager.getInstance().removeRewardFromAllUsers(String.valueOf(id));
         deleteFile();
     }
 

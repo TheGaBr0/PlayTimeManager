@@ -16,8 +16,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -25,7 +23,7 @@ import java.util.*;
 public class JoinStreaksManager {
     private static JoinStreaksManager instance;
     private final Set<JoinStreakReward> rewards = new HashSet<>();
-    private final Map<Integer, LinkedHashSet<Float>> joinRewardsMap = new HashMap<>();
+    private final Map<Integer, LinkedHashSet<String>> joinRewardsMap = new HashMap<>();
     private final Set<String> joinedDuringCurrentInterval = new HashSet<>();
     private PlayTimeManager plugin;
     private static PlayTimeDatabase db;
@@ -51,8 +49,6 @@ public class JoinStreaksManager {
         startIntervalTask();
     }
 
-    // Rest of existing code...
-
     private void populateJoinedUsers() {
         long streakIntervalSeconds = plugin.getConfiguration().getStreakInterval();
         Set<String> recentPlayers = db.getPlayersWithinTimeInterval(streakIntervalSeconds);
@@ -75,7 +71,6 @@ public class JoinStreaksManager {
 
 
     public void startIntervalTask() {
-        // Cancel existing task if it exists
         if (intervalTask != null) {
             intervalTask.cancel();
         }
@@ -154,31 +149,21 @@ public class JoinStreaksManager {
         }
     }
 
-    public boolean rewardExists(float rewardFloat) {
-        // Extract the integer part of the float (the reward ID)
-        int rewardId = (int) Math.floor(rewardFloat);
-
-        // Check if any reward in our set has this ID
-        for (JoinStreakReward reward : rewards) {
-            if (reward.getId() == rewardId) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public void addReward(JoinStreakReward reward) {
-        // Add to our rewards set
         rewards.add(reward);
 
         updateJoinRewardsMap(reward);
 
     }
-    public LinkedHashSet<Float> getRewardIdsForJoinCount(int joinCount, OnlineUser onlineUser) {
-        LinkedHashSet<Float> rewardIds = new LinkedHashSet<>();
 
-        for (Map.Entry<Integer, LinkedHashSet<Float>> entry : joinRewardsMap.entrySet()) {
+    public JoinStreakReward getMainInstance(String instance){
+
+        return getReward(Integer.parseInt(instance.split("\\.")[0]));
+    }
+
+    public LinkedHashSet<String> getRewardIdsForJoinCount(int joinCount, OnlineUser onlineUser) {
+        LinkedHashSet<String> rewardIds = new LinkedHashSet<>();
+        for (Map.Entry<Integer, LinkedHashSet<String>> entry : joinRewardsMap.entrySet()) {
             int id = entry.getKey();
             JoinStreakReward reward = getReward(id);
 
@@ -199,7 +184,7 @@ public class JoinStreaksManager {
                 } else if (joinCount >= minJoins) {
                     // User is within interval, give rewards for their current position and below
                     int position = joinCount - minJoins;
-                    Iterator<Float> iterator = entry.getValue().iterator();
+                    Iterator<String> iterator = entry.getValue().iterator();
                     int count = 0;
 
                     while (iterator.hasNext() && count <= position) {
@@ -209,73 +194,44 @@ public class JoinStreaksManager {
                 }
             }
         }
-
         // Filter out rewards the user already has
         rewardIds.removeAll(onlineUser.getReceivedRewards());
         rewardIds.removeAll(onlineUser.getRewardsToBeClaimed());
+
         return rewardIds;
     }
 
     public void removeReward(JoinStreakReward reward) {
-        // Remove from our rewards set
         rewards.remove(reward);
 
-        int rewardId = reward.getId();
-
-        // Remove all instances of this reward from the joinRewardsMap
-        for (Map.Entry<Integer, LinkedHashSet<Float>> entry : joinRewardsMap.entrySet()) {
-            // Create a set of reward keys to remove
-            Set<Float> toRemove = new HashSet<>();
-
-            for (Float rewardKey : entry.getValue()) {
-                // If the integer part of this float equals the reward ID, mark for removal
-                if ((int)Math.floor(rewardKey) == rewardId) {
-                    toRemove.add(rewardKey);
-                }
-            }
-
-            // Remove all marked reward keys
-            entry.getValue().removeAll(toRemove);
-
-            // If the set is now empty, remove the entire entry in a separate step
-            // (to avoid ConcurrentModificationException)
-        }
-
-        // Remove any empty sets left in the map (in a separate loop to avoid concurrent modification)
-        joinRewardsMap.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        joinRewardsMap.remove(reward.getId());
     }
 
     public void updateJoinRewardsMap(JoinStreakReward reward) {
-        int rewardId = reward.getId();
+        String rewardIdString = String.valueOf(reward.getId());
         int minJoins = reward.getMinRequiredJoins();
         int maxJoins = reward.getMaxRequiredJoins();
 
         // First, remove any existing entries for this reward
-        joinRewardsMap.entrySet().removeIf(entry -> entry.getKey() == rewardId);
+        joinRewardsMap.entrySet().removeIf(entry -> entry.getValue().stream()
+                .anyMatch(val -> val.split("\\.")[0].equals(rewardIdString)));
 
         if (minJoins == -1) {
-            joinRewardsMap.put(rewardId, new LinkedHashSet<>());
+            joinRewardsMap.put(reward.getId(), new LinkedHashSet<>());
         }
-        // Single value case - add just one entry
         else if (minJoins == maxJoins) {
-            joinRewardsMap.put(rewardId, new LinkedHashSet<>(Collections.singleton((float)rewardId)));
+            joinRewardsMap.put(reward.getId(), new LinkedHashSet<>(Collections.singleton(rewardIdString+".1")));
         }
-        // Range case - add entries for each join count in the range
         else {
-            LinkedHashSet<Float> set = new LinkedHashSet<>();
-            int range = maxJoins - minJoins;
+            LinkedHashSet<String> set = new LinkedHashSet<>();
 
-            for (int joinCount = 0; joinCount <= range; joinCount++) {
-                // Use exact decimal string representation
-                BigDecimal base = BigDecimal.valueOf(rewardId);
-                BigDecimal increment = new BigDecimal("0.1").multiply(BigDecimal.valueOf(joinCount));
-                BigDecimal value = base.add(increment);
+            for (int joinCount = 1; joinCount <= maxJoins; joinCount++) {
+                String joinCountStr = String.valueOf(joinCount);
+                String valueStr = rewardIdString + "." + joinCountStr;
 
-                // Convert to string with proper scale and then back to float for guaranteed precision
-                value = new BigDecimal(value.setScale(1, RoundingMode.HALF_UP).toString());
-                set.add(value.floatValue());
+                set.add(valueStr);
             }
-            joinRewardsMap.put(rewardId, set);
+            joinRewardsMap.put(reward.getId(), set);
         }
     }
 
@@ -316,20 +272,18 @@ public class JoinStreaksManager {
         int currentStreak = onlineUser.getJoinStreak();
 
         // Get all rewards that match this specific join count
-        LinkedHashSet<Float> unclaimedRewards = getRewardIdsForJoinCount(currentStreak, onlineUser);
+        LinkedHashSet<String> unclaimedRewards = getRewardIdsForJoinCount(currentStreak, onlineUser);
         // Process each unclaimed reward
-        for (Float rewardKey : unclaimedRewards) {
-            // Get the base reward ID (integer part)
-            int rewardId = (int) Math.floor(rewardKey);
-            JoinStreakReward reward = getReward(rewardId);
+        for (String rewardKey : unclaimedRewards) {
 
-            if (reward != null) {
-                processQualifiedReward(onlineUser, player, reward, rewardKey);
+            JoinStreakReward mainInstance = getMainInstance(rewardKey);
+            if (mainInstance != null) {
+                processQualifiedReward(onlineUser, player, mainInstance, rewardKey);
             }
         }
     }
 
-    private void processQualifiedReward(OnlineUser onlineUser, Player player, JoinStreakReward reward, float rewardKey) {
+    private void processQualifiedReward(OnlineUser onlineUser, Player player, JoinStreakReward reward, String rewardKey) {
         // Check if player has auto-claim permission
         if (player.hasPermission("playtime.joinstreak.claim.automatic")) {
             // Auto claim the reward with the specific key (not just the integer ID)
@@ -345,17 +299,12 @@ public class JoinStreaksManager {
         }
     }
 
-    public void processCompletedReward(Player player, JoinStreakReward reward, float instance, boolean manualClaim) {
+    public void processCompletedReward(Player player, JoinStreakReward reward, String instance, boolean manualClaim) {
 
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
 
-        if(instance == 1.0f){
-            onlineUser.addReceivedReward(reward.getId());
-            onlineUser.removeRewardToBeClaimed(reward.getId());
-        }else{
-            onlineUser.addReceivedReward(instance);
-            onlineUser.removeRewardToBeClaimed(instance);
-        }
+        onlineUser.addReceivedReward(instance);
+        onlineUser.unclaimReward(instance);
 
 
         if (plugin.isPermissionsManagerConfigured()) {
@@ -461,7 +410,9 @@ public class JoinStreaksManager {
         return result;
     }
 
-    public Map<Integer, LinkedHashSet<Float>> getJoinRewardsMap(){
+    public Map<Integer, LinkedHashSet<String>> getJoinRewardsMap(){
         return joinRewardsMap;
     }
+
+
 }

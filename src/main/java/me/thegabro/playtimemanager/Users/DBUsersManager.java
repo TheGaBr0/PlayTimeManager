@@ -141,7 +141,7 @@ public class DBUsersManager {
         db.removeGoalFromAllUsers(goalName);
     }
 
-    public void removeRewardFromAllUsers(int rewardID){
+    public void removeRewardFromAllUsers(String rewardID){
         for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
             user.removeReceivedReward(rewardID);
             user.removeRewardToBeClaimed(rewardID);

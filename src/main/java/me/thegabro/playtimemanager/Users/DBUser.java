@@ -26,13 +26,13 @@ public class DBUser {
     protected LocalDateTime firstJoin;
     protected final GoalsManager goalsManager = GoalsManager.getInstance();
     protected int joinStreak;
-    protected LinkedHashSet<Float> receivedRewards = new LinkedHashSet<>();
-    protected LinkedHashSet<Float> rewardsToBeClaimed = new LinkedHashSet<>();
+    protected LinkedHashSet<String> receivedRewards = new LinkedHashSet<>();
+    protected LinkedHashSet<String> rewardsToBeClaimed = new LinkedHashSet<>();
 
     // Private constructor
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime,
                    ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int joinStreak,
-                   LinkedHashSet<Float> receivedRewards, LinkedHashSet<Float> rewardsToBeClaimed) {
+                   LinkedHashSet<String> receivedRewards, LinkedHashSet<String> rewardsToBeClaimed) {
         this.uuid = uuid;
         this.nickname = nickname;
         this.DBplaytime = playtime;
@@ -43,8 +43,6 @@ public class DBUser {
         this.joinStreak = joinStreak;
         this.receivedRewards = receivedRewards;
         this.rewardsToBeClaimed = rewardsToBeClaimed;
-        fixGhostGoals();
-        fixGhostRewards();
     }
 
     public DBUser(Player p) {
@@ -73,8 +71,8 @@ public class DBUser {
         LocalDateTime lastSeen = db.getLastSeen(uuid);
         LocalDateTime firstJoin = db.getFirstJoin(uuid);
         int joinStreak = db.getJoinStreak(uuid);
-        LinkedHashSet<Float> receivedRewards = db.getReceivedRewards(uuid);
-        LinkedHashSet<Float> rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
+        LinkedHashSet<String> receivedRewards = db.getReceivedRewards(uuid);
+        LinkedHashSet<String> rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
 
         return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals, lastSeen, firstJoin, joinStreak,
                 receivedRewards, rewardsToBeClaimed);
@@ -168,105 +166,48 @@ public class DBUser {
         db.resetJoinStreak(uuid);
     }
 
-    public void removeRewardToBeClaimed(float rewardId) {
-        // Remove all rewards where the integer part matches rewardId
-        rewardsToBeClaimed.removeIf(rewardFloat -> Math.floor(rewardFloat) == rewardId);
+    public void unclaimReward(String rewardId) {
+        rewardsToBeClaimed.remove(rewardId);
         db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
     }
 
-    public void removeReceivedReward(float rewardId) {
+    public void removeRewardToBeClaimed(String rewardId) {
         // Remove all rewards where the integer part matches rewardId
-        receivedRewards.removeIf(rewardFloat -> Math.floor(rewardFloat) == rewardId);
+        rewardsToBeClaimed.removeIf(reward -> {
+            String mainInstance = reward.split("\\.")[0];
+            return mainInstance.equals(rewardId);
+        });
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    }
+
+    public void removeReceivedReward(String rewardId) {
+        // Remove all rewards where the integer part matches rewardId
+        receivedRewards.removeIf(reward -> {
+            String mainInstance = reward.split("\\.")[0];
+            return mainInstance.equals(rewardId);
+        });
         db.updateReceivedRewards(uuid, receivedRewards);
     }
 
-    public void dataIntegrityCheck(){
-        fixGhostGoals();
-        fixGhostRewards();
+    public void addRewardToBeClaimed(String rewardKey) {
+        rewardsToBeClaimed.add(rewardKey);
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
     }
 
-    // Made public so it can be called as needed
-    public void fixGhostGoals() {
-        // Create a new ArrayList to store goals that need to be removed
-        ArrayList<String> goalsToRemove = new ArrayList<>();
-
-        for (String completedGoal : completedGoals) {
-            if (goalsManager.getGoal(completedGoal) == null) {
-                goalsToRemove.add(completedGoal);
-            }
-        }
-
-        // Only update the database if we actually have goals to remove
-        if (!goalsToRemove.isEmpty()) {
-            for (String goalToRemove : goalsToRemove) {
-                unmarkGoalAsCompleted(goalToRemove);
-            }
-        }
-    }
-
-    // Made public so it can be called as needed
-    public void fixGhostRewards() {
-        // Create sets to store rewards that need to be removed
-        Set<Float> receivedRewardsToRemove = new HashSet<>();
-        Set<Float> rewardsToBeClaimedToRemove = new HashSet<>();
-        JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
-
-        // Check received rewards
-        for (Float rewardId : receivedRewards) {
-            if (!joinStreaksManager.rewardExists(rewardId)) {
-                receivedRewardsToRemove.add(rewardId);
-            }
-        }
-
-        // Check rewards to be claimed
-        for (Float rewardId : rewardsToBeClaimed) {
-            if (!joinStreaksManager.rewardExists(rewardId)) {
-                rewardsToBeClaimedToRemove.add(rewardId);
-            }
-        }
-
-        // Only update if we have rewards to remove
-        if (!receivedRewardsToRemove.isEmpty()) {
-            for (Float rewardToRemove : receivedRewardsToRemove) {
-                removeReceivedReward(rewardToRemove);
-            }
-        }
-
-        if (!rewardsToBeClaimedToRemove.isEmpty()) {
-            for (Float rewardToRemove : rewardsToBeClaimedToRemove) {
-                removeRewardToBeClaimed(rewardToRemove);
-            }
-        }
+    public void addReceivedReward(String rewardKey) {
+        receivedRewards.add(rewardKey);
+        db.updateReceivedRewards(uuid, receivedRewards);
     }
 
     // Getter methods for reward sets
-    public Set<Float> getReceivedRewards() {
+    public Set<String> getReceivedRewards() {
         return new HashSet<>(receivedRewards); // Return a copy to prevent modification
     }
 
-    public Set<Float> getRewardsToBeClaimed() {
+    public Set<String> getRewardsToBeClaimed() {
         return new HashSet<>(rewardsToBeClaimed); // Return a copy to prevent modification
     }
 
-    public void addRewardToBeClaimed(float rewardKey) {
-        // Use LinkedHashSet to maintain order
-        LinkedHashSet<Float> currentRewards = new LinkedHashSet<>(rewardsToBeClaimed);
-        currentRewards.add(rewardKey);
-        rewardsToBeClaimed = currentRewards;
-
-        // Update in database immediately to maintain order
-        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
-    }
-
-    public void addReceivedReward(float rewardKey) {
-        // LinkedHashSet to maintain order
-        LinkedHashSet<Float> currentRewards = new LinkedHashSet<>(receivedRewards);
-        currentRewards.add(rewardKey);
-        receivedRewards = currentRewards;
-
-        // Update in database immediately to maintain order
-        db.updateReceivedRewards(uuid, receivedRewards);
-    }
     private void userMapping() {
         boolean uuidExists = db.playerExists(uuid);
         String existingNickname = uuidExists ? db.getNickname(uuid) : null;

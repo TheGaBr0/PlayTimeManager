@@ -890,12 +890,12 @@ public abstract class PlayTimeDatabase {
         return players;
     }
 
-    public LinkedHashSet<Float> getRewardsToBeClaimed(String uuid) {
+    public LinkedHashSet<String> getRewardsToBeClaimed(String uuid) {
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
 
-        LinkedHashSet<Float> rewards = new LinkedHashSet<>();
+        LinkedHashSet<String> rewards = new LinkedHashSet<>();
 
         try {
             conn = getSQLConnection();
@@ -908,11 +908,7 @@ public abstract class PlayTimeDatabase {
                 if (rewardsStr != null && !rewardsStr.isEmpty()) {
                     String[] rewardArray = rewardsStr.split(",");
                     for (String reward : rewardArray) {
-                        try {
-                            rewards.add(Float.parseFloat(reward.trim()));
-                        } catch (NumberFormatException e) {
-                            plugin.getLogger().warning("Invalid reward format: " + reward);
-                        }
+                        rewards.add(reward.trim());
                     }
                 }
             }
@@ -931,12 +927,12 @@ public abstract class PlayTimeDatabase {
         return rewards;
     }
 
-    public LinkedHashSet<Float> getReceivedRewards(String uuid) {
+    public LinkedHashSet<String> getReceivedRewards(String uuid) {
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
 
-        LinkedHashSet<Float> rewards = new LinkedHashSet<>();
+        LinkedHashSet<String> rewards = new LinkedHashSet<>();
 
         try {
             conn = getSQLConnection();
@@ -949,11 +945,7 @@ public abstract class PlayTimeDatabase {
                 if (rewardsStr != null && !rewardsStr.isEmpty()) {
                     String[] rewardArray = rewardsStr.split(",");
                     for (String reward : rewardArray) {
-                        try {
-                            rewards.add(Float.parseFloat(reward.trim()));
-                        } catch (NumberFormatException e) {
-                            plugin.getLogger().warning("Invalid reward format: " + reward);
-                        }
+                        rewards.add(reward.trim());
                     }
                 }
             }
@@ -972,16 +964,14 @@ public abstract class PlayTimeDatabase {
         return rewards;
     }
 
-    public void updateReceivedRewards(String uuid, LinkedHashSet<Float> rewards) {
+    public void updateReceivedRewards(String uuid, LinkedHashSet<String> rewards) {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
             conn = getSQLConnection();
             ps = conn.prepareStatement("UPDATE play_time SET received_rewards = ? WHERE uuid = ?;");
 
-            String rewardsStr = rewards.stream()
-                    .map(String::valueOf)
-                    .collect(Collectors.joining(","));
+            String rewardsStr = String.join(",", rewards);
 
             ps.setString(1, rewardsStr);
             ps.setString(2, uuid);
@@ -999,16 +989,14 @@ public abstract class PlayTimeDatabase {
         }
     }
 
-    public void updateRewardsToBeClaimed(String uuid, LinkedHashSet<Float> rewards) {
+    public void updateRewardsToBeClaimed(String uuid, LinkedHashSet<String> rewards) {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
             conn = getSQLConnection();
             ps = conn.prepareStatement("UPDATE play_time SET rewards_to_be_claimed = ? WHERE uuid = ?;");
 
-            String rewardsStr = rewards.stream()
-                    .map(String::valueOf)
-                    .collect(Collectors.joining(","));
+            String rewardsStr = String.join(",", rewards);
 
             ps.setString(1, rewardsStr);
             ps.setString(2, uuid);
@@ -1026,7 +1014,7 @@ public abstract class PlayTimeDatabase {
         }
     }
 
-    public void removeRewardFromAllUsers(int rewardID) {
+    public void removeRewardFromAllUsers(String rewardID) {
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -1041,51 +1029,67 @@ public abstract class PlayTimeDatabase {
 
             PreparedStatement updateStmt = conn.prepareStatement("UPDATE play_time SET received_rewards = ?, rewards_to_be_claimed = ? WHERE uuid = ?;");
 
+            // Get the integer part of the rewardID being removed
+            String rewardIntegerPart = rewardID;
+            if (rewardID != null && rewardID.contains(".")) {
+                String[] parts = rewardID.split("\\.", 2);
+                if (parts.length > 0) {
+                    rewardIntegerPart = parts[0];
+                }
+            }
+
             while (rs.next()) {
                 String uuid = rs.getString("uuid");
                 String receivedRewards = rs.getString("received_rewards");
                 String rewardsToBeClaimed = rs.getString("rewards_to_be_claimed");
 
                 // Process received_rewards column
-                LinkedHashSet<Float> receivedRewardsList = new LinkedHashSet<>();
+                LinkedHashSet<String> receivedRewardsList = new LinkedHashSet<>();
                 if (receivedRewards != null && !receivedRewards.isEmpty()) {
                     for (String reward : receivedRewards.split(",")) {
-                        try {
-                            float rewardValue = Float.parseFloat(reward.trim());
-                            // Keep only if the integer part doesn't match the rewardID
-                            if (Math.floor(rewardValue) != rewardID) {
-                                receivedRewardsList.add(rewardValue);
+                        String trimmedReward = reward.trim();
+
+                        // Extract the integer part using split
+                        String integerPart = trimmedReward;
+                        if (trimmedReward.contains(".")) {
+                            String[] parts = trimmedReward.split("\\.", 2);
+                            if (parts.length > 0) {
+                                integerPart = parts[0];
                             }
-                        } catch (NumberFormatException e) {
-                            // Skip invalid entries
+                        }
+
+                        // Keep only if the integer part doesn't match the rewardID's integer part
+                        if (!integerPart.equals(rewardIntegerPart)) {
+                            receivedRewardsList.add(trimmedReward);
                         }
                     }
                 }
 
                 // Process rewards_to_be_claimed column
-                LinkedHashSet<Float> rewardsToBeClaimedList = new LinkedHashSet<>();
+                LinkedHashSet<String> rewardsToBeClaimedList = new LinkedHashSet<>();
                 if (rewardsToBeClaimed != null && !rewardsToBeClaimed.isEmpty()) {
                     for (String reward : rewardsToBeClaimed.split(",")) {
-                        try {
-                            float rewardValue = Float.parseFloat(reward.trim());
-                            // Keep only if the integer part doesn't match the rewardID
-                            if (Math.floor(rewardValue) != rewardID) {
-                                rewardsToBeClaimedList.add(rewardValue);
+                        String trimmedReward = reward.trim();
+
+                        // Extract the integer part using split
+                        String integerPart = trimmedReward;
+                        if (trimmedReward.contains(".")) {
+                            String[] parts = trimmedReward.split("\\.", 2);
+                            if (parts.length > 0) {
+                                integerPart = parts[0];
                             }
-                        } catch (NumberFormatException e) {
-                            // Skip invalid entries
+                        }
+
+                        // Keep only if the integer part doesn't match the rewardID's integer part
+                        if (!integerPart.equals(rewardIntegerPart)) {
+                            rewardsToBeClaimedList.add(trimmedReward);
                         }
                     }
                 }
 
                 // Convert back to comma-separated strings
-                String updatedReceivedRewards = receivedRewardsList.stream()
-                        .map(String::valueOf)
-                        .collect(Collectors.joining(","));
-
-                String updatedRewardsToBeClaimed = rewardsToBeClaimedList.stream()
-                        .map(String::valueOf)
-                        .collect(Collectors.joining(","));
+                String updatedReceivedRewards = String.join(",", receivedRewardsList);
+                String updatedRewardsToBeClaimed = String.join(",", rewardsToBeClaimedList);
 
                 // Update the database
                 updateStmt.setString(1, updatedReceivedRewards);

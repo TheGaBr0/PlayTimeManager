@@ -86,7 +86,6 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             }
         }
 
-        // Add "Create New Reward" button
         inv.setItem(4, createGuiItem(
                 Material.EMERALD,
                 Component.text("§a§lCreate New Reward"),
@@ -150,7 +149,6 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                 while(protectedSlots.contains(slot)) slot++;
                 if(slot >= 45) break; // Stop before bottom border
 
-                // Create reward item
                 inv.setItem(slot, createGuiItem(
                         Material.valueOf(reward.getItemIcon()),
                         Component.text("§e§l#ID§r§e " + reward.getId()),
@@ -159,12 +157,13 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                                 (reward.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
                         Component.text("§e" + reward.getCommands().size() + "§7 " +
                                 (reward.getCommands().size() != 1 ? "commands loaded" : "command loaded")),
+                        Component.text("§aMiddle click to clone this reward"),
+                        Component.text(""),
                         Component.text("§c§oShift-Right Click to delete")
                 ));
                 slot++;
             }
         } else {
-            // Display message if no rewards exist
             inv.setItem(22, createGuiItem(
                     Material.BARRIER,
                     Component.text("§l§cNo join streak rewards have been created!")
@@ -205,7 +204,6 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             return;
         }
 
-        // Handle "Create New Reward" button
         if (slot == 4 && clickedItem.getType() == Material.EMERALD) {
             whoClicked.closeInventory();
             rewardsManager.addReward(new JoinStreakReward(plugin, rewardsManager.getNextRewardId(), -1));
@@ -213,7 +211,6 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             return;
         }
 
-        // Handle pagination buttons
         if (slot == NEXT_BUTTON_SLOT && clickedItem.getType() == Material.ARROW) {
             openInventory(whoClicked, currentPage + 1);
             return;
@@ -224,36 +221,75 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             return;
         }
 
-        // Handle clicking on a reward
         if (clickedItem.getItemMeta().hasDisplayName()) {
             String rewardID = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName());
 
+            // Extract the reward ID from the display name
+            int id;
+            try {
+                id = Integer.parseInt(rewardID.substring(12));
+            } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                return;
+            }
+
+            JoinStreakReward reward = rewardsManager.getReward(id);
+            if (reward == null) return;
+
+            // Check for middle-click to clone
+            if (event.getClick().isCreativeAction()) {
+                whoClicked.closeInventory();
+                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Cloning reward &e" + id + "&7..."));
+
+                // Create a new reward with the next available ID
+                int newId = rewardsManager.getNextRewardId();
+                JoinStreakReward clonedReward = cloneReward(newId, reward);
+
+                // Add the cloned reward to manager
+                rewardsManager.addReward(clonedReward);
+
+                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7cloned reward &e" + id + " &7to new reward &e" + newId));
+                openInventory(whoClicked);
+                return;
+            }
+
             // Check for shift-right-click to delete
             if (event.isShiftClick() && event.isRightClick()) {
-                int id = Integer.parseInt(rewardID.substring(12));
-                JoinStreakReward rewardToDelete = rewardsManager.getReward(id);
-                if (rewardToDelete != null) {
-                    whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Deleting reward &e" + id + "&7..."));
-                    Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
-                        rewardToDelete.kill();
+                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Deleting reward &e" + id + "&7..."));
+                Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
+                    reward.kill();
 
-                        // Switch back to main thread for UI updates
-                        Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
-                            whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7deleted reward &e" + id));
-                            openInventory(whoClicked);
-                        });
+                    // Switch back to main thread for UI updates
+                    Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
+                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7deleted reward &e" + id));
+                        openInventory(whoClicked);
                     });
-                }
-            } else {
-                // Regular click - open settings GUI
+                });
+            } else if (!event.getClick().isCreativeAction()) { // Regular click - open settings GUI
                 whoClicked.closeInventory();
-                JoinStreakRewardSettingsGui settingsGui = new JoinStreakRewardSettingsGui(
-                        rewardsManager.getReward(Integer.parseInt(rewardID.substring(12))),
-                        this
-                );
+                JoinStreakRewardSettingsGui settingsGui = new JoinStreakRewardSettingsGui(reward, this);
                 settingsGui.openInventory(whoClicked);
             }
         }
+    }
+
+    private JoinStreakReward cloneReward(int newId, JoinStreakReward reward) {
+        JoinStreakReward clonedReward = new JoinStreakReward(plugin, newId, reward.getMinRequiredJoins());
+
+        clonedReward.setRequiredJoinsRange(reward.getMinRequiredJoins(), reward.getMaxRequiredJoins());
+        clonedReward.setItemIcon(reward.getItemIcon());
+        clonedReward.setRewardDescription(reward.getRewardDescription());
+        clonedReward.setRewardMessage(reward.getRewardMessage());
+        clonedReward.setDescription(reward.getDescription());
+        clonedReward.setRewardSound(reward.getRewardSound());
+
+        for (String command : reward.getCommands()) {
+            clonedReward.addCommand(command);
+        }
+
+        for (String permission : reward.getPermissions()) {
+            clonedReward.addPermission(permission);
+        }
+        return clonedReward;
     }
 
     @EventHandler

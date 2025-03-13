@@ -9,6 +9,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -20,6 +21,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,13 +37,21 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private Player player;
 
-    // Pagination variables
     private int currentPage = 0;
-    private final List<RewardDisplayItem> displayItems = new ArrayList<>();
+    private final List<RewardDisplayItem> allDisplayItems = new ArrayList<>();
+    private final List<RewardDisplayItem> filteredDisplayItems = new ArrayList<>();
     private final int REWARDS_PER_PAGE = 28; // Maximum number of rewards per page
     private final int NEXT_BUTTON_SLOT = 50;
     private final int PREV_BUTTON_SLOT = 48;
     private final int PAGE_INDICATOR_SLOT = 49;
+    private final int SHOW_CLAIMED_BUTTON_SLOT = 3;
+    private final int SHOW_AVAILABLE_BUTTON_SLOT = 4;
+    private final int SHOW_LOCKED_BUTTON_SLOT = 5;
+    private final int CLAIM_ALL_BUTTON_SLOT = 46;
+    // Filter states
+    private boolean showClaimed = false;
+    private boolean showAvailable = true;
+    private boolean showLocked = true;
 
     // Interaction cooldown
     private static final Map<UUID, Long> lastInteractionTime = new HashMap<>();
@@ -55,78 +66,131 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
     public void openInventory() {
         currentPage = 0; // Reset to first page when opening the GUI
+        loadRewards();
+        applyFilters();
         initializeItems();
         player.openInventory(inv);
     }
 
     public void openInventory(int page) {
         currentPage = page;
-        initializeItems();
+        applyFilters(); // Apply filters to the display items
+        initializeItems(); // Only reinitialize items, no need to reload rewards
         player.openInventory(inv);
     }
 
-    private static class RewardDisplayItem {
+    public static class RewardDisplayItem implements Comparable<RewardDisplayItem> {
         private final JoinStreakReward reward;
-        private final float instance;
+        private final String instance;
         private final RewardStatus status;
+        private final int specificJoinCount;
+        private final int instanceNumber;
+        private final int subInstanceNumber;
 
-        public RewardDisplayItem(JoinStreakReward reward, float instance, RewardStatus status) {
+        public RewardDisplayItem(JoinStreakReward reward, String instance, RewardStatus status, int specificJoinCount) {
+            int subInstanceNumber1;
+            int instanceNumber1;
             this.reward = reward;
             this.instance = instance;
             this.status = status;
+            this.specificJoinCount = specificJoinCount;
+
+            // Parse instance numbers (e.g., "1.2" -> instanceNumber=1, subInstanceNumber=2)
+            String[] parts = instance.split("\\.");
+            if (parts.length >= 2) {
+                try {
+                    instanceNumber1 = Integer.parseInt(parts[0]);
+                    subInstanceNumber1 = Integer.parseInt(parts[1]);
+                } catch (NumberFormatException e) {
+                    instanceNumber1 = 0;
+                    subInstanceNumber1 = 0;
+                }
+            } else {
+                instanceNumber1 = 0;
+                subInstanceNumber1 = 0;
+            }
+            this.subInstanceNumber = subInstanceNumber1;
+            this.instanceNumber = instanceNumber1;
         }
 
         public JoinStreakReward getReward() {
             return reward;
         }
 
-        public float getInstance() {
+        public String getInstance() {
             return instance;
         }
 
         public RewardStatus getStatus() {
             return status;
         }
+
+        public int getSpecificJoinCount() {
+            return specificJoinCount;
+        }
+
+        @Override
+        public int compareTo(RewardDisplayItem other) {
+            // First, sort by status: AVAILABLE, LOCKED, CLAIMED
+            if (this.status != other.status) {
+                return this.status.ordinal() - other.status.ordinal();
+            }
+
+            // Then sort by required joins
+            if (this.specificJoinCount != other.specificJoinCount && this.specificJoinCount != -1 && other.specificJoinCount != -1) {
+                return Integer.compare(this.specificJoinCount, other.specificJoinCount);
+            }
+
+            // If same required joins, sort by instance number (1.x)
+            if (this.instanceNumber != other.instanceNumber) {
+                return Integer.compare(this.instanceNumber, other.instanceNumber);
+            }
+
+            // Finally, sort by sub-instance number (x.1)
+            return Integer.compare(this.subInstanceNumber, other.subInstanceNumber);
+        }
     }
 
     private enum RewardStatus {
-        CLAIMED,
-        AVAILABLE,
-        LOCKED
+        AVAILABLE, // Should show first
+        LOCKED,    // Should show second
+        CLAIMED    // Should show last
     }
 
-    public void initializeItems() {
-        int leftIndex = 9;
-        int rightIndex = 17;
+    private void applyFilters() {
+        filteredDisplayItems.clear();
 
-        // Process all rewards and their instances to display items
-        displayItems.clear();
-        Map<Integer, LinkedHashSet<Float>> joinRewardsMap = rewardsManager.getJoinRewardsMap();
-        Set<Float> rewardsReceived = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getReceivedRewards();
-        Set<Float> rewardsToBeClaimed = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed();
+        for (RewardDisplayItem item : allDisplayItems) {
+            switch (item.getStatus()) {
+                case CLAIMED:
+                    if (showClaimed) filteredDisplayItems.add(item);
+                    break;
+                case AVAILABLE:
+                    if (showAvailable) filteredDisplayItems.add(item);
+                    break;
+                case LOCKED:
+                    if (showLocked) filteredDisplayItems.add(item);
+                    break;
+            }
+        }
+    }
 
-        // For each reward ID and its instances
-        for (Map.Entry<Integer, LinkedHashSet<Float>> entry : joinRewardsMap.entrySet()) {
-            int rewardId = entry.getKey();
-            JoinStreakReward baseReward = rewardsManager.getReward(rewardId);
+    private void loadRewards() {
+        allDisplayItems.clear();
+        Map<Integer, LinkedHashSet<String>> joinRewardsMap = rewardsManager.getJoinRewardsMap();
+        Set<String> rewardsReceived = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getReceivedRewards();
+        Set<String> rewardsToBeClaimed = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed();
 
-            if (baseReward == null) continue;
+        for (Map.Entry<Integer, LinkedHashSet<String>> entry : joinRewardsMap.entrySet()) {
+            Integer rewardId = entry.getKey();
+            LinkedHashSet<String> instances = entry.getValue();
 
-            // Get the instances sorted
-            List<Float> sortedInstances = new ArrayList<>(entry.getValue());
-            Collections.sort(sortedInstances);
+            JoinStreakReward reward = rewardsManager.getMainInstance(String.valueOf(rewardId));
+            if (reward == null) continue;
 
-            // Calculate how many discrete instances we need to display
-            int minJoins = baseReward.getMinRequiredJoins();
-            int maxJoins = baseReward.getMaxRequiredJoins();
-
-            // Skip rewards with invalid ranges (e.g., -1 which might be used for special cases)
-            if (minJoins <= 0 && minJoins != -1) continue;
-
-            // For each instance of this reward
-            for (Float instance : sortedInstances) {
-
+            for (String instance : instances) {
                 RewardStatus status;
+
                 if (rewardsReceived.contains(instance)) {
                     status = RewardStatus.CLAIMED;
                 } else if (rewardsToBeClaimed.contains(instance)) {
@@ -135,27 +199,20 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                     status = RewardStatus.LOCKED;
                 }
 
-                displayItems.add(new RewardDisplayItem(baseReward, instance, status));
+                // Calculate specific join count for this instance
+                int specificJoinCount = calculateSpecificJoinCount(reward, instance);
+
+                allDisplayItems.add(new RewardDisplayItem(reward, instance, status, specificJoinCount));
             }
         }
 
-        // Sort displayItems: AVAILABLE first, then LOCKED, then CLAIMED
-        displayItems.sort((a, b) -> {
-            if (a.getStatus() != b.getStatus()) {
-                return a.getStatus().ordinal() - b.getStatus().ordinal();
-            }
+        // Sort the display items using the natural ordering (defined by Comparable)
+        Collections.sort(allDisplayItems);
+    }
 
-            // If same status, sort by required joins
-            int aJoins = a.getReward().getMinRequiredJoins();
-            int bJoins = b.getReward().getMinRequiredJoins();
-
-            if (aJoins != bJoins) {
-                return Integer.compare(aJoins, bJoins);
-            }
-
-            // If same required joins, sort by instance
-            return Float.compare(a.getInstance(), b.getInstance());
-        });
+    public void initializeItems() {
+        int leftIndex = 9;
+        int rightIndex = 17;
 
         protectedSlots.clear();
         inv.clear();
@@ -170,8 +227,16 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             }
         }
 
+        createFilterButtons();
+
+        inv.setItem(CLAIM_ALL_BUTTON_SLOT, createGuiItem(
+                Material.CHEST,
+                Component.text("§e§lClaim all")
+        ));
+        protectedSlots.add(CLAIM_ALL_BUTTON_SLOT);
+
         // Add pagination controls if needed
-        int totalPages = (int) Math.ceil((double) displayItems.size() / REWARDS_PER_PAGE);
+        int totalPages = (int) Math.ceil((double) filteredDisplayItems.size() / REWARDS_PER_PAGE);
 
         if (totalPages > 1) {
             // Page indicator
@@ -212,13 +277,13 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             protectedSlots.add(PREV_BUTTON_SLOT);
         }
 
-        if(!displayItems.isEmpty()) {
+        if(!filteredDisplayItems.isEmpty()) {
             // Calculate start and end indices for current page
             int startIndex = currentPage * REWARDS_PER_PAGE;
-            int endIndex = Math.min(startIndex + REWARDS_PER_PAGE, displayItems.size());
+            int endIndex = Math.min(startIndex + REWARDS_PER_PAGE, filteredDisplayItems.size());
 
             // Get subset of rewards for current page
-            List<RewardDisplayItem> currentPageRewards = displayItems.subList(startIndex, endIndex);
+            List<RewardDisplayItem> currentPageRewards = filteredDisplayItems.subList(startIndex, endIndex);
 
             int slot = 10; // Start at first available slot after top border
             for(RewardDisplayItem displayItem : currentPageRewards) {
@@ -228,12 +293,12 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
                 // Create reward item based on status
                 JoinStreakReward reward = displayItem.getReward();
-                float instance = displayItem.getInstance();
+                String instance = displayItem.getInstance();
 
                 Material material;
                 String statusPrefix;
                 List<Component> lore = new ArrayList<>();
-                int specificJoinCount;
+
                 switch (displayItem.getStatus()) {
                     case AVAILABLE:
                         material = Material.valueOf(reward.getItemIcon());
@@ -251,15 +316,18 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                         material = Material.valueOf(reward.getItemIcon());;
                         statusPrefix = "§c§l[LOCKED] ";
                         lore.add(Component.text("§cYou haven't reached this join streak yet"));
-
                         break;
                 }
 
                 // Add reward details to lore
-                specificJoinCount = calculateSpecificJoinCount(reward, instance);
+                int specificJoinCount = displayItem.getSpecificJoinCount();
                 lore.add(Component.text("§7Required Joins: §e" +
                         (specificJoinCount == -1 ? "-" : specificJoinCount)));
-                lore.add(Component.text("§7Reward ID: §e" + instance));
+                lore.add(Component.text("§7Your current join streak: " +
+                        (dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getJoinStreak() < specificJoinCount
+                                ? "§c" : "§a") +
+                        dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getJoinStreak())
+                );
 
                 if(!reward.getDescription().isEmpty()) {
                     lore.add(Component.text(""));
@@ -288,24 +356,60 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
                 ItemStack item = new ItemStack(material);
                 ItemMeta meta = item.getItemMeta();
-                meta.displayName(Component.text(statusPrefix + "Reward #" + instance));
+                meta.displayName(Component.text(statusPrefix));
                 meta.lore(lore);
+                NamespacedKey key = new NamespacedKey(plugin, "reward_id");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, instance);
+
                 item.setItemMeta(meta);
 
                 inv.setItem(slot, item);
                 slot++;
             }
         } else {
-            // Display message if no rewards exist
+            // Display message if no rewards exist or all are filtered out
             inv.setItem(22, createGuiItem(
                     Material.BARRIER,
-                    Component.text("§l§cNo rewards available!")
+                    Component.text("§l§cNo rewards to display!"),
+                    Component.text("§7Try changing your filters")
             ));
         }
     }
 
-    // Helper method to calculate a specific join count for an instance
-    private int calculateSpecificJoinCount(JoinStreakReward reward, float instance) {
+    // Create the filter toggle buttons
+    private void createFilterButtons() {
+        // Show Claimed Button
+        Material claimedMaterial = showClaimed ? Material.LIME_DYE : Material.GRAY_DYE;
+        String claimedStatus = showClaimed ? "§a§lON" : "§c§lOFF";
+        inv.setItem(SHOW_CLAIMED_BUTTON_SLOT, createGuiItem(
+                claimedMaterial,
+                Component.text("§8§l[CLAIMED] §7Rewards: " + claimedStatus),
+                Component.text("§7Click to " + (showClaimed ? "hide" : "show") + " claimed rewards")
+        ));
+        protectedSlots.add(SHOW_CLAIMED_BUTTON_SLOT);
+
+        // Show Available Button
+        Material availableMaterial = showAvailable ? Material.LIME_DYE : Material.GRAY_DYE;
+        String availableStatus = showAvailable ? "§a§lON" : "§c§lOFF";
+        inv.setItem(SHOW_AVAILABLE_BUTTON_SLOT, createGuiItem(
+                availableMaterial,
+                Component.text("§a§l[AVAILABLE] §7Rewards: " + availableStatus),
+                Component.text("§7Click to " + (showAvailable ? "hide" : "show") + " available rewards")
+        ));
+        protectedSlots.add(SHOW_AVAILABLE_BUTTON_SLOT);
+
+        // Show Locked Button
+        Material lockedMaterial = showLocked ? Material.LIME_DYE : Material.GRAY_DYE;
+        String lockedStatus = showLocked ? "§a§lON" : "§c§lOFF";
+        inv.setItem(SHOW_LOCKED_BUTTON_SLOT, createGuiItem(
+                lockedMaterial,
+                Component.text("§c§l[LOCKED] §7Rewards: " + lockedStatus),
+                Component.text("§7Click to " + (showLocked ? "hide" : "show") + " locked rewards")
+        ));
+        protectedSlots.add(SHOW_LOCKED_BUTTON_SLOT);
+    }
+
+    private int calculateSpecificJoinCount(JoinStreakReward reward, String instance) {
         int min = reward.getMinRequiredJoins();
         int max = reward.getMaxRequiredJoins();
 
@@ -315,36 +419,47 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         // If it's a single-value join requirement
         if (min == max) return min;
 
-        // For a range, we need to map the instance to a specific value within the range
-        // First, we need to determine how many total instances are in this range
-        // This is assuming the instances are evenly distributed across the range
-        Map<Integer, LinkedHashSet<Float>> joinRewardsMap = rewardsManager.getJoinRewardsMap();
-        LinkedHashSet<Float> instances = joinRewardsMap.get(reward.getId());
+        // Get the instances for this reward
+        Map<Integer, LinkedHashSet<String>> joinRewardsMap = rewardsManager.getJoinRewardsMap();
+        LinkedHashSet<String> instances = joinRewardsMap.get(reward.getId());
 
         if (instances == null || instances.isEmpty()) return min;
 
         // Sort instances for consistent ordering
-        List<Float> sortedInstances = new ArrayList<>(instances);
-        Collections.sort(sortedInstances);
+        List<String> sortedInstances = new ArrayList<>(instances);
+        Collections.sort(sortedInstances, new Comparator<String>() {
+            @Override
+            public int compare(String a, String b) {
+                try {
+                    // Split the instance strings at the decimal point
+                    String[] aParts = a.split("\\.");
+                    String[] bParts = b.split("\\.");
 
-        // Find index of current instance
+                    // Compare the integer parts first
+                    int aIntPart = Integer.parseInt(aParts[0]);
+                    int bIntPart = Integer.parseInt(bParts[0]);
+
+                    if (aIntPart != bIntPart) {
+                        return Integer.compare(aIntPart, bIntPart);
+                    }
+
+                    // If integer parts are equal, compare the decimal parts
+                    int aDecimalPart = Integer.parseInt(aParts[1]);
+                    int bDecimalPart = Integer.parseInt(bParts[1]);
+
+                    return Integer.compare(aDecimalPart, bDecimalPart);
+                } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                    return a.compareTo(b);
+                }
+            }
+        });
+
+        // Find index of current instance (0-based)
         int index = sortedInstances.indexOf(instance);
         if (index == -1) return min; // Fallback if instance not found
 
-        // Calculate the specific join count based on position in range
-        int totalInstances = sortedInstances.size();
-        int rangeSize = max - min + 1;
-
-        // If we have fewer instances than the range size, distribute them evenly
-        if (totalInstances <= rangeSize) {
-            // Calculate the step size to distribute instances across the range
-            double step = (double) rangeSize / totalInstances;
-            return min + (int)(index * step);
-        } else {
-            // If we have more instances than range size, multiple instances will share the same join count
-            // This is a fallback case and might not match your exact requirements
-            return min + (index * rangeSize / totalInstances);
-        }
+        // Calculate specific join count based on position in the sorted list
+        return min + index;
     }
 
     private ItemStack createGuiItem(Material material, @Nullable TextComponent name, @Nullable TextComponent...lore) {
@@ -379,6 +494,33 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             return;
         }
 
+        // Handle filter buttons
+        if (slot == SHOW_CLAIMED_BUTTON_SLOT) {
+            showClaimed = !showClaimed;
+            applyFilters();
+            initializeItems();
+            return;
+        }
+
+        if (slot == SHOW_AVAILABLE_BUTTON_SLOT) {
+            showAvailable = !showAvailable;
+            applyFilters();
+            initializeItems();
+            return;
+        }
+
+        if (slot == SHOW_LOCKED_BUTTON_SLOT) {
+            showLocked = !showLocked;
+            applyFilters();
+            initializeItems();
+            return;
+        }
+
+        if (slot == CLAIM_ALL_BUTTON_SLOT){
+            claimAllRewards();
+            return;
+        }
+
         // Handle pagination buttons
         if (slot == NEXT_BUTTON_SLOT && clickedItem.getType() == Material.ARROW) {
             openInventory(currentPage + 1);
@@ -397,59 +539,56 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             // Only process if it's an available reward
             if (displayName.contains("[CLICK TO CLAIM]")) {
                 // Extract reward instance from the lore
-                List<Component> lore = clickedItem.getItemMeta().lore();
-                if (lore != null) {
-                    for (Component line : lore) {
-                        String loreLine = Utils.stripColor(((TextComponent) line).content());
-                        if (loreLine.startsWith("Reward ID:")) {
-                            try {
-                                // Extract the float instance value
-                                float instance = Float.parseFloat(loreLine.substring(loreLine.indexOf(":") + 1).trim());
+                NamespacedKey key = new NamespacedKey(plugin, "reward_id");
+                PersistentDataContainer container = clickedItem.getItemMeta().getPersistentDataContainer();
+                if (container.has(key, PersistentDataType.STRING)) {
+                    String instance = container.get(key, PersistentDataType.STRING);
+                    Set<String> rewardsToBeClaimed = dbUsersManager.getUserFromUUID(whoClicked.getUniqueId().toString()).getRewardsToBeClaimed();
 
-                                // Get the user's rewards to be claimed
-                                Set<Float> rewardsToBeClaimed = dbUsersManager.getUserFromUUID(whoClicked.getUniqueId().toString()).getRewardsToBeClaimed();
-
-                                // Verify that the reward is actually claimable
-                                if (rewardsToBeClaimed.contains(instance)) {
-                                    // Find the reward object based on the instance
-                                    JoinStreakReward reward = null;
-                                    for (RewardDisplayItem displayItem : displayItems) {
-                                        if (displayItem.getInstance() == instance) {
-                                            reward = displayItem.getReward();
-                                            break;
-                                        }
-                                    }
-
-                                    if (reward != null) {
-                                        // Process the reward claim
-                                        rewardsManager.processCompletedReward(whoClicked, reward, instance, true);
-
-                                        // Send success message
-                                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aYou have successfully claimed your reward!"));
-
-                                        // Refresh the GUI
-                                        openInventory(currentPage);
-                                    } else {
-                                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cCouldn't find the reward details!"));
-                                        whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
-                                    }
-                                } else {
-                                    whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cThis reward is not available to claim!"));
-                                    whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
-                                }
-                                return; // Exit after processing
-                            } catch (NumberFormatException e) {
-                                // Invalid format, ignore
-                                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cAn error occurred while claiming this reward!"));
-                                e.printStackTrace();
+                    if (rewardsToBeClaimed.contains(instance)) {
+                        JoinStreakReward reward = null;
+                        for (RewardDisplayItem displayItem : allDisplayItems) {
+                            if (displayItem.getInstance().equals(instance)) {
+                                reward = displayItem.getReward();
+                                break;
                             }
                         }
+
+                        if (reward != null) {
+                            rewardsManager.processCompletedReward(whoClicked, reward, instance, true);
+                            whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aYou have successfully claimed your reward!"));
+
+                            // Reload rewards to update status
+                            loadRewards();
+                            applyFilters();
+                            openInventory(currentPage);
+                        } else {
+                            whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cCouldn't find the reward details!"));
+                            whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                        }
+                    } else {
+                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cThis reward is not available to claim!"));
+                        whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
                     }
                 }
             }
         }
     }
 
+    private void claimAllRewards(){
+
+        Set<String> claimableRewards = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed();
+
+        if(claimableRewards.isEmpty())
+            return;
+
+        for(String instance : claimableRewards){
+            rewardsManager.processCompletedReward(player, rewardsManager.getMainInstance(instance), instance, true);
+        }
+        loadRewards();
+        applyFilters();
+        openInventory(0);
+    }
 
     private boolean isOnCooldown(Player player) {
         UUID playerId = player.getUniqueId();

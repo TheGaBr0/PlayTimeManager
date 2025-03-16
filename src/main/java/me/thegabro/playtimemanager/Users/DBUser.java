@@ -170,6 +170,12 @@ public class DBUser {
         return relativeJoinStreak;
     }
 
+    public void incrementJoinStreak(){
+        this.relativeJoinStreak++;
+        this.absoluteJoinStreak++;
+        db.incrementJoinStreak(uuid);
+    }
+
     public void resetJoinStreaks(){
         this.relativeJoinStreak = 0;
         this.absoluteJoinStreak = 0;

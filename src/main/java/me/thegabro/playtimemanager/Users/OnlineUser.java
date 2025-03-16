@@ -27,12 +27,6 @@ public class OnlineUser extends DBUser {
         db.updateLastSeen(uuid, this.lastSeen);
     }
 
-    public void incrementJoinStreak(){
-        this.relativeJoinStreak++;
-        this.absoluteJoinStreak++;
-        db.incrementJoinStreak(uuid);
-    }
-
     public Player getPlayer(){
         return p;
     }

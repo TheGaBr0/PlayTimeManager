@@ -9,6 +9,7 @@ import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
+import org.quartz.CronExpression;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -16,6 +17,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
+import java.text.ParseException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -30,6 +32,10 @@ public class JoinStreaksManager {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private BukkitTask intervalTask;
+    private JoinStreakReward lastRewardByJoins;
+    private CronExpression cronExpression;
+    private TimeZone timezone;
+    private Date nextIntervalReset;
 
     private JoinStreaksManager() {}
 
@@ -43,15 +49,100 @@ public class JoinStreaksManager {
     public void initialize(PlayTimeManager playTimeManager) {
         this.plugin = playTimeManager;
         db = plugin.getDatabase();
+
+        validateConfiguration();
+
         clearRewards();
         loadRewards();
+        updateIntervalResetTimes();
         populateJoinedUsers();
         startIntervalTask();
     }
 
+    private void validateConfiguration() {
+        try {
+            // Validate cron expression (using Quartz cron expression)
+            String cronString = plugin.getConfiguration().getStreakResetSchedule();
+            this.cronExpression = new CronExpression(cronString);
+
+            // Set the timezone
+            String timezoneConfig = plugin.getConfiguration().getStreakTimeZone();
+            if ("utc".equalsIgnoreCase(timezoneConfig)) {
+                this.timezone = TimeZone.getTimeZone("UTC");
+            } else {
+                this.timezone = TimeZone.getDefault();
+            }
+            this.cronExpression.setTimeZone(timezone);
+
+            if(plugin.getConfiguration().getStreakCheckVerbose()) {
+                plugin.getLogger().info("Join streak configuration validated successfully");
+                plugin.getLogger().info("Using cron schedule: " + cronString);
+                plugin.getLogger().info("Using timezone: " + timezone.getID());
+            }
+
+        } catch (ParseException e) {
+            plugin.getLogger().severe("Invalid cron expression in config! Using default: 0 0 0 * * ?");
+            try {
+                // Make sure the default is in the correct format for Quartz CronExpression
+                this.cronExpression = new CronExpression("0 0 0 * * ?");
+                this.timezone = TimeZone.getDefault();
+                this.cronExpression.setTimeZone(timezone);
+            } catch (ParseException ex) {
+                plugin.getLogger().severe("Critical error initializing cron scheduler: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void updateIntervalResetTimes() {
+        Date now = new Date();
+        // Update next reset time using Quartz Cron Expression
+        nextIntervalReset = cronExpression.getNextValidTimeAfter(now);
+    }
+
+    private Date getPreviousCronTime(Date fromTime) {
+        // Create a working copy of the reference time
+        Date workingTime = new Date(fromTime.getTime());
+
+        // Step back one minute to ensure we find the previous execution
+        // if the reference time happens to be exactly at an execution time
+        Calendar cal = Calendar.getInstance(timezone);
+        cal.setTime(workingTime);
+        cal.add(Calendar.MINUTE, -1);
+        workingTime = cal.getTime();
+
+        // Get the next execution time AFTER our offset working time
+        // This actually gives us the first future execution from our offset time
+        Date nextTime = cronExpression.getNextValidTimeAfter(workingTime);
+
+        // If we found a next time, step back one more millisecond and find the next time again
+        // This will give us the previous execution before the reference time
+        if (nextTime != null) {
+            cal.setTime(nextTime);
+            cal.add(Calendar.MILLISECOND, -1);
+            Date previousTime = cronExpression.getNextValidTimeAfter(cal.getTime());
+
+            if (previousTime != null && previousTime.before(fromTime)) {
+                return previousTime;
+            }
+        }
+
+        // Fallback: if something went wrong with the calculation above,
+        // return 24 hours ago as a safe default
+        cal.setTime(fromTime);
+        cal.add(Calendar.DAY_OF_YEAR, -1);
+
+        if (plugin.getConfiguration().getStreakCheckVerbose())
+            plugin.getLogger().warning("Could not determine previous cron time, defaulting to 24 hours ago.");
+
+        return cal.getTime();
+    }
+
     private void populateJoinedUsers() {
-        long streakIntervalSeconds = plugin.getConfiguration().getStreakInterval();
-        Set<String> recentPlayers = db.getPlayersWithinTimeInterval(streakIntervalSeconds);
+        Date now = new Date();
+        Date previousReset = getPreviousCronTime(now);
+        long intervalSeconds = (now.getTime() - previousReset.getTime()) / 1000L;
+
+        Set<String> recentPlayers = db.getPlayersWithinTimeInterval(intervalSeconds);
 
         joinedDuringCurrentInterval.clear();
         joinedDuringCurrentInterval.addAll(recentPlayers);
@@ -61,77 +152,112 @@ public class JoinStreaksManager {
                     joinedDuringCurrentInterval.size() + " players who joined within the configured interval.");
     }
 
-    public int getNextRewardId() {
-        // Find the maximum ID from the rewards set, or 0 if the set is empty
-        return rewards.stream()
-                .mapToInt(JoinStreakReward::getId)  // Extract the IDs from rewards (as int)
-                .max()                              // Find the maximum ID
-                .orElse(0) + 1;                     // Default to 0 if empty, then add 1 for the next ID
-    }
+    // Other methods are unchanged
 
-
-    public void startIntervalTask() {
+    private void scheduleNextReset() {
         if (intervalTask != null) {
             intervalTask.cancel();
         }
 
-        long intervalTicks = plugin.getConfiguration().getStreakInterval() * 20;
+        Date now = new Date();
+        // Add a small buffer (e.g., 1 second) to avoid scheduling for a time that's too close
+        if (nextIntervalReset.getTime() - now.getTime() < 1000) {
+            // Get the next interval after the current nextIntervalReset
+            nextIntervalReset = cronExpression.getNextValidTimeAfter(nextIntervalReset);
+        }
+
+        long delayInMillis = nextIntervalReset.getTime() - now.getTime();
+        long delayInTicks = Math.max(20, delayInMillis / 50); // Min 1 second (20 ticks)
+
+        if (plugin.getConfiguration().getStreakCheckVerbose()) {
+            plugin.getLogger().info("Next join streak interval reset scheduled for: " + nextIntervalReset +
+                    " (in " + delayInMillis/1000 + " s)");
+        }
 
         intervalTask = new BukkitRunnable() {
             @Override
             public void run() {
-                // Reset streaks for players who didn't join during this interval
                 resetMissingPlayerStreaks();
 
-                if(plugin.getConfiguration().getStreakCheckVerbose())
+                if (plugin.getConfiguration().getStreakCheckVerbose()) {
                     plugin.getLogger().info("Resetting join streak interval tracking. Cleared " +
                             joinedDuringCurrentInterval.size() + " tracked players.");
+                }
 
                 joinedDuringCurrentInterval.clear();
+
+                // Calculate the next reset time and reschedule
+                Date oldNextReset = nextIntervalReset;
+                updateIntervalResetTimes();
+
+                // Ensure we don't get stuck in a loop if times are too close
+                if (Math.abs(nextIntervalReset.getTime() - oldNextReset.getTime()) < 1000) {
+                    nextIntervalReset = cronExpression.getNextValidTimeAfter(nextIntervalReset);
+                }
+
+                scheduleNextReset(); // Re-run with the updated time
             }
-        }.runTaskTimer(plugin, intervalTicks, intervalTicks);
+        }.runTaskLater(plugin, delayInTicks);
+    }
+
+    public void startIntervalTask() {
+        validateConfiguration();
+        updateIntervalResetTimes();
+        scheduleNextReset();
     }
 
     private void resetMissingPlayerStreaks() {
-
-        if(plugin.getConfiguration().getStreakCheckVerbose())
-            plugin.getLogger().info(String.format("Join streak check schedule started, refresh rate is %ss", plugin.getConfiguration().getStreakInterval()));
-
         // Get all players from database who have active streaks
         Set<String> playersWithStreaks = db.getPlayersWithActiveStreaks();
 
-
         // Find players with streaks who didn't join during this interval
-        playersWithStreaks.removeAll(joinedDuringCurrentInterval);
+        Set<String> playersToReset = new HashSet<>(playersWithStreaks);
+        playersToReset.removeAll(joinedDuringCurrentInterval);
 
-        //do not reset online users during time interval expiring, instead increment their joinstreak
-        for(OnlineUser onlineUser : onlineUsersManager.getOnlineUsersByUUID().values()){
-            playersWithStreaks.remove(onlineUser.getUuid());
+        // Get the current time
+        Date now = new Date();
+        Date previousReset = getPreviousCronTime(now);
+        long intervalSeconds = (now.getTime() - previousReset.getTime()) / 1000L;
+
+        // Process all players who might need reset
+        for (String playerUUID : playersToReset) {
+            DBUser user = dbUsersManager.getUserFromUUID(playerUUID);
+            if (user != null) {
+                // Check if the player was recently online within the interval
+                long secondsSinceLastSeen = Duration.between(user.getLastSeen(), LocalDateTime.now()).getSeconds();
+
+                // If the player was online recently (within this interval), don't reset their streak
+                if (secondsSinceLastSeen <= intervalSeconds) {
+                    playersToReset.remove(playerUUID);
+                    continue;
+                }
+
+                // Otherwise reset their streak
+                user.resetJoinStreaks();
+            }
+        }
+
+        // Handle online players separately (as you're already doing)
+        for (OnlineUser onlineUser : onlineUsersManager.getOnlineUsersByUUID().values()) {
+            // Remove from reset list and increment streak
+            playersToReset.remove(onlineUser.getUuid());
             onlineUser.incrementJoinStreak();
             checkRewardsForUser(onlineUser, onlineUser.getPlayer());
         }
 
-        // Reset streaks for all missing players
-        for (String playerUUID : playersWithStreaks) {
-            // Retrieve player data and reset streak
-            DBUser user = dbUsersManager.getUserFromUUID(playerUUID);
-            if (user != null) {
-                user.resetJoinStreaks();
-            } else {
-                // If user data isn't loaded in memory, reset directly in database
-                db.resetJoinStreaks(playerUUID);
-            }
-        }
-
-        if(plugin.getConfiguration().getStreakCheckVerbose())
-            plugin.getLogger().info("Reset join streaks for " + playersWithStreaks.size() +
+        if (plugin.getConfiguration().getStreakCheckVerbose())
+            plugin.getLogger().info("Reset join streaks for " + playersToReset.size() +
                     " players who missed the current interval");
     }
 
     public void isItAStreak(OnlineUser user, Player player) {
         String playerUUID = user.getUuid();
         long secondsBetween = Duration.between(user.getLastSeen(), LocalDateTime.now()).getSeconds();
-        long streakIntervalSeconds = plugin.getConfiguration().getStreakInterval();
+
+        Date now = new Date();
+        Date previousReset = getPreviousCronTime(now);
+
+        long streakIntervalSeconds = (now.getTime() - previousReset.getTime()) / 1000L;
 
         if (secondsBetween <= streakIntervalSeconds) {
             // Check if player already joined during this interval
@@ -151,9 +277,8 @@ public class JoinStreaksManager {
 
     public void addReward(JoinStreakReward reward) {
         rewards.add(reward);
-
         updateJoinRewardsMap(reward);
-
+        updateEndLoopReward();
     }
 
     public JoinStreakReward getMainInstance(String instance){
@@ -205,6 +330,8 @@ public class JoinStreaksManager {
         rewards.remove(reward);
 
         joinRewardsMap.remove(reward.getId());
+
+        updateEndLoopReward();
     }
 
     public void updateJoinRewardsMap(JoinStreakReward reward) {
@@ -232,6 +359,19 @@ public class JoinStreaksManager {
                 set.add(valueStr);
             }
             joinRewardsMap.put(reward.getId(), set);
+        }
+    }
+
+    public void updateEndLoopReward() {
+        // Find the reward with the highest required joins
+        lastRewardByJoins = rewards.stream()
+                .filter(reward -> reward.getMinRequiredJoins() != -1) // Exclude rewards with no join requirement
+                .max(Comparator.comparingInt(JoinStreakReward::getMaxRequiredJoins))
+                .orElse(null);
+
+        if (plugin.getConfiguration().getStreakCheckVerbose() && lastRewardByJoins != null) {
+            plugin.getLogger().info("Updated lastRewardByJoins: ID=" + lastRewardByJoins.getId() +
+                    ", Required Joins=" + lastRewardByJoins.getRequiredJoinsDisplay());
         }
     }
 
@@ -281,6 +421,14 @@ public class JoinStreaksManager {
                 processQualifiedReward(onlineUser, player, mainInstance, rewardKey);
             }
         }
+    }
+
+    public int getNextRewardId() {
+        // Find the maximum ID from the rewards set, or 0 if the set is empty
+        return rewards.stream()
+                .mapToInt(JoinStreakReward::getId)  // Extract the IDs from rewards (as int)
+                .max()                              // Find the maximum ID
+                .orElse(0) + 1;                     // Default to 0 if empty, then add 1 for the next ID
     }
 
     private void processQualifiedReward(OnlineUser onlineUser, Player player, JoinStreakReward reward, String rewardKey) {

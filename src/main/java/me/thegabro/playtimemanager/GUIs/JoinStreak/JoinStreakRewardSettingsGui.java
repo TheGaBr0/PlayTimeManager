@@ -359,6 +359,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                         player.sendMessage(Component.text("Required joins updated to " + newValue + "!").color(NamedTextColor.GREEN));
                     }
                     JoinStreaksManager.getInstance().updateJoinRewardsMap(reward);
+                    JoinStreaksManager.getInstance().updateEndLoopReward();
                 } else {
                     player.sendMessage(Component.text("Invalid format. Please enter a positive number, -1 to deactivate, or a valid range (e.g., 1-25).").color(NamedTextColor.RED));
                 }

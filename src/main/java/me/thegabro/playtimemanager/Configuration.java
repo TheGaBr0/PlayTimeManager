@@ -4,30 +4,48 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class Configuration {
 
-    private final boolean createIfNotExist, resource;
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
 
+    // File related fields
+    private final boolean createIfNotExist, resource;
     private FileConfiguration config;
     private File file;
     private final File path;
     private final String name;
-    private long goalsCheckRate;
-    private boolean goalsCheckVerbose;
+
+    // Config settings fields - grouped by category
+    // General settings
+    private String pluginChatPrefix;
+    private String datetimeFormat;
+
+    // Playtime settings
     private String playtimeSelfMessage;
     private String playtimeOthersMessage;
-    private String permissionsManagerPlugin;
-    private String datetimeFormat;
-    private String playtimetopLeaderboardFormat;
+
+    // Goals settings
+    private long goalsCheckRate;
+    private boolean goalsCheckVerbose;
+
+    // Placeholders settings
     private boolean placeholdersEnableErrors;
     private String placeholdersDefaultMessage;
-    private String pluginChatPrefix;
-    private long streakInterval;
-    private String joinClaimMessage;
+
+    // Permissions settings
+    private String permissionsManagerPlugin;
+
+    // Streak settings
+    private String streakResetSchedule;
+    private String streakTimeZone;
     private boolean streakCheckVerbose;
+    private String joinClaimMessage;
+
+    // Leaderboard settings
+    private String playtimetopLeaderboardFormat;
     private String playtimetopHeader;
     private String playtimetopPreviousPageExists;
     private String playtimetopPreviousPageNotExists;
@@ -37,6 +55,14 @@ public class Configuration {
     private String playtimetopNextPageNotExists;
     private String playtimetopNextPageOverText;
 
+    /**
+     * Constructor for Configuration
+     *
+     * @param path             Location of the configuration file
+     * @param name             Name of the configuration file (without extension)
+     * @param createIfNotExist Whether to create the file if it doesn't exist
+     * @param resource         Whether to use plugin resource as default
+     */
     public Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
         this.path = path;
         this.name = name + ".yml";
@@ -46,28 +72,13 @@ public class Configuration {
         reload();
     }
 
-    private void save() {
-        try {
-            config.save(file);
-        } catch (Exception exc) {
-            plugin.getLogger().severe(String.valueOf(exc));
-        }
-    }
+    //-------------------------------------------------------------------------
+    // File operations
+    //-------------------------------------------------------------------------
 
-    private void reloadFile() {
-        file = new File(path, name);
-    }
-
-    private void reloadConfig() {
-        config = YamlConfiguration.loadConfiguration(file);
-    }
-
-    public void reload() {
-        reloadFile();
-        reloadConfig();
-        updateAllSettings();
-    }
-
+    /**
+     * Creates the configuration file if it doesn't exist
+     */
     private void create() {
         if (file == null) {
             reloadFile();
@@ -87,24 +98,68 @@ public class Configuration {
         }
     }
 
+    /**
+     * Saves the configuration to file
+     */
+    private void save() {
+        try {
+            config.save(file);
+        } catch (Exception exc) {
+            plugin.getLogger().severe(String.valueOf(exc));
+        }
+    }
+
+    /**
+     * Reloads the file reference
+     */
+    private void reloadFile() {
+        file = new File(path, name);
+    }
+
+    /**
+     * Reloads the config from file
+     */
+    private void reloadConfig() {
+        config = YamlConfiguration.loadConfiguration(file);
+    }
+
+    /**
+     * Reloads the configuration completely
+     */
+    public void reload() {
+        reloadFile();
+        reloadConfig();
+        updateAllSettings();
+    }
+
+    //-------------------------------------------------------------------------
+    // Settings update methods
+    //-------------------------------------------------------------------------
+
+    /**
+     * Updates all configuration settings from the config file
+     */
     private void updateAllSettings() {
-        // Update goals settings
-        this.goalsCheckRate = config.getLong("goal-check-rate", 900);
-        this.goalsCheckVerbose = config.getBoolean("goal-check-verbose", true);
+        updateGeneralSettings();
+        updatePlaytimeSettings();
+        updateGoalsSettings();
+        updatePlaceholdersSettings();
+        updatePermissionsSettings();
+        updateStreakSettings();
+        updateLeaderboardSettings();
+    }
 
-        // Update messages
-        this.playtimeSelfMessage = config.getString("playtime-self-message",
-                "[&6PlayTime&eManager&f]&7 Your playtime is &6%PLAYTIME%");
-        this.playtimeOthersMessage = config.getString("playtime-others-message",
-                "[&6PlayTime&eManager&f]&7 The playtime of &e%PLAYER_NAME%&7 is &6%PLAYTIME%");
+    /**
+     * Updates general plugin settings
+     */
+    private void updateGeneralSettings() {
+        // Update plugin prefix
+        this.pluginChatPrefix = config.getString("prefix", "[§6PlayTime§eManager§f]§7");
 
-        // Update permissions settings
-        this.permissionsManagerPlugin = config.getString("permissions-manager-plugin", "luckperms");
-
-        // Update datetime settings
+        // Update datetime format
         String configFormat = config.getString("datetime-format", "MMM dd, yyyy HH:mm:ss");
         try {
-            new java.text.SimpleDateFormat(configFormat);
+            new SimpleDateFormat(configFormat);
             this.datetimeFormat = configFormat;
         } catch (IllegalArgumentException e) {
             this.datetimeFormat = "MMM dd, yyyy HH:mm:ss";
@@ -112,15 +167,56 @@ public class Configuration {
             save();
             plugin.getLogger().warning("Invalid datetime format in config. Resetting to default: " + this.datetimeFormat);
         }
+    }
 
-        // Update prefixes settings
-        this.pluginChatPrefix = config.getString("prefix", "[§6PlayTime§eManager§f]§7");
+    /**
+     * Updates playtime message settings
+     */
+    private void updatePlaytimeSettings() {
+        this.playtimeSelfMessage = config.getString("playtime-self-message",
+                "[&6PlayTime&eManager&f]&7 Your playtime is &6%PLAYTIME%");
+        this.playtimeOthersMessage = config.getString("playtime-others-message",
+                "[&6PlayTime&eManager&f]&7 The playtime of &e%PLAYER_NAME%&7 is &6%PLAYTIME%");
+    }
 
-        // Update placeholders settings
+    /**
+     * Updates goals settings
+     */
+    private void updateGoalsSettings() {
+        this.goalsCheckRate = config.getLong("goal-check-rate", 900);
+        this.goalsCheckVerbose = config.getBoolean("goal-check-verbose", true);
+    }
+
+    /**
+     * Updates placeholders settings
+     */
+    private void updatePlaceholdersSettings() {
         this.placeholdersEnableErrors = config.getBoolean("placeholders.enable-errors", false);
         this.placeholdersDefaultMessage = config.getString("placeholders.default-message", "No data");
+    }
 
-        // Update playtimetop settings
+    /**
+     * Updates permissions settings
+     */
+    private void updatePermissionsSettings() {
+        this.permissionsManagerPlugin = config.getString("permissions-manager-plugin", "luckperms");
+    }
+
+    /**
+     * Updates streak settings
+     */
+    private void updateStreakSettings() {
+        this.joinClaimMessage = config.getString("join-warn-claim-message", "[&6PlayTime&eManager&f]&7 Reward " +
+                "earned for your login streak! Use &e/claimrewards &7to collect it.");
+        this.streakCheckVerbose = config.getBoolean("streak-check-verbose", true);
+        this.streakTimeZone = config.getString("reset-schedule-timezone", "server");
+        this.streakResetSchedule = config.getString("streak-reset-schedule", "0 0 * * *");
+    }
+
+    /**
+     * Updates leaderboard settings
+     */
+    private void updateLeaderboardSettings() {
         this.playtimetopHeader = config.getString("playtimetop.header",
                 "[&6PlayTime&eManager&f]&7 Top 100 players - page: %PAGE_NUMBER%");
         this.playtimetopLeaderboardFormat = config.getString("playtimetop.leaderboard-format",
@@ -135,15 +231,13 @@ public class Configuration {
         this.playtimetopNextPageNotExists = config.getString("playtimetop.footer.next-page.text-if-page-not-exists", "&7»");
         this.playtimetopNextPageOverText = config.getString("playtimetop.footer.next-page.over-text",
                 "&7Click to go to next page");
-
-        // Update streak settings
-        this.streakInterval = config.getLong("streak-interval", 86400);
-        this.joinClaimMessage = config.getString("join-warn-claim-message", "[&6PlayTime&eManager&f]&7 Reward " +
-                "earned for your login streak! Use &e/claimrewards &7to collect it.");
-        this.streakCheckVerbose = config.getBoolean("streak-check-verbose", true);
-
     }
 
+    //-------------------------------------------------------------------------
+    // Getter and setter methods - grouped by category
+    //-------------------------------------------------------------------------
+
+    // General settings
     public String getPluginPrefix() {
         return this.pluginChatPrefix;
     }
@@ -154,18 +248,145 @@ public class Configuration {
         save();
     }
 
-    public String getPlaytimetopHeader() {
-        return playtimetopHeader;
+    public String getDateTimeFormat() {
+        return datetimeFormat;
     }
 
-    public void setPlaytimetopHeader(String header) {
-        if (header != null) {
-            this.playtimetopHeader = header;
-            config.set("playtimetop.header", header);
+    public void setDateTimeFormat(String format) {
+        this.datetimeFormat = format;
+        config.set("datetime-format", format);
+        save();
+    }
+
+    // Playtime settings
+    public String getPlaytimeSelfMessage() {
+        return playtimeSelfMessage;
+    }
+
+    public void setPlaytimeSelfMessage(String message) {
+        if (message != null) {
+            this.playtimeSelfMessage = message;
+            config.set("playtime-self-message", message);
             save();
         }
     }
 
+    public String getPlaytimeOthersMessage() {
+        return playtimeOthersMessage;
+    }
+
+    public void setPlaytimeOthersMessage(String message) {
+        if (message != null) {
+            this.playtimeOthersMessage = message;
+            config.set("playtime-others-message", message);
+            save();
+        }
+    }
+
+    // Goals settings
+    public long getGoalsCheckRate() {
+        return goalsCheckRate;
+    }
+
+    public void setGoalsCheckRate(Long rate) {
+        if (rate != null) {
+            this.goalsCheckRate = rate;
+            config.set("goal-check-rate", rate);
+            save();
+        }
+    }
+
+    public boolean getGoalsCheckVerbose() {
+        return goalsCheckVerbose;
+    }
+
+    public void setGoalsCheckVerbose(Boolean verbose) {
+        if (verbose != null) {
+            this.goalsCheckVerbose = verbose;
+            config.set("goal-check-verbose", verbose);
+            save();
+        }
+    }
+
+    // Placeholders settings
+    public boolean isPlaceholdersEnableErrors() {
+        return placeholdersEnableErrors;
+    }
+
+    public void setPlaceholdersEnableErrors(boolean enableErrors) {
+        this.placeholdersEnableErrors = enableErrors;
+        config.set("placeholders.enable-errors", enableErrors);
+        save();
+    }
+
+    public String getPlaceholdersDefaultMessage() {
+        return placeholdersDefaultMessage;
+    }
+
+    public void setPlaceholdersDefaultMessage(String message) {
+        this.placeholdersDefaultMessage = message;
+        config.set("placeholders.default-message", message);
+        save();
+    }
+
+    // Permissions settings
+    public String getPermissionsManagerPlugin() {
+        return permissionsManagerPlugin;
+    }
+
+    public void setPermissionsManagerPlugin(String plugin) {
+        if (plugin != null) {
+            this.permissionsManagerPlugin = plugin.toLowerCase();
+            config.set("permissions-manager-plugin", plugin.toLowerCase());
+            save();
+        }
+    }
+
+    public String getStreakResetSchedule() {
+        return streakResetSchedule;
+    }
+
+    public void setStreakResetSchedule(String streakResetSchedule) {
+        this.streakResetSchedule = streakResetSchedule;
+        config.set("streak-reset-schedule", streakResetSchedule);
+        save();
+    }
+
+    public String getStreakTimeZone() {
+        return streakTimeZone;
+    }
+
+    public void setStreakTimeZone(String streakTimeZone) {
+        this.streakTimeZone = streakTimeZone;
+        config.set("reset-schedule-timezone", streakTimeZone);
+        save();
+    }
+
+    public boolean getStreakCheckVerbose() {
+        return streakCheckVerbose;
+    }
+
+    public void setStreakCheckVerbose(Boolean verbose) {
+        if (verbose != null) {
+            this.streakCheckVerbose = verbose;
+            config.set("streak-check-verbose", verbose);
+            save();
+        }
+    }
+
+    public String getJoinClaimMessage() {
+        return joinClaimMessage;
+    }
+
+    public void setJoinClaimMessage(String autoclaim) {
+        if (autoclaim != null) {
+            this.joinClaimMessage = autoclaim;
+            config.set("join-warn-claim-message", autoclaim);
+            save();
+        }
+    }
+
+    // Leaderboard settings
     public String getPlaytimetopLeaderboardFormat() {
         return playtimetopLeaderboardFormat;
     }
@@ -174,6 +395,18 @@ public class Configuration {
         if (format != null) {
             this.playtimetopLeaderboardFormat = format;
             config.set("playtimetop.leaderboard-format", format);
+            save();
+        }
+    }
+
+    public String getPlaytimetopHeader() {
+        return playtimetopHeader;
+    }
+
+    public void setPlaytimetopHeader(String header) {
+        if (header != null) {
+            this.playtimetopHeader = header;
+            config.set("playtimetop.header", header);
             save();
         }
     }
@@ -258,130 +491,6 @@ public class Configuration {
         if (text != null) {
             this.playtimetopNextPageOverText = text;
             config.set("playtimetop.footer.next-page.over-text", text);
-            save();
-        }
-    }
-
-    public boolean isPlaceholdersEnableErrors() {
-        return placeholdersEnableErrors;
-    }
-
-    public void setPlaceholdersEnableErrors(boolean enableErrors) {
-        this.placeholdersEnableErrors = enableErrors;
-        config.set("placeholders.enable-errors", enableErrors);
-        save();
-    }
-
-    public String getPlaceholdersDefaultMessage() {
-        return placeholdersDefaultMessage;
-    }
-
-    public void setPlaceholdersDefaultMessage(String message) {
-        this.placeholdersDefaultMessage = message;
-        config.set("placeholders.default-message", message);
-        save();
-    }
-
-    public long getStreakInterval() {
-        return streakInterval;
-    }
-
-    public void setStreakInterval(long streakInterval) {
-        this.streakInterval = streakInterval;
-        config.set("streak-interval", streakInterval);
-        save();
-    }
-
-    public void setJoinClaimMessage(String autoclaim) {
-        if (autoclaim != null) {
-            this.joinClaimMessage = autoclaim;
-            config.set("join-warn-claim-message", autoclaim);
-            save();
-        }
-    }
-
-    public String getJoinClaimMessage() {
-        return joinClaimMessage;
-    }
-
-    public void setStreakCheckVerbose(Boolean verbose) {
-        if (verbose != null) {
-            this.streakCheckVerbose = verbose;
-            config.set("streak-check-verbose", verbose);
-            save();
-        }
-    }
-
-    public boolean getStreakCheckVerbose() {
-        return streakCheckVerbose;
-    }
-
-    public long getGoalsCheckRate() {
-        return goalsCheckRate;
-    }
-
-    public String getDateTimeFormat() {
-        return datetimeFormat;
-    }
-
-    public void setDateTimeFormat(String format) {
-        this.datetimeFormat = format;
-        config.set("datetime-format", format);
-        save();
-    }
-
-    public void setGoalsCheckVerbose(Boolean verbose) {
-        if (verbose != null) {
-            this.goalsCheckVerbose = verbose;
-            config.set("goal-check-verbose", verbose);
-            save();
-        }
-    }
-
-    public void setGoalsCheckRate(Long rate) {
-        if (rate != null) {
-            this.goalsCheckRate = rate;
-            config.set("goal-check-rate", rate);
-            save();
-        }
-    }
-
-    public boolean getGoalsCheckVerbose() {
-        return goalsCheckVerbose;
-    }
-
-    public String getPermissionsManagerPlugin() {
-        return permissionsManagerPlugin;
-    }
-
-    public void setPermissionsManagerPlugin(String plugin) {
-        if (plugin != null) {
-            this.permissionsManagerPlugin = plugin.toLowerCase();
-            config.set("permissions-manager-plugin", plugin.toLowerCase());
-            save();
-        }
-    }
-
-    public String getPlaytimeSelfMessage() {
-        return playtimeSelfMessage;
-    }
-
-    public void setPlaytimeSelfMessage(String message) {
-        if (message != null) {
-            this.playtimeSelfMessage = message;
-            config.set("playtime-self-message", message);
-            save();
-        }
-    }
-
-    public String getPlaytimeOthersMessage() {
-        return playtimeOthersMessage;
-    }
-
-    public void setPlaytimeOthersMessage(String message) {
-        if (message != null) {
-            this.playtimeOthersMessage = message;
-            config.set("playtime-others-message", message);
             save();
         }
     }

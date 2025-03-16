@@ -103,13 +103,26 @@ goal-check-verbose: true
 #                           JOIN STREAK
 #=================================================================
 
-# Time in seconds between logins to maintain a player's login streak
-# Default: 24 hours (86400s)
-# If a player logs in within this time after their last login, their streak increases
-# If they fail to log in within this interval, their streak resets to 0
-streak-interval: 86400
+# Define when the interval resets (in cron format)
+# Format: <seconds> <minute> <hour> <day-of-month> <month> <day-of-week>
+# I know it may seem a little difficult to understand, but it's very powerful and highly customizable.
+# I suggest you to use this website if you need help: https://www.freeformatter.com/cron-expression-generator-quartz.html
+# Also ChatGPT is very useful in these cases :)
+# Examples:
+# "0 0 0 * * ?" - Daily at midnight (00:00) -> Use this if you want to implement rewards based on daily logins.
+# "0 6 0 * * ?" - Daily at 6 AM
+# "0 0 12 * * ?" - Daily at noon (12 PM)
+# "0 0 0 ? * MON" - Weekly on Monday at midnight
+# "0 0 0 1 * ?" - Monthly on the 1st at midnight
+# "0/30 * * ? * *" - Every 30 seconds
+streak-reset-schedule: "0 0 0 * * ?"
+
+# Whether to use server timezone or UTC for cron scheduling
+# Values: "server" or "utc"
+reset-schedule-timezone: "server"
 
 #Enable or disable debug logging in the console
+#I suggest you to keep this true if you are experimenting with cron expressions defined above
 #Default: true
 streak-check-verbose: true
 

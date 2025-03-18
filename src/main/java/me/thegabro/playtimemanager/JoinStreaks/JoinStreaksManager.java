@@ -9,6 +9,7 @@ import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
+import org.bukkit.command.CommandSender;
 import org.quartz.CronExpression;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
@@ -36,6 +37,7 @@ public class JoinStreaksManager {
     private CronExpression cronExpression;
     private TimeZone timezone;
     private Date nextIntervalReset;
+    private boolean isJoinStreakCheckScheduleActive;
 
     private JoinStreaksManager() {}
 
@@ -49,6 +51,7 @@ public class JoinStreaksManager {
     public void initialize(PlayTimeManager playTimeManager) {
         this.plugin = playTimeManager;
         db = plugin.getDatabase();
+        isJoinStreakCheckScheduleActive = true;
 
         validateConfiguration();
 
@@ -352,7 +355,7 @@ public class JoinStreaksManager {
         else {
             LinkedHashSet<String> set = new LinkedHashSet<>();
 
-            for (int joinCount = 1; joinCount <= maxJoins; joinCount++) {
+            for (int joinCount = minJoins; joinCount <= maxJoins; joinCount++) {
                 String joinCountStr = String.valueOf(joinCount);
                 String valueStr = rewardIdString + "." + joinCountStr;
 
@@ -445,15 +448,29 @@ public class JoinStreaksManager {
             Component pendingMessage = Utils.parseColors(plugin.getConfiguration().getJoinClaimMessage());
             player.sendMessage(pendingMessage);
         }
+        if(onlineUser.getRelativeJoinStreak() == lastRewardByJoins.getMaxRequiredJoins()){
+            restartUserJoinStreakRewards(onlineUser);
+        }
+    }
+
+    public void restartUserJoinStreakRewards(OnlineUser onlineUser){
+            Set<String> userRewards = onlineUser.getReceivedRewards();
+            for(String rewardId : userRewards){
+                onlineUser.removeReceivedReward(rewardId);
+            }
+            onlineUser.resetRelativeJoinStreak();
     }
 
     public void processCompletedReward(Player player, JoinStreakReward reward, String instance, boolean manualClaim) {
 
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
 
-        onlineUser.addReceivedReward(instance);
-        onlineUser.unclaimReward(instance);
-
+        //if player ends a cycle of rewards, then he can't have them as unclaimed but can still have them in their
+        //inventory ready to be claimed. In this situation let's just process the claim of that reward
+        if(onlineUser.getRewardsToBeClaimed().contains(instance)){
+            onlineUser.addReceivedReward(instance);
+            onlineUser.unclaimReward(instance);
+        }
 
         if (plugin.isPermissionsManagerConfigured()) {
             assignPermissionsForReward(onlineUser, reward);
@@ -562,5 +579,27 @@ public class JoinStreaksManager {
         return joinRewardsMap;
     }
 
+    public void toggleJoinStreakCheckSchedule(CommandSender sender) {
+        isJoinStreakCheckScheduleActive = !isJoinStreakCheckScheduleActive;
+
+        if (isJoinStreakCheckScheduleActive) {
+            startIntervalTask();
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                    " The join streak check schedule has been activated"));
+            Date now = new Date();
+            long delayInMillis = nextIntervalReset.getTime() - now.getTime();
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                    " Next join streak interval reset scheduled for: " + nextIntervalReset +"(in " + delayInMillis/1000 + " s)" ));
+        } else {
+            intervalTask.cancel();
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                    " The join streak check schedule has been deactivated"));
+            plugin.getLogger().info("The join streak check schedule has been deactivated from GUI button");
+        }
+    }
+
+    public boolean getJoinsStreakCheckScheduleStatus(){
+        return isJoinStreakCheckScheduleActive;
+    }
 
 }

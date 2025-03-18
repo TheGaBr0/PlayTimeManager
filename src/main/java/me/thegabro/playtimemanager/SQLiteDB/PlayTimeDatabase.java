@@ -847,6 +847,28 @@ public abstract class PlayTimeDatabase {
         }
     }
 
+    public void resetRelativeJoinStreak(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET relative_join_streak = 0 WHERE uuid = ?;");
+            ps.setString(1, uuid);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
     public Set<String> getPlayersWithinTimeInterval(long intervalSeconds) {
         Set<String> players = new HashSet<>();
         Connection conn = null;

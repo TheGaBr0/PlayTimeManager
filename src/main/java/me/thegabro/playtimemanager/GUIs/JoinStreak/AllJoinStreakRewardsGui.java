@@ -93,6 +93,17 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         ));
         protectedSlots.add(4);
 
+        boolean isActive = rewardsManager.getJoinsStreakCheckScheduleStatus(); // Retrieve current state
+        inv.setItem(5, createGuiItem(
+                isActive ? Material.GREEN_CONCRETE : Material.RED_CONCRETE,
+                Component.text(isActive ? "§e§lRewards status: §2§lON" : "§e§lRewards status: §4§lOFF"),
+                Component.text("§7Click to toggle the schedule"),
+                Component.text("§7When set to §cOFF§7, the plugin will stop"),
+                Component.text("§7granting rewards but will continue"),
+                Component.text("§7tracking players' join streaks.")
+        ));
+        protectedSlots.add(5);
+
         // Add pagination controls if needed
         int totalPages = (int) Math.ceil((double) sortedRewards.size() / REWARDS_PER_PAGE);
 
@@ -201,6 +212,12 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
     public void onGUIClick(Player whoClicked, int slot, ItemStack clickedItem, @NotNull InventoryAction action, @NotNull InventoryClickEvent event) {
         if (clickedItem == null || clickedItem.getType().equals(Material.AIR)
                 || clickedItem.getType().equals(Material.BLACK_STAINED_GLASS_PANE)) {
+            return;
+        }
+
+        if (slot == 5 && (clickedItem.getType() == Material.GREEN_CONCRETE || clickedItem.getType() == Material.RED_CONCRETE)) {
+            rewardsManager.toggleJoinStreakCheckSchedule(whoClicked); // Toggle the state
+            openInventory(whoClicked); // Refresh GUI
             return;
         }
 

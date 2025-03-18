@@ -182,6 +182,11 @@ public class DBUser {
         db.resetJoinStreaks(uuid);
     }
 
+    public void resetRelativeJoinStreak(){
+        this.relativeJoinStreak = 0;
+        db.resetJoinStreaks(uuid);
+    }
+
     public void unclaimReward(String rewardId) {
         rewardsToBeClaimed.remove(rewardId);
         db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);

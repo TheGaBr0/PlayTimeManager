@@ -424,6 +424,9 @@ public class JoinStreaksManager {
                 processQualifiedReward(onlineUser, player, mainInstance, rewardKey);
             }
         }
+        if(onlineUser.getRelativeJoinStreak() >= lastRewardByJoins.getMaxRequiredJoins()){
+            restartUserJoinStreakRewards(onlineUser);
+        }
     }
 
     public int getNextRewardId() {
@@ -448,9 +451,6 @@ public class JoinStreaksManager {
             Component pendingMessage = Utils.parseColors(plugin.getConfiguration().getJoinClaimMessage());
             player.sendMessage(pendingMessage);
         }
-        if(onlineUser.getRelativeJoinStreak() == lastRewardByJoins.getMaxRequiredJoins()){
-            restartUserJoinStreakRewards(onlineUser);
-        }
     }
 
     public void restartUserJoinStreakRewards(OnlineUser onlineUser){
@@ -458,6 +458,7 @@ public class JoinStreaksManager {
             for(String rewardId : userRewards){
                 onlineUser.removeReceivedReward(rewardId);
             }
+            onlineUser.migrateUnclaimedRewards();
             onlineUser.resetRelativeJoinStreak();
     }
 
@@ -465,11 +466,16 @@ public class JoinStreaksManager {
 
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
 
+
+
+        plugin.getLogger().info(String.valueOf(onlineUser.getRewardsToBeClaimed()));
+
+        onlineUser.unclaimReward(instance);
+
         //if player ends a cycle of rewards, then he can't have them as unclaimed but can still have them in their
         //inventory ready to be claimed. In this situation let's just process the claim of that reward
-        if(onlineUser.getRewardsToBeClaimed().contains(instance)){
+        if (!instance.endsWith("R")) {
             onlineUser.addReceivedReward(instance);
-            onlineUser.unclaimReward(instance);
         }
 
         if (plugin.isPermissionsManagerConfigured()) {

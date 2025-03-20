@@ -128,7 +128,7 @@ streak-check-verbose: true
 
 # Message shown to players who earn a login streak reward but need to claim it manually
 # This appears when a player without the auto-claim permission (playtime.joinstreak.claim.automatic) qualifies for a reward
-join-warn-claim-message: "[&6PlayTime&eManager&f]&7 Reward earned for your login streak! Use &e/joinstreak claim &7to collect it."
+join-warn-claim-message: "[&6PlayTime&eManager&f]&7 Reward earned for your login streak! Use &e/claimrewards &7to collect it."
 
 
 #=================================================================

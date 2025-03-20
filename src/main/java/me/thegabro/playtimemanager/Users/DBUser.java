@@ -184,7 +184,22 @@ public class DBUser {
 
     public void resetRelativeJoinStreak(){
         this.relativeJoinStreak = 0;
-        db.resetJoinStreaks(uuid);
+        db.resetRelativeJoinStreak(uuid);
+    }
+
+    public void migrateUnclaimedRewards(){
+        LinkedHashSet<String> newRewardsToBeClaimed = new LinkedHashSet<String>();
+        plugin.getLogger().info(String.valueOf(rewardsToBeClaimed));
+        for(String reward : rewardsToBeClaimed){
+            if (reward != null) {
+                if(!reward.endsWith("R")){
+                    String modifiedReward = reward + ".R";
+                    newRewardsToBeClaimed.add(modifiedReward);
+                }
+            }
+        }
+        rewardsToBeClaimed = newRewardsToBeClaimed;
+        db.updateRewardsToBeClaimed(uuid, newRewardsToBeClaimed);
     }
 
     public void unclaimReward(String rewardId) {

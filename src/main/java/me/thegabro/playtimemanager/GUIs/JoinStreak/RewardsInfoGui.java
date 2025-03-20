@@ -152,9 +152,10 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     }
 
     private enum RewardStatus {
-        AVAILABLE, // Should show first
-        LOCKED,    // Should show second
-        CLAIMED    // Should show last
+        AVAILABLE_OLD, // Should show first
+        AVAILABLE,
+        LOCKED,
+        CLAIMED,   // Should show last
     }
 
     private void applyFilters() {
@@ -165,6 +166,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                 case CLAIMED:
                     if (showClaimed) filteredDisplayItems.add(item);
                     break;
+                case AVAILABLE_OLD:
                 case AVAILABLE:
                     if (showAvailable) filteredDisplayItems.add(item);
                     break;
@@ -206,6 +208,20 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             }
         }
 
+        for (String instance : dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed()) {
+
+            if(!instance.endsWith("R"))
+                continue;
+
+            JoinStreakReward reward = rewardsManager.getMainInstance(instance);
+            if (reward == null) continue;
+
+            RewardStatus status;
+
+            status = RewardStatus.AVAILABLE_OLD;
+
+            allDisplayItems.add(new RewardDisplayItem(reward, instance, status, -1));
+        }
         // Sort the display items using the natural ordering (defined by Comparable)
         Collections.sort(allDisplayItems);
     }
@@ -300,6 +316,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                 List<Component> lore = new ArrayList<>();
 
                 switch (displayItem.getStatus()) {
+                    case AVAILABLE_OLD:
                     case AVAILABLE:
                         material = Material.valueOf(reward.getItemIcon());
                         statusPrefix = "§a§l[CLICK TO CLAIM] ";
@@ -319,15 +336,17 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                         break;
                 }
 
-                // Add reward details to lore
-                int specificJoinCount = displayItem.getSpecificJoinCount();
-                lore.add(Component.text("§7Required Joins: §e" +
-                        (specificJoinCount == -1 ? "-" : specificJoinCount)));
-                lore.add(Component.text("§7Your current join streak: " +
-                        (dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRelativeJoinStreak() < specificJoinCount
-                                ? "§c" : "§a") +
-                        dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRelativeJoinStreak())
-                );
+                if(!(displayItem.getStatus() == RewardStatus.AVAILABLE_OLD)){
+                    int specificJoinCount = displayItem.getSpecificJoinCount();
+                    lore.add(Component.text("§7Required Joins: §e" +
+                            (specificJoinCount == -1 ? "-" : specificJoinCount)));
+
+                    lore.add(Component.text("§7Your current join streak: " +
+                            (dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRelativeJoinStreak() < specificJoinCount
+                                    ? "§c" : "§a") +
+                            dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRelativeJoinStreak())
+                    );
+                }
 
                 if(!reward.getDescription().isEmpty()) {
                     lore.add(Component.text(""));

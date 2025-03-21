@@ -21,6 +21,8 @@ import java.io.File;
 import java.text.ParseException;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class JoinStreaksManager {
@@ -149,10 +151,6 @@ public class JoinStreaksManager {
 
         joinedDuringCurrentInterval.clear();
         joinedDuringCurrentInterval.addAll(recentPlayers);
-
-        if(plugin.getConfiguration().getStreakCheckVerbose())
-            plugin.getLogger().info("Populated join streak interval tracking with " +
-                    joinedDuringCurrentInterval.size() + " players who joined within the configured interval.");
     }
 
     // Other methods are unchanged
@@ -174,7 +172,7 @@ public class JoinStreaksManager {
 
         if (plugin.getConfiguration().getStreakCheckVerbose()) {
             plugin.getLogger().info("Next join streak interval reset scheduled for: " + nextIntervalReset +
-                    " (in " + delayInMillis/1000 + " s)");
+                    " (in " + Utils.ticksToFormattedPlaytime(delayInTicks) + ")");
         }
 
         intervalTask = new BukkitRunnable() {
@@ -371,11 +369,6 @@ public class JoinStreaksManager {
                 .filter(reward -> reward.getMinRequiredJoins() != -1) // Exclude rewards with no join requirement
                 .max(Comparator.comparingInt(JoinStreakReward::getMaxRequiredJoins))
                 .orElse(null);
-
-        if (plugin.getConfiguration().getStreakCheckVerbose() && lastRewardByJoins != null) {
-            plugin.getLogger().info("Updated lastRewardByJoins: ID=" + lastRewardByJoins.getId() +
-                    ", Required Joins=" + lastRewardByJoins.getRequiredJoinsDisplay());
-        }
     }
 
     public JoinStreakReward getReward(int id) {
@@ -405,9 +398,6 @@ public class JoinStreaksManager {
                 }
             }
         }
-        plugin.getLogger().info(String.valueOf(joinRewardsMap));
-
-
     }
 
     private void checkRewardsForUser(OnlineUser onlineUser, Player player) {
@@ -466,10 +456,6 @@ public class JoinStreaksManager {
 
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
 
-
-
-        plugin.getLogger().info(String.valueOf(onlineUser.getRewardsToBeClaimed()));
-
         onlineUser.unclaimReward(instance);
 
         //if player ends a cycle of rewards, then he can't have them as unclaimed but can still have them in their
@@ -486,17 +472,6 @@ public class JoinStreaksManager {
 
         if(!manualClaim)
             sendRewardMessage(player, reward);
-
-        if(plugin.getConfiguration().getStreakCheckVerbose()){
-            String joinRequirement;
-            if(reward.isSingleJoinReward()) {
-                joinRequirement = String.valueOf(reward.getMinRequiredJoins());
-            } else {
-                joinRequirement = reward.getMinRequiredJoins() + " to " + reward.getMaxRequiredJoins();
-            }
-            plugin.getLogger().info(String.format("User %s has received the join streak reward %d which requires %s consecutive joins!",
-                    onlineUser.getNickname(), reward.getId(), joinRequirement));
-        }
 
         playRewardSound(player, reward);
     }
@@ -519,9 +494,6 @@ public class JoinStreaksManager {
             commands.forEach(command -> {
                 try {
                     String formattedCommand = formatRewardCommand(command, player, reward);
-                    if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                        plugin.getLogger().info("Executing command: " + formattedCommand);
-                    }
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), formattedCommand);
                 } catch (Exception e) {
                     plugin.getLogger().severe(String.format("Failed to execute command for join streak reward %d: %s",
@@ -587,15 +559,19 @@ public class JoinStreaksManager {
 
     public void toggleJoinStreakCheckSchedule(CommandSender sender) {
         isJoinStreakCheckScheduleActive = !isJoinStreakCheckScheduleActive;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
 
         if (isJoinStreakCheckScheduleActive) {
             startIntervalTask();
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
                     " The join streak check schedule has been activated"));
-            Date now = new Date();
-            long delayInMillis = nextIntervalReset.getTime() - now.getTime();
+
+            Map<String, Object> scheduleInfo = getNextSchedule();
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                    " Next join streak interval reset scheduled for: " + nextIntervalReset +"(in " + delayInMillis/1000 + " s)" ));
+                    " Next join streak interval reset scheduled for: &e" + formatter.format(
+                    ((Date)getNextSchedule().get("nextReset")).toInstant()
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDateTime()) +"&7 (in &e" + scheduleInfo.get("timeRemaining") + "&7)" ));
         } else {
             intervalTask.cancel();
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
@@ -606,6 +582,27 @@ public class JoinStreaksManager {
 
     public boolean getJoinsStreakCheckScheduleStatus(){
         return isJoinStreakCheckScheduleActive;
+    }
+
+    public Map<String, Object> getNextSchedule() {
+        // Ensure the next interval reset is calculated
+        updateIntervalResetTimes();
+
+        Map<String, Object> scheduleInfo = new HashMap<>();
+        scheduleInfo.put("nextReset", nextIntervalReset);
+
+        // Calculate seconds remaining
+        Date now = new Date();
+        long delayInMillis = nextIntervalReset.getTime() - now.getTime();
+        long delayInTicks = Math.max(20, delayInMillis / 50);
+
+        scheduleInfo.put("timeRemaining", Utils.ticksToFormattedPlaytime(delayInTicks));
+
+        return scheduleInfo;
+    }
+
+    public JoinStreakReward getLastRewardByJoins(){
+        return lastRewardByJoins;
     }
 
 }

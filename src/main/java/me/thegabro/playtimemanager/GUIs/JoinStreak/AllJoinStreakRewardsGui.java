@@ -22,6 +22,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
@@ -38,6 +40,11 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
     private final int NEXT_BUTTON_SLOT = 50;
     private final int PREV_BUTTON_SLOT = 48;
     private final int PAGE_INDICATOR_SLOT = 49;
+    private final int TOGGLE_SCHEDULE = 5;
+    private final int CREATE_REWARD = 4;
+    private final int INFO = 3;
+    private DateTimeFormatter formatter;
+
 
     public AllJoinStreakRewardsGui() {
         inv = Bukkit.createInventory(this, 54, Component.text("Join Streak Rewards"));
@@ -56,6 +63,10 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
     }
 
     public void initializeItems() {
+
+        formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+
+        Map<String, Object> nextSchedule = rewardsManager.getNextSchedule();
         int leftIndex = 9;
         int rightIndex = 17;
 
@@ -86,15 +97,31 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             }
         }
 
-        inv.setItem(4, createGuiItem(
+        inv.setItem(INFO, createGuiItem(
+                Material.COMPASS,
+                Component.text("§e§lSystem Information"),
+                Component.text("§7Next join streak check:"),
+                Component.text("§e" + formatter.format(
+                        ((Date)nextSchedule.get("nextReset")).toInstant()
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDateTime()
+                )  +" (in §e" + nextSchedule.get("timeRemaining") + "§7)" ),
+                Component.text(""),
+                Component.text("§7Reward cycle will reset after player"),
+                Component.text("§7reaches reward with ID: §e#" + rewardsManager.getLastRewardByJoins().getId()),
+                Component.text("§7which requires §e"+rewardsManager.getLastRewardByJoins().getMaxRequiredJoins()+" §7joins to complete")
+        ));
+        protectedSlots.add(CREATE_REWARD);
+
+        inv.setItem(CREATE_REWARD, createGuiItem(
                 Material.EMERALD,
                 Component.text("§a§lCreate New Reward"),
                 Component.text("§7Click to create a new join streak reward")
         ));
-        protectedSlots.add(4);
+        protectedSlots.add(CREATE_REWARD);
 
         boolean isActive = rewardsManager.getJoinsStreakCheckScheduleStatus(); // Retrieve current state
-        inv.setItem(5, createGuiItem(
+        inv.setItem(TOGGLE_SCHEDULE, createGuiItem(
                 isActive ? Material.GREEN_CONCRETE : Material.RED_CONCRETE,
                 Component.text(isActive ? "§e§lRewards status: §2§lON" : "§e§lRewards status: §4§lOFF"),
                 Component.text("§7Click to toggle the schedule"),
@@ -102,7 +129,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                 Component.text("§7granting rewards but will continue"),
                 Component.text("§7tracking players' join streaks.")
         ));
-        protectedSlots.add(5);
+        protectedSlots.add(TOGGLE_SCHEDULE);
 
         // Add pagination controls if needed
         int totalPages = (int) Math.ceil((double) sortedRewards.size() / REWARDS_PER_PAGE);
@@ -215,13 +242,13 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             return;
         }
 
-        if (slot == 5 && (clickedItem.getType() == Material.GREEN_CONCRETE || clickedItem.getType() == Material.RED_CONCRETE)) {
+        if (slot == TOGGLE_SCHEDULE && (clickedItem.getType() == Material.GREEN_CONCRETE || clickedItem.getType() == Material.RED_CONCRETE)) {
             rewardsManager.toggleJoinStreakCheckSchedule(whoClicked); // Toggle the state
             openInventory(whoClicked); // Refresh GUI
             return;
         }
 
-        if (slot == 4 && clickedItem.getType() == Material.EMERALD) {
+        if (slot == CREATE_REWARD && clickedItem.getType() == Material.EMERALD) {
             whoClicked.closeInventory();
             rewardsManager.addReward(new JoinStreakReward(plugin, rewardsManager.getNextRewardId(), -1));
             openInventory(whoClicked);

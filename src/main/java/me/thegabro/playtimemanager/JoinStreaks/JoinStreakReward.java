@@ -138,8 +138,7 @@ public class JoinStreakReward {
     }
 
     private String getDefaultRewardMessage() {
-        return plugin.getConfiguration().getPluginPrefix()+" Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 times " +
-                "and unlocked a new reward! Use &e/claimrewards&7 to collect it!";
+        return plugin.getConfiguration().getPluginPrefix()+" Congratulations &e%PLAYER_NAME%&7, you have redeemed your reward successfully!";
     }
 
     public ItemStack getDefaultIcon(){

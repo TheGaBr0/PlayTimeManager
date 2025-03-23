@@ -802,13 +802,34 @@ public abstract class PlayTimeDatabase {
         return 0; // Default return value if player not found or error occurs
     }
 
-    public void incrementJoinStreak(String uuid) {
+    public void incrementRelativeJoinStreak(String uuid) {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
             conn = getSQLConnection();
-            ps = conn.prepareStatement("UPDATE play_time SET relative_join_streak = relative_join_streak + 1, " +
-                    "absolute_join_streak = absolute_join_streak + 1 WHERE uuid = ?;");
+            ps = conn.prepareStatement("UPDATE play_time SET relative_join_streak = relative_join_streak + 1 WHERE uuid = ?;");
+            ps.setString(1, uuid);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public void incrementAbsoluteJoinStreak(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET absolute_join_streak = absolute_join_streak + 1 WHERE uuid = ?;");
             ps.setString(1, uuid);
             ps.executeUpdate();
         } catch (SQLException ex) {

@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager.GUIs.JoinStreak;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
+import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -47,7 +48,7 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
     public JoinStreakCommandsGui(JoinStreakReward reward, JoinStreakRewardSettingsGui parentGui) {
         this.reward = reward;
         this.parentGui = parentGui;
-        this.inventory = Bukkit.createInventory(this, GUI_SIZE, Component.text("§6Commands Editor"));
+        this.inventory = Bukkit.createInventory(this, GUI_SIZE, Utils.parseColors("&6Commands Editor"));
     }
 
     @Override
@@ -71,7 +72,7 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
     private ItemStack createBackgroundItem() {
         return parentGui.createGuiItem(
                 Material.BLACK_STAINED_GLASS_PANE,
-                Component.text("§f")
+                Utils.parseColors("&f")
         );
     }
 
@@ -87,9 +88,9 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
             String command = commands.get(startIndex + i);
             inventory.setItem(i, parentGui.createGuiItem(
                     Material.PAPER,
-                    Component.text("§e" + command),
-                    Component.text("§7Click to edit"),
-                    Component.text("§cRight-click to remove")
+                    Utils.parseColors("&e" + command),
+                    Utils.parseColors("&7Click to edit"),
+                    Utils.parseColors("&cRight-click to remove")
             ));
         }
 
@@ -100,32 +101,32 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
         if (currentPage > 0) {
             inventory.setItem(Slots.PREV_PAGE, parentGui.createGuiItem(
                     Material.ARROW,
-                    Component.text("§ePrevious Page")
+                    Utils.parseColors("&ePrevious Page")
             ));
         }
 
         if ((currentPage + 1) * COMMANDS_PER_PAGE < reward.getCommands().size()) {
             inventory.setItem(Slots.NEXT_PAGE, parentGui.createGuiItem(
                     Material.ARROW,
-                    Component.text("§eNext Page")
+                    Utils.parseColors("&eNext Page")
             ));
         }
 
         inventory.setItem(Slots.ADD_COMMAND, parentGui.createGuiItem(
                 Material.EMERALD,
-                Component.text("§a§lAdd Command"),
-                Component.text("§7Click to add a new command")
+                Utils.parseColors("&a&lAdd Command"),
+                Utils.parseColors("&7Click to add a new command")
         ));
 
         inventory.setItem(Slots.BACK, parentGui.createGuiItem(
                 Material.MAGENTA_GLAZED_TERRACOTTA,
-                Component.text("§6§lBack")
+                Utils.parseColors("&6&lBack")
         ));
 
         inventory.setItem(Slots.DELETE_ALL, parentGui.createGuiItem(
                 Material.BARRIER,
-                Component.text("§c§lDelete all"),
-                Component.text("§7Click to discard every command")
+                Utils.parseColors("&c&lDelete all"),
+                Utils.parseColors("&7Click to discard every command")
         ));
     }
 
@@ -191,29 +192,29 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
 
     private void startCommandAdd(Player player) {
 
-        Component header = Component.text("✎ Commands Editor: ")
+        Component header = Utils.parseColors("✎ Commands Editor: ")
                 .color(NamedTextColor.GOLD)
                 .decoration(TextDecoration.BOLD, true)
-                .append(Component.text("Reward " + reward.getId())
+                .append(Utils.parseColors("Reward " + reward.getId())
                         .color(NamedTextColor.YELLOW));
 
         // Divider for visual separation
-        Component divider = Component.text("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
+        Component divider = Utils.parseColors("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
                 .color(NamedTextColor.DARK_GRAY);
 
         // Instructions with formatting
-        Component instructions = Component.text("Enter the new command for this reward.")
+        Component instructions = Utils.parseColors("Enter the new command for this reward.")
                 .color(NamedTextColor.WHITE)
                 .append(Component.newline())
-                .append(Component.text("• Commands must be valid and use '/' as a prefix.")
+                .append(Utils.parseColors("• Commands must be valid and use '/' as a prefix.")
                         .color(NamedTextColor.GRAY))
                 .append(Component.newline())
-                .append(Component.text("• Type ")
+                .append(Utils.parseColors("• Type ")
                         .color(NamedTextColor.GRAY)
-                        .append(Component.text("cancel")
+                        .append(Utils.parseColors("cancel")
                                 .color(NamedTextColor.RED)
                                 .decoration(TextDecoration.ITALIC, true))
-                        .append(Component.text(" to exit")
+                        .append(Utils.parseColors(" to exit")
                                 .color(NamedTextColor.GRAY)));
 
         // Combine all components with proper spacing
@@ -233,7 +234,7 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
                 player,
                 (p, input) -> {
                     if (input.equalsIgnoreCase("cancel")) {
-                        p.sendMessage(Component.text("§7Command add cancelled"));
+                        p.sendMessage(Utils.parseColors("&7Command add cancelled"));
                         openInventory(p);
                         return;
                     }
@@ -242,13 +243,13 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
 
                     String joinRequirement;
                     if (reward.isSingleJoinReward()) {
-                        joinRequirement = "§e" + reward.getMinRequiredJoins() + " §7times";
+                        joinRequirement = "&e" + reward.getMinRequiredJoins() + " &7times";
                     } else {
-                        joinRequirement = "between §e" + reward.getMinRequiredJoins() +
-                                " §7and §e" + reward.getMaxRequiredJoins() + " §7times";
+                        joinRequirement = "between &e" + reward.getMinRequiredJoins() +
+                                " &7and &e" + reward.getMaxRequiredJoins() + " &7times";
                     }
 
-                    p.sendMessage(Component.text("§7Command §e" + input + " §7added. It will be executed when " +
+                    p.sendMessage(Utils.parseColors("&7Command &e" + input + " &7added. It will be executed when " +
                             "a player joins " + joinRequirement));
                     openInventory(p);
                 }
@@ -260,33 +261,33 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
                 player,
                 (p, input) -> {
                     if (input.equalsIgnoreCase("cancel")) {
-                        p.sendMessage(Component.text("§cCommand edit cancelled"));
+                        p.sendMessage(Utils.parseColors("&cCommand edit cancelled"));
                         openInventory(p);
                         return;
                     }
 
                     reward.removeCommand(oldCommand);
                     reward.addCommand(input);
-                    p.sendMessage(Component.text("§aCommand edited successfully!"));
+                    p.sendMessage(Utils.parseColors("&aCommand edited successfully!"));
                     openInventory(p);
                 }
         );
 
 
-        Component preText = Component.text("You can ")
+        Component preText = Utils.parseColors("You can ")
                 .color(TextColor.color(170,170,170));  // Gray color
 
-        Component clickableText = Component.text("[click here]")
+        Component clickableText = Utils.parseColors("[click here]")
                 .color(TextColor.color(255,170,0))  // Gold color
                 .decoration(TextDecoration.BOLD, true)
                 .clickEvent(ClickEvent.suggestCommand(oldCommand))
-                .hoverEvent(HoverEvent.showText(Component.text("Click to autocomplete command")));
+                .hoverEvent(HoverEvent.showText(Utils.parseColors("Click to autocomplete command")));
 
         Component fullMessage = Component.empty()
-                .append(Component.text("\n"))
+                .append(Utils.parseColors("\n"))
                 .append(preText)
                 .append(clickableText)
-                .append(Component.text(" to autocomplete the old command")
+                .append(Utils.parseColors(" to autocomplete the old command")
                         .color(TextColor.color(170,170,170)));  // Gray color
 
         player.sendMessage(fullMessage);
@@ -295,8 +296,8 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
     private void handleDeleteAll(Player whoClicked) {
         ItemStack warningItem = parentGui.createGuiItem(
                 Material.BARRIER,
-                Component.text("§c§lDelete All Commands"),
-                Component.text("§7This will remove all commands from this reward")
+                Utils.parseColors("&c&lDelete All Commands"),
+                Utils.parseColors("&7This will remove all commands from this reward")
         );
 
         ConfirmationGui confirmationGui = new ConfirmationGui(warningItem, (confirmed) -> {

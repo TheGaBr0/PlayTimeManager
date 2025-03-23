@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager.GUIs.JoinStreak;
 import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.wesjd.anvilgui.AnvilGUI;
@@ -45,7 +46,7 @@ public class JoinStreakPermissionsGui implements InventoryHolder, Listener {
     public JoinStreakPermissionsGui(JoinStreakReward reward, JoinStreakRewardSettingsGui parentGui) {
         this.reward = reward;
         this.parentGui = parentGui;
-        this.inventory = Bukkit.createInventory(this, GUI_SIZE, Component.text("§6Permissions Editor"));
+        this.inventory = Bukkit.createInventory(this, GUI_SIZE, Utils.parseColors("&6Permissions Editor"));
         this.currentPage = 0;
     }
 
@@ -73,7 +74,7 @@ public class JoinStreakPermissionsGui implements InventoryHolder, Listener {
     private ItemStack createBackgroundItem() {
         return parentGui.createGuiItem(
                 Material.BLACK_STAINED_GLASS_PANE,
-                Component.text("§f")
+                Utils.parseColors("&f")
         );
     }
 
@@ -100,28 +101,28 @@ public class JoinStreakPermissionsGui implements InventoryHolder, Listener {
                 if (!groupExists) {
                     inventory.setItem(i, parentGui.createGuiItem(
                             Material.BOOK,
-                            Component.text("§e" + permission),
-                            Component.text("§7Click to edit"),
-                            Component.text("§cRight-click to remove"),
-                            Component.text(""),
-                            Component.text("§c⚠ WARNING: Group '" + groupName + "' does not exist!"),
-                            Component.text("§cPlease create this group in LuckPerms"),
-                            Component.text("§cor remove this permission.")
+                            Utils.parseColors("&e" + permission),
+                            Utils.parseColors("&7Click to edit"),
+                            Utils.parseColors("&cRight-click to remove"),
+                            Utils.parseColors(""),
+                            Utils.parseColors("&c⚠ WARNING: Group '" + groupName + "' does not exist!"),
+                            Utils.parseColors("&cPlease create this group in LuckPerms"),
+                            Utils.parseColors("&cor remove this permission.")
                     ));
                 } else {
                     inventory.setItem(i, parentGui.createGuiItem(
                             Material.BOOK,
-                            Component.text("§e" + permission),
-                            Component.text("§7Click to edit"),
-                            Component.text("§cRight-click to remove")
+                            Utils.parseColors("&e" + permission),
+                            Utils.parseColors("&7Click to edit"),
+                            Utils.parseColors("&cRight-click to remove")
                     ));
                 }
             } else {
                 inventory.setItem(i, parentGui.createGuiItem(
                         Material.PAPER,
-                        Component.text("§e" + permission),
-                        Component.text("§7Click to edit"),
-                        Component.text("§cRight-click to remove")
+                        Utils.parseColors("&e" + permission),
+                        Utils.parseColors("&7Click to edit"),
+                        Utils.parseColors("&cRight-click to remove")
                 ));
             }
         }
@@ -134,35 +135,35 @@ public class JoinStreakPermissionsGui implements InventoryHolder, Listener {
         if (currentPage > 0) {
             inventory.setItem(Slots.PREV_PAGE, parentGui.createGuiItem(
                     Material.ARROW,
-                    Component.text("§ePrevious Page")
+                    Utils.parseColors("&ePrevious Page")
             ));
         }
 
         if ((currentPage + 1) * PERMISSIONS_PER_PAGE < reward.getPermissions().size()) {
             inventory.setItem(Slots.NEXT_PAGE, parentGui.createGuiItem(
                     Material.ARROW,
-                    Component.text("§eNext Page")
+                    Utils.parseColors("&eNext Page")
             ));
         }
 
         // Add new permission button
         inventory.setItem(Slots.ADD_PERMISSION, parentGui.createGuiItem(
                 Material.EMERALD,
-                Component.text("§a§lAdd Permission"),
-                Component.text("§7Click to add a new permission")
+                Utils.parseColors("&a&lAdd Permission"),
+                Utils.parseColors("&7Click to add a new permission")
         ));
 
         // Save and exit button
         inventory.setItem(Slots.BACK, parentGui.createGuiItem(
                 Material.MAGENTA_GLAZED_TERRACOTTA,
-                Component.text("§6§lBack")
+                Utils.parseColors("&6&lBack")
         ));
 
         // Cancel button
         inventory.setItem(Slots.DELETE_ALL, parentGui.createGuiItem(
                 Material.BARRIER,
-                Component.text("§c§lDelete all"),
-                Component.text("§7Click to discard every permission")
+                Utils.parseColors("&c&lDelete all"),
+                Utils.parseColors("&7Click to discard every permission")
         ));
     }
 
@@ -278,8 +279,8 @@ public class JoinStreakPermissionsGui implements InventoryHolder, Listener {
     private void handleDeleteAll(Player whoClicked) {
         ItemStack warningItem = parentGui.createGuiItem(
                 Material.BARRIER,
-                Component.text("§c§lDelete All Permissions"),
-                Component.text("§7This will remove all permissions from this reward")
+                Utils.parseColors("&c&lDelete All Permissions"),
+                Utils.parseColors("&7This will remove all permissions from this reward")
         );
 
         ConfirmationGui confirmationGui = new ConfirmationGui(warningItem, (confirmed) -> {

@@ -128,7 +128,16 @@ streak-check-verbose: true
 
 # Message shown to players who earn a login streak reward but need to claim it manually
 # This appears when a player without the auto-claim permission (playtime.joinstreak.claim.automatic) qualifies for a reward
-join-warn-claim-message: "[&6PlayTime&eManager&f]&7 Reward earned for your login streak! Use &e/claimrewards &7to collect it."
+# %REQUIRED_JOINS% - Required joins to achieve the reward
+# %PLAYER_NAME% - Player's username
+# %MIN_JOINS% - Minimum required joins to achieve the first sub-reward, useful if the main reward is range based.
+# %MAX_JOINS% - Maximum required joins to achieve the last sub-reward, useful if the main reward is range based.
+join-warn-claim-message: "[&6PlayTime&eManager&f]&7 Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times 
+                            and unlocked a new reward! Use &e/claimrewards&7 to collect it!"
+
+# The opposite of 'join-warn-claim-message' field
+join-warn-autoclaim-message: "[&6PlayTime&eManager&f]&7 Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times 
+                            and unlocked a new reward! We have automatically claimed it for you!"
 
 
 #=================================================================

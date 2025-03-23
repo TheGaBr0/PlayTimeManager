@@ -5,7 +5,6 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -143,8 +142,8 @@ public class DBUsersManager {
 
     public void removeRewardFromAllUsers(String rewardID){
         for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
-            user.removeReceivedReward(rewardID);
-            user.removeRewardToBeClaimed(rewardID);
+            user.wipeReceivedReward(rewardID);
+            user.wipeRewardToBeClaimed(rewardID);
         }
         db.removeRewardFromAllUsers(rewardID);
     }

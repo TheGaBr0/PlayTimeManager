@@ -43,6 +43,8 @@ public class Configuration {
     private String streakTimeZone;
     private boolean streakCheckVerbose;
     private String joinClaimMessage;
+    private String joinAutoClaimMessage;
+
 
     // Leaderboard settings
     private String playtimetopLeaderboardFormat;
@@ -206,8 +208,12 @@ public class Configuration {
      * Updates streak settings
      */
     private void updateStreakSettings() {
-        this.joinClaimMessage = config.getString("join-warn-claim-message", "[&6PlayTime&eManager&f]&7 Reward " +
-                "earned for your login streak! Use &e/claimrewards &7to collect it.");
+        this.joinClaimMessage = config.getString("join-warn-claim-message", "[&6PlayTime&eManager&f]&7 Great job, " +
+                "&e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times " +
+                "and unlocked a new reward! Use &e/claimrewards&7 to collect it!");
+        this.joinAutoClaimMessage = config.getString("join-warn-autoclaim-message", "[&6PlayTime&eManager&f]&7 Great job, " +
+                "&e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times " +
+                "and unlocked a new reward! We have automatically claimed it for you!");
         this.streakCheckVerbose = config.getBoolean("streak-check-verbose", true);
         this.streakTimeZone = config.getString("reset-schedule-timezone", "server");
         this.streakResetSchedule = config.getString("streak-reset-schedule", "0 0 * * *");
@@ -382,6 +388,18 @@ public class Configuration {
         if (autoclaim != null) {
             this.joinClaimMessage = autoclaim;
             config.set("join-warn-claim-message", autoclaim);
+            save();
+        }
+    }
+
+    public String getJoinAutoClaimMessage() {
+        return joinAutoClaimMessage;
+    }
+
+    public void setJoinAutoClaimMessage(String autoclaim) {
+        if (autoclaim != null) {
+            this.joinAutoClaimMessage = autoclaim;
+            config.set("join-warn-autoclaim-message", autoclaim);
             save();
         }
     }

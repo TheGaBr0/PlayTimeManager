@@ -56,7 +56,8 @@ public class DBUser {
         if(firstJoin == null){
             firstJoin = LocalDateTime.now();
             db.updateFirstJoin(uuid, firstJoin);
-            db.incrementJoinStreak(uuid);
+            db.incrementAbsoluteJoinStreak(uuid);
+            db.incrementRelativeJoinStreak(uuid);
         }
     }
 
@@ -170,10 +171,14 @@ public class DBUser {
         return relativeJoinStreak;
     }
 
-    public void incrementJoinStreak(){
+    public void incrementRelativeJoinStreak(){
         this.relativeJoinStreak++;
+        db.incrementRelativeJoinStreak(uuid);
+    }
+
+    public void incrementAbsoluteJoinStreak(){
         this.absoluteJoinStreak++;
-        db.incrementJoinStreak(uuid);
+        db.incrementAbsoluteJoinStreak(uuid);
     }
 
     public void resetJoinStreaks(){
@@ -207,7 +212,12 @@ public class DBUser {
         db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
     }
 
-    public void removeRewardToBeClaimed(String rewardId) {
+    public void unreceiveReward(String rewardId) {
+        receivedRewards.remove(rewardId);
+        db.updateReceivedRewards(uuid, receivedRewards);
+    }
+
+    public void wipeRewardToBeClaimed(String rewardId) {
         // Remove all rewards where the integer part matches rewardId
         rewardsToBeClaimed.removeIf(reward -> {
             String mainInstance = reward.split("\\.")[0];
@@ -216,7 +226,7 @@ public class DBUser {
         db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
     }
 
-    public void removeReceivedReward(String rewardId) {
+    public void wipeReceivedReward(String rewardId) {
         // Remove all rewards where the integer part matches rewardId
         receivedRewards.removeIf(reward -> {
             String mainInstance = reward.split("\\.")[0];

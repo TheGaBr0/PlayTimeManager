@@ -7,6 +7,7 @@ import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -43,7 +44,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
     private final int TOGGLE_SCHEDULE = 5;
     private final int CREATE_REWARD = 4;
     private final int INFO = 3;
-    private DateTimeFormatter formatter;
+
 
 
     public AllJoinStreakRewardsGui() {
@@ -64,7 +65,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
     public void initializeItems() {
 
-        formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
 
         Map<String, Object> nextSchedule = rewardsManager.getNextSchedule();
         int leftIndex = 9;
@@ -90,7 +91,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         // Create GUI borders
         for(int i = 0; i < 54; i++) {
             if(i <= 9 || i >= 45 || i == leftIndex || i == rightIndex) {
-                inv.setItem(i, createGuiItem(Material.BLACK_STAINED_GLASS_PANE, Component.text("§f[§6P.T.M.§f]§7")));
+                inv.setItem(i, createGuiItem(Material.BLACK_STAINED_GLASS_PANE, Utils.parseColors("&f[&6P.T.M.&f]&7")));
                 protectedSlots.add(i);
                 if(i == leftIndex) leftIndex += 9;
                 if(i == rightIndex) rightIndex += 9;
@@ -99,35 +100,43 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
         inv.setItem(INFO, createGuiItem(
                 Material.COMPASS,
-                Component.text("§e§lSystem Information"),
-                Component.text("§7Next join streak check:"),
-                Component.text("§e" + formatter.format(
-                        ((Date)nextSchedule.get("nextReset")).toInstant()
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDateTime()
-                )  +" (in §e" + nextSchedule.get("timeRemaining") + "§7)" ),
-                Component.text(""),
-                Component.text("§7Reward cycle will reset after player"),
-                Component.text("§7reaches reward with ID: §e#" + rewardsManager.getLastRewardByJoins().getId()),
-                Component.text("§7which requires §e"+rewardsManager.getLastRewardByJoins().getMaxRequiredJoins()+" §7joins to complete")
+                Utils.parseColors("&e&lSystem Information"),
+                Utils.parseColors("&7Next join streak check: &e" +
+                        (nextSchedule.get("nextReset") != null ?
+                                formatter.format(
+                                        ((Date)nextSchedule.get("nextReset")).toInstant()
+                                                .atZone(ZoneId.systemDefault())
+                                                .toLocalDateTime()
+                                ) + " &7(in &e" + nextSchedule.get("timeRemaining") + "&7)"
+                                : "-")
+                ),
+                Utils.parseColors(""),
+                Utils.parseColors("&7Reward cycle will reset after player"),
+                Utils.parseColors("&7reaches reward with ID: &e#" +
+                        (rewardsManager.getLastRewardByJoins() != null ? rewardsManager.getLastRewardByJoins().getId() : "-")),
+                Utils.parseColors("&7which requires &e"+
+                        (rewardsManager.getLastRewardByJoins() != null ? rewardsManager.getLastRewardByJoins().getMaxRequiredJoins() : "-")
+                        +" &7consecutive joins to complete")
         ));
         protectedSlots.add(CREATE_REWARD);
 
         inv.setItem(CREATE_REWARD, createGuiItem(
                 Material.EMERALD,
-                Component.text("§a§lCreate New Reward"),
-                Component.text("§7Click to create a new join streak reward")
+                Utils.parseColors("&a&lCreate New Reward"),
+                Utils.parseColors("&7Click to create a new join streak reward")
         ));
         protectedSlots.add(CREATE_REWARD);
 
-        boolean isActive = rewardsManager.getJoinsStreakCheckScheduleStatus(); // Retrieve current state
+        boolean isActive = rewardsManager.getJoinsStreakCheckScheduleStatus();
+        boolean hasRewards = !rewardsManager.getRewards().isEmpty();
         inv.setItem(TOGGLE_SCHEDULE, createGuiItem(
-                isActive ? Material.GREEN_CONCRETE : Material.RED_CONCRETE,
-                Component.text(isActive ? "§e§lRewards status: §2§lON" : "§e§lRewards status: §4§lOFF"),
-                Component.text("§7Click to toggle the schedule"),
-                Component.text("§7When set to §cOFF§7, the plugin will stop"),
-                Component.text("§7granting rewards but will continue"),
-                Component.text("§7tracking players' join streaks.")
+                (isActive && hasRewards) ? Material.GREEN_CONCRETE : Material.RED_CONCRETE,
+                Utils.parseColors((isActive && hasRewards) ? "&e&lRewards status: &2&lON" : "&e&lRewards status: &4&lOFF"),
+                Utils.parseColors("&7Click to toggle the schedule"),
+                Utils.parseColors("&7When set to &cOFF&7, the plugin will stop"),
+                Utils.parseColors("&7granting rewards but will continue"),
+                Utils.parseColors("&7tracking players' join streaks."),
+                hasRewards ? Component.text("") : Utils.parseColors("&c&lNo rewards available!")
         ));
         protectedSlots.add(TOGGLE_SCHEDULE);
 
@@ -138,7 +147,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             // Page indicator
             inv.setItem(PAGE_INDICATOR_SLOT, createGuiItem(
                     Material.PAPER,
-                    Component.text("§e§lPage " + (currentPage + 1) + " of " + totalPages)
+                    Utils.parseColors("&e&lPage " + (currentPage + 1) + " of " + totalPages)
             ));
             protectedSlots.add(PAGE_INDICATOR_SLOT);
 
@@ -146,13 +155,13 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             if (currentPage < totalPages - 1) {
                 inv.setItem(NEXT_BUTTON_SLOT, createGuiItem(
                         Material.ARROW,
-                        Component.text("§a§lNext Page →"),
-                        Component.text("§7Click to view the next page")
+                        Utils.parseColors("&a&lNext Page →"),
+                        Utils.parseColors("&7Click to view the next page")
                 ));
             } else {
                 inv.setItem(NEXT_BUTTON_SLOT, createGuiItem(
                         Material.BARRIER,
-                        Component.text("§c§lNo More Pages")
+                        Utils.parseColors("&c&lNo More Pages")
                 ));
             }
             protectedSlots.add(NEXT_BUTTON_SLOT);
@@ -161,13 +170,13 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             if (currentPage > 0) {
                 inv.setItem(PREV_BUTTON_SLOT, createGuiItem(
                         Material.ARROW,
-                        Component.text("§a§l← Previous Page"),
-                        Component.text("§7Click to view the previous page")
+                        Utils.parseColors("&a&l← Previous Page"),
+                        Utils.parseColors("&7Click to view the previous page")
                 ));
             } else {
                 inv.setItem(PREV_BUTTON_SLOT, createGuiItem(
                         Material.BARRIER,
-                        Component.text("§c§lFirst Page")
+                        Utils.parseColors("&c&lFirst Page")
                 ));
             }
             protectedSlots.add(PREV_BUTTON_SLOT);
@@ -189,34 +198,40 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
                 inv.setItem(slot, createGuiItem(
                         Material.valueOf(reward.getItemIcon()),
-                        Component.text("§e§l#ID§r§e " + reward.getId()),
-                        Component.text("§7Required Joins: §e" + (reward.getMinRequiredJoins() == -1 ? "-" : reward.getRequiredJoinsDisplay())),
-                        Component.text("§e" + reward.getPermissions().size() + "§7 " +
+                        Utils.parseColors("&e&l#ID&r&e " + reward.getId()),
+                        Utils.parseColors("&7Required Joins: &e" + (reward.getMinRequiredJoins() == -1 ? "-" : reward.getRequiredJoinsDisplay())),
+                        Utils.parseColors("&e" + reward.getPermissions().size() + "&7 " +
                                 (reward.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
-                        Component.text("§e" + reward.getCommands().size() + "§7 " +
+                        Utils.parseColors("&e" + reward.getCommands().size() + "&7 " +
                                 (reward.getCommands().size() != 1 ? "commands loaded" : "command loaded")),
-                        Component.text("§aMiddle click to clone this reward"),
-                        Component.text(""),
-                        Component.text("§c§oShift-Right Click to delete")
+                        Utils.parseColors("&aMiddle click to clone this reward"),
+                        Utils.parseColors(""),
+                        Utils.parseColors("&c&oShift-Right Click to delete")
                 ));
                 slot++;
             }
         } else {
             inv.setItem(22, createGuiItem(
                     Material.BARRIER,
-                    Component.text("§l§cNo join streak rewards have been created!")
+                    Utils.parseColors("&l&cNo join streak rewards have been created!")
             ));
         }
     }
 
-    private ItemStack createGuiItem(Material material, @Nullable TextComponent name, @Nullable TextComponent...lore) {
+    private ItemStack createGuiItem(Material material, @Nullable Component name, @Nullable Component...lore) {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(name);
+
+        if (name != null) {
+            meta.displayName(name.decoration(TextDecoration.ITALIC, false));
+        }
 
         ArrayList<Component> metalore = new ArrayList<>();
         if (lore != null) {
-            metalore.addAll(Arrays.asList(lore));
+            // Disable italic for each lore line
+            for (Component loreLine : lore) {
+                metalore.add(loreLine.decoration(TextDecoration.ITALIC, false));
+            }
         }
 
         meta.lore(metalore);
@@ -243,8 +258,17 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         }
 
         if (slot == TOGGLE_SCHEDULE && (clickedItem.getType() == Material.GREEN_CONCRETE || clickedItem.getType() == Material.RED_CONCRETE)) {
-            rewardsManager.toggleJoinStreakCheckSchedule(whoClicked); // Toggle the state
-            openInventory(whoClicked); // Refresh GUI
+            boolean hasRewards = !rewardsManager.getRewards().isEmpty();
+            if (!hasRewards) {
+                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cCannot enable rewards: No rewards have been created!"));
+                return;
+            }
+
+            boolean toggleSuccess = rewardsManager.toggleJoinStreakCheckSchedule(whoClicked);
+
+            if (toggleSuccess) {
+                openInventory(whoClicked);
+            }
             return;
         }
 
@@ -265,54 +289,60 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             return;
         }
 
-        if (clickedItem.getItemMeta().hasDisplayName()) {
-            String rewardID = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName());
+        if (clickedItem.getItemMeta() != null && clickedItem.getItemMeta().displayName() != null) {
+            String displayName = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName());
 
-            // Extract the reward ID from the display name
-            int id;
-            try {
-                id = Integer.parseInt(rewardID.substring(12));
-            } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                return;
-            }
+            if (displayName.startsWith("#ID ") || displayName.contains("#ID ")) {
+                // Extract the reward ID from the display name
+                String idPart = displayName.substring(displayName.indexOf("#ID ") + 4).trim();
+                int id;
+                try {
+                    id = Integer.parseInt(idPart);
 
-            JoinStreakReward reward = rewardsManager.getReward(id);
-            if (reward == null) return;
+                    JoinStreakReward reward = rewardsManager.getReward(id);
+                    if (reward == null) return;
 
-            // Check for middle-click to clone
-            if (event.getClick().isCreativeAction()) {
-                whoClicked.closeInventory();
-                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Cloning reward &e" + id + "&7..."));
+                    // Check for middle-click to clone
+                    if (event.getClick().isCreativeAction()) {
+                        whoClicked.closeInventory();
+                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Cloning reward &e" + id + "&7..."));
 
-                // Create a new reward with the next available ID
-                int newId = rewardsManager.getNextRewardId();
-                JoinStreakReward clonedReward = cloneReward(newId, reward);
+                        // Create a new reward with the next available ID
+                        int newId = rewardsManager.getNextRewardId();
+                        JoinStreakReward clonedReward = cloneReward(newId, reward);
 
-                // Add the cloned reward to manager
-                rewardsManager.addReward(clonedReward);
+                        // Add the cloned reward to manager
+                        rewardsManager.addReward(clonedReward);
 
-                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7cloned reward &e" + id + " &7to new reward &e" + newId));
-                openInventory(whoClicked);
-                return;
-            }
-
-            // Check for shift-right-click to delete
-            if (event.isShiftClick() && event.isRightClick()) {
-                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Deleting reward &e" + id + "&7..."));
-                Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
-                    reward.kill();
-
-                    // Switch back to main thread for UI updates
-                    Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
-                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7deleted reward &e" + id));
+                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7cloned reward &e" + id + " &7to new reward &e" + newId));
                         openInventory(whoClicked);
-                    });
-                });
-            } else if (!event.getClick().isCreativeAction()) { // Regular click - open settings GUI
-                whoClicked.closeInventory();
-                JoinStreakRewardSettingsGui settingsGui = new JoinStreakRewardSettingsGui(reward, this);
-                settingsGui.openInventory(whoClicked);
+                        return;
+                    }
+
+                    // Check for shift-right-click to delete
+                    if (event.isShiftClick() && event.isRightClick()) {
+                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Deleting reward &e" + id + "&7..."));
+                        Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
+                            reward.kill();
+
+                            // Switch back to main thread for UI updates
+                            Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
+                                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7deleted reward &e" + id));
+                                openInventory(whoClicked);
+                            });
+                        });
+                    } else if (!event.getClick().isCreativeAction()) { // Regular click - open settings GUI
+                        whoClicked.closeInventory();
+                        JoinStreakRewardSettingsGui settingsGui = new JoinStreakRewardSettingsGui(reward, this);
+                        settingsGui.openInventory(whoClicked);
+                    }
+
+                } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                    return;
+                }
             }
+
+
         }
     }
 

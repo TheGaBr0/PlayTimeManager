@@ -153,11 +153,13 @@ public class JoinStreaksManager {
         joinedDuringCurrentInterval.addAll(recentPlayers);
     }
 
-    // Other methods are unchanged
-
     private void scheduleNextReset() {
         if (intervalTask != null) {
             intervalTask.cancel();
+        }
+
+        if (rewards.isEmpty() && plugin.getConfiguration().getStreakCheckVerbose()) {
+            plugin.getLogger().info("No active rewards found, but scheduler will continue running to track absolute join streaks.");
         }
 
         Date now = new Date();
@@ -178,13 +180,13 @@ public class JoinStreaksManager {
         intervalTask = new BukkitRunnable() {
             @Override
             public void run() {
-                resetMissingPlayerStreaks();
-
                 if (plugin.getConfiguration().getStreakCheckVerbose()) {
                     plugin.getLogger().info("Resetting join streak interval tracking. Cleared " +
                             joinedDuringCurrentInterval.size() + " tracked players.");
                 }
 
+                // We should always reset missing player streaks to properly track absolute streaks
+                resetMissingPlayerStreaks();
                 joinedDuringCurrentInterval.clear();
 
                 // Calculate the next reset time and reschedule
@@ -240,10 +242,17 @@ public class JoinStreaksManager {
 
         // Handle online players separately (as you're already doing)
         for (OnlineUser onlineUser : onlineUsersManager.getOnlineUsersByUUID().values()) {
-            // Remove from reset list and increment streak
+            // Remove from reset list
             playersToReset.remove(onlineUser.getUuid());
-            onlineUser.incrementJoinStreak();
-            checkRewardsForUser(onlineUser, onlineUser.getPlayer());
+
+            // Always increment absolute streak
+            onlineUser.incrementAbsoluteJoinStreak();
+
+            // Only increment relative streak and check rewards if schedule is active AND rewards exist
+            if (isJoinStreakCheckScheduleActive && !rewards.isEmpty()) {
+                onlineUser.incrementRelativeJoinStreak();
+                checkRewardsForUser(onlineUser, onlineUser.getPlayer());
+            }
         }
 
         if (plugin.getConfiguration().getStreakCheckVerbose())
@@ -263,10 +272,26 @@ public class JoinStreaksManager {
         if (secondsBetween <= streakIntervalSeconds) {
             // Check if player already joined during this interval
             if (!joinedDuringCurrentInterval.contains(playerUUID)) {
-                // First join in this interval, increment streak and add to tracking set
-                user.incrementJoinStreak();
-                joinedDuringCurrentInterval.add(playerUUID);
-                checkRewardsForUser(user, player);
+                // Always increment absolute join streak regardless of conditions
+                user.incrementAbsoluteJoinStreak();
+
+                // Only increment relative streak and process rewards if schedule is active AND rewards exist
+                if (isJoinStreakCheckScheduleActive && !rewards.isEmpty()) {
+                    user.incrementRelativeJoinStreak();
+                    joinedDuringCurrentInterval.add(playerUUID);
+                    checkRewardsForUser(user, player);
+                } else {
+                    // Even if we don't increment relative streak, still track this join
+                    joinedDuringCurrentInterval.add(playerUUID);
+
+                    if (plugin.getConfiguration().getStreakCheckVerbose()) {
+                        String reason = !isJoinStreakCheckScheduleActive ?
+                                "join streak check schedule is inactive" :
+                                "no active rewards configured";
+                        plugin.getLogger().info("Not incrementing relative join streak for " +
+                                user.getNickname() + " because " + reason);
+                    }
+                }
             }
         } else {
             // Too much time has passed, reset streak
@@ -278,6 +303,7 @@ public class JoinStreaksManager {
 
     public void addReward(JoinStreakReward reward) {
         rewards.add(reward);
+
         updateJoinRewardsMap(reward);
         updateEndLoopReward();
     }
@@ -329,6 +355,9 @@ public class JoinStreaksManager {
 
     public void removeReward(JoinStreakReward reward) {
         rewards.remove(reward);
+
+        if(rewards.isEmpty())
+            isJoinStreakCheckScheduleActive=false;
 
         joinRewardsMap.remove(reward.getId());
 
@@ -432,27 +461,29 @@ public class JoinStreaksManager {
         if (player.hasPermission("playtime.joinstreak.claim.automatic")) {
             // Auto claim the reward with the specific key (not just the integer ID)
             onlineUser.addReceivedReward(rewardKey);
-            processCompletedReward(player, reward, rewardKey, false);
+
+            sendRewardRelatedMessages(player, reward, rewardKey, plugin.getConfiguration().getJoinAutoClaimMessage());
+
+
+            processCompletedReward(player, reward, rewardKey);
         } else {
             // Add to pending rewards with the specific key
             onlineUser.addRewardToBeClaimed(rewardKey);
 
-            // Notify player about pending reward
-            Component pendingMessage = Utils.parseColors(plugin.getConfiguration().getJoinClaimMessage());
-            player.sendMessage(pendingMessage);
+            sendRewardRelatedMessages(player, reward, rewardKey, plugin.getConfiguration().getJoinClaimMessage());
         }
     }
 
     public void restartUserJoinStreakRewards(OnlineUser onlineUser){
             Set<String> userRewards = onlineUser.getReceivedRewards();
             for(String rewardId : userRewards){
-                onlineUser.removeReceivedReward(rewardId);
+                onlineUser.unreceiveReward(rewardId);
             }
             onlineUser.migrateUnclaimedRewards();
             onlineUser.resetRelativeJoinStreak();
     }
 
-    public void processCompletedReward(Player player, JoinStreakReward reward, String instance, boolean manualClaim) {
+    public void processCompletedReward(Player player, JoinStreakReward reward, String instance) {
 
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
 
@@ -470,8 +501,7 @@ public class JoinStreaksManager {
 
         executeRewardCommands(reward, player);
 
-        if(!manualClaim)
-            sendRewardMessage(player, reward);
+        sendRewardRelatedMessages(player, reward, instance, reward.getRewardMessage());
 
         playRewardSound(player, reward);
     }
@@ -535,14 +565,15 @@ public class JoinStreaksManager {
         }
     }
 
-    private void sendRewardMessage(Player player, JoinStreakReward reward) {
+    private void sendRewardRelatedMessages(Player player, JoinStreakReward reward, String instance, String message) {
         Map<String, String> replacements = new HashMap<>();
         replacements.put("%PLAYER_NAME%", player.getName());
-        replacements.put("%REQUIRED_JOINS%", reward.getRequiredJoinsDisplay());
+        replacements.put("%REQUIRED_JOINS%", instance.matches("^\\d+\\.\\d+.*") ?
+                instance.replaceAll("^\\d+\\.(\\d+).*", "$1") : "");
         replacements.put("%MIN_JOINS%", String.valueOf(reward.getMinRequiredJoins()));
         replacements.put("%MAX_JOINS%", String.valueOf(reward.getMaxRequiredJoins()));
 
-        player.sendMessage(Utils.parseColors(replacePlaceholders(reward.getRewardMessage(), replacements)));
+        player.sendMessage(Utils.parseColors(replacePlaceholders(message, replacements)));
     }
 
     private String replacePlaceholders(String input, Map<String, String> replacements) {
@@ -557,11 +588,18 @@ public class JoinStreaksManager {
         return joinRewardsMap;
     }
 
-    public void toggleJoinStreakCheckSchedule(CommandSender sender) {
-        isJoinStreakCheckScheduleActive = !isJoinStreakCheckScheduleActive;
+    public boolean toggleJoinStreakCheckSchedule(CommandSender sender) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+        isJoinStreakCheckScheduleActive = !isJoinStreakCheckScheduleActive;
 
         if (isJoinStreakCheckScheduleActive) {
+            if (rewards.isEmpty()) {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                        " No active rewards found. Join streak check schedule not started."));
+                isJoinStreakCheckScheduleActive = false;
+                return false;
+            }
+
             startIntervalTask();
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
                     " The join streak check schedule has been activated"));
@@ -573,11 +611,14 @@ public class JoinStreaksManager {
                             .atZone(ZoneId.systemDefault())
                             .toLocalDateTime()) +"&7 (in &e" + scheduleInfo.get("timeRemaining") + "&7)" ));
         } else {
-            intervalTask.cancel();
+            if (intervalTask != null)
+                intervalTask.cancel();
+
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
                     " The join streak check schedule has been deactivated"));
             plugin.getLogger().info("The join streak check schedule has been deactivated from GUI button");
         }
+        return true;
     }
 
     public boolean getJoinsStreakCheckScheduleStatus(){
@@ -589,14 +630,19 @@ public class JoinStreaksManager {
         updateIntervalResetTimes();
 
         Map<String, Object> scheduleInfo = new HashMap<>();
-        scheduleInfo.put("nextReset", nextIntervalReset);
 
-        // Calculate seconds remaining
-        Date now = new Date();
-        long delayInMillis = nextIntervalReset.getTime() - now.getTime();
-        long delayInTicks = Math.max(20, delayInMillis / 50);
+        if(isJoinStreakCheckScheduleActive){
+            scheduleInfo.put("nextReset", nextIntervalReset);
+            Date now = new Date();
+            long delayInMillis = nextIntervalReset.getTime() - now.getTime();
+            long delayInTicks = Math.max(20, delayInMillis / 50);
 
-        scheduleInfo.put("timeRemaining", Utils.ticksToFormattedPlaytime(delayInTicks));
+            scheduleInfo.put("timeRemaining", Utils.ticksToFormattedPlaytime(delayInTicks));
+        }
+        else{
+            scheduleInfo.put("nextReset", null);
+            scheduleInfo.put("timeRemaining", "-");
+        }
 
         return scheduleInfo;
     }

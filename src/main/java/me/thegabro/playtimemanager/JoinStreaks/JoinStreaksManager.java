@@ -39,7 +39,6 @@ public class JoinStreaksManager {
     private CronExpression cronExpression;
     private TimeZone timezone;
     private Date nextIntervalReset;
-    private boolean isJoinStreakCheckScheduleActive;
 
     private JoinStreaksManager() {}
 
@@ -53,7 +52,6 @@ public class JoinStreaksManager {
     public void initialize(PlayTimeManager playTimeManager) {
         this.plugin = playTimeManager;
         db = plugin.getDatabase();
-        isJoinStreakCheckScheduleActive = true;
 
         validateConfiguration();
 
@@ -249,7 +247,7 @@ public class JoinStreaksManager {
             onlineUser.incrementAbsoluteJoinStreak();
 
             // Only increment relative streak and check rewards if schedule is active AND rewards exist
-            if (isJoinStreakCheckScheduleActive && !rewards.isEmpty()) {
+            if (plugin.getConfiguration().getRewardsCheckScheduleActivation() && !rewards.isEmpty()) {
                 onlineUser.incrementRelativeJoinStreak();
                 checkRewardsForUser(onlineUser, onlineUser.getPlayer());
             }
@@ -276,7 +274,7 @@ public class JoinStreaksManager {
                 user.incrementAbsoluteJoinStreak();
 
                 // Only increment relative streak and process rewards if schedule is active AND rewards exist
-                if (isJoinStreakCheckScheduleActive && !rewards.isEmpty()) {
+                if (plugin.getConfiguration().getRewardsCheckScheduleActivation() && !rewards.isEmpty()) {
                     user.incrementRelativeJoinStreak();
                     joinedDuringCurrentInterval.add(playerUUID);
                     checkRewardsForUser(user, player);
@@ -285,8 +283,8 @@ public class JoinStreaksManager {
                     joinedDuringCurrentInterval.add(playerUUID);
 
                     if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                        String reason = !isJoinStreakCheckScheduleActive ?
-                                "join streak check schedule is inactive" :
+                        String reason = !plugin.getConfiguration().getRewardsCheckScheduleActivation() ?
+                                "rewards check schedule is inactive" :
                                 "no active rewards configured";
                         plugin.getLogger().info("Not incrementing relative join streak for " +
                                 user.getNickname() + " because " + reason);
@@ -357,7 +355,7 @@ public class JoinStreaksManager {
         rewards.remove(reward);
 
         if(rewards.isEmpty())
-            isJoinStreakCheckScheduleActive=false;
+            plugin.getConfiguration().setRewardsCheckScheduleActivation(false);
 
         joinRewardsMap.remove(reward.getId());
 
@@ -443,8 +441,10 @@ public class JoinStreaksManager {
                 processQualifiedReward(onlineUser, player, mainInstance, rewardKey);
             }
         }
-        if(onlineUser.getRelativeJoinStreak() >= lastRewardByJoins.getMaxRequiredJoins()){
-            restartUserJoinStreakRewards(onlineUser);
+        if(lastRewardByJoins != null){
+            if(onlineUser.getRelativeJoinStreak() >= lastRewardByJoins.getMaxRequiredJoins()){
+                restartUserJoinStreakRewards(onlineUser);
+            }
         }
     }
 
@@ -590,13 +590,15 @@ public class JoinStreaksManager {
 
     public boolean toggleJoinStreakCheckSchedule(CommandSender sender) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
-        isJoinStreakCheckScheduleActive = !isJoinStreakCheckScheduleActive;
 
-        if (isJoinStreakCheckScheduleActive) {
+        boolean currentState = plugin.getConfiguration().getRewardsCheckScheduleActivation();
+        plugin.getConfiguration().setRewardsCheckScheduleActivation(!currentState);
+
+        if (plugin.getConfiguration().getRewardsCheckScheduleActivation()) {
             if (rewards.isEmpty()) {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
                         " No active rewards found. Join streak check schedule not started."));
-                isJoinStreakCheckScheduleActive = false;
+                plugin.getConfiguration().setRewardsCheckScheduleActivation(false);
                 return false;
             }
 
@@ -621,17 +623,12 @@ public class JoinStreaksManager {
         return true;
     }
 
-    public boolean getJoinsStreakCheckScheduleStatus(){
-        return isJoinStreakCheckScheduleActive;
-    }
-
     public Map<String, Object> getNextSchedule() {
-        // Ensure the next interval reset is calculated
         updateIntervalResetTimes();
 
         Map<String, Object> scheduleInfo = new HashMap<>();
 
-        if(isJoinStreakCheckScheduleActive){
+        if(plugin.getConfiguration().getRewardsCheckScheduleActivation()){
             scheduleInfo.put("nextReset", nextIntervalReset);
             Date now = new Date();
             long delayInMillis = nextIntervalReset.getTime() - now.getTime();

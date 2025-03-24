@@ -14,10 +14,16 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -28,6 +34,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+
+import static me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui.activeGuis;
 
 public class RewardsInfoGui implements InventoryHolder, Listener {
 
@@ -54,15 +62,21 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     private boolean showAvailable = true;
     private boolean showLocked = true;
 
-    // Interaction cooldown
-    private static final Map<UUID, Long> lastInteractionTime = new HashMap<>();
-    private static final long INTERACTION_COOLDOWN = 500; // 500ms cooldown between interactions
-
-    public RewardsInfoGui(){}
-
-    public RewardsInfoGui(Player player) {
+    protected static boolean isListenerRegistered = false;
+    protected static final Map<UUID, RewardsInfoGui> activeGuis = new HashMap<>();
+    private final String sessionToken;
+    
+    public RewardsInfoGui(Player player, String sessionToken) {
         this.player = player;
+        this.sessionToken = sessionToken;
+
         inv = Bukkit.createInventory(this, 54, Utils.parseColors("&6Claim Your Rewards"));
+
+        // Register listeners only once
+        if (!isListenerRegistered) {
+            Bukkit.getPluginManager().registerEvents(new InventoryListener(), PlayTimeManager.getInstance());
+            isListenerRegistered = true;
+        }
     }
 
     public void openInventory() {
@@ -70,6 +84,10 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         loadRewards();
         applyFilters();
         initializeItems();
+
+        // Track active GUI
+        activeGuis.put(player.getUniqueId(), this);
+
         player.openInventory(inv);
     }
 
@@ -514,12 +532,6 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             return;
         }
 
-        // Prevent rapid clicking
-        if (isOnCooldown(whoClicked)) {
-            whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
-            return;
-        }
-
         // Handle filter buttons
         if (slot == SHOW_CLAIMED_BUTTON_SLOT) {
             showClaimed = !showClaimed;
@@ -560,7 +572,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
         // Handle clicking on a reward
         if (clickedItem.getItemMeta().hasDisplayName()) {
-            String displayName = Utils.stripColor(clickedItem.getItemMeta().getDisplayName());
+            String displayName = Utils.stripColor(String.valueOf(clickedItem.getItemMeta().displayName()));
 
             // Only process if it's an available reward
             if (displayName.contains("[CLICK TO CLAIM]")) {
@@ -569,83 +581,94 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                 PersistentDataContainer container = clickedItem.getItemMeta().getPersistentDataContainer();
                 if (container.has(key, PersistentDataType.STRING)) {
                     String instance = container.get(key, PersistentDataType.STRING);
-                    Set<String> rewardsToBeClaimed = dbUsersManager.getUserFromUUID(whoClicked.getUniqueId().toString()).getRewardsToBeClaimed();
-
-                    if (rewardsToBeClaimed.contains(instance)) {
-                        JoinStreakReward reward = null;
-                        for (RewardDisplayItem displayItem : allDisplayItems) {
-                            if (displayItem.getInstance().equals(instance)) {
-                                reward = displayItem.getReward();
-                                break;
-                            }
-                        }
-
-                        if (reward != null) {
-                            rewardsManager.processCompletedReward(whoClicked, reward, instance);
-                            // Reload rewards to update status
-                            loadRewards();
-                            applyFilters();
-                            openInventory(currentPage);
-                        } else {
-                            whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cCouldn't find the reward details!"));
-                            whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
-                        }
-                    } else {
-                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cThis reward is not available to claim!"));
-                        whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
-                    }
+                    claimReward(player, instance);
+                } else {
+                    whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cThis reward is not available to claim!"));
+                    whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
                 }
             }
         }
     }
 
-    private void claimAllRewards(){
-
-        Set<String> claimableRewards = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed();
-
-        if(claimableRewards.isEmpty())
+    private void claimReward(Player player, String instance) {
+        if (!plugin.getSessionManager().validateSession(player.getUniqueId(), sessionToken)) {
+            plugin.getLogger().warning("Player " + player.getName() + " attempted GUI action with invalid session token!");
+            player.closeInventory();
             return;
-
-        for(String instance : claimableRewards){
-            rewardsManager.processCompletedReward(player, rewardsManager.getMainInstance(instance), instance);
         }
-        loadRewards();
-        applyFilters();
-        openInventory(0);
-    }
 
-    private boolean isOnCooldown(Player player) {
-        UUID playerId = player.getUniqueId();
-        long currentTime = System.currentTimeMillis();
+        if (!player.hasPermission("playtime.joinstreak.claim")) {
+            player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cYou don't have permission to claim rewards!"));
+            return;
+        }
 
-        // Check and update last interaction time
-        if (lastInteractionTime.containsKey(playerId)) {
-            long lastTime = lastInteractionTime.get(playerId);
-            if (currentTime - lastTime < INTERACTION_COOLDOWN) {
-                return true;
+        // Validate player has the reward to claim
+        Set<String> rewardsToBeClaimed = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed();
+        if (!rewardsToBeClaimed.contains(instance)) {
+            // Log potential exploit attempt
+            player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cThis reward is not available to claim!"));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            return;
+        }
+
+        // Check if the reward exists
+        JoinStreakReward reward = null;
+        for (RewardDisplayItem displayItem : allDisplayItems) {
+            if (displayItem.getInstance().equals(instance)) {
+                reward = displayItem.getReward();
+                break;
             }
         }
 
-        lastInteractionTime.put(playerId, currentTime);
-        return false;
-    }
+        if (reward == null) {
+            player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cCouldn't find the reward details!"));
+            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            return;
+        }
 
-    @EventHandler
-    public void onInventoryClick(InventoryClickEvent e) {
-        if (e.getInventory().getHolder() instanceof RewardsInfoGui) {
-            e.setCancelled(true);
+        try {
+            rewardsManager.processCompletedReward(player, reward, instance);
 
-            RewardsInfoGui gui = (RewardsInfoGui) e.getInventory().getHolder();
-            gui.onGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getAction(), e);
+            loadRewards();
+            applyFilters();
+            initializeItems();
+            player.updateInventory();
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error processing reward for player " + player.getName() + ": " + e.getMessage());
+            e.printStackTrace();
+            player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cAn error occurred while processing your reward."));
         }
     }
 
-    @EventHandler
-    public void onInventoryClose(InventoryCloseEvent event) {
-        if (event.getInventory().getHolder() instanceof RewardsInfoGui) {
-            // Optional: Perform cleanup or additional actions on inventory close
-            UUID playerId = event.getPlayer().getUniqueId();
-            lastInteractionTime.remove(playerId);
+    private void claimAllRewards() {
+        if (!player.hasPermission("playtime.joinstreak.claim")) {
+            player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cYou don't have permission to claim rewards!"));
+            return;
         }
+
+        Set<String> claimableRewards = new HashSet<>(dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed());
+
+        if (claimableRewards.isEmpty())
+            return;
+
+        int claimedCount = 0;
+        for (String instance : claimableRewards) {
+            JoinStreakReward reward = rewardsManager.getMainInstance(instance);
+            if (reward != null) {
+                try {
+                    rewardsManager.processCompletedReward(player, reward, instance);
+                    claimedCount++;
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Error processing reward for player " + player.getName() + ": " + e.getMessage());
+                }
+            }
+        }
+
+        player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aClaimed " + claimedCount + " rewards!"));
+        loadRewards();
+        applyFilters();
+        initializeItems();
+        player.updateInventory();
     }
 }
+

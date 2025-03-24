@@ -46,6 +46,7 @@ public class PlayTimeManager extends JavaPlugin{
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private final String serverVersion = Bukkit.getBukkitVersion().split("-")[0];
+    private SessionManager sessionManager;
 
     @Override
     public void onEnable() {
@@ -106,7 +107,6 @@ public class PlayTimeManager extends JavaPlugin{
         Bukkit.getPluginManager().registerEvents(new ConfirmationGui(), this);
         Bukkit.getPluginManager().registerEvents(new JoinStreakRewardSettingsGui(), this);
         Bukkit.getPluginManager().registerEvents(new AllJoinStreakRewardsGui(), this);
-        Bukkit.getPluginManager().registerEvents(new RewardsInfoGui(), this);
         Bukkit.getPluginManager().registerEvents(new JoinStreakPermissionsGui(), this);
         Bukkit.getPluginManager().registerEvents(new JoinStreakCommandsGui(), this);
 
@@ -130,6 +130,8 @@ public class PlayTimeManager extends JavaPlugin{
 
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();
+
+        sessionManager = new SessionManager();
 
         getLogger().info("has been enabled!");
 
@@ -169,7 +171,7 @@ public class PlayTimeManager extends JavaPlugin{
 
     public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
 
-    public String getServerVersion() { return serverVersion; }
+    public SessionManager getSessionManager() { return sessionManager; }
 
     private boolean checkPermissionsPlugin() {
         String configuredPlugin = config.getPermissionsManagerPlugin().toLowerCase();

@@ -127,8 +127,9 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         ));
         protectedSlots.add(CREATE_REWARD);
 
-        boolean isActive = rewardsManager.getJoinsStreakCheckScheduleStatus();
+        boolean isActive = plugin.getConfiguration().getRewardsCheckScheduleActivation();
         boolean hasRewards = !rewardsManager.getRewards().isEmpty();
+
         inv.setItem(TOGGLE_SCHEDULE, createGuiItem(
                 (isActive && hasRewards) ? Material.GREEN_CONCRETE : Material.RED_CONCRETE,
                 Utils.parseColors((isActive && hasRewards) ? "&e&lRewards status: &2&lON" : "&e&lRewards status: &4&lOFF"),

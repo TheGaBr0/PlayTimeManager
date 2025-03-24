@@ -103,12 +103,12 @@ goal-check-verbose: true
 #                           JOIN STREAK
 #=================================================================
 
-# Define when the interval resets (in cron format)
-# Format: <seconds> <minute> <hour> <day-of-month> <month> <day-of-week>
-# I know it may seem a little difficult to understand, but it's very powerful and highly customizable.
-# I suggest you to use this website if you need help: https://www.freeformatter.com/cron-expression-generator-quartz.html
-# Also ChatGPT is very useful in these cases :)
-# Examples:
+#Define when the interval resets (in cron format)
+#Format: <seconds> <minute> <hour> <day-of-month> <month> <day-of-week>
+#I know it may seem a little difficult to understand, but it's very powerful and highly customizable.
+#I suggest you to use this website if you need help: https://www.freeformatter.com/cron-expression-generator-quartz.html
+#Also ChatGPT is very useful in these cases :)
+#Examples:
 # "0 0 0 * * ?" - Daily at midnight (00:00) -> Use this if you want to implement rewards based on daily logins.
 # "0 6 0 * * ?" - Daily at 6 AM
 # "0 0 12 * * ?" - Daily at noon (12 PM)
@@ -117,8 +117,8 @@ goal-check-verbose: true
 # "0/30 * * ? * *" - Every 30 seconds
 streak-reset-schedule: "0 0 0 * * ?"
 
-# Whether to use server timezone or UTC for cron scheduling
-# Values: "server" or "utc"
+#Whether to use server timezone or UTC for cron scheduling
+#Values: "server" or "utc"
 reset-schedule-timezone: "server"
 
 #Enable or disable debug logging in the console
@@ -126,8 +126,8 @@ reset-schedule-timezone: "server"
 #Default: true
 streak-check-verbose: true
 
-# Message shown to players who earn a login streak reward but need to claim it manually
-# This appears when a player without the auto-claim permission (playtime.joinstreak.claim.automatic) qualifies for a reward
+#Message shown to players who earn a login streak reward but need to claim it manually
+#This appears when a player without the auto-claim permission (playtime.joinstreak.claim.automatic) qualifies for a reward
 # %REQUIRED_JOINS% - Required joins to achieve the reward
 # %PLAYER_NAME% - Player's username
 # %MIN_JOINS% - Minimum required joins to achieve the first sub-reward, useful if the main reward is range based.
@@ -139,16 +139,18 @@ join-warn-claim-message: "[&6PlayTime&eManager&f]&7 Great job, &e%PLAYER_NAME%&7
 join-warn-autoclaim-message: "[&6PlayTime&eManager&f]&7 Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times 
                             and unlocked a new reward! We have automatically claimed it for you!"
 
-
+#If set to false the plugin will stop granting rewards, but will still continue to track players' join streaks
+#Useful for maintenance of the rewards
+rewards-check-schedule-activation: true
 #=================================================================
 #                           PLACEHOLDERS
 #=================================================================
 
 placeholders:
-  # If enabled, errors in placeholders will be displayed
-  # If disabled, the text in 'default-message' will be shown instead of error messages
+  #If enabled, errors in placeholders will be displayed
+  #If disabled, the text in 'default-message' will be shown instead of error messages
   enable-errors: false
-  # The default message to display when 'enable-errors' is set to false
+  #The default message to display when 'enable-errors' is set to false
   default-message: "No data"
 
 

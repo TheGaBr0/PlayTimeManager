@@ -44,7 +44,7 @@ public class Configuration {
     private boolean streakCheckVerbose;
     private String joinClaimMessage;
     private String joinAutoClaimMessage;
-
+    private boolean rewardsScheduleActivation;
 
     // Leaderboard settings
     private String playtimetopLeaderboardFormat;
@@ -217,6 +217,7 @@ public class Configuration {
         this.streakCheckVerbose = config.getBoolean("streak-check-verbose", true);
         this.streakTimeZone = config.getString("reset-schedule-timezone", "server");
         this.streakResetSchedule = config.getString("streak-reset-schedule", "0 0 * * *");
+        this.rewardsScheduleActivation = config.getBoolean("rewards-check-schedule-activation", true);
     }
 
     /**
@@ -402,6 +403,16 @@ public class Configuration {
             config.set("join-warn-autoclaim-message", autoclaim);
             save();
         }
+    }
+
+    public boolean getRewardsCheckScheduleActivation(){
+        return rewardsScheduleActivation;
+    }
+
+    public void setRewardsCheckScheduleActivation(boolean activation){
+        this.rewardsScheduleActivation = activation;
+        config.set("rewards-check-schedule-activation", activation);
+        save();
     }
 
     // Leaderboard settings

@@ -9,8 +9,15 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 public class ClaimRewards implements CommandExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+
+    private static final Map<UUID, Long> lastGuiOpenTime = new HashMap<>();
+    private static final long GUI_OPEN_COOLDOWN = 1000;
 
     public ClaimRewards() {}
 
@@ -27,9 +34,26 @@ public class ClaimRewards implements CommandExecutor {
             return true;
         }
 
-        // Open the rewards inventory (using our new instance-based approach)
-        RewardsInfoGui rewardsGui = new RewardsInfoGui(player);
+        // Check for rapid GUI opening (potential exploit)
+        UUID playerId = player.getUniqueId();
+        long currentTime = System.currentTimeMillis();
+        if (lastGuiOpenTime.containsKey(playerId)) {
+            long lastTime = lastGuiOpenTime.get(playerId);
+            if (currentTime - lastTime < GUI_OPEN_COOLDOWN) {
+                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cPlease wait before using this command again."));
+                return true;
+            }
+        }
+        lastGuiOpenTime.put(playerId, currentTime);
+
+        // Create a session token for this GUI interaction
+        String sessionToken = UUID.randomUUID().toString();
+        plugin.getSessionManager().createSession(player.getUniqueId(), sessionToken);
+
+        // Open the rewards inventory with session validation
+        RewardsInfoGui rewardsGui = new RewardsInfoGui(player, sessionToken);
         rewardsGui.openInventory();
         return true;
     }
+
 }

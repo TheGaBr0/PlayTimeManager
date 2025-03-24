@@ -1,5 +1,4 @@
 package me.thegabro.playtimemanager.GUIs.JoinStreak;
-
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
@@ -26,9 +25,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {

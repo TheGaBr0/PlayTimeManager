@@ -28,6 +28,7 @@ public class PlaytimeReload implements CommandExecutor {
         if (sender.hasPermission("playtime.reload")) {
             // Reload configuration
             plugin.getConfiguration().reload();
+            plugin.getGuiConfig().reload();
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The configuration file has been reloaded"));
 
             // Reload goals

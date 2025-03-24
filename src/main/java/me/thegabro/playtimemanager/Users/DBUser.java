@@ -194,7 +194,6 @@ public class DBUser {
 
     public void migrateUnclaimedRewards(){
         LinkedHashSet<String> newRewardsToBeClaimed = new LinkedHashSet<String>();
-        plugin.getLogger().info(String.valueOf(rewardsToBeClaimed));
         for(String reward : rewardsToBeClaimed){
             if (reward != null) {
                 if(!reward.endsWith("R")){

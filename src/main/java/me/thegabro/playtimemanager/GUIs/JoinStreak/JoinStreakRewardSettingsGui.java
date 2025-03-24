@@ -124,7 +124,6 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.REWARD_MESSAGE, createGuiItem(
                 Material.OAK_SIGN,
                 Utils.parseColors("&e&lReward Message"),
-                Utils.parseColors(""),
                 Utils.parseColors("&7Left-click to edit the message"),
                 Utils.parseColors("&7Right-click to display the message")
         ));
@@ -165,7 +164,6 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.REWARDS_DESCRIPTION, createGuiItem(
                 Material.PAPER,
                 Utils.parseColors("&e&lRewards Description"),
-                Utils.parseColors(""),
                 Utils.parseColors("&7Click to edit Rewards Description"),
                 Utils.parseColors("&7Right-click to display the description")
 
@@ -175,7 +173,6 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.DESCRIPTION, createGuiItem(
                 Material.WRITABLE_BOOK,
                 Utils.parseColors("&e&lReward Description"),
-                Utils.parseColors(""),
                 Utils.parseColors("&7Click to edit full description"),
                 Utils.parseColors("&7Right-click to display the description")
 
@@ -185,7 +182,6 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         ItemStack iconItem =
                 createGuiItem(Material.valueOf(reward.getItemIcon()),
                         Utils.parseColors("&e&lReward Icon"),
-                        Utils.parseColors(""),
                         Utils.parseColors("&7Click to set an icon"));
         inventory.setItem(Slots.REWARD_ICON, iconItem);
     }
@@ -205,7 +201,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 metalore.add(loreLine.decoration(TextDecoration.ITALIC, false));
             }
         }
-
+        meta.lore(metalore);
         item.setItemMeta(meta);
         return item;
     }

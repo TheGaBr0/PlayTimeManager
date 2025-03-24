@@ -38,6 +38,8 @@ public class PlayTimeManager extends JavaPlugin{
 
     private static PlayTimeManager instance;
     private Configuration config;
+    private Configuration rewardsConfig;
+    private RewardsGuiConfiguration guiConfig;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
     private final String CURRENTCONFIGVERSION = "3.5";
@@ -133,6 +135,9 @@ public class PlayTimeManager extends JavaPlugin{
 
         sessionManager = new SessionManager();
 
+        guiConfig = new RewardsGuiConfiguration(this);
+
+
         getLogger().info("has been enabled!");
 
 
@@ -172,6 +177,10 @@ public class PlayTimeManager extends JavaPlugin{
     public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
 
     public SessionManager getSessionManager() { return sessionManager; }
+
+    public RewardsGuiConfiguration getGuiConfig() {
+        return guiConfig;
+    }
 
     private boolean checkPermissionsPlugin() {
         String configuredPlugin = config.getPermissionsManagerPlugin().toLowerCase();

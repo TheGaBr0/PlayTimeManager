@@ -45,6 +45,8 @@ public class Configuration {
     private String joinClaimMessage;
     private String joinAutoClaimMessage;
     private boolean rewardsScheduleActivation;
+    private boolean joinStreakResetActivation;
+    private int joinStreakResetMissesAllowed;
 
     // Leaderboard settings
     private String playtimetopLeaderboardFormat;
@@ -218,6 +220,9 @@ public class Configuration {
         this.streakTimeZone = config.getString("reset-schedule-timezone", "server");
         this.streakResetSchedule = config.getString("streak-reset-schedule", "0 0 * * *");
         this.rewardsScheduleActivation = config.getBoolean("rewards-check-schedule-activation", true);
+        this.joinStreakResetActivation = config.getBoolean("reset-joinstreak.enabled", true);
+        this.joinStreakResetMissesAllowed = config.getInt("reset-joinstreak.missed-joins", 1);
+
     }
 
     /**
@@ -412,6 +417,26 @@ public class Configuration {
     public void setRewardsCheckScheduleActivation(boolean activation){
         this.rewardsScheduleActivation = activation;
         config.set("rewards-check-schedule-activation", activation);
+        save();
+    }
+
+    public boolean getJoinStreakResetActivation(){
+        return this.joinStreakResetActivation;
+    }
+
+    public void setJoinStreakResetActivation(boolean activation){
+        this.joinStreakResetActivation = activation;
+        config.set("reset-joinstreak.enabled", activation);
+        save();
+    }
+
+    public int getJoinStreakResetMissesAllowed(){
+        return this.joinStreakResetMissesAllowed;
+    }
+
+    public void setJoinStreakResetMissesAllowed(int missesAllowed){
+        this.joinStreakResetMissesAllowed = missesAllowed;
+        config.set("reset-joinstreak.missed-joins", missesAllowed);
         save();
     }
 

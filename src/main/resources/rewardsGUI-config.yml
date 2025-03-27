@@ -1,5 +1,10 @@
 # PlayTimeManager - Rewards GUI Configuration
-# This file contains all customizable text elements for the Rewards GUI
+# This file contains all customizable text elements for the join streak rewards GUI
+
+# Hex colors are supported with the following format: &#rrggbb
+# where rr (red), gg (green) and bb (blue) are
+# hexadecimal values between 00 and ff (same as decimal 0-255)
+# Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
 
 gui:
   title: "&6Claim Your Rewards"

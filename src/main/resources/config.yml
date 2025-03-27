@@ -17,10 +17,12 @@
 #If you are looking for goals settings, please head to the "Goals" folder
 #To make such folder appear you need to create at least one goal -> /playtimegoal set <goalname> time:<time>
 
+#If you are looking for rewards settings, please head to the "Rewards" folder
+
 # Hex colors are supported with the following format: &#rrggbb
 # where rr (red), gg (green) and bb (blue) are
 # hexadecimal values between 00 and ff (same as decimal 0-255)
-# Standard minecraft colors are still accepted both with classical & or § format. Please avoid mixing & and §, take only one format.
+# Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
 
 #Leave this untouched
 config-version: 3.5
@@ -121,10 +123,19 @@ streak-reset-schedule: "0 0 0 * * ?"
 #Values: "server" or "utc"
 reset-schedule-timezone: "server"
 
+#If set to false the plugin will stop granting rewards, but will still continue to track players' join streaks
+#Useful for maintenance of the rewards
+rewards-check-schedule-activation: true
+
 #Enable or disable debug logging in the console
 #I suggest you to keep this true if you are experimenting with cron expressions defined above
 #Default: true
 streak-check-verbose: true
+
+# Enables or disables the reset of the join streak.
+reset-joinstreak:
+  enabled: true
+  missed-joins: 1 # Number of missed joins allowed before the streak is reset.
 
 #Message shown to players who earn a login streak reward but need to claim it manually
 #This appears when a player without the auto-claim permission (playtime.joinstreak.claim.automatic) qualifies for a reward
@@ -139,9 +150,6 @@ join-warn-claim-message: "[&6PlayTime&eManager&f]&7 Great job, &e%PLAYER_NAME%&7
 join-warn-autoclaim-message: "[&6PlayTime&eManager&f]&7 Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times 
                             and unlocked a new reward! We have automatically claimed it for you!"
 
-#If set to false the plugin will stop granting rewards, but will still continue to track players' join streaks
-#Useful for maintenance of the rewards
-rewards-check-schedule-activation: true
 #=================================================================
 #                           PLACEHOLDERS
 #=================================================================

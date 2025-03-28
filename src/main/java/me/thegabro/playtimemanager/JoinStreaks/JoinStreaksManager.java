@@ -53,7 +53,6 @@ public class JoinStreaksManager {
 
         validateConfiguration();
 
-
         Date now = new Date();
         Date firstTrigger = cronExpression.getNextValidTimeAfter(now);
         Date secondTrigger = cronExpression.getNextValidTimeAfter(firstTrigger);
@@ -104,46 +103,7 @@ public class JoinStreaksManager {
 
     private void updateIntervalResetTimes() {
         Date now = new Date();
-        // Update next reset time using Quartz Cron Expression
         nextIntervalReset = cronExpression.getNextValidTimeAfter(now);
-    }
-
-    private Date getPreviousCronTime(Date fromTime) {
-        // Create a working copy of the reference time
-        Date workingTime = new Date(fromTime.getTime());
-
-        // Step back one minute to ensure we find the previous execution
-        // if the reference time happens to be exactly at an execution time
-        Calendar cal = Calendar.getInstance(timezone);
-        cal.setTime(workingTime);
-        cal.add(Calendar.MINUTE, -1);
-        workingTime = cal.getTime();
-
-        // Get the next execution time AFTER our offset working time
-        // This actually gives us the first future execution from our offset time
-        Date nextTime = cronExpression.getNextValidTimeAfter(workingTime);
-
-        // If we found a next time, step back one more millisecond and find the next time again
-        // This will give us the previous execution before the reference time
-        if (nextTime != null) {
-            cal.setTime(nextTime);
-            cal.add(Calendar.MILLISECOND, -1);
-            Date previousTime = cronExpression.getNextValidTimeAfter(cal.getTime());
-
-            if (previousTime != null && previousTime.before(fromTime)) {
-                return previousTime;
-            }
-        }
-
-        // Fallback: if something went wrong with the calculation above,
-        // return 24 hours ago as a safe default
-        cal.setTime(fromTime);
-        cal.add(Calendar.DAY_OF_YEAR, -1);
-
-        if (plugin.getConfiguration().getStreakCheckVerbose())
-            plugin.getLogger().warning("Could not determine previous cron time, defaulting to 24 hours ago.");
-
-        return cal.getTime();
     }
 
     private void scheduleNextReset() {
@@ -173,10 +133,6 @@ public class JoinStreaksManager {
         intervalTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                    plugin.getLogger().info("Resetting join streak interval tracking.");
-                }
-
 
                 resetMissingPlayerStreaks();
 
@@ -196,7 +152,6 @@ public class JoinStreaksManager {
     }
 
     public void startIntervalTask() {
-        validateConfiguration();
         updateIntervalResetTimes();
         scheduleNextReset();
     }
@@ -208,17 +163,6 @@ public class JoinStreaksManager {
 
             Set<String> playersWithStreaks = db.getPlayersWithActiveStreaks();
 
-            if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                plugin.getLogger().info(String.format("resetMissingPlayerStreaks: Found %d players with active streaks",
-                        playersWithStreaks.size()));
-            }
-
-
-            if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                plugin.getLogger().info(String.format("resetMissingPlayerStreaks: Interval calculated as %d seconds",
-                        exactIntervalSeconds * plugin.getConfiguration().getJoinStreakResetMissesAllowed()));
-            }
-
             // Process all players who might need reset
             int playersReset = 0;
             for (String playerUUID : playersWithStreaks) {
@@ -226,11 +170,6 @@ public class JoinStreaksManager {
                 if (user != null) {
                     // Check if the player's last seen time is older than the interval
                     LocalDateTime lastSeen = user.getLastSeen();
-
-                    if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                        plugin.getLogger().info(String.format("resetMissingPlayerStreaks: Checking player %s - Last Seen: %s",
-                                user.getNickname(), lastSeen));
-                    }
 
                     // Null or empty check first
                     if (lastSeen == null) {
@@ -242,22 +181,16 @@ public class JoinStreaksManager {
                     // Calculate seconds since last seen
                     long secondsSinceLastSeen = Duration.between(lastSeen, LocalDateTime.now()).getSeconds();
 
-                    if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                        plugin.getLogger().info(String.format("resetMissingPlayerStreaks: %s - Seconds since last seen: %d, Interval: %d",
-                                user.getNickname(), secondsSinceLastSeen, exactIntervalSeconds * plugin.getConfiguration().getJoinStreakResetMissesAllowed()));
-                    }
-
                     // Reset if seconds since last seen is greater than interval
                     if (secondsSinceLastSeen > exactIntervalSeconds * plugin.getConfiguration().getJoinStreakResetMissesAllowed()) {
                         user.resetJoinStreaks();
                         playersReset++;
-
-                        if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                            plugin.getLogger().info(String.format("resetMissingPlayerStreaks: Reset streak for %s",
-                                    user.getNickname()));
-                        }
                     }
                 }
+            }
+
+            if (plugin.getConfiguration().getStreakCheckVerbose()) {
+                plugin.getLogger().info(String.format("Streak reset for %d players", playersReset));
             }
         }
 
@@ -267,19 +200,9 @@ public class JoinStreaksManager {
             // Always increment absolute streak
             onlineUser.incrementAbsoluteJoinStreak();
 
-            if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                plugin.getLogger().info(String.format("resetMissingPlayerStreaks: Incremented absolute join streak for online player %s. New streak: %d",
-                        onlineUser.getNickname(), onlineUser.getAbsoluteJoinStreak()));
-            }
-
             // Only increment relative streak and check rewards if schedule is active AND rewards exist
             if (plugin.getConfiguration().getRewardsCheckScheduleActivation() && !rewards.isEmpty()) {
                 onlineUser.incrementRelativeJoinStreak();
-
-                if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                    plugin.getLogger().info(String.format("resetMissingPlayerStreaks: Incremented relative join streak for online player %s. New streak: %d",
-                            onlineUser.getNickname(), onlineUser.getRelativeJoinStreak()));
-                }
 
                 checkRewardsForUser(onlineUser, onlineUser.getPlayer());
                 onlinePlayersProcessed++;
@@ -291,38 +214,22 @@ public class JoinStreaksManager {
     public void isItAStreak(OnlineUser user, Player player) {
         long secondsBetween = Duration.between(user.getLastSeen(), LocalDateTime.now()).getSeconds();
 
-        if (plugin.getConfiguration().getStreakCheckVerbose()) {
-            plugin.getLogger().info(String.format("isItAStreak: Player %s - Seconds since last seen: %d, Interval: %d",
-                    user.getNickname(), secondsBetween, exactIntervalSeconds * plugin.getConfiguration().getJoinStreakResetMissesAllowed()));
-        }
 
         if (secondsBetween <= exactIntervalSeconds * plugin.getConfiguration().getJoinStreakResetMissesAllowed()) {
             // Always increment absolute join streak
             user.incrementAbsoluteJoinStreak();
 
-            if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                plugin.getLogger().info(String.format("isItAStreak: Incrementing absolute join streak for %s. New streak: %d",
-                        user.getNickname(), user.getAbsoluteJoinStreak()));
-            }
 
             // Only increment relative streak and process rewards if schedule is active AND rewards exist
             if (plugin.getConfiguration().getRewardsCheckScheduleActivation() && !rewards.isEmpty()) {
                 user.incrementRelativeJoinStreak();
 
-                if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                    plugin.getLogger().info(String.format("isItAStreak: Incrementing relative join streak for %s. New streak: %d",
-                            user.getNickname(), user.getRelativeJoinStreak()));
-                }
 
                 checkRewardsForUser(user, player);
             }
         } else {
             // Too much time has passed, reset streak
             if(plugin.getConfiguration().getJoinStreakResetActivation()){
-                if (plugin.getConfiguration().getStreakCheckVerbose()) {
-                    plugin.getLogger().info(String.format("isItAStreak: Resetting join streaks for %s. Seconds since last seen: %d, Interval: %d",
-                            user.getNickname(), secondsBetween, exactIntervalSeconds * plugin.getConfiguration().getJoinStreakResetMissesAllowed()));
-                }
                 user.resetJoinStreaks();
             }
         }

@@ -1,6 +1,8 @@
 package me.thegabro.playtimemanager.Commands;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Translations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Translations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
@@ -30,8 +32,10 @@ public class PlaytimeTop implements TabExecutor {
     private final int TOP_MAX = 100;
     private final Pattern pagePattern = Pattern.compile("p\\d+");
     private int page;
+    private final CommandsConfiguration config;
 
     public PlaytimeTop() {
+        this.config = plugin.getCommandsConfig();
         if (plugin.isPermissionsManagerConfigured()) {
             try {
                 this.luckPermsManager = LuckPermsManager.getInstance(plugin);
@@ -89,7 +93,7 @@ public class PlaytimeTop implements TabExecutor {
                     }
 
                     // Send header message
-                    String headerFormat = plugin.getConfiguration().getPlaytimetopHeader();
+                    String headerFormat = config.getConfig().getString("playtimetop.header");
                     String header = headerFormat.replace("%PAGE_NUMBER%", String.valueOf(page));
                     sender.sendMessage(Utils.parseColors(header));
 
@@ -100,8 +104,8 @@ public class PlaytimeTop implements TabExecutor {
                     CompletableFuture<Component>[] messageFutures = new CompletableFuture[endIndex - startIndex];
 
                     // Get the format from config
-                    String format = plugin.getConfiguration().getPlaytimetopLeaderboardFormat();
-                    boolean usePrefixes = plugin.getConfiguration().getPlaytimetopLeaderboardFormat().contains("%PREFIX%") && plugin.isPermissionsManagerConfigured();
+                    String format = config.getConfig().getString("playtimetop.leaderboard-format");
+                    boolean usePrefixes = format.contains("%PREFIX%") && plugin.isPermissionsManagerConfigured();
 
                     // Process each player in the page range
                     for (int i = startIndex; i < endIndex; i++) {
@@ -149,20 +153,20 @@ public class PlaytimeTop implements TabExecutor {
 
                                 // Previous page arrow
                                 if (page > 1) {
-                                    String prevPageText = plugin.getConfiguration().getPlaytimetopPreviousPageExists();
-                                    String prevPageHoverText = plugin.getConfiguration().getPlaytimetopPreviousPageOverText();
+                                    String prevPageText = config.getConfig().getString("playtimetop.footer.previous-page.text-if-page-exists");
+                                    String prevPageHoverText = config.getConfig().getString("playtimetop.footer.previous-page.over-text");
 
                                     Component previousArrow = Utils.parseColors(prevPageText)
                                             .clickEvent(ClickEvent.runCommand("/playtimetop p" + (page - 1)))
                                             .hoverEvent(HoverEvent.showText(Utils.parseColors(prevPageHoverText)));
                                     navigationMessage = navigationMessage.append(previousArrow);
                                 } else {
-                                    String prevPageNotExistsText = plugin.getConfiguration().getPlaytimetopPreviousPageNotExists();
+                                    String prevPageNotExistsText = config.getConfig().getString("playtimetop.footer.previous-page.text-if-page-not-exists");
                                     navigationMessage = navigationMessage.append(Utils.parseColors(prevPageNotExistsText));
                                 }
 
                                 // Middle text
-                                String middleTextFormat = plugin.getConfiguration().getPlaytimetopMiddleText();
+                                String middleTextFormat = config.getConfig().getString("playtimetop.footer.middle-text");
                                 String middleText = middleTextFormat
                                         .replace("%PAGE_NUMBER%", String.valueOf(page))
                                         .replace("%TOTAL_PAGES%", String.valueOf(totalPages));
@@ -170,15 +174,15 @@ public class PlaytimeTop implements TabExecutor {
 
                                 // Next page arrow
                                 if (page < totalPages) {
-                                    String nextPageText = plugin.getConfiguration().getPlaytimetopNextPageExists();
-                                    String nextPageHoverText = plugin.getConfiguration().getPlaytimetopNextPageOverText();
+                                    String nextPageText = config.getConfig().getString("playtimetop.footer.next-page.text-if-page-exists");
+                                    String nextPageHoverText = config.getConfig().getString("playtimetop.footer.next-page.over-text");
 
                                     Component nextArrow = Utils.parseColors(nextPageText)
                                             .clickEvent(ClickEvent.runCommand("/playtimetop p" + (page + 1)))
                                             .hoverEvent(HoverEvent.showText(Utils.parseColors(nextPageHoverText)));
                                     navigationMessage = navigationMessage.append(nextArrow);
                                 } else {
-                                    String nextPageNotExistsText = plugin.getConfiguration().getPlaytimetopNextPageNotExists();
+                                    String nextPageNotExistsText = config.getConfig().getString("playtimetop.footer.next-page.text-if-page-not-exists");
                                     navigationMessage = navigationMessage.append(Utils.parseColors(nextPageNotExistsText));
                                 }
 

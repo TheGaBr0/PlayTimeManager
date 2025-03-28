@@ -57,37 +57,6 @@ playtime-self-message: "[&6PlayTime&eManager&f]&7 Your playtime is &6%PLAYTIME%"
 #Available placeholders: %PLAYTIME%, %PLAYER_NAME%, %PREFIX%
 playtime-others-message: "[&6PlayTime&eManager&f]&7 The playtime of &e%PLAYER_NAME%&7 is &6%PLAYTIME%"
 
-playtimetop:
-  # The header text shown at the top of the leaderboard menu
-  # %PAGE_NUMBER% displays the current page number
-  header: "[&6PlayTime&eManager&f]&7 Top 100 players - page: %PAGE_NUMBER%"
-  #Format for each line in the leaderboard display
-  #Available placeholders:
-  # %POSITION% - Player's position in the leaderboard (1, 2, 3, etc.)
-  # %PREFIX% - Player's prefix from LuckPerms
-  # %PLAYER_NAME% - Player's username
-  # %PLAYTIME% - Player's total playtime formatted
-  leaderboard-format: "&7&l#%POSITION%&r &e%PLAYER_NAME% &7- &d%PLAYTIME%"
-  footer:
-    middle-text: "&7Page %PAGE_NUMBER%/%TOTAL_PAGES%"
-    # Configuration for the previous page button
-    previous-page:
-      # Text shown when there is a previous page available
-      text-if-page-exists: "&6«"
-      # Text shown when there is no previous page available
-      text-if-page-not-exists: "&7«"
-      # Hover text displayed when mousing over the previous page button
-      over-text: "&7Click to go to previous page"
-
-    # Configuration for the next page button
-    next-page:
-      # Text shown when there is a next page available
-      text-if-page-exists: "&6»"
-      # Text shown when there is no next page available
-      text-if-page-not-exists: "&7»"
-      # Hover text displayed when mousing over the next page button
-      over-text: "&7Click to go to next page"
-
 #=================================================================
 #                              GOALS
 #=================================================================

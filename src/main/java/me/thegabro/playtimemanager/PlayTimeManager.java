@@ -6,6 +6,8 @@ import me.thegabro.playtimemanager.GUIs.Goals.GoalPermissionsGui;
 import me.thegabro.playtimemanager.GUIs.Goals.GoalSettingsGui;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreaksManager;
+import me.thegabro.playtimemanager.Translations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Translations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Updates.UpdateManager;
 import me.thegabro.playtimemanager.Commands.*;
 import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeCommandManager;
@@ -38,8 +40,8 @@ public class PlayTimeManager extends JavaPlugin{
 
     private static PlayTimeManager instance;
     private Configuration config;
-    private Configuration rewardsConfig;
-    private RewardsGuiConfiguration guiConfig;
+    private CommandsConfiguration commandsConfig;
+    private GUIsConfiguration guiConfig;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
     private final String CURRENTCONFIGVERSION = "3.5";
@@ -55,8 +57,6 @@ public class PlayTimeManager extends JavaPlugin{
 
         int BSTATS_PLUGIN_ID = 24739;
         Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
-
-
 
         if (!getDataFolder().exists()) {
             getDataFolder().mkdirs();
@@ -82,6 +82,9 @@ public class PlayTimeManager extends JavaPlugin{
         }
 
         config = new Configuration(this.getDataFolder(), "config", true, true);
+
+        guiConfig = new GUIsConfiguration(this);
+        commandsConfig = new CommandsConfiguration(this);
 
         GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(this);
@@ -135,8 +138,6 @@ public class PlayTimeManager extends JavaPlugin{
 
         sessionManager = new SessionManager();
 
-        guiConfig = new RewardsGuiConfiguration(this);
-
 
         getLogger().info("has been enabled!");
 
@@ -178,8 +179,12 @@ public class PlayTimeManager extends JavaPlugin{
 
     public SessionManager getSessionManager() { return sessionManager; }
 
-    public RewardsGuiConfiguration getGuiConfig() {
+    public GUIsConfiguration getGUIsConfig() {
         return guiConfig;
+    }
+
+    public CommandsConfiguration getCommandsConfig() {
+        return commandsConfig;
     }
 
     private boolean checkPermissionsPlugin() {

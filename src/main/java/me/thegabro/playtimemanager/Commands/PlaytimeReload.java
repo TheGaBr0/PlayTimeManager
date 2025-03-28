@@ -26,17 +26,16 @@ public class PlaytimeReload implements CommandExecutor {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
         if (sender.hasPermission("playtime.reload")) {
-            // Reload configuration
+            // Reload configurations
             plugin.getConfiguration().reload();
-            plugin.getGuiConfig().reload();
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The configuration file has been reloaded"));
+            plugin.getGUIsConfig().reload();
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The configuration files have been reloaded"));
 
             // Reload goals
             goalsManager.clearGoals();
             goalsManager.loadGoals();
 
-            joinStreaksManager.clearRewards();
-            joinStreaksManager.loadRewards();
+            joinStreaksManager.initialize(plugin);
 
             //reload online users data
             for(Player p : Bukkit.getOnlinePlayers()) {

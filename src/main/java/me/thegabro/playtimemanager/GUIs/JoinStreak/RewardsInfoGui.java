@@ -5,7 +5,7 @@ import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
-import me.thegabro.playtimemanager.RewardsGuiConfiguration;
+import me.thegabro.playtimemanager.Translations.GUIsConfiguration;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
@@ -34,7 +34,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
-    private final RewardsGuiConfiguration config;
+    private final GUIsConfiguration config;
     private Player player;
 
     private int currentPage = 0;
@@ -60,9 +60,9 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     public RewardsInfoGui(Player player, String sessionToken) {
         this.player = player;
         this.sessionToken = sessionToken;
-        this.config = plugin.getGuiConfig();
+        this.config = plugin.getGUIsConfig();
 
-        inv = Bukkit.createInventory(this, 54, Utils.parseColors(config.getConfig().getString("gui.title")));
+        inv = Bukkit.createInventory(this, 54, Utils.parseColors(config.getConfig().getString("rewards-gui.title")));
 
         // Register listeners only once
         if (!isListenerRegistered) {
@@ -247,7 +247,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         // Create GUI borders
         for (int i = 0; i < 54; i++) {
             if (i <= 9 || i >= 45 || i == leftIndex || i == rightIndex) {
-                inv.setItem(i, createGuiItem(Material.BLACK_STAINED_GLASS_PANE, Utils.parseColors(config.getConfig().getString("gui.border-item-name"))));
+                inv.setItem(i, createGuiItem(Material.BLACK_STAINED_GLASS_PANE, Utils.parseColors(config.getConfig().getString("rewards-gui.border-item-name"))));
                 protectedSlots.add(i);
                 if (i == leftIndex) leftIndex += 9;
                 if (i == rightIndex) rightIndex += 9;
@@ -258,7 +258,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
         inv.setItem(CLAIM_ALL_BUTTON_SLOT, createGuiItem(
                 Material.CHEST,
-                Utils.parseColors(config.getConfig().getString("claim-all.name"))
+                Utils.parseColors(config.getConfig().getString("rewards-gui.claim-all.name"))
         ));
         protectedSlots.add(CLAIM_ALL_BUTTON_SLOT);
 
@@ -267,7 +267,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
         if (totalPages > 1) {
             // Page indicator
-            String pageIndicator = config.getConfig().getString("pagination.page-indicator")
+            String pageIndicator = config.getConfig().getString("rewards-gui.pagination.page-indicator")
                     .replace("{current_page}", String.valueOf(currentPage + 1))
                     .replace("{total_pages}", String.valueOf(totalPages));
 
@@ -281,13 +281,13 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             if (currentPage < totalPages - 1) {
                 inv.setItem(NEXT_BUTTON_SLOT, createGuiItem(
                         Material.ARROW,
-                        Utils.parseColors(config.getConfig().getString("pagination.next-page.name")),
-                        Utils.parseColors(config.getConfig().getString("pagination.next-page.lore"))
+                        Utils.parseColors(config.getConfig().getString("rewards-gui.pagination.next-page.name")),
+                        Utils.parseColors(config.getConfig().getString("rewards-gui.pagination.next-page.lore"))
                 ));
             } else {
                 inv.setItem(NEXT_BUTTON_SLOT, createGuiItem(
                         Material.BARRIER,
-                        Utils.parseColors(config.getConfig().getString("pagination.no-more-pages"))
+                        Utils.parseColors(config.getConfig().getString("rewards-gui.pagination.no-more-pages"))
                 ));
             }
             protectedSlots.add(NEXT_BUTTON_SLOT);
@@ -296,13 +296,13 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             if (currentPage > 0) {
                 inv.setItem(PREV_BUTTON_SLOT, createGuiItem(
                         Material.ARROW,
-                        Utils.parseColors(config.getConfig().getString("pagination.prev-page.name")),
-                        Utils.parseColors(config.getConfig().getString("pagination.prev-page.lore"))
+                        Utils.parseColors(config.getConfig().getString("rewards-gui.pagination.prev-page.name")),
+                        Utils.parseColors(config.getConfig().getString("rewards-gui.pagination.prev-page.lore"))
                 ));
             } else {
                 inv.setItem(PREV_BUTTON_SLOT, createGuiItem(
                         Material.BARRIER,
-                        Utils.parseColors(config.getConfig().getString("pagination.first-page"))
+                        Utils.parseColors(config.getConfig().getString("rewards-gui.pagination.first-page"))
                 ));
             }
             protectedSlots.add(PREV_BUTTON_SLOT);
@@ -329,76 +329,80 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                 Material material;
                 String statusPrefix;
                 List<Component> lore = new ArrayList<>();
+                String rewardType;
 
                 switch (displayItem.getStatus()) {
                     case AVAILABLE_OLD:
                     case AVAILABLE:
                         material = Material.valueOf(reward.getItemIcon());
-                        statusPrefix = config.getConfig().getString("reward-items.available.prefix");
-                        for (String loreLine : config.getConfig().getStringList("reward-items.available.lore")) {
+                        statusPrefix = config.getConfig().getString("rewards-gui.reward-items.available.prefix");
+                        for (String loreLine : config.getConfig().getStringList("rewards-gui.reward-items.available.lore")) {
                             lore.add(Utils.parseColors(loreLine));
                         }
+                        rewardType = "CLAIMABLE";
                         break;
                     case CLAIMED:
                         material = Material.valueOf(reward.getItemIcon());
-                        statusPrefix = config.getConfig().getString("reward-items.claimed.prefix");
-                        for (String loreLine : config.getConfig().getStringList("reward-items.claimed.lore")) {
+                        statusPrefix = config.getConfig().getString("rewards-gui.reward-items.claimed.prefix");
+                        for (String loreLine : config.getConfig().getStringList("rewards-gui.reward-items.claimed.lore")) {
                             lore.add(Utils.parseColors(loreLine));
                         }
+                        rewardType = "CLAIMED";
                         break;
                     case LOCKED:
                     default:
                         material = Material.valueOf(reward.getItemIcon());
-                        statusPrefix = config.getConfig().getString("reward-items.locked.prefix");
-                        for (String loreLine : config.getConfig().getStringList("reward-items.locked.lore")) {
+                        statusPrefix = config.getConfig().getString("rewards-gui.reward-items.locked.prefix");
+                        for (String loreLine : config.getConfig().getStringList("rewards-gui.reward-items.locked.lore")) {
                             lore.add(Utils.parseColors(loreLine));
                         }
+                        rewardType = "LOCKED";
                         break;
                 }
 
                 if (!(displayItem.getStatus() == RewardStatus.AVAILABLE_OLD)) {
                     int specificJoinCount = displayItem.getSpecificJoinCount();
-                    String requiredJoins = config.getConfig().getString("reward-items.info-lore.required-joins")
+                    String requiredJoins = config.getConfig().getString("rewards-gui.reward-items.info-lore.required-joins")
                             .replace("{required_joins}", specificJoinCount == -1 ? "-" : String.valueOf(specificJoinCount));
                     lore.add(Utils.parseColors(requiredJoins));
 
                     int currentStreak = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRelativeJoinStreak();
                     String streakColor = currentStreak < specificJoinCount ?
-                            config.getConfig().getString("reward-items.info-lore.join-streak-color.insufficient") :
-                            config.getConfig().getString("reward-items.info-lore.join-streak-color.sufficient");
+                            config.getConfig().getString("rewards-gui.reward-items.info-lore.join-streak-color.insufficient") :
+                            config.getConfig().getString("rewards-gui.reward-items.info-lore.join-streak-color.sufficient");
 
-                    String joinStreak = config.getConfig().getString("reward-items.info-lore.join-streak")
+                    String joinStreak = config.getConfig().getString("rewards-gui.reward-items.info-lore.join-streak")
                             .replace("{color}", streakColor)
                             .replace("{current_streak}", String.valueOf(currentStreak));
                     lore.add(Utils.parseColors(joinStreak));
                 }
 
                 if (!reward.getDescription().isEmpty()) {
-                    lore.add(Utils.parseColors(config.getConfig().getString("reward-items.info-lore.description-separator")));
-                    lore.add(Utils.parseColors(config.getConfig().getString("reward-items.info-lore.description")
+                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.description-separator")));
+                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.description")
                             .replace("{description}", reward.getDescription())));
                 }
 
                 if (!reward.getRewardDescription().isEmpty()) {
-                    lore.add(Utils.parseColors(config.getConfig().getString("reward-items.info-lore.reward-description-separator")));
-                    lore.add(Utils.parseColors(config.getConfig().getString("reward-items.info-lore.reward-description")
+                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.reward-description-separator")));
+                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.reward-description")
                             .replace("{reward_description}", reward.getRewardDescription())));
                 }
 
                 if (!reward.getPermissions().isEmpty()) {
-                    lore.add(Utils.parseColors(config.getConfig().getString("reward-items.info-lore.permissions-header-separator")));
-                    lore.add(Utils.parseColors(config.getConfig().getString("reward-items.info-lore.permissions-header")));
+                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.permissions-header-separator")));
+                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.permissions-header")));
                     for (String permission : reward.getPermissions()) {
-                        lore.add(Utils.parseColors(config.getConfig().getString("reward-items.info-lore.permission-format")
+                        lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.permission-format")
                                 .replace("{permission}", permission)));
                     }
                 }
 
                 if (!reward.getCommands().isEmpty()) {
-                    lore.add(Utils.parseColors(config.getConfig().getString("reward-items.info-lore.commands-header-separator")));
-                    lore.add(Utils.parseColors(config.getConfig().getString("reward-items.info-lore.commands-header")));
+                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.commands-header-separator")));
+                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.commands-header")));
                     for (String command : reward.getCommands()) {
-                        lore.add(Utils.parseColors(config.getConfig().getString("reward-items.info-lore.command-format")
+                        lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.command-format")
                                 .replace("{command}", command)));
                     }
                 }
@@ -407,20 +411,23 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                 ItemMeta meta = item.getItemMeta();
                 meta.displayName(Utils.parseColors(statusPrefix));
                 meta.lore(lore);
-                NamespacedKey key = new NamespacedKey(plugin, "reward_id");
-                meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, instance);
+                NamespacedKey idKey = new NamespacedKey(plugin, "reward_id");
+                NamespacedKey typeKey = new NamespacedKey(plugin, "reward_type");
+                meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, instance);
+                meta.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, rewardType);
+
 
                 item.setItemMeta(meta);
 
-                inv.setItem(slot, createRewardItem(material, statusPrefix, lore));
+                inv.setItem(slot, createRewardItem(material, statusPrefix, lore, meta.getPersistentDataContainer()));
                 slot++;
             }
         } else {
             // Display message if no rewards exist or all are filtered out
             inv.setItem(22, createGuiItem(
                     Material.BARRIER,
-                    Utils.parseColors(config.getConfig().getString("no-rewards.name")),
-                    Utils.parseColors(config.getConfig().getString("no-rewards.lore"))
+                    Utils.parseColors(config.getConfig().getString("rewards-gui.no-rewards.name")),
+                    Utils.parseColors(config.getConfig().getString("rewards-gui.no-rewards.lore"))
             ));
         }
     }
@@ -430,11 +437,11 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         // Show Claimed Button
         Material claimedMaterial = showClaimed ? Material.LIME_DYE : Material.GRAY_DYE;
         String claimedName = showClaimed ?
-                config.getConfig().getString("filters.claimed.enabled-name") :
-                config.getConfig().getString("filters.claimed.disabled-name");
+                config.getConfig().getString("rewards-gui.filters.claimed.enabled-name") :
+                config.getConfig().getString("rewards-gui.filters.claimed.disabled-name");
         String claimedLore = showClaimed ?
-                config.getConfig().getString("filters.claimed.lore-enabled") :
-                config.getConfig().getString("filters.claimed.lore-disabled");
+                config.getConfig().getString("rewards-gui.filters.claimed.lore-enabled") :
+                config.getConfig().getString("rewards-gui.filters.claimed.lore-disabled");
 
         inv.setItem(SHOW_CLAIMED_BUTTON_SLOT, createGuiItem(
                 claimedMaterial,
@@ -446,11 +453,11 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         // Show Available Button
         Material availableMaterial = showAvailable ? Material.LIME_DYE : Material.GRAY_DYE;
         String availableName = showAvailable ?
-                config.getConfig().getString("filters.available.enabled-name") :
-                config.getConfig().getString("filters.available.disabled-name");
+                config.getConfig().getString("rewards-gui.filters.available.enabled-name") :
+                config.getConfig().getString("rewards-gui.filters.available.disabled-name");
         String availableLore = showAvailable ?
-                config.getConfig().getString("filters.available.lore-enabled") :
-                config.getConfig().getString("filters.available.lore-disabled");
+                config.getConfig().getString("rewards-gui.filters.available.lore-enabled") :
+                config.getConfig().getString("rewards-gui.filters.available.lore-disabled");
 
         inv.setItem(SHOW_AVAILABLE_BUTTON_SLOT, createGuiItem(
                 availableMaterial,
@@ -462,11 +469,11 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         // Show Locked Button
         Material lockedMaterial = showLocked ? Material.LIME_DYE : Material.GRAY_DYE;
         String lockedName = showLocked ?
-                config.getConfig().getString("filters.locked.enabled-name") :
-                config.getConfig().getString("filters.locked.disabled-name");
+                config.getConfig().getString("rewards-gui.filters.locked.enabled-name") :
+                config.getConfig().getString("rewards-gui.filters.locked.disabled-name");
         String lockedLore = showLocked ?
-                config.getConfig().getString("filters.locked.lore-enabled") :
-                config.getConfig().getString("filters.locked.lore-disabled");
+                config.getConfig().getString("rewards-gui.filters.locked.lore-enabled") :
+                config.getConfig().getString("rewards-gui.filters.locked.lore-disabled");
 
         inv.setItem(SHOW_LOCKED_BUTTON_SLOT, createGuiItem(
                 lockedMaterial,
@@ -550,7 +557,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         return item;
     }
 
-    private ItemStack createRewardItem(Material material, String name, List<Component> lore) {
+    private ItemStack createRewardItem(Material material, String name, List<Component> lore, PersistentDataContainer originalContainer) {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
 
@@ -559,6 +566,15 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         ArrayList<Component> metalore = new ArrayList<>();
         for (Component loreLine : lore) {
             metalore.add(loreLine.decoration(TextDecoration.ITALIC, false));
+        }
+
+        if (originalContainer != null) {
+            for (NamespacedKey key : originalContainer.getKeys()) {
+                if (originalContainer.has(key, PersistentDataType.STRING)) {
+                    String value = originalContainer.get(key, PersistentDataType.STRING);
+                    meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, value);
+                }
+            }
         }
 
         meta.lore(metalore);
@@ -617,20 +633,23 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
         // Handle clicking on a reward
         if (clickedItem.getItemMeta().hasDisplayName()) {
-            String displayName = Utils.stripColor(String.valueOf(clickedItem.getItemMeta().displayName()));
 
-            // Only process if it's an available reward
-            if (displayName.contains("[CLICK TO CLAIM]")) {
-                // Extract reward instance from the lore
-                NamespacedKey key = new NamespacedKey(plugin, "reward_id");
-                PersistentDataContainer container = clickedItem.getItemMeta().getPersistentDataContainer();
-                if (container.has(key, PersistentDataType.STRING)) {
-                    String instance = container.get(key, PersistentDataType.STRING);
-                    claimReward(player, instance);
-                } else {
-                    whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
-                            config.getConfig().getString("messages.not-available")));
-                    whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            PersistentDataContainer container = clickedItem.getItemMeta().getPersistentDataContainer();
+            NamespacedKey typeKey = new NamespacedKey(plugin, "reward_type");
+
+            if (container.has(typeKey, PersistentDataType.STRING)) {
+                if(container.get(typeKey, PersistentDataType.STRING).equals("CLAIMABLE")){
+                    // Extract reward instance from the lore
+                    NamespacedKey idKey = new NamespacedKey(plugin, "reward_id");
+
+                    if (container.has(idKey, PersistentDataType.STRING)) {
+                        String instance = container.get(idKey, PersistentDataType.STRING);
+                        claimReward(player, instance);
+                    } else {
+                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
+                                config.getConfig().getString("rewards-gui.messages.not-available")));
+                        whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                    }
                 }
             }
         }
@@ -645,7 +664,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
         if (!player.hasPermission("playtime.joinstreak.claim")) {
             player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
-                    config.getConfig().getString("messages.no-permission")));
+                    config.getConfig().getString("rewards-gui.messages.no-permission")));
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return;
         }
@@ -653,7 +672,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         JoinStreakReward reward = rewardsManager.getMainInstance(instance);
         if (reward == null) {
             player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
-                    config.getConfig().getString("messages.reward-not-found")));
+                    config.getConfig().getString("rewards-gui.messages.reward-not-found")));
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return;
         }
@@ -669,7 +688,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             plugin.getLogger().severe("Error processing reward for player " + player.getName() + ": " + e.getMessage());
             e.printStackTrace();
             player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
-                    config.getConfig().getString("messages.error-processing")));
+                    config.getConfig().getString("rewards-gui.messages.error-processing")));
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
         }
     }
@@ -683,7 +702,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
         if (!player.hasPermission("playtime.joinstreak.claim")) {
             player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
-                    config.getConfig().getString("messages.no-permission")));
+                    config.getConfig().getString("rewards-gui.messages.no-permission")));
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return;
         }
@@ -692,8 +711,6 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         Set<String> claimableRewards = new HashSet<>(dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed());
 
         if (claimableRewards.isEmpty()) {
-            player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
-                    config.getConfig().getString("messages.no-available-rewards")));
             return;
         }
 
@@ -713,7 +730,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         if (claimedCount > 0) {
             // Notify the player about claimed rewards
             player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
-                    config.getConfig().getString("messages.claimed-rewards").replace("{count}", String.valueOf(claimedCount))));
+                    config.getConfig().getString("rewards-gui.messages.claimed-rewards").replace("{count}", String.valueOf(claimedCount))));
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
 
             // Reload the rewards to refresh the GUI
@@ -722,7 +739,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             initializeItems();
         } else {
             player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
-                    config.getConfig().getString("messages.error-processing")));
+                    config.getConfig().getString("rewards-gui.messages.error-processing")));
             player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
         }
     }

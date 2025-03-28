@@ -144,7 +144,6 @@ public class Version332to34Updater {
         newConfig.setPluginChatPrefix(prefix);
         newConfig.setPlaytimeSelfMessage(playtimeSelfMessage);
         newConfig.setPlaytimeOthersMessage(playtimeOthersMessage);
-        newConfig.setPlaytimetopLeaderboardFormat(leaderboardFormat);
         newConfig.setGoalsCheckRate(goalsCheckRate);
         newConfig.setGoalsCheckVerbose(goalsCheckVerbose);
         newConfig.setPlaceholdersEnableErrors(placeHoldersErrors);

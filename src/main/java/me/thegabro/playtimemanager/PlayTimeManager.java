@@ -45,8 +45,6 @@ public class PlayTimeManager extends JavaPlugin{
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
     private final String CURRENTCONFIGVERSION = "3.5";
-    private final String CURRENTGOALSCONFIGVERSION = "1.0";
-    private final String CURRENTREWARDSCONFIGVERSION = "1.0";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private final String serverVersion = Bukkit.getBukkitVersion().split("-")[0];

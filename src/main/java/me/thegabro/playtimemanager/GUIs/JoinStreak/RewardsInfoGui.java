@@ -707,7 +707,6 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             return;
         }
 
-        // Get rewards to be claimed for this player
         Set<String> claimableRewards = new HashSet<>(dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed());
 
         if (claimableRewards.isEmpty()) {

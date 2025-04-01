@@ -27,12 +27,6 @@
 #Leave this untouched
 config-version: 3.5
 
-#Leave this untouched
-goals-config-version: 1.0
-
-#Leave this untouched
-joinstreak-rewards-config-version: 1.0
-
 #Choose your permissions management plugin
 #Available options: "luckperms"
 #Using a different permissions plugin? Let me know on my GitHub issues page!

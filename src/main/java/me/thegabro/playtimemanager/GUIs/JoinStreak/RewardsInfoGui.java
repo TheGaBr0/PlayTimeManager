@@ -379,14 +379,23 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
                 if (!reward.getDescription().isEmpty()) {
                     lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.description-separator")));
-                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.description")
-                            .replace("{description}", reward.getDescription())));
+
+                    String descriptionTemplate = config.getConfig().getString("rewards-gui.reward-items.info-lore.description");
+                    String[] descriptionLines = reward.getDescription().split("\n");
+
+                    for (String line : descriptionLines) {
+                        lore.add(Utils.parseColors(descriptionTemplate.replace("{description}", line)));
+                    }
                 }
 
                 if (!reward.getRewardDescription().isEmpty()) {
                     lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.reward-description-separator")));
-                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.reward-description")
-                            .replace("{reward_description}", reward.getRewardDescription())));
+                    String descriptionTemplate = config.getConfig().getString("rewards-gui.reward-items.info-lore.reward-description");
+                    String[] descriptionLines = reward.getRewardDescription().split("\n");
+
+                    for (String line : descriptionLines) {
+                        lore.add(Utils.parseColors(descriptionTemplate.replace("{reward_description}", line)));
+                    }
                 }
 
                 if (!reward.getPermissions().isEmpty()) {

@@ -73,7 +73,7 @@ rewards-gui:
       description-separator: ""
       description: "&7{description}"
       reward-description-separator: ""
-      reward-description: "&7Reward: {reward_description}"
+      reward-description: "&7{reward_description}"
       permissions-header-separator: ""
       permissions-header: "&7&lPermissions:"
       permission-format: "&7- &f{permission}"

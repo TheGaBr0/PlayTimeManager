@@ -39,12 +39,12 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
     private static final class Slots {
         static final int REQUIRED_JOINS = 10;
         static final int REWARD_PERMISSIONS = 12;
-        static final int REWARD_ICON = 14;
+        static final int REWARD_COMMANDS = 14;
         static final int REWARD_SOUND = 16;
         static final int DESCRIPTION = 29;
         static final int REWARDS_DESCRIPTION = 31;
         static final int REWARD_MESSAGE = 33;
-        static final int REWARD_COMMANDS = 40;
+        static final int REWARD_ICON = 40;
         static final int DELETE_REWARD = 45;
         static final int BACK_BUTTON = 53;
     }
@@ -123,7 +123,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         // Message button
         inventory.setItem(Slots.REWARD_MESSAGE, createGuiItem(
                 Material.OAK_SIGN,
-                Utils.parseColors("&e&lReward Message"),
+                Utils.parseColors("&e&lReward Achieved Message"),
                 Utils.parseColors("&7Left-click to edit the message"),
                 Utils.parseColors("&7Right-click to display the message")
         ));
@@ -160,22 +160,47 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 Utils.parseColors("&e&lBack")
         ));
 
-        // Description button
+        List<Component> rewardsDescLore = new ArrayList<>();
+        rewardsDescLore.add(Utils.parseColors("&7Click to edit rewards description"));
+
+        if (!reward.getRewardDescription().isEmpty()) {
+            rewardsDescLore.add(Component.text(""));
+            rewardsDescLore.add(Utils.parseColors("&7Current description:"));
+
+            // Split the description by newlines and add each line
+            String[] descriptionLines = reward.getRewardDescription().split("\n");
+            for (String line : descriptionLines) {
+                // Format each line with a bullet point and yellow color
+                rewardsDescLore.add(Utils.parseColors("&7"+line));
+            }
+        }
+
         inventory.setItem(Slots.REWARDS_DESCRIPTION, createGuiItem(
                 Material.PAPER,
                 Utils.parseColors("&e&lRewards Description"),
-                Utils.parseColors("&7Click to edit Rewards Description"),
-                Utils.parseColors("&7Right-click to display the description")
-
+                rewardsDescLore.toArray(new Component[0])
         ));
+
+        List<Component> DescLore = new ArrayList<>();
+        DescLore.add(Utils.parseColors("&7Click to edit reward's description"));
+
+        if (!reward.getRewardDescription().isEmpty()) {
+            DescLore.add(Component.text(""));
+            DescLore.add(Utils.parseColors("&7Current description:"));
+
+            // Split the description by newlines and add each line
+            String[] descriptionLines = reward.getDescription().split("\n");
+            for (String line : descriptionLines) {
+                // Format each line with a bullet point and yellow color
+                DescLore.add(Utils.parseColors("&7"+line));
+            }
+        }
 
         // Reward Description button
         inventory.setItem(Slots.DESCRIPTION, createGuiItem(
                 Material.WRITABLE_BOOK,
-                Utils.parseColors("&e&lReward Description"),
-                Utils.parseColors("&7Click to edit full description"),
-                Utils.parseColors("&7Right-click to display the description")
-
+                Utils.parseColors("&e&lDescription"),
+                DescLore.toArray(new Component[0])
         ));
 
         // Item Icon button
@@ -260,18 +285,12 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
             case Slots.REWARDS_DESCRIPTION:
                 if (clickType == ClickType.LEFT) {
                     openRewardsDescriptionEditor(player);
-                } else if (clickType == ClickType.RIGHT) {
-                    // Test the message
-                    player.sendMessage(Utils.parseColors(reward.getRewardDescription()));
                 }
                 break;
 
             case Slots.DESCRIPTION:
                 if (clickType == ClickType.LEFT) {
                     openDescriptionEditor(player);
-                } else if (clickType == ClickType.RIGHT) {
-                    // Test the message
-                    player.sendMessage(Utils.parseColors(reward.getDescription()));
                 }
                 break;
 
@@ -404,6 +423,29 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                                 .color(NamedTextColor.RED)
                                 .decoration(TextDecoration.ITALIC, true))
                         .append(Utils.parseColors(" to exit")
+                                .color(NamedTextColor.GRAY)))
+                        .append(Component.newline())
+                .append(Utils.parseColors("• Type ")
+                        .color(NamedTextColor.GRAY)
+                        .append(Utils.parseColors("confirm")
+                                .color(NamedTextColor.GREEN)
+                                .decoration(TextDecoration.ITALIC, true))
+                        .append(Utils.parseColors(" to submit")
+                                .color(NamedTextColor.GRAY)))
+                .append(Component.newline())
+                .append(Utils.parseColors("• Type ")
+                        .color(NamedTextColor.GRAY)
+                        .append(Utils.parseColors("newline")
+                                .color(NamedTextColor.YELLOW)
+                                .decoration(TextDecoration.ITALIC, true))
+                        .append(Utils.parseColors(" to start a new line")
+                                .color(NamedTextColor.GRAY)))
+                        .append(Component.newline())
+                .append(Utils.parseColors("• Type ")
+                        .append(Utils.parseColors("removeline")
+                                .color(NamedTextColor.YELLOW)
+                                .decoration(TextDecoration.ITALIC, true))
+                        .append(Utils.parseColors(" to remove the last line")
                                 .color(NamedTextColor.GRAY)));
 
         // Combine all components with proper spacing
@@ -427,7 +469,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 player.sendMessage(Utils.parseColors("Rewards description edit cancelled").color(NamedTextColor.RED));
             }
             reopenMainGui(player);
-        });
+        }, true);
     }
 
     private void openDescriptionEditor(Player player) {
@@ -460,8 +502,29 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                                 .color(NamedTextColor.RED)
                                 .decoration(TextDecoration.ITALIC, true))
                         .append(Utils.parseColors(" to exit")
+                                .color(NamedTextColor.GRAY)))
+                .append(Utils.parseColors("• Type ")
+                .color(NamedTextColor.GRAY)
+                .append(Utils.parseColors("confirm")
+                        .color(NamedTextColor.GREEN)
+                        .decoration(TextDecoration.ITALIC, true))
+                .append(Utils.parseColors(" to submit")
+                        .color(NamedTextColor.GRAY)))
+                .append(Component.newline())
+                .append(Utils.parseColors("• Type ")
+                        .color(NamedTextColor.GRAY)
+                        .append(Utils.parseColors("newline")
+                                .color(NamedTextColor.YELLOW)
+                                .decoration(TextDecoration.ITALIC, true))
+                        .append(Utils.parseColors(" to start a new line")
+                                .color(NamedTextColor.GRAY)))
+                .append(Component.newline())
+                .append(Utils.parseColors("• Type ")
+                        .append(Utils.parseColors("removeline")
+                                .color(NamedTextColor.YELLOW)
+                                .decoration(TextDecoration.ITALIC, true))
+                        .append(Utils.parseColors(" to remove the last line")
                                 .color(NamedTextColor.GRAY)));
-
         // Combine all components with proper spacing
         Component fullMessage = Component.empty()
                 .append(header)
@@ -483,7 +546,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 player.sendMessage(Utils.parseColors("Reward description edit cancelled").color(NamedTextColor.RED));
             }
             reopenMainGui(player);
-        });
+        }, true);
     }
 
     private void openItemIconSelector(Player player) {

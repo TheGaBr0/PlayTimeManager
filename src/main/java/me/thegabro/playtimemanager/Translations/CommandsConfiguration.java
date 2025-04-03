@@ -39,7 +39,7 @@ public class CommandsConfiguration {
 
         if (!file.exists()) {
             file.getParentFile().mkdirs();
-            plugin.saveResource(CONFIG_FILENAME, false);
+            plugin.saveResource(CONFIG_PATH+CONFIG_FILENAME, false);
         }
     }
 

@@ -303,57 +303,23 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
     private void openRequiredJoinsEditor(Player player) {
         player.closeInventory();
 
-        // Header with reward id
-        Component header = Utils.parseColors("✎ Required Joins Editor: ")
-                .color(NamedTextColor.GOLD)
-                .decoration(TextDecoration.BOLD, true)
-                .append(Utils.parseColors("Reward " + reward.getId())
-                        .color(NamedTextColor.YELLOW));
+        Component header = Utils.parseColors("&6&l✎ Required Joins Editor: &eReward " + reward.getId());
 
-        // Divider for visual separation
-        Component divider = Utils.parseColors("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
-                .color(NamedTextColor.DARK_GRAY);
+        Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
-        // Get current value display
         String currentValue = reward.getRequiredJoinsDisplay();
 
-        // Instructions with better spacing and formatting
-        Component instructions = Utils.parseColors("Enter the required joins for this reward:")
-                .color(NamedTextColor.WHITE)
-                .append(Component.newline())
-                .append(Utils.parseColors("• Current value: ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Utils.parseColors(currentValue)
-                                .color(NamedTextColor.YELLOW)))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Enter a single positive number (e.g. \"5\")")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Utils.parseColors("• OR enter an interval with format \"x1-x2\"")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Utils.parseColors("  This represents a range of joins from x1 to x2")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Utils.parseColors("  Example: \"1-25\" triggers on ALL joins from 1st to 25th")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Enter ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Utils.parseColors("-1")
-                                .color(NamedTextColor.RED))
-                        .append(Utils.parseColors(" to deactivate this reward")
-                                .color(NamedTextColor.GRAY)))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Type ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Utils.parseColors("cancel")
-                                .color(NamedTextColor.RED)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Utils.parseColors(" to exit")
-                                .color(NamedTextColor.GRAY)));
+        Component instructions = Utils.parseColors(
+                "&fEnter the required joins for this reward:\n" +
+                        "&7• Current value: &e" + currentValue + "\n" +
+                        "&7• Enter a single positive number (e.g. \"5\")\n" +
+                        "&7• OR enter an interval with format \"x1-x2\"\n" +
+                        "&7  This represents a range of joins from x1 to x2\n" +
+                        "&7  Example: \"1-25\" triggers on ALL joins from 1st to 25th\n" +
+                        "&7• Enter &c-1 &7to deactivate this reward\n" +
+                        "&7• Type &c&o" + "cancel" + " &7to exit"
+        );
 
-        // Combine all components with proper spacing
         Component fullMessage = Component.empty()
                 .append(header)
                 .append(Component.newline())
@@ -372,20 +338,19 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 if (success) {
                     String newValue = reward.getRequiredJoinsDisplay();
                     if (input.equals("-1")) {
-                        player.sendMessage(Utils.parseColors("Reward has been deactivated!").color(NamedTextColor.GREEN));
+                        player.sendMessage(Utils.parseColors("&aReward has been deactivated!"));
                     } else {
-                        player.sendMessage(Utils.parseColors("Required joins updated to " + newValue + "!").color(NamedTextColor.GREEN));
+                        player.sendMessage(Utils.parseColors("&aRequired joins updated to " + newValue + "!"));
                     }
                     JoinStreaksManager.getInstance().updateJoinRewardsMap(reward);
                     JoinStreaksManager.getInstance().updateEndLoopReward();
                 } else {
-                    player.sendMessage(Utils.parseColors("Invalid format. Please enter a positive number, -1 to deactivate, or a valid range (e.g., 1-25).").color(NamedTextColor.RED));
+                    player.sendMessage(Utils.parseColors("&cInvalid format. Please enter a positive number, -1 to deactivate, or a valid range (e.g., 1-25)."));
                 }
             } else {
-                player.sendMessage(Utils.parseColors("Required joins edit cancelled").color(NamedTextColor.RED));
+                player.sendMessage(Utils.parseColors("&cRequired joins edit cancelled"));
             }
 
-            // Reopen the GUI
             reopenMainGui(player);
         });
     }
@@ -393,62 +358,21 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
     private void openRewardsDescriptionEditor(Player player) {
         player.closeInventory();
 
-        // Header with reward id
-        Component header = Utils.parseColors("✎ Rewards Description Editor: ")
-                .color(NamedTextColor.GOLD)
-                .decoration(TextDecoration.BOLD, true)
-                .append(Utils.parseColors("Reward " + reward.getId())
-                        .color(NamedTextColor.YELLOW));
+        Component header = Utils.parseColors("&6&l✎ Rewards Description Editor: &eReward " + reward.getId());
 
-        // Divider for visual separation
-        Component divider = Utils.parseColors("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
-                .color(NamedTextColor.DARK_GRAY);
+        Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
-        Component instructions = Utils.parseColors("Enter a description of what the player receives when achieving this reward.")
-                .color(NamedTextColor.WHITE)
-                .append(Component.newline())
-                .append(Utils.parseColors("• Describe the specific rewards or benefits")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Utils.parseColors("• This will be returned by the placeholder %REWARD_DETAILS%")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Example: '500 coins, VIP rank for 7 days'")
-                        .color(NamedTextColor.YELLOW)
-                        .decoration(TextDecoration.ITALIC, true))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Type ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Utils.parseColors("cancel")
-                                .color(NamedTextColor.RED)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Utils.parseColors(" to exit")
-                                .color(NamedTextColor.GRAY)))
-                        .append(Component.newline())
-                .append(Utils.parseColors("• Type ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Utils.parseColors("confirm")
-                                .color(NamedTextColor.GREEN)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Utils.parseColors(" to submit")
-                                .color(NamedTextColor.GRAY)))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Type ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Utils.parseColors("newline")
-                                .color(NamedTextColor.YELLOW)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Utils.parseColors(" to start a new line")
-                                .color(NamedTextColor.GRAY)))
-                        .append(Component.newline())
-                .append(Utils.parseColors("• Type ")
-                        .append(Utils.parseColors("removeline")
-                                .color(NamedTextColor.YELLOW)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Utils.parseColors(" to remove the last line")
-                                .color(NamedTextColor.GRAY)));
+        Component instructions = Utils.parseColors(
+                "&fEnter a description of what the player receives when achieving this reward.\n" +
+                        "&7• Describe the specific rewards or benefits\n" +
+                        "&7• This will be returned by the placeholder %REWARD_DETAILS%\n" +
+                        "&e&o• Example: '500 coins, VIP rank for 7 days'\n" +
+                        "&7• Type &c&o" + "cancel" + " &7to exit\n" +
+                        "&7• Type &a&o" + "confirm" + " &7to submit\n" +
+                        "&7• Type &e&o" + "newline" + " &7to start a new line\n" +
+                        "&7• Type &e&o" + "removeline" + " &7to remove the last line"
+        );
 
-        // Combine all components with proper spacing
         Component fullMessage = Component.empty()
                 .append(header)
                 .append(Component.newline())
@@ -464,9 +388,9 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         chatEventManager.startChatInput(player, (p, message) -> {
             if (!message.equalsIgnoreCase("cancel")) {
                 reward.setRewardDescription(message);
-                player.sendMessage(Utils.parseColors("Rewards description updated successfully!").color(NamedTextColor.GREEN));
+                player.sendMessage(Utils.parseColors("&aRewards description updated successfully!"));
             } else {
-                player.sendMessage(Utils.parseColors("Rewards description edit cancelled").color(NamedTextColor.RED));
+                player.sendMessage(Utils.parseColors("&cRewards description edit cancelled"));
             }
             reopenMainGui(player);
         }, true);
@@ -475,57 +399,20 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
     private void openDescriptionEditor(Player player) {
         player.closeInventory();
 
-        // Header with reward id
-        Component header = Utils.parseColors("✎ Reward Description Editor: ")
-                .color(NamedTextColor.GOLD)
-                .decoration(TextDecoration.BOLD, true)
-                .append(Utils.parseColors("Reward " + reward.getId())
-                        .color(NamedTextColor.YELLOW));
+        Component header = Utils.parseColors("&6&l✎ Reward Description Editor: &eReward " + reward.getId());
 
-        // Divider for visual separation
-        Component divider = Utils.parseColors("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
-                .color(NamedTextColor.DARK_GRAY);
+        Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
-        Component instructions = Utils.parseColors("Enter a brief, general description for this reward.")
-                .color(NamedTextColor.WHITE)
-                .append(Component.newline())
-                .append(Utils.parseColors("• Keep it short and concise")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Example: 'A 30 days achievement for dedicated players!'")
-                        .color(NamedTextColor.YELLOW)
-                        .decoration(TextDecoration.ITALIC, true))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Type ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Utils.parseColors("cancel")
-                                .color(NamedTextColor.RED)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Utils.parseColors(" to exit")
-                                .color(NamedTextColor.GRAY)))
-                .append(Utils.parseColors("• Type ")
-                .color(NamedTextColor.GRAY)
-                .append(Utils.parseColors("confirm")
-                        .color(NamedTextColor.GREEN)
-                        .decoration(TextDecoration.ITALIC, true))
-                .append(Utils.parseColors(" to submit")
-                        .color(NamedTextColor.GRAY)))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Type ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Utils.parseColors("newline")
-                                .color(NamedTextColor.YELLOW)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Utils.parseColors(" to start a new line")
-                                .color(NamedTextColor.GRAY)))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Type ")
-                        .append(Utils.parseColors("removeline")
-                                .color(NamedTextColor.YELLOW)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Utils.parseColors(" to remove the last line")
-                                .color(NamedTextColor.GRAY)));
-        // Combine all components with proper spacing
+        Component instructions = Utils.parseColors(
+                "&fEnter a brief, general description for this reward.\n" +
+                        "&7• Keep it short and concise\n" +
+                        "&e&o• Example: 'A 30 days achievement for dedicated players!'\n" +
+                        "&7• Type &c&o" + "cancel" + " &7to exit\n" +
+                        "&7• Type &a&o" + "confirm" + " &7to submit\n" +
+                        "&7• Type &e&o" + "newline" + " &7to start a new line\n" +
+                        "&7• Type &e&o" + "removeline" + " &7to remove the last line"
+        );
+
         Component fullMessage = Component.empty()
                 .append(header)
                 .append(Component.newline())
@@ -541,9 +428,9 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         chatEventManager.startChatInput(player, (p, message) -> {
             if (!message.equalsIgnoreCase("cancel")) {
                 reward.setDescription(message);
-                player.sendMessage(Utils.parseColors("Reward description updated successfully!").color(NamedTextColor.GREEN));
+                player.sendMessage(Utils.parseColors("&aReward description updated successfully!"));
             } else {
-                player.sendMessage(Utils.parseColors("Reward description edit cancelled").color(NamedTextColor.RED));
+                player.sendMessage(Utils.parseColors("&cReward description edit cancelled"));
             }
             reopenMainGui(player);
         }, true);
@@ -552,25 +439,12 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
     private void openItemIconSelector(Player player) {
         player.closeInventory();
 
-        Component header = Utils.parseColors("Item Icon Selector")
-                .color(NamedTextColor.GOLD)
-                .decoration(TextDecoration.BOLD, true);
+        Component header = Utils.parseColors("&6&lItem Icon Selector");
 
-        Component instructions = Utils.parseColors("Hold the item you want to use as the reward icon and type ")
-                .color(NamedTextColor.WHITE)
-                .append(Utils.parseColors("confirm")
-                        .color(NamedTextColor.GREEN)
-                        .decoration(TextDecoration.BOLD, true))
-                .append(Utils.parseColors(" in chat.")
-                        .color(NamedTextColor.WHITE))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Type ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Utils.parseColors("cancel")
-                                .color(NamedTextColor.RED)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Utils.parseColors(" to exit")
-                                .color(NamedTextColor.GRAY)));
+        Component instructions = Utils.parseColors(
+                "&fHold the item you want to use as the reward icon and type &a&lconfirm &fin chat.\n" +
+                        "&7• Type &c&o" + "cancel" + " &7to exit"
+        );
 
         player.sendMessage(header);
         player.sendMessage(instructions);
@@ -581,52 +455,34 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 if (heldItem.getType() != Material.AIR) {
                     // Create a copy of the item to prevent inventory manipulation
                     reward.setItemIcon(heldItem.clone().getType().toString());
-                    player.sendMessage(Utils.parseColors("Reward icon updated successfully!").color(NamedTextColor.GREEN));
+                    player.sendMessage(Utils.parseColors("&aReward icon updated successfully!"));
                 } else {
-                    player.sendMessage(Utils.parseColors("You must be holding an item to set as the icon!").color(NamedTextColor.RED));
+                    player.sendMessage(Utils.parseColors("&cYou must be holding an item to set as the icon!"));
                 }
             } else if (!message.equalsIgnoreCase("cancel")) {
-                player.sendMessage(Utils.parseColors("Invalid input. Use 'confirm' or 'cancel'.").color(NamedTextColor.YELLOW));
+                player.sendMessage(Utils.parseColors("&eInvalid input. Use 'confirm' or 'cancel'."));
             } else {
-                player.sendMessage(Utils.parseColors("Item icon selection cancelled").color(NamedTextColor.RED));
+                player.sendMessage(Utils.parseColors("&cItem icon selection cancelled"));
             }
             reopenMainGui(player);
         });
     }
 
+
     private void openMessageEditor(Player player) {
         player.closeInventory();
 
-        // Header with reward id
-        Component header = Utils.parseColors("✎ Message Editor: ")
-                .color(NamedTextColor.GOLD)
-                .decoration(TextDecoration.BOLD, true)
-                .append(Utils.parseColors("Reward " + reward.getId())
-                        .color(NamedTextColor.YELLOW));
+        Component header = Utils.parseColors("&6&l✎ Message Editor: &eReward " + reward.getId());
 
-        // Divider for visual separation
-        Component divider = Utils.parseColors("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
-                .color(NamedTextColor.DARK_GRAY);
+        Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
-        // Instructions with formatting
-        Component instructions = Utils.parseColors("Enter the new message for this reward.")
-                .color(NamedTextColor.WHITE)
-                .append(Component.newline())
-                .append(Utils.parseColors("• Supports legacy and hex color codes (e.g. &6 or &#rrggbb)")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Available placeholders: %PLAYER_NAME%, %REQUIRED_JOINS%, %REWARD_NAME%, %MIN_JOINS%, %MAX_JOINS%")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Type ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Utils.parseColors("cancel")
-                                .color(NamedTextColor.RED)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Utils.parseColors(" to exit")
-                                .color(NamedTextColor.GRAY)));
+        Component instructions = Utils.parseColors(
+                "&fEnter the new message for this reward.\n" +
+                        "&7• Supports legacy and hex color codes (e.g. &6 or &#rrggbb)\n" +
+                        "&7• Available placeholders: %PLAYER_NAME%, %REQUIRED_JOINS%, %REWARD_NAME%, %MIN_JOINS%, %MAX_JOINS%\n" +
+                        "&7• Type &c&o" + "cancel" + " &7to exit"
+        );
 
-        // Combine all components with proper spacing
         Component fullMessage = Component.empty()
                 .append(header)
                 .append(Component.newline())
@@ -642,32 +498,23 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         chatEventManager.startChatInput(player, (p, message) -> {
             if (!message.equalsIgnoreCase("cancel")) {
                 reward.setRewardMessage(message);
-                player.sendMessage(Utils.parseColors("Reward message updated successfully!").color(NamedTextColor.GREEN));
+                player.sendMessage(Utils.parseColors("&aReward message updated successfully!"));
             } else {
-                player.sendMessage(Utils.parseColors("Reward message edit cancelled").color(NamedTextColor.RED));
+                player.sendMessage(Utils.parseColors("&cReward message edit cancelled"));
             }
 
-            // Reopen the GUI
             reopenMainGui(player);
         });
 
-        Component preText = Utils.parseColors("You can ")
-                .color(TextColor.color(170,170,170));  // Gray color
-
-        Component clickableText = Utils.parseColors("[click here]")
-                .color(TextColor.color(255,170,0))  // Gold color
-                .decoration(TextDecoration.BOLD, true)
-                .clickEvent(ClickEvent.suggestCommand(reward.getRewardMessage()))
-                .hoverEvent(HoverEvent.showText(Utils.parseColors("Click to autocomplete the current message")));
-
-        fullMessage = Component.empty()
+        Component clickableSuggestion = Component.empty()
                 .append(Utils.parseColors("\n"))
-                .append(preText)
-                .append(clickableText)
-                .append(Utils.parseColors(" to autocomplete the current message")
-                        .color(TextColor.color(170,170,170)));  // Gray color
+                .append(Utils.parseColors("&7You can "))
+                .append(Utils.parseColors("&6&l[click here]")
+                        .clickEvent(ClickEvent.suggestCommand(reward.getRewardMessage()))
+                        .hoverEvent(HoverEvent.showText(Utils.parseColors("&eClick to autocomplete the current message"))))
+                .append(Utils.parseColors("&7 to autocomplete the current message"));
 
-        player.sendMessage(fullMessage);
+        player.sendMessage(clickableSuggestion);
     }
 
     private void openSoundEditor(Player player) {
@@ -675,49 +522,22 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
 
         String actualUrl = "https://jd.papermc.io/paper/1.21.4/org/bukkit/Sound.html";
 
-        // Header with reward id
-        Component header = Utils.parseColors("✎ Sound Editor: ")
-                .color(NamedTextColor.GOLD)
-                .decoration(TextDecoration.BOLD, true)
-                .append(Utils.parseColors("Reward " + reward.getId())
-                        .color(NamedTextColor.YELLOW));
+        Component header = Utils.parseColors("&6&l✎ Sound Editor: &eReward " + reward.getId());
 
-        // Divider for visual separation
-        Component divider = Utils.parseColors("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
-                .color(NamedTextColor.DARK_GRAY);
+        Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
-        // Instructions with better spacing and formatting
-        Component instructions = Utils.parseColors("Enter the new sound for this reward.")
-                .color(NamedTextColor.WHITE)
-                .append(Component.newline())
-                .append(Utils.parseColors("• Input is not case-sensitive")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Type ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Utils.parseColors("cancel")
-                                .color(NamedTextColor.RED)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Utils.parseColors(" to exit")
-                                .color(NamedTextColor.GRAY)));
+        Component instructions = Utils.parseColors(
+                "&fEnter the new sound for this reward.\n" +
+                        "&7• Input is not case-sensitive\n" +
+                        "&7• Type &c&o" + "cancel" + " &7to exit"
+        );
 
-        // Sound list link with icon
-        Component linkText = Utils.parseColors("» SOUND LIST ")
-                .color(NamedTextColor.YELLOW)
-                .decoration(TextDecoration.BOLD, true)
-                .append(Utils.parseColors("«")
-                        .color(NamedTextColor.YELLOW)
-                        .decoration(TextDecoration.BOLD, true))
+        Component linkText = Utils.parseColors("&e&l» SOUND LIST «")
                 .clickEvent(ClickEvent.openUrl(actualUrl))
-                .hoverEvent(HoverEvent.showText(Utils.parseColors("Click to open sounds documentation for 1.21.4")
-                        .color(NamedTextColor.WHITE)));
+                .hoverEvent(HoverEvent.showText(Utils.parseColors("&fClick to open sounds documentation for 1.21.4")));
 
-        // Link description
-        Component linkInfo = Utils.parseColors("Documentation for server version 1.21.4")
-                .color(NamedTextColor.GRAY)
-                .decoration(TextDecoration.ITALIC, true);
+        Component linkInfo = Utils.parseColors("&7&oDocumentation for server version 1.21.4");
 
-        // Combine all components with proper spacing
         Component fullMessage = Component.empty()
                 .append(header)
                 .append(Component.newline())
@@ -744,25 +564,24 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
 
                 if (sound != null) {
                     reward.setRewardSound(input.toUpperCase());
-                    player.sendMessage(Utils.parseColors("Reward sound updated successfully!").color(NamedTextColor.GREEN));
+                    player.sendMessage(Utils.parseColors("&aReward sound updated successfully!"));
                 } else {
-                    player.sendMessage(Utils.parseColors(input.toUpperCase() + " is not a valid sound").color(NamedTextColor.YELLOW));
+                    player.sendMessage(Utils.parseColors("&e" + input.toUpperCase() + " is not a valid sound"));
                 }
             } else {
-                player.sendMessage(Utils.parseColors("Reward sound edit cancelled").color(NamedTextColor.RED));
+                player.sendMessage(Utils.parseColors("&cReward sound edit cancelled"));
             }
 
-            // Reopen the GUI
             reopenMainGui(player);
         });
     }
+
 
     private void playRewardSound(Player player) {
         try {
             String soundName = reward.getRewardSound();
             Sound sound = null;
 
-            // Simple direct field access - most efficient when the name matches exactly
             try {
                 sound = (Sound) Sound.class.getField(soundName).get(null);
             } catch (NoSuchFieldException | IllegalAccessException e) {

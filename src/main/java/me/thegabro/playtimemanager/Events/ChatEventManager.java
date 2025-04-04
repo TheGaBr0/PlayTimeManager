@@ -138,7 +138,7 @@ public class ChatEventManager implements Listener {
         }
 
         if (session.commandOnly() && !message.startsWith("/")) {
-            player.sendMessage(Component.text("§cPlease enter a valid command starting with '/' or type 'cancel' to exit"));
+            player.sendMessage(Component.text("§7Please enter a valid command starting with '/' or type §ccancel§7 to exit"));
             return;
         }
 
@@ -163,13 +163,19 @@ public class ChatEventManager implements Listener {
                     session.setMessageBuffer(updatedBuffer);
                 }
             }
-            player.sendMessage(Component.text("§aMessage updated. ")
+            long lineNumber = currentBuffer.chars().filter(c -> c == '\n').count() + 1;
+
+            player.sendMessage(
+                    Component.text(String.format("§7Message on line §e"+lineNumber+"§7 updated with: "))
                             .append(Component.newline())
-                    .append(Component.newline())
-                    .append(Component.text("§7Sending a new message will §coverwrite§7 the current line."))
-                    .append(Component.newline())
-                    .append(Component.text("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
-                            .color(NamedTextColor.DARK_GRAY)));
+                            .append(Component.newline())
+                            .append(Utils.parseColors(message))
+                            .append(Component.newline())
+                            .append(Component.newline())
+                            .append(Component.text("§7Sending a new message will §coverwrite§7 the current line."))
+                            .append(Component.newline())
+                            .append(Component.text("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬").color(NamedTextColor.DARK_GRAY))
+            );
         } else {
             Bukkit.getScheduler().runTask(plugin, () -> handleInput(player, message, session));
         }

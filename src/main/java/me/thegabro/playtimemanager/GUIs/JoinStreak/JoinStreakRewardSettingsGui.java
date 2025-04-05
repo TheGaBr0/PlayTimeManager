@@ -393,7 +393,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 player.sendMessage(Utils.parseColors("&cRewards description edit cancelled"));
             }
             reopenMainGui(player);
-        }, true);
+        }, true, reward.getRewardDescription());
     }
 
     private void openDescriptionEditor(Player player) {
@@ -433,7 +433,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 player.sendMessage(Utils.parseColors("&cReward description edit cancelled"));
             }
             reopenMainGui(player);
-        }, true);
+        }, true, reward.getDescription());
     }
 
     private void openItemIconSelector(Player player) {

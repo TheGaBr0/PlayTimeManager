@@ -42,10 +42,6 @@ public class ChatEventManager implements Listener {
         activeSessions.put(playerId, new ChatInputSession(callback, false, false));
     }
 
-    public void startChatInput(Player player, BiConsumer<Player, String> callback, boolean allowNewlines) {
-        UUID playerId = player.getUniqueId();
-        activeSessions.put(playerId, new ChatInputSession(callback, false, allowNewlines));
-    }
 
     public void startChatInput(Player player, BiConsumer<Player, String> callback, boolean allowNewlines, String oldMessage) {
         UUID playerId = player.getUniqueId();
@@ -68,29 +64,6 @@ public class ChatEventManager implements Listener {
     public void startCommandInput(Player player, BiConsumer<Player, String> callback) {
         UUID playerId = player.getUniqueId();
         activeSessions.put(playerId, new ChatInputSession(callback, true, false));
-    }
-
-    public void startCommandInput(Player player, BiConsumer<Player, String> callback, boolean allowNewlines) {
-        UUID playerId = player.getUniqueId();
-        activeSessions.put(playerId, new ChatInputSession(callback, true, allowNewlines));
-    }
-
-    public void startCommandInput(Player player, BiConsumer<Player, String> callback, boolean allowNewlines, String oldMessage) {
-        UUID playerId = player.getUniqueId();
-        ChatInputSession session = new ChatInputSession(callback, true, allowNewlines);
-
-        // Parse the old message into rows if it exists
-        if (oldMessage != null && !oldMessage.isEmpty()) {
-            String[] lines = oldMessage.split("\n");
-            for (String line : lines) {
-                session.addRow(line);
-            }
-        }
-
-        activeSessions.put(playerId, session);
-
-        // Immediately display the current message (which contains the old message)
-        displayCurrentMessage(player, session, "Edit Previous Command");
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -135,7 +108,8 @@ public class ChatEventManager implements Listener {
         // Handle special keywords
         if (message.equalsIgnoreCase("cancel")) {
             Bukkit.getScheduler().runTask(plugin, () -> {
-                session.callback().accept(player, "cancel");
+                String finalMessage = session.allowNewlines() ? session.getMessageAsString() : "cancel";
+                session.callback().accept(player, finalMessage);
                 activeSessions.remove(playerId);
             });
             return;
@@ -143,7 +117,7 @@ public class ChatEventManager implements Listener {
 
         if (message.equalsIgnoreCase("confirm")) {
             Bukkit.getScheduler().runTask(plugin, () -> {
-                String finalMessage = session.getMessageAsString();
+                String finalMessage = session.allowNewlines() ? session.getMessageAsString() : "confirm";
                 session.callback().accept(player, finalMessage);
                 activeSessions.remove(playerId);
             });

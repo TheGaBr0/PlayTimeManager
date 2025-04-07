@@ -199,6 +199,9 @@ public class DBUser {
                 if(!reward.endsWith("R")){
                     String modifiedReward = reward + ".R";
                     newRewardsToBeClaimed.add(modifiedReward);
+                }else{
+                    //do not delete already stored unclaimed rewards of previous cycles
+                    newRewardsToBeClaimed.add(reward);
                 }
             }
         }

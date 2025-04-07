@@ -51,7 +51,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     // Filter states
     private boolean showClaimed = false;
     private boolean showAvailable = true;
-    private boolean showLocked = true;
+    private boolean showLocked = false;
 
     protected static boolean isListenerRegistered = false;
     protected static final Map<UUID, RewardsInfoGui> activeGuis = new HashMap<>();
@@ -62,7 +62,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         this.sessionToken = sessionToken;
         this.config = plugin.getGUIsConfig();
 
-        inv = Bukkit.createInventory(this, 54, Utils.parseColors(config.getConfig().getString("rewards-gui.title")));
+        inv = Bukkit.createInventory(this, 54, Utils.parseColors(config.getConfig().getString("rewards-gui.gui.title")));
 
         // Register listeners only once
         if (!isListenerRegistered) {
@@ -77,17 +77,18 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         applyFilters();
         initializeItems();
 
-        // Track active GUI
+        // Track active GUIs
         activeGuis.put(player.getUniqueId(), this);
 
         player.openInventory(inv);
     }
 
-    public void openInventory(int page) {
+    public void changePage(int page) {
         currentPage = page;
-        applyFilters(); // Apply filters to the display items
-        initializeItems(); // Only reinitialize items, no need to reload rewards
-        player.openInventory(inv);
+        initializeItems();
+
+        player.updateInventory();
+
     }
 
     public static class RewardDisplayItem implements Comparable<RewardDisplayItem> {
@@ -247,7 +248,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         // Create GUI borders
         for (int i = 0; i < 54; i++) {
             if (i <= 9 || i >= 45 || i == leftIndex || i == rightIndex) {
-                inv.setItem(i, createGuiItem(Material.BLACK_STAINED_GLASS_PANE, Utils.parseColors(config.getConfig().getString("rewards-gui.border-item-name"))));
+                inv.setItem(i, createGuiItem(Material.BLACK_STAINED_GLASS_PANE, Utils.parseColors(config.getConfig().getString("rewards-gui.gui.border-item-name"))));
                 protectedSlots.add(i);
                 if (i == leftIndex) leftIndex += 9;
                 if (i == rightIndex) rightIndex += 9;
@@ -493,6 +494,8 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     }
 
     private int calculateSpecificJoinCount(JoinStreakReward reward, String instance) {
+
+        plugin.getLogger().info(instance);
         int min = reward.getMinRequiredJoins();
         int max = reward.getMaxRequiredJoins();
 
@@ -597,6 +600,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     }
 
     public void onGUIClick(Player whoClicked, int slot, ItemStack clickedItem, @NotNull InventoryAction action, @NotNull InventoryClickEvent event) {
+
         if (clickedItem == null || clickedItem.getType().equals(Material.AIR)
                 || clickedItem.getType().equals(Material.BLACK_STAINED_GLASS_PANE)) {
             return;
@@ -631,12 +635,12 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
         // Handle pagination buttons
         if (slot == NEXT_BUTTON_SLOT && clickedItem.getType() == Material.ARROW) {
-            openInventory(currentPage + 1);
+            changePage(currentPage + 1);
             return;
         }
 
         if (slot == PREV_BUTTON_SLOT && clickedItem.getType() == Material.ARROW) {
-            openInventory(currentPage - 1);
+            changePage(currentPage - 1);
             return;
         }
 

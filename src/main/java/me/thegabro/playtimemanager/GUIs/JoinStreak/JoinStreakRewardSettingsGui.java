@@ -450,6 +450,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         player.sendMessage(instructions);
 
         chatEventManager.startChatInput(player, (p, message) -> {
+            plugin.getLogger().info(message);
             if (message.equalsIgnoreCase("confirm")) {
                 ItemStack heldItem = player.getInventory().getItemInMainHand();
                 if (heldItem.getType() != Material.AIR) {

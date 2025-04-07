@@ -16,6 +16,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -26,6 +27,8 @@ import org.jetbrains.annotations.Nullable;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
+import static me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui.activeGuis;
 
 public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
@@ -268,7 +271,8 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             boolean toggleSuccess = rewardsManager.toggleJoinStreakCheckSchedule(whoClicked);
 
             if (toggleSuccess) {
-                openInventory(whoClicked);
+                initializeItems();
+                whoClicked.updateInventory();
             }
             return;
         }
@@ -380,6 +384,17 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                 if (e.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
                     e.setCancelled(true);
                 }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent event) {
+        if (event.getInventory().getHolder() instanceof AllJoinStreakRewardsGui && event.getPlayer() instanceof Player player) {
+            if(!plugin.getConfiguration().getRewardsCheckScheduleActivation()){
+                event.getPlayer().sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &c&l⚠ WARNING &c&l⚠"));
+                event.getPlayer().sendMessage(Utils.parseColors("&7The join streak rewards schedule is currently &4&lDISABLED&6!"));
+                event.getPlayer().sendMessage(Utils.parseColors("&7Player join streaks will still be tracked, but &c&nno reward will be granted&r&7."));
             }
         }
     }

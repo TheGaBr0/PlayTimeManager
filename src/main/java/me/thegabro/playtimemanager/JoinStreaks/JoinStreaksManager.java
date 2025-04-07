@@ -16,13 +16,17 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.ParseException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class JoinStreaksManager {
     private static JoinStreaksManager instance;
@@ -52,6 +56,26 @@ public class JoinStreaksManager {
         db = plugin.getDatabase();
 
         validateConfiguration();
+
+        File rewardsFolder = new File(plugin.getDataFolder(), "Rewards");
+        if (!rewardsFolder.exists()) {
+            rewardsFolder.mkdirs();
+        }
+
+        File warningFile = new File(rewardsFolder, "NEVER RENAME FILES IN THIS FOLDER.txt");
+        if (!warningFile.exists()) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(warningFile))) {
+                writer.write("NEVER RENAME FILES IN THIS FOLDER\n");
+                writer.write("--------------------------------------------------\n");
+                writer.write("WARNING: The files in this folder are named according to their ID.\n");
+                writer.write("Changing the names of these files will cause the configuration files to be missing in the database.\n");
+                writer.write("This could result in failures as IDs are used by the plugin, and modifying the file names will break the mapping.\n");
+                writer.write("ID values should never be changed by the user.\n");
+                writer.write("--------------------------------------------------");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
         Date now = new Date();
         Date firstTrigger = cronExpression.getNextValidTimeAfter(now);
@@ -184,6 +208,7 @@ public class JoinStreaksManager {
                     // Reset if seconds since last seen is greater than interval
                     if (secondsSinceLastSeen > exactIntervalSeconds * plugin.getConfiguration().getJoinStreakResetMissesAllowed()) {
                         user.resetJoinStreaks();
+                        restartUserJoinStreakRewards(user);
                         playersReset++;
                     }
                 }
@@ -195,7 +220,6 @@ public class JoinStreaksManager {
         }
 
         // Handle online players separately
-        int onlinePlayersProcessed = 0;
         for (OnlineUser onlineUser : onlineUsersManager.getOnlineUsersByUUID().values()) {
             // Always increment absolute streak
             onlineUser.incrementAbsoluteJoinStreak();
@@ -205,7 +229,6 @@ public class JoinStreaksManager {
                 onlineUser.incrementRelativeJoinStreak();
 
                 checkRewardsForUser(onlineUser, onlineUser.getPlayer());
-                onlinePlayersProcessed++;
             }
         }
 
@@ -403,14 +426,17 @@ public class JoinStreaksManager {
 
             processCompletedReward(player, reward, rewardKey);
         } else {
-            // Add to pending rewards with the specific key
-            onlineUser.addRewardToBeClaimed(rewardKey);
+            //Let's first check that the user doesn't have any unclaimed clones of this reward from a previous cycle
+            if(!onlineUser.getRewardsToBeClaimed().contains(rewardKey.concat(".R"))){
+                // Add to pending rewards with the specific key
+                onlineUser.addRewardToBeClaimed(rewardKey);
+            }
 
             sendRewardRelatedMessages(player, reward, rewardKey, plugin.getConfiguration().getJoinClaimMessage());
         }
     }
 
-    public void restartUserJoinStreakRewards(OnlineUser onlineUser){
+    public void restartUserJoinStreakRewards(DBUser onlineUser){
             Set<String> userRewards = onlineUser.getReceivedRewards();
             for(String rewardId : userRewards){
                 onlineUser.unreceiveReward(rewardId);

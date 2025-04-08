@@ -307,7 +307,14 @@ public class JoinStreaksManager {
         rewardIds.removeAll(onlineUser.getReceivedRewards());
         rewardIds.removeAll(onlineUser.getRewardsToBeClaimed());
 
+        // Filter out previous cycle unclaimed rewards. This avoids duplicates.
+        List<String> modifiedRewards = onlineUser.getRewardsToBeClaimed().stream()
+                .map(reward -> reward.replace(".R", ""))
+                .toList();
+        modifiedRewards.forEach(rewardIds::remove);
+
         return rewardIds;
+
     }
 
     public void removeReward(JoinStreakReward reward) {
@@ -334,7 +341,7 @@ public class JoinStreaksManager {
             joinRewardsMap.put(reward.getId(), new LinkedHashSet<>());
         }
         else if (minJoins == maxJoins) {
-            joinRewardsMap.put(reward.getId(), new LinkedHashSet<>(Collections.singleton(rewardIdString+".1")));
+            joinRewardsMap.put(reward.getId(), new LinkedHashSet<>(Collections.singleton(rewardIdString+"."+minJoins)));
         }
         else {
             LinkedHashSet<String> set = new LinkedHashSet<>();
@@ -394,7 +401,6 @@ public class JoinStreaksManager {
         LinkedHashSet<String> unclaimedRewards = getRewardIdsForJoinCount(currentStreak, onlineUser);
         // Process each unclaimed reward
         for (String rewardKey : unclaimedRewards) {
-
             JoinStreakReward mainInstance = getMainInstance(rewardKey);
             if (mainInstance != null) {
                 processQualifiedReward(onlineUser, player, mainInstance, rewardKey);
@@ -453,9 +459,9 @@ public class JoinStreaksManager {
 
         //if player ends a cycle of rewards, then he can't have them as unclaimed but can still have them in their
         //inventory ready to be claimed. In this situation let's just process the claim of that reward
-        if (!instance.endsWith("R")) {
-            onlineUser.addReceivedReward(instance);
-        }
+        //if (!instance.endsWith("R")) {
+            onlineUser.addReceivedReward(instance.replace(".R", ""));
+        //}
 
         if (plugin.isPermissionsManagerConfigured()) {
             assignPermissionsForReward(onlineUser, reward);

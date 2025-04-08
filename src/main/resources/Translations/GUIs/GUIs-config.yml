@@ -27,20 +27,20 @@ rewards-gui:
 
   filters:
     claimed:
-      enabled-name: "&8&l[CLAIMED] &7Rewards: &a&lON"
-      disabled-name: "&8&l[CLAIMED] &7Rewards: &c&lOFF"
-      lore-enabled: "&7Click to hide claimed rewards"
-      lore-disabled: "&7Click to show claimed rewards"
+      enabled-name: "&9&l[ CLAIMED REWARDS ]"
+      disabled-name: "&7Claimed Rewards"
+      lore-enabled: "&7Currently viewing: &9&lClaimed rewards\n&8Click to switch filter"
+      lore-disabled: "&7Click to view all claimed rewards"
     available:
-      enabled-name: "&a&l[AVAILABLE] &7Rewards: &a&lON"
-      disabled-name: "&a&l[AVAILABLE] &7Rewards: &c&lOFF"
-      lore-enabled: "&7Click to hide available rewards"
-      lore-disabled: "&7Click to show available rewards"
+      enabled-name: "&6&l[ AVAILABLE REWARDS ]"
+      disabled-name: "&7Available Rewards"
+      lore-enabled: "&7Currently viewing: &6&lAvailable rewards\n&8Click to switch filter"
+      lore-disabled: "&7Click to view rewards ready to claim"
     locked:
-      enabled-name: "&c&l[LOCKED] &7Rewards: &a&lON"
-      disabled-name: "&c&l[LOCKED] &7Rewards: &c&lOFF"
-      lore-enabled: "&7Click to hide locked rewards"
-      lore-disabled: "&7Click to show locked rewards"
+      enabled-name: "&4&l[ LOCKED REWARDS ]"
+      disabled-name: "&7Locked Rewards"
+      lore-enabled: "&7Currently viewing: &4&lLocked rewards\n&8Click to switch filter"
+      lore-disabled: "&7Click to view upcoming rewards"
 
   claim-all:
     name: "&e&lClaim all"

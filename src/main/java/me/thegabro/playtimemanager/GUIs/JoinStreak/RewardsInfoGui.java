@@ -48,11 +48,13 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     private final int SHOW_AVAILABLE_BUTTON_SLOT = 4;
     private final int SHOW_LOCKED_BUTTON_SLOT = 5;
     private final int CLAIM_ALL_BUTTON_SLOT = 46;
-    // Filter states
-    private boolean showClaimed = false;
-    private boolean showAvailable = true;
-    private boolean showLocked = false;
 
+    private enum FilterType {
+        CLAIMED,
+        AVAILABLE,
+        LOCKED
+    }
+    private FilterType currentFilter = FilterType.AVAILABLE;
     protected static boolean isListenerRegistered = false;
     protected static final Map<UUID, RewardsInfoGui> activeGuis = new HashMap<>();
     private final String sessionToken;
@@ -164,10 +166,10 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     }
 
     private enum RewardStatus {
-        AVAILABLE_OLD, // Should show first
+        AVAILABLE_OLD,
         AVAILABLE,
         LOCKED,
-        CLAIMED,   // Should show last
+        CLAIMED,
     }
 
     private void applyFilters() {
@@ -176,14 +178,14 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         for (RewardDisplayItem item : allDisplayItems) {
             switch (item.getStatus()) {
                 case CLAIMED:
-                    if (showClaimed) filteredDisplayItems.add(item);
+                    if (currentFilter == FilterType.CLAIMED) filteredDisplayItems.add(item);
                     break;
                 case AVAILABLE_OLD:
                 case AVAILABLE:
-                    if (showAvailable) filteredDisplayItems.add(item);
+                    if (currentFilter == FilterType.AVAILABLE) filteredDisplayItems.add(item);
                     break;
                 case LOCKED:
-                    if (showLocked) filteredDisplayItems.add(item);
+                    if (currentFilter == FilterType.LOCKED) filteredDisplayItems.add(item);
                     break;
             }
         }
@@ -232,7 +234,9 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
             status = RewardStatus.AVAILABLE_OLD;
 
-            allDisplayItems.add(new RewardDisplayItem(reward, instance, status, -1));
+            int specificJoinCount = calculateSpecificJoinCount(reward, instance.replace(".R", ""));
+
+            allDisplayItems.add(new RewardDisplayItem(reward, instance, status, specificJoinCount));
         }
         // Sort the display items using the natural ordering (defined by Comparable)
         Collections.sort(allDisplayItems);
@@ -361,12 +365,11 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                         break;
                 }
 
+                int specificJoinCount = displayItem.getSpecificJoinCount();
+                String requiredJoins = config.getConfig().getString("rewards-gui.reward-items.info-lore.required-joins")
+                        .replace("{required_joins}", specificJoinCount == -1 ? "-" : String.valueOf(specificJoinCount));
+                lore.add(Utils.parseColors(requiredJoins));
                 if (!(displayItem.getStatus() == RewardStatus.AVAILABLE_OLD)) {
-                    int specificJoinCount = displayItem.getSpecificJoinCount();
-                    String requiredJoins = config.getConfig().getString("rewards-gui.reward-items.info-lore.required-joins")
-                            .replace("{required_joins}", specificJoinCount == -1 ? "-" : String.valueOf(specificJoinCount));
-                    lore.add(Utils.parseColors(requiredJoins));
-
                     int currentStreak = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRelativeJoinStreak();
                     String streakColor = currentStreak < specificJoinCount ?
                             config.getConfig().getString("rewards-gui.reward-items.info-lore.join-streak-color.insufficient") :
@@ -445,11 +448,11 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     // Create the filter toggle buttons
     private void createFilterButtons() {
         // Show Claimed Button
-        Material claimedMaterial = showClaimed ? Material.LIME_DYE : Material.GRAY_DYE;
-        String claimedName = showClaimed ?
+        Material claimedMaterial = currentFilter == FilterType.CLAIMED ? Material.LIME_DYE : Material.GRAY_DYE;
+        String claimedName = currentFilter == FilterType.CLAIMED ?
                 config.getConfig().getString("rewards-gui.filters.claimed.enabled-name") :
                 config.getConfig().getString("rewards-gui.filters.claimed.disabled-name");
-        String claimedLore = showClaimed ?
+        String claimedLore = currentFilter == FilterType.CLAIMED ?
                 config.getConfig().getString("rewards-gui.filters.claimed.lore-enabled") :
                 config.getConfig().getString("rewards-gui.filters.claimed.lore-disabled");
 
@@ -461,11 +464,11 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         protectedSlots.add(SHOW_CLAIMED_BUTTON_SLOT);
 
         // Show Available Button
-        Material availableMaterial = showAvailable ? Material.LIME_DYE : Material.GRAY_DYE;
-        String availableName = showAvailable ?
+        Material availableMaterial = currentFilter == FilterType.AVAILABLE ? Material.LIME_DYE : Material.GRAY_DYE;
+        String availableName = currentFilter == FilterType.AVAILABLE ?
                 config.getConfig().getString("rewards-gui.filters.available.enabled-name") :
                 config.getConfig().getString("rewards-gui.filters.available.disabled-name");
-        String availableLore = showAvailable ?
+        String availableLore = currentFilter == FilterType.AVAILABLE ?
                 config.getConfig().getString("rewards-gui.filters.available.lore-enabled") :
                 config.getConfig().getString("rewards-gui.filters.available.lore-disabled");
 
@@ -477,11 +480,11 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         protectedSlots.add(SHOW_AVAILABLE_BUTTON_SLOT);
 
         // Show Locked Button
-        Material lockedMaterial = showLocked ? Material.LIME_DYE : Material.GRAY_DYE;
-        String lockedName = showLocked ?
+        Material lockedMaterial = currentFilter == FilterType.LOCKED ? Material.LIME_DYE : Material.GRAY_DYE;
+        String lockedName = currentFilter == FilterType.LOCKED ?
                 config.getConfig().getString("rewards-gui.filters.locked.enabled-name") :
                 config.getConfig().getString("rewards-gui.filters.locked.disabled-name");
-        String lockedLore = showLocked ?
+        String lockedLore = currentFilter == FilterType.LOCKED ?
                 config.getConfig().getString("rewards-gui.filters.locked.lore-enabled") :
                 config.getConfig().getString("rewards-gui.filters.locked.lore-disabled");
 
@@ -495,7 +498,6 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
     private int calculateSpecificJoinCount(JoinStreakReward reward, String instance) {
 
-        plugin.getLogger().info(instance);
         int min = reward.getMinRequiredJoins();
         int max = reward.getMaxRequiredJoins();
 
@@ -606,23 +608,22 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             return;
         }
 
-        // Handle filter buttons
         if (slot == SHOW_CLAIMED_BUTTON_SLOT) {
-            showClaimed = !showClaimed;
+            currentFilter = FilterType.CLAIMED;
             applyFilters();
             initializeItems();
             return;
         }
 
         if (slot == SHOW_AVAILABLE_BUTTON_SLOT) {
-            showAvailable = !showAvailable;
+            currentFilter = FilterType.AVAILABLE;
             applyFilters();
             initializeItems();
             return;
         }
 
         if (slot == SHOW_LOCKED_BUTTON_SLOT) {
-            showLocked = !showLocked;
+            currentFilter = FilterType.LOCKED;
             applyFilters();
             initializeItems();
             return;

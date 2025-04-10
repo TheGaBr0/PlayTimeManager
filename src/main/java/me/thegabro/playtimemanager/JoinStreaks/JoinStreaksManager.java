@@ -305,13 +305,25 @@ public class JoinStreaksManager {
         }
         // Filter out rewards the user already has
         rewardIds.removeAll(onlineUser.getReceivedRewards());
-        rewardIds.removeAll(onlineUser.getRewardsToBeClaimed());
 
-        // Filter out previous cycle unclaimed rewards. This avoids duplicates.
-        List<String> modifiedRewards = onlineUser.getRewardsToBeClaimed().stream()
-                .map(reward -> reward.replace(".R", ""))
-                .toList();
-        modifiedRewards.forEach(rewardIds::remove);
+        // Improved handling of .R duplicates
+        Set<String> toRemove = new HashSet<>();
+        for (String reward : onlineUser.getRewardsToBeClaimed()) {
+            if (reward.endsWith(".R")) {
+                String baseId = reward.substring(0, reward.length() - 2);
+                String[] parts = baseId.split("\\.");
+
+                // If second digit doesn't match current joinCount, remove the base ID too
+                if (parts.length >= 2 && Integer.parseInt(parts[1]) != joinCount) {
+                    toRemove.add(baseId);
+                }
+            } else {
+                toRemove.add(reward); // Remove standard rewards that are already to be claimed
+            }
+        }
+
+        rewardIds.removeAll(toRemove);
+        rewardIds.removeAll(onlineUser.getRewardsToBeClaimed());
 
         return rewardIds;
 
@@ -399,9 +411,16 @@ public class JoinStreaksManager {
 
         // Get all rewards that match this specific join count
         LinkedHashSet<String> unclaimedRewards = getRewardIdsForJoinCount(currentStreak, onlineUser);
+
         // Process each unclaimed reward
         for (String rewardKey : unclaimedRewards) {
             JoinStreakReward mainInstance = getMainInstance(rewardKey);
+
+            if (onlineUser.getRewardsToBeClaimed().contains(rewardKey + ".R")) {
+                sendRewardRelatedMessages(player, mainInstance, rewardKey, plugin.getConfiguration().getJoinCantClaimMessage());
+                continue;
+            }
+
             if (mainInstance != null) {
                 processQualifiedReward(onlineUser, player, mainInstance, rewardKey);
             }
@@ -538,8 +557,6 @@ public class JoinStreaksManager {
         replacements.put("%PLAYER_NAME%", player.getName());
         replacements.put("%REQUIRED_JOINS%", instance.matches("^\\d+\\.\\d+.*") ?
                 instance.replaceAll("^\\d+\\.(\\d+).*", "$1") : "");
-        replacements.put("%MIN_JOINS%", String.valueOf(reward.getMinRequiredJoins()));
-        replacements.put("%MAX_JOINS%", String.valueOf(reward.getMaxRequiredJoins()));
 
         player.sendMessage(Utils.parseColors(replacePlaceholders(message, replacements)));
     }

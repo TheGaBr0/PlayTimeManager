@@ -44,6 +44,7 @@ public class Configuration {
     private boolean streakCheckVerbose;
     private String joinClaimMessage;
     private String joinAutoClaimMessage;
+    private String joinCantClaimMessage;
     private boolean rewardsScheduleActivation;
     private boolean joinStreakResetActivation;
     private int joinStreakResetMissesAllowed;
@@ -204,6 +205,10 @@ public class Configuration {
         this.joinAutoClaimMessage = config.getString("join-warn-autoclaim-message", "[&6PlayTime&eManager&f]&7 Great job, " +
                 "&e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times " +
                 "and unlocked a new reward! We have automatically claimed it for you!");
+        this.joinCantClaimMessage = config.getString("join-unclaimed-previous-message", "[&6PlayTime&eManager&f]&7 " +
+                "&e%PLAYER_NAME%&7, you've joined &6%REQUIRED_JOINS%&7 consecutive times, " +
+                "but you didn't claim your previous reward! Please use &e/claimrewards&7 to collect your pending " +
+                "rewards before new ones can be granted.");
         this.streakCheckVerbose = config.getBoolean("streak-check-verbose", true);
         this.streakTimeZone = config.getString("reset-schedule-timezone", "server");
         this.streakResetSchedule = config.getString("streak-reset-schedule", "0 0 * * *");
@@ -375,6 +380,18 @@ public class Configuration {
         if (autoclaim != null) {
             this.joinAutoClaimMessage = autoclaim;
             config.set("join-warn-autoclaim-message", autoclaim);
+            save();
+        }
+    }
+
+    public String getJoinCantClaimMessage() {
+        return joinCantClaimMessage;
+    }
+
+    public void setJoinCantClaimMessage(String cantclaim) {
+        if (cantclaim != null) {
+            this.joinCantClaimMessage = cantclaim;
+            config.set("join-unclaimed-previous-message", cantclaim);
             save();
         }
     }

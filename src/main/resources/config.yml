@@ -104,14 +104,20 @@ reset-joinstreak:
 #This appears when a player without the auto-claim permission (playtime.joinstreak.claim.automatic) qualifies for a reward
 # %REQUIRED_JOINS% - Required joins to achieve the reward
 # %PLAYER_NAME% - Player's username
-# %MIN_JOINS% - Minimum required joins to achieve the first sub-reward, useful if the main reward is range based.
-# %MAX_JOINS% - Maximum required joins to achieve the last sub-reward, useful if the main reward is range based.
 join-warn-claim-message: "[&6PlayTime&eManager&f]&7 Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times 
                             and unlocked a new reward! Use &e/claimrewards&7 to collect it!"
 
 # The opposite of 'join-warn-claim-message' field
 join-warn-autoclaim-message: "[&6PlayTime&eManager&f]&7 Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times 
                             and unlocked a new reward! We have automatically claimed it for you!"
+
+# Message shown to players who qualify for a reward but won't receive it because
+# they didn't claim the previous reward cycle
+# %REQUIRED_JOINS% - Required joins to achieve the reward
+# %PLAYER_NAME% - Player's username
+join-unclaimed-previous-message: "[&6PlayTime&eManager&f]&7 &e%PLAYER_NAME%&7, you've joined &6%REQUIRED_JOINS%&7 consecutive times, 
+                                  but you didn't claim your previous reward! Please use &e/claimrewards&7 to collect your pending 
+                                  rewards before new ones can be granted."
 
 #=================================================================
 #                           PLACEHOLDERS

@@ -480,7 +480,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter the new message for this reward.\n" +
                         "&7• Supports legacy and hex color codes (e.g. &6 or &#rrggbb)\n" +
-                        "&7• Available placeholders: %PLAYER_NAME%, %REQUIRED_JOINS%, %REWARD_NAME%, %MIN_JOINS%, %MAX_JOINS%\n" +
+                        "&7• Available placeholders: %PLAYER_NAME%, %REQUIRED_JOINS%\n" +
                         "&7• Type &c&o" + "cancel" + " &7to exit"
         );
 

@@ -255,7 +255,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         return inv;
     }
 
-    public void onGUIClick(Player whoClicked, int slot, ItemStack clickedItem, @NotNull InventoryAction action, @NotNull InventoryClickEvent event) {
+    public void onGUIClick(Player whoClicked, int slot, ItemStack clickedItem, @NotNull InventoryClickEvent event) {
         if (clickedItem == null || clickedItem.getType().equals(Material.AIR)
                 || clickedItem.getType().equals(Material.BLACK_STAINED_GLASS_PANE)) {
             return;
@@ -378,7 +378,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                 e.setCancelled(true);
 
                 AllJoinStreakRewardsGui gui = (AllJoinStreakRewardsGui) e.getInventory().getHolder();
-                gui.onGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getAction(), e);
+                gui.onGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e);
 
             } else {
                 if (e.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {

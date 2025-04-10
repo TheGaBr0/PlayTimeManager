@@ -7,7 +7,6 @@ import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -136,7 +135,7 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
             if ((e.getRawSlot() < e.getInventory().getSize())) {
                 e.setCancelled(true);
                 JoinStreakCommandsGui gui = (JoinStreakCommandsGui) e.getInventory().getHolder();
-                gui.handleGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getAction());
+                gui.handleGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e);
             } else {
                 if (e.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
                     e.setCancelled(true);
@@ -145,7 +144,7 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
         }
     }
 
-    private void handleGUIClick(Player whoClicked, int slot, ItemStack clickedItem, InventoryAction action) {
+    private void handleGUIClick(Player whoClicked, int slot, ItemStack clickedItem, InventoryClickEvent event) {
         if (clickedItem == null || clickedItem.getType().equals(Material.AIR)
                 || clickedItem.getType().equals(Material.BLACK_STAINED_GLASS_PANE)) {
             return;
@@ -177,8 +176,8 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
             }
             default -> {
                 if (slot < COMMANDS_PER_PAGE && clickedItem.getType() == Material.PAPER) {
-                    String command = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName()).substring(2);
-                    if (action.equals(InventoryAction.PICKUP_HALF)) {
+                    String command = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName());
+                    if (event.isShiftClick() && event.isRightClick()) {
                         reward.removeCommand(command);
                         updateCommandsPage();
                     } else {
@@ -191,44 +190,14 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
     }
 
     private void startCommandAdd(Player player) {
-
-        Component header = Utils.parseColors("✎ Commands Editor: ")
-                .color(NamedTextColor.GOLD)
-                .decoration(TextDecoration.BOLD, true)
-                .append(Utils.parseColors("Reward " + reward.getId())
-                        .color(NamedTextColor.YELLOW));
-
-        // Divider for visual separation
-        Component divider = Utils.parseColors("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
-                .color(NamedTextColor.DARK_GRAY);
-
-        // Instructions with formatting
-        Component instructions = Utils.parseColors("Enter the new command for this reward.")
-                .color(NamedTextColor.WHITE)
-                .append(Component.newline())
-                .append(Utils.parseColors("• Commands must be valid and use '/' as a prefix.")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Utils.parseColors("• Type ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Utils.parseColors("cancel")
-                                .color(NamedTextColor.RED)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Utils.parseColors(" to exit")
-                                .color(NamedTextColor.GRAY)));
-
-        // Combine all components with proper spacing
-        Component fullMessage = Component.empty()
-                .append(header)
-                .append(Component.newline())
-                .append(divider)
-                .append(Component.newline())
-                .append(Component.newline())
-                .append(instructions)
-                .append(Component.newline())
-                .append(divider);
-
-        player.sendMessage(fullMessage);
+        // Create messages using Utils.parseColors for the header and instructions
+        player.sendMessage(Utils.parseColors("&6&l✎ Commands Editor: &eReward " + reward.getId()));
+        player.sendMessage(Utils.parseColors("&r&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
+        player.sendMessage(Utils.parseColors("&fEnter the new command for this reward."));
+        player.sendMessage(Utils.parseColors("&7• Commands must be valid and use '/' as a prefix."));
+        player.sendMessage(Utils.parseColors("&7• Available placeholders: PLAYER_NAME"));
+        player.sendMessage(Utils.parseColors("&7• Type &c&icancel&r&7 to exit"));
+        player.sendMessage(Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
 
         chatEventManager.startCommandInput(
                 player,
@@ -273,21 +242,22 @@ public class JoinStreakCommandsGui implements InventoryHolder, Listener {
                 }
         );
 
-
-        Component preText = Utils.parseColors("You can ")
+        // For the clickable message part, we need to keep the Component approach
+        // since Utils.parseColors doesn't support clickable text
+        Component preText = Component.text("You can ")
                 .color(TextColor.color(170,170,170));  // Gray color
 
-        Component clickableText = Utils.parseColors("[click here]")
+        Component clickableText = Component.text("[click here]")
                 .color(TextColor.color(255,170,0))  // Gold color
                 .decoration(TextDecoration.BOLD, true)
                 .clickEvent(ClickEvent.suggestCommand(oldCommand))
-                .hoverEvent(HoverEvent.showText(Utils.parseColors("Click to autocomplete command")));
+                .hoverEvent(HoverEvent.showText(Component.text("Click to autocomplete command")));
 
         Component fullMessage = Component.empty()
-                .append(Utils.parseColors("\n"))
+                .append(Component.text("\n"))
                 .append(preText)
                 .append(clickableText)
-                .append(Utils.parseColors(" to autocomplete the old command")
+                .append(Component.text(" to autocomplete the old command")
                         .color(TextColor.color(170,170,170)));  // Gray color
 
         player.sendMessage(fullMessage);

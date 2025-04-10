@@ -174,15 +174,22 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         ));
     }
 
-    public ItemStack createGuiItem(Material material, @Nullable TextComponent name, @Nullable TextComponent... lore) {
+    public ItemStack createGuiItem(Material material, @Nullable Component name, @Nullable Component... lore) {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(name);
 
-        if (lore != null) {
-            meta.lore(Arrays.asList(lore));
+        if (name != null) {
+            meta.displayName(name.decoration(TextDecoration.ITALIC, false));
         }
 
+        ArrayList<Component> metalore = new ArrayList<>();
+        if (lore != null) {
+            // Disable italic for each lore line
+            for (Component loreLine : lore) {
+                metalore.add(loreLine.decoration(TextDecoration.ITALIC, false));
+            }
+        }
+        meta.lore(metalore);
         item.setItemMeta(meta);
         return item;
     }

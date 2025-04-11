@@ -160,7 +160,6 @@ public class JoinStreaksManager {
 
                 resetMissingPlayerStreaks();
 
-
                 // Calculate the next reset time and reschedule
                 Date oldNextReset = nextIntervalReset;
                 updateIntervalResetTimes();
@@ -181,8 +180,6 @@ public class JoinStreaksManager {
     }
 
     private void resetMissingPlayerStreaks() {
-        // Get all players from database who have active streaks
-
         if(plugin.getConfiguration().getJoinStreakResetActivation()) {
 
             Set<String> playersWithStreaks = db.getPlayersWithActiveStreaks();

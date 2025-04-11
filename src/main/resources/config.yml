@@ -98,7 +98,8 @@ streak-check-verbose: true
 # Enables or disables the reset of the join streak.
 reset-joinstreak:
   enabled: true
-  missed-joins: 1 # Number of missed joins allowed before the streak is reset.
+  # Number of missed joins allowed before the streak is reset.
+  missed-joins: 1
 
 #Message shown to players who earn a login streak reward but need to claim it manually
 #This appears when a player without the auto-claim permission (playtime.joinstreak.claim.automatic) qualifies for a reward

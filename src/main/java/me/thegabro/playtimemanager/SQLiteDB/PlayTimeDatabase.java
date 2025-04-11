@@ -890,48 +890,6 @@ public abstract class PlayTimeDatabase {
         }
     }
 
-    public Set<String> getPlayersWithinTimeInterval(long intervalSeconds) {
-        Set<String> players = new HashSet<>();
-        Connection conn = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-
-        try {
-            conn = getSQLConnection();
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime cutoffTime = now.minusSeconds(intervalSeconds);
-
-            // Use timestamp comparison directly
-            ps = conn.prepareStatement(
-                    "SELECT uuid FROM play_time WHERE last_seen IS NOT NULL AND " +
-                            "last_seen >= ?");
-
-            ps.setTimestamp(1, Timestamp.valueOf(cutoffTime));
-
-            rs = ps.executeQuery();
-
-            while (rs.next()) {
-                players.add(rs.getString("uuid"));
-            }
-
-        } catch (SQLException ex) {
-            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
-        } finally {
-            try {
-                if (rs != null)
-                    rs.close();
-                if (ps != null)
-                    ps.close();
-                if (conn != null)
-                    conn.close();
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
-            }
-        }
-
-        return players;
-    }
-
     public Set<String> getPlayersWithActiveStreaks() {
         Set<String> players = new HashSet<>();
         Connection conn = null;
@@ -940,7 +898,7 @@ public abstract class PlayTimeDatabase {
 
         try {
             conn = getSQLConnection();
-            ps = conn.prepareStatement("SELECT uuid FROM play_time WHERE relative_join_streak > 0;");
+            ps = conn.prepareStatement("SELECT uuid FROM play_time WHERE absolute_join_streak > 0;");
             rs = ps.executeQuery();
 
             while (rs.next()) {

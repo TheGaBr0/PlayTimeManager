@@ -54,7 +54,7 @@ rewards-gui:
 
   reward-items:
     available:
-      prefix: "&a&l[CLICK TO CLAIM] "
+      prefix: "&a&l[CLAIMABLE] "
       lore:
         - "&aThis reward is available to claim!"
         - "&7Click to receive your reward"

@@ -522,7 +522,7 @@ public class JoinStreaksManager {
 
     private String formatRewardCommand(String command, Player player, JoinStreakReward reward) {
         Map<String, String> replacements = new HashMap<>();
-        replacements.put("%PLAYER_NAME%", player.getName());
+        replacements.put("PLAYER_NAME", player.getName());
 
         return replacePlaceholders(command, replacements).replaceFirst("/", "");
     }

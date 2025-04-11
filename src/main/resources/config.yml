@@ -75,7 +75,7 @@ goal-check-verbose: true
 #Also ChatGPT is very useful in these cases :)
 #Examples:
 # "0 0 0 * * ?" - Daily at midnight (00:00) -> Use this if you want to implement rewards based on daily logins.
-# "0 6 0 * * ?" - Daily at 6 AM
+# "0 0 6 * * ?" - Daily at 6 AM
 # "0 0 12 * * ?" - Daily at noon (12 PM)
 # "0 0 0 ? * MON" - Weekly on Monday at midnight
 # "0 0 0 1 * ?" - Monthly on the 1st at midnight

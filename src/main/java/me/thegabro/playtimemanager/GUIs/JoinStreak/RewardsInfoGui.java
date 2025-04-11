@@ -369,7 +369,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                 String requiredJoins = config.getConfig().getString("rewards-gui.reward-items.info-lore.required-joins")
                         .replace("{required_joins}", specificJoinCount == -1 ? "-" : String.valueOf(specificJoinCount));
                 lore.add(Utils.parseColors(requiredJoins));
-                if (!(displayItem.getStatus() == RewardStatus.AVAILABLE_OLD)) {
+                if (!(displayItem.getStatus() == RewardStatus.AVAILABLE_OLD) && !(displayItem.getStatus() == RewardStatus.AVAILABLE)) {
                     int currentStreak = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRelativeJoinStreak();
                     String streakColor = currentStreak < specificJoinCount ?
                             config.getConfig().getString("rewards-gui.reward-items.info-lore.join-streak-color.insufficient") :
@@ -399,24 +399,6 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
                     for (String line : descriptionLines) {
                         lore.add(Utils.parseColors(descriptionTemplate.replace("{reward_description}", line)));
-                    }
-                }
-
-                if (!reward.getPermissions().isEmpty()) {
-                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.permissions-header-separator")));
-                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.permissions-header")));
-                    for (String permission : reward.getPermissions()) {
-                        lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.permission-format")
-                                .replace("{permission}", permission)));
-                    }
-                }
-
-                if (!reward.getCommands().isEmpty()) {
-                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.commands-header-separator")));
-                    lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.commands-header")));
-                    for (String command : reward.getCommands()) {
-                        lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.command-format")
-                                .replace("{command}", command)));
                     }
                 }
 
@@ -610,6 +592,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
         if (slot == SHOW_CLAIMED_BUTTON_SLOT) {
             currentFilter = FilterType.CLAIMED;
+            currentPage=0;
             applyFilters();
             initializeItems();
             return;
@@ -617,6 +600,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
         if (slot == SHOW_AVAILABLE_BUTTON_SLOT) {
             currentFilter = FilterType.AVAILABLE;
+            currentPage=0;
             applyFilters();
             initializeItems();
             return;
@@ -624,6 +608,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
         if (slot == SHOW_LOCKED_BUTTON_SLOT) {
             currentFilter = FilterType.LOCKED;
+            currentPage=0;
             applyFilters();
             initializeItems();
             return;

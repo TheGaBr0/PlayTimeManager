@@ -8,6 +8,7 @@ import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
+import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 import org.quartz.CronExpression;
 import org.bukkit.Bukkit;
@@ -29,13 +30,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class JoinStreaksManager {
-    private static JoinStreaksManager instance;
     private final Set<JoinStreakReward> rewards = new HashSet<>();
     private final Map<Integer, LinkedHashSet<String>> joinRewardsMap = new HashMap<>();
     private PlayTimeManager plugin;
     private static PlayTimeDatabase db;
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+    private final Set<String> playersJoinedDuringCurrentCycle = new HashSet<>();
+    private long currentCycleStartTime;
     private BukkitTask intervalTask;
     private JoinStreakReward lastRewardByJoins;
     private CronExpression cronExpression;
@@ -44,11 +46,12 @@ public class JoinStreaksManager {
     private long exactIntervalSeconds;
     private JoinStreaksManager() {}
 
-    public static synchronized JoinStreaksManager getInstance() {
-        if (instance == null) {
-            instance = new JoinStreaksManager();
-        }
-        return instance;
+    private static final class InstanceHolder {
+        private static JoinStreaksManager instance = new JoinStreaksManager();
+    }
+
+    public static JoinStreaksManager getInstance() {
+        return InstanceHolder.instance;
     }
 
     public void initialize(PlayTimeManager playTimeManager) {
@@ -82,6 +85,7 @@ public class JoinStreaksManager {
         Date secondTrigger = cronExpression.getNextValidTimeAfter(firstTrigger);
         long intervalMillis = secondTrigger.getTime() - firstTrigger.getTime();
         exactIntervalSeconds = intervalMillis/1000;
+        this.currentCycleStartTime = System.currentTimeMillis();
 
         clearRewards();
         loadRewards();
@@ -158,6 +162,9 @@ public class JoinStreaksManager {
             @Override
             public void run() {
 
+                playersJoinedDuringCurrentCycle.clear();
+                currentCycleStartTime = System.currentTimeMillis();
+
                 resetMissingPlayerStreaks();
 
                 // Calculate the next reset time and reschedule
@@ -220,11 +227,10 @@ public class JoinStreaksManager {
         for (OnlineUser onlineUser : onlineUsersManager.getOnlineUsersByUUID().values()) {
             // Always increment absolute streak
             onlineUser.incrementAbsoluteJoinStreak();
-
+            playersJoinedDuringCurrentCycle.add(onlineUser.getUuid());
             // Only increment relative streak and check rewards if schedule is active AND rewards exist
             if (plugin.getConfiguration().getRewardsCheckScheduleActivation() && !rewards.isEmpty()) {
                 onlineUser.incrementRelativeJoinStreak();
-
                 checkRewardsForUser(onlineUser, onlineUser.getPlayer());
             }
         }
@@ -232,27 +238,41 @@ public class JoinStreaksManager {
     }
 
     public void isItAStreak(OnlineUser user, Player player) {
-        long secondsBetween = Duration.between(user.getLastSeen(), LocalDateTime.now()).getSeconds();
+        long secondsBetween;
 
+        if (!isCurrentCycle()) {
+            // We're in a different cycle than tracked, force a cycle reset
+            playersJoinedDuringCurrentCycle.clear();
+            currentCycleStartTime = System.currentTimeMillis();
+        }
 
-        if (secondsBetween <= exactIntervalSeconds * plugin.getConfiguration().getJoinStreakResetMissesAllowed()) {
-            // Always increment absolute join streak
-            user.incrementAbsoluteJoinStreak();
+        secondsBetween =  Duration.between(user.getLastSeen(), LocalDateTime.now()).getSeconds();
 
+        if(!playersJoinedDuringCurrentCycle.contains(user.getUuid())){
+            if (secondsBetween <= exactIntervalSeconds * plugin.getConfiguration().getJoinStreakResetMissesAllowed()) {
+                // Always increment absolute join streak
+                user.incrementAbsoluteJoinStreak();
+                playersJoinedDuringCurrentCycle.add(user.getUuid());
 
-            // Only increment relative streak and process rewards if schedule is active AND rewards exist
-            if (plugin.getConfiguration().getRewardsCheckScheduleActivation() && !rewards.isEmpty()) {
-                user.incrementRelativeJoinStreak();
-
-
-                checkRewardsForUser(user, player);
-            }
-        } else {
-            // Too much time has passed, reset streak
-            if(plugin.getConfiguration().getJoinStreakResetActivation()){
+                // Only increment relative streak and process rewards if schedule is active AND rewards exist
+                if (plugin.getConfiguration().getRewardsCheckScheduleActivation() && !rewards.isEmpty()) {
+                    user.incrementRelativeJoinStreak();
+                    checkRewardsForUser(user, player);
+                }
+            } else {
+                // Too much time has passed, reset streak
                 user.resetJoinStreaks();
             }
         }
+    }
+
+    private boolean isCurrentCycle() {
+        // Get current cycle info based on cronExpression
+        Date now = new Date();
+        Date previousReset = cronExpression.getTimeAfter(new Date(now.getTime() - exactIntervalSeconds * 1000));
+
+        // We're in a valid cycle if the current time is between the previous reset and the next reset
+        return now.after(previousReset) && now.before(nextIntervalReset);
     }
 
     public void addReward(JoinStreakReward reward) {
@@ -263,8 +283,20 @@ public class JoinStreaksManager {
     }
 
     public JoinStreakReward getMainInstance(String instance){
+        if (instance == null || instance.isEmpty()) {
+            return null;
+        }
 
-        return getReward(Integer.parseInt(instance.split("\\.")[0]));
+        try {
+            String[] parts = instance.split("\\.");
+            if (parts.length > 0) {
+                return getReward(Integer.parseInt(parts[0]));
+            }
+        } catch (NumberFormatException e) {
+            plugin.getLogger().warning("Invalid reward ID format: " + instance);
+        }
+
+        return null;
     }
 
     public LinkedHashSet<String> getRewardIdsForJoinCount(int joinCount, OnlineUser onlineUser) {
@@ -414,7 +446,7 @@ public class JoinStreaksManager {
             JoinStreakReward mainInstance = getMainInstance(rewardKey);
 
             if (onlineUser.getRewardsToBeClaimed().contains(rewardKey + ".R")) {
-                sendRewardRelatedMessages(player, mainInstance, rewardKey, plugin.getConfiguration().getJoinCantClaimMessage());
+                sendRewardRelatedMessages(player, rewardKey, plugin.getConfiguration().getJoinCantClaimMessage(), 0);
                 continue;
             }
 
@@ -443,7 +475,7 @@ public class JoinStreaksManager {
             // Auto claim the reward with the specific key (not just the integer ID)
             onlineUser.addReceivedReward(rewardKey);
 
-            sendRewardRelatedMessages(player, reward, rewardKey, plugin.getConfiguration().getJoinAutoClaimMessage());
+            sendRewardRelatedMessages(player, rewardKey, plugin.getConfiguration().getJoinAutoClaimMessage(), 1);
 
 
             processCompletedReward(player, reward, rewardKey);
@@ -454,7 +486,7 @@ public class JoinStreaksManager {
                 onlineUser.addRewardToBeClaimed(rewardKey);
             }
 
-            sendRewardRelatedMessages(player, reward, rewardKey, plugin.getConfiguration().getJoinClaimMessage());
+            sendRewardRelatedMessages(player, rewardKey, plugin.getConfiguration().getJoinClaimMessage(), 1);
         }
     }
 
@@ -485,7 +517,7 @@ public class JoinStreaksManager {
 
         executeRewardCommands(reward, player);
 
-        sendRewardRelatedMessages(player, reward, instance, reward.getRewardMessage());
+        sendRewardRelatedMessages(player, instance, reward.getRewardMessage(), 0);
 
         playRewardSound(player, reward);
     }
@@ -549,13 +581,16 @@ public class JoinStreaksManager {
         }
     }
 
-    private void sendRewardRelatedMessages(Player player, JoinStreakReward reward, String instance, String message) {
+    private void sendRewardRelatedMessages(Player player, String instance, String message, int delaySeconds) {
         Map<String, String> replacements = new HashMap<>();
         replacements.put("%PLAYER_NAME%", player.getName());
         replacements.put("%REQUIRED_JOINS%", instance.matches("^\\d+\\.\\d+.*") ?
                 instance.replaceAll("^\\d+\\.(\\d+).*", "$1") : "");
 
-        player.sendMessage(Utils.parseColors(replacePlaceholders(message, replacements)));
+        final Component finalMessage = Utils.parseColors(replacePlaceholders(message, replacements));
+        Bukkit.getScheduler().runTaskLater(this.plugin, () -> {
+            player.sendMessage(finalMessage);
+        }, delaySeconds * 20L); // Convert seconds to ticks (20 ticks = 1 second)
     }
 
     private String replacePlaceholders(String input, Map<String, String> replacements) {
@@ -628,6 +663,57 @@ public class JoinStreaksManager {
 
     public JoinStreakReward getLastRewardByJoins(){
         return lastRewardByJoins;
+    }
+
+    public void onServerReload() {
+        // Update interval reset times first to ensure accurate cycle information
+        updateIntervalResetTimes();
+
+        // Recalculate if we're in the same cycle as when we last tracked
+        if (!isCurrentCycle()) {
+            playersJoinedDuringCurrentCycle.clear();
+            currentCycleStartTime = System.currentTimeMillis();
+        }
+
+        try {
+            Set<String> playersWithStreaks = db.getPlayersWithActiveStreaks();
+            Date cycleStartDate = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);
+
+            for (String playerUUID : playersWithStreaks) {
+                DBUser user = dbUsersManager.getUserFromUUID(playerUUID);
+                if (user != null) {
+                    LocalDateTime lastSeen = user.getLastSeen();
+
+                    if (lastSeen == null) {
+                        continue;
+                    }
+
+                    Date lastSeenDate = Date.from(lastSeen.atZone(ZoneId.systemDefault()).toInstant());
+
+                    // Check if the player's last seen time is within the current cycle
+                    if (lastSeenDate.after(cycleStartDate) && lastSeenDate.before(nextIntervalReset)) {
+                        playersJoinedDuringCurrentCycle.add(playerUUID);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error processing players during reload: " + e.getMessage());
+        }
+    }
+
+    public void cleanUp() {
+        if (intervalTask != null) {
+            intervalTask.cancel();
+            intervalTask = null;
+        }
+
+        // Clear collections to help with garbage collection
+        playersJoinedDuringCurrentCycle.clear();
+        rewards.clear();
+        joinRewardsMap.clear();
+
+        InstanceHolder.instance = null; // Allow singleton to be garbage collected
     }
 
 }

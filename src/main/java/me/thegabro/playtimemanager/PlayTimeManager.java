@@ -47,6 +47,7 @@ public class PlayTimeManager extends JavaPlugin{
     private final String CURRENTCONFIGVERSION = "3.5";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
+    private JoinStreaksManager joinStreaksManager;
     private final String serverVersion = Bukkit.getBukkitVersion().split("-")[0];
     private SessionManager sessionManager;
 
@@ -90,8 +91,9 @@ public class PlayTimeManager extends JavaPlugin{
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
 
-        JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
+        joinStreaksManager = JoinStreaksManager.getInstance();
         joinStreaksManager.initialize(this);
+        joinStreaksManager.onServerReload();
 
         permissionsManagerConfigured = checkPermissionsPlugin();
 
@@ -151,6 +153,7 @@ public class PlayTimeManager extends JavaPlugin{
         db.close();
         HandlerList.unregisterAll(this);
         dbUsersManager.clearCache();
+        joinStreaksManager.cleanUp();
         getLogger().info("has been disabled!");
     }
 

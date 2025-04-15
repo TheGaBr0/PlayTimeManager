@@ -49,7 +49,7 @@ public class ClaimRewards implements CommandExecutor {
         String sessionToken = UUID.randomUUID().toString();
         plugin.getSessionManager().createSession(player.getUniqueId(), sessionToken);
         // Open the rewards inventory with session validation
-        RewardsInfoGui rewardsGui = new RewardsInfoGui(player, sessionToken);
+        RewardsInfoGui rewardsGui = new RewardsInfoGui(player, sessionToken, true);
         rewardsGui.openInventory();
         return true;
     }

@@ -36,7 +36,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final GUIsConfiguration config;
     private Player player;
-
+    private boolean isOwner;
     private int currentPage = 0;
     private final List<RewardDisplayItem> allDisplayItems = new ArrayList<>();
     private final List<RewardDisplayItem> filteredDisplayItems = new ArrayList<>();
@@ -59,11 +59,11 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     protected static final Map<UUID, RewardsInfoGui> activeGuis = new HashMap<>();
     private final String sessionToken;
 
-    public RewardsInfoGui(Player player, String sessionToken) {
+    public RewardsInfoGui(Player player, String sessionToken, boolean owner) {
         this.player = player;
         this.sessionToken = sessionToken;
         this.config = plugin.getGUIsConfig();
-
+        this.isOwner = owner;
         inv = Bukkit.createInventory(this, 54, Utils.parseColors(config.getConfig().getString("rewards-gui.gui.title")));
 
         // Register listeners only once
@@ -261,11 +261,13 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
         createFilterButtons();
 
-        inv.setItem(CLAIM_ALL_BUTTON_SLOT, createGuiItem(
-                Material.CHEST,
-                Utils.parseColors(config.getConfig().getString("rewards-gui.claim-all.name"))
-        ));
-        protectedSlots.add(CLAIM_ALL_BUTTON_SLOT);
+        if(isOwner){
+            inv.setItem(CLAIM_ALL_BUTTON_SLOT, createGuiItem(
+                    Material.CHEST,
+                    Utils.parseColors(config.getConfig().getString("rewards-gui.claim-all.name"))
+            ));
+            protectedSlots.add(CLAIM_ALL_BUTTON_SLOT);
+        }
 
         // Add pagination controls if needed
         int totalPages = (int) Math.ceil((double) filteredDisplayItems.size() / REWARDS_PER_PAGE);
@@ -614,7 +616,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             return;
         }
 
-        if (slot == CLAIM_ALL_BUTTON_SLOT) {
+        if (slot == CLAIM_ALL_BUTTON_SLOT && isOwner) {
             claimAllRewards();
             return;
         }
@@ -631,7 +633,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         }
 
         // Handle clicking on a reward
-        if (clickedItem.getItemMeta().hasDisplayName()) {
+        if (clickedItem.getItemMeta().hasDisplayName() && isOwner) {
 
             PersistentDataContainer container = clickedItem.getItemMeta().getPersistentDataContainer();
             NamespacedKey typeKey = new NamespacedKey(plugin, "reward_type");

@@ -27,7 +27,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class JoinStreaksManager {
     private final Set<JoinStreakReward> rewards = new HashSet<>();
@@ -247,7 +246,6 @@ public class JoinStreaksManager {
         }
 
         secondsBetween =  Duration.between(user.getLastSeen(), LocalDateTime.now()).getSeconds();
-
         if(!playersJoinedDuringCurrentCycle.contains(user.getUuid())){
             if (secondsBetween <= exactIntervalSeconds * plugin.getConfiguration().getJoinStreakResetMissesAllowed()) {
                 // Always increment absolute join streak
@@ -346,14 +344,15 @@ public class JoinStreaksManager {
                 if (parts.length >= 2 && Integer.parseInt(parts[1]) != joinCount) {
                     toRemove.add(baseId);
                 }
-            } else {
-                toRemove.add(reward); // Remove standard rewards that are already to be claimed
+            }else{
+                toRemove.add(reward);
             }
         }
 
         rewardIds.removeAll(toRemove);
+        plugin.getLogger().info(String.valueOf(rewardIds));
         rewardIds.removeAll(onlineUser.getRewardsToBeClaimed());
-
+        plugin.getLogger().info(String.valueOf(rewardIds));
         return rewardIds;
 
     }
@@ -505,11 +504,25 @@ public class JoinStreaksManager {
 
         onlineUser.unclaimReward(instance);
 
-        //if player ends a cycle of rewards, then he can't have them as unclaimed but can still have them in their
-        //inventory ready to be claimed. In this situation let's just process the claim of that reward
-        //if (!instance.endsWith("R")) {
-            onlineUser.addReceivedReward(instance.replace(".R", ""));
-        //}
+        //This logic ensures that relative rewards (those ending with "R") are only marked as received if the player's
+        // current relative join streak meets the condition. This is required otherwise the if the player doesn't
+        //claim any reward for the current cycle, in the next one they will only be claimable once. If they click on
+        // claim all this should only be applied to rewards with a join streak less or equal than the current relative one.
+        if (instance.endsWith("R")) {
+            try {
+                String[] parts = instance.split("\\.");
+
+                int instancePart = Integer.parseInt(parts[1]);
+
+                plugin.getLogger().info(String.valueOf(instancePart) + " "+ onlineUser.getRelativeJoinStreak());
+
+                if(onlineUser.getRelativeJoinStreak()<=instancePart)
+                    onlineUser.addReceivedReward(instance.replace(".R", ""));
+
+            } catch (NumberFormatException | ArrayIndexOutOfBoundsException ignored) {}
+        }else{
+            onlineUser.addReceivedReward(instance);
+        }
 
         if (plugin.isPermissionsManagerConfigured()) {
             assignPermissionsForReward(onlineUser, reward);
@@ -675,30 +688,33 @@ public class JoinStreaksManager {
             currentCycleStartTime = System.currentTimeMillis();
         }
 
-        try {
-            Set<String> playersWithStreaks = db.getPlayersWithActiveStreaks();
-            Date cycleStartDate = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);
+        //if schedule is active, when the server restarts add to the playersJoinedDuringCurrentCycle
+        //structure every player whose lastseen is within the current cycle.
+        if(plugin.getConfiguration().getRewardsCheckScheduleActivation()){
+            try {
+                Set<String> playersWithStreaks = db.getPlayersWithActiveStreaks();
+                Date cycleStartDate = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);
 
-            for (String playerUUID : playersWithStreaks) {
-                DBUser user = dbUsersManager.getUserFromUUID(playerUUID);
-                if (user != null) {
-                    LocalDateTime lastSeen = user.getLastSeen();
+                for (String playerUUID : playersWithStreaks) {
+                    DBUser user = dbUsersManager.getUserFromUUID(playerUUID);
+                    if (user != null) {
+                        LocalDateTime lastSeen = user.getLastSeen();
 
-                    if (lastSeen == null) {
-                        continue;
-                    }
+                        if (lastSeen == null) {
+                            continue;
+                        }
 
-                    Date lastSeenDate = Date.from(lastSeen.atZone(ZoneId.systemDefault()).toInstant());
+                        Date lastSeenDate = Date.from(lastSeen.atZone(ZoneId.systemDefault()).toInstant());
 
-                    // Check if the player's last seen time is within the current cycle
-                    if (lastSeenDate.after(cycleStartDate) && lastSeenDate.before(nextIntervalReset)) {
-                        playersJoinedDuringCurrentCycle.add(playerUUID);
+                        // Check if the player's last seen time is within the current cycle
+                        if (lastSeenDate.after(cycleStartDate) && lastSeenDate.before(nextIntervalReset)) {
+                            playersJoinedDuringCurrentCycle.add(playerUUID);
+                        }
                     }
                 }
+            } catch (Exception e) {
+                plugin.getLogger().severe("Error processing players during reload: " + e.getMessage());
             }
-
-        } catch (Exception e) {
-            plugin.getLogger().severe("Error processing players during reload: " + e.getMessage());
         }
     }
 

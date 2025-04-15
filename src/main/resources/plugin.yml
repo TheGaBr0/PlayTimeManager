@@ -63,6 +63,7 @@ permissions:
       playtime.joinstreak: true
       playtime.joinstreak.claim: true
       playtime.joinstreak.claim.automatic: true
+      playtime.joinstreak.seeplayer: true
   playtime:
     default: true
   playtime.others:
@@ -90,4 +91,6 @@ permissions:
   playtime.joinstreak.claim:
     default: true
   playtime.joinstreak.claim.automatic:
+    default: false
+  playtime.joinstreak.seeplayer:
     default: false

@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.Events;
 
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreaksManager;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -21,7 +21,7 @@ public class JoinEventManager implements Listener {
             OnlineUser onlineUser = new OnlineUser(event.getPlayer());
             onlineUsersManager.addOnlineUser(onlineUser);
             onlineUser.updateLastSeen();
-            joinStreaksManager.isItAStreak(onlineUser, event.getPlayer());
+            joinStreaksManager.processPlayerLogin(event.getPlayer());
             dbUsersManager.updateCachedTopPlayers(onlineUser);
 
     }

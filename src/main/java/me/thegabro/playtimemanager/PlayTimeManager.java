@@ -5,7 +5,7 @@ import me.thegabro.playtimemanager.GUIs.Goals.GoalCommandsGui;
 import me.thegabro.playtimemanager.GUIs.Goals.GoalPermissionsGui;
 import me.thegabro.playtimemanager.GUIs.Goals.GoalSettingsGui;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreaksManager;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Translations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Translations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Updates.UpdateManager;

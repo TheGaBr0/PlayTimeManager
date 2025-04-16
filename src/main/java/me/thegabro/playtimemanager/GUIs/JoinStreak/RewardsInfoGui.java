@@ -1,8 +1,8 @@
 package me.thegabro.playtimemanager.GUIs.JoinStreak;
 
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import me.thegabro.playtimemanager.Translations.GUIsConfiguration;
@@ -193,7 +193,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
     private void loadRewards() {
         allDisplayItems.clear();
-        Map<Integer, LinkedHashSet<String>> joinRewardsMap = rewardsManager.getJoinRewardsMap();
+        Map<Integer, LinkedHashSet<String>> joinRewardsMap = rewardsManager.getRewardRegistry().getJoinRewardsMap();
         Set<String> rewardsReceived = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getReceivedRewards();
         Set<String> rewardsToBeClaimed = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed();
 
@@ -201,7 +201,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             Integer rewardId = entry.getKey();
             LinkedHashSet<String> instances = entry.getValue();
 
-            JoinStreakReward reward = rewardsManager.getMainInstance(String.valueOf(rewardId));
+            JoinStreakReward reward = rewardsManager.getRewardRegistry().getMainInstance(String.valueOf(rewardId));
             if (reward == null) continue;
 
             for (String instance : instances) {
@@ -227,7 +227,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             if (!instance.endsWith("R"))
                 continue;
 
-            JoinStreakReward reward = rewardsManager.getMainInstance(instance);
+            JoinStreakReward reward = rewardsManager.getRewardRegistry().getMainInstance(instance);
             if (reward == null) continue;
 
             RewardStatus status;
@@ -492,7 +492,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         if (min == max) return min;
 
         // Get the instances for this reward
-        Map<Integer, LinkedHashSet<String>> joinRewardsMap = rewardsManager.getJoinRewardsMap();
+        Map<Integer, LinkedHashSet<String>> joinRewardsMap = rewardsManager.getRewardRegistry().getJoinRewardsMap();
         LinkedHashSet<String> instances = joinRewardsMap.get(reward.getId());
 
         if (instances == null || instances.isEmpty()) return min;
@@ -670,7 +670,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             return;
         }
 
-        JoinStreakReward reward = rewardsManager.getMainInstance(instance);
+        JoinStreakReward reward = rewardsManager.getRewardRegistry().getMainInstance(instance);
         if (reward == null) {
             player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
                     config.getConfig().getString("rewards-gui.messages.reward-not-found")));
@@ -679,7 +679,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         }
 
         try {
-            rewardsManager.processCompletedReward(player, reward, instance);
+            rewardsManager.getRewardExecutor().processCompletedReward(player, reward, instance);
 
             loadRewards();
             applyFilters();
@@ -716,10 +716,10 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
         int claimedCount = 0;
         for (String instance : claimableRewards) {
-            JoinStreakReward reward = rewardsManager.getMainInstance(instance);
+            JoinStreakReward reward = rewardsManager.getRewardRegistry().getMainInstance(instance);
             if (reward != null) {
                 try {
-                    rewardsManager.processCompletedReward(player, reward, instance);
+                    rewardsManager.getRewardExecutor().processCompletedReward(player, reward, instance);
                     claimedCount++;
                 } catch (Exception e) {
                     plugin.getLogger().severe("Error processing reward for player " + player.getName() + ": " + e.getMessage());

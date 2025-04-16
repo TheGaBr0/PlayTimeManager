@@ -1,11 +1,10 @@
 package me.thegabro.playtimemanager.GUIs.JoinStreak;
 
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreaksManager;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -27,8 +26,6 @@ import org.jetbrains.annotations.Nullable;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-
-import static me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui.activeGuis;
 
 public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
@@ -77,7 +74,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
         //This approach sorts primarily by minimum required joins, and for rewards that have the same minimum value,
         // it then sorts by the maximum required joins.
-        Set<JoinStreakReward> rewardsSet = rewardsManager.getRewards();
+        Set<JoinStreakReward> rewardsSet = rewardsManager.getRewardRegistry().getRewards();
         sortedRewards = rewardsSet.stream()
                 .sorted(
                         Comparator.comparing(
@@ -116,9 +113,9 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                 Utils.parseColors(""),
                 Utils.parseColors("&7Reward cycle will reset after player"),
                 Utils.parseColors("&7reaches reward with ID: &e#" +
-                        (rewardsManager.getLastRewardByJoins() != null ? rewardsManager.getLastRewardByJoins().getId() : "-")),
+                        (rewardsManager.getRewardRegistry().getLastRewardByJoins() != null ? rewardsManager.getRewardRegistry().getLastRewardByJoins().getId() : "-")),
                 Utils.parseColors("&7which requires &e"+
-                        (rewardsManager.getLastRewardByJoins() != null ? rewardsManager.getLastRewardByJoins().getMaxRequiredJoins() : "-")
+                        (rewardsManager.getRewardRegistry().getLastRewardByJoins() != null ? rewardsManager.getRewardRegistry().getLastRewardByJoins().getMaxRequiredJoins() : "-")
                         +" &7consecutive joins to complete")
         ));
         protectedSlots.add(CREATE_REWARD);
@@ -131,7 +128,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         protectedSlots.add(CREATE_REWARD);
 
         boolean isActive = plugin.getConfiguration().getRewardsCheckScheduleActivation();
-        boolean hasRewards = !rewardsManager.getRewards().isEmpty();
+        boolean hasRewards = !rewardsManager.getRewardRegistry().getRewards().isEmpty();
 
         inv.setItem(TOGGLE_SCHEDULE, createGuiItem(
                 (isActive && hasRewards) ? Material.GREEN_CONCRETE : Material.RED_CONCRETE,
@@ -262,7 +259,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         }
 
         if (slot == TOGGLE_SCHEDULE && (clickedItem.getType() == Material.GREEN_CONCRETE || clickedItem.getType() == Material.RED_CONCRETE)) {
-            boolean hasRewards = !rewardsManager.getRewards().isEmpty();
+            boolean hasRewards = !rewardsManager.getRewardRegistry().getRewards().isEmpty();
             if (!hasRewards) {
                 whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cCannot enable rewards: No rewards have been created!"));
                 return;
@@ -279,7 +276,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
         if (slot == CREATE_REWARD && clickedItem.getType() == Material.EMERALD) {
             whoClicked.closeInventory();
-            rewardsManager.addReward(new JoinStreakReward(plugin, rewardsManager.getNextRewardId(), -1));
+            rewardsManager.getRewardRegistry().addReward(new JoinStreakReward(plugin, rewardsManager.getRewardRegistry().getNextRewardId(), -1));
             openInventory(whoClicked);
             return;
         }
@@ -304,7 +301,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                 try {
                     id = Integer.parseInt(idPart);
 
-                    JoinStreakReward reward = rewardsManager.getReward(id);
+                    JoinStreakReward reward = rewardsManager.getRewardRegistry().getReward(id);
                     if (reward == null) return;
 
                     // Check for middle-click to clone
@@ -313,11 +310,11 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                         whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Cloning reward &e" + id + "&7..."));
 
                         // Create a new reward with the next available ID
-                        int newId = rewardsManager.getNextRewardId();
+                        int newId = rewardsManager.getRewardRegistry().getNextRewardId();
                         JoinStreakReward clonedReward = cloneReward(newId, reward);
 
                         // Add the cloned reward to manager
-                        rewardsManager.addReward(clonedReward);
+                        rewardsManager.getRewardRegistry().addReward(clonedReward);
 
                         whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7cloned reward &e" + id + " &7to new reward &e" + newId));
                         openInventory(whoClicked);

@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreaksManager;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -35,8 +35,6 @@ public class PlaytimeReload implements CommandExecutor {
             goalsManager.clearGoals();
             goalsManager.loadGoals();
 
-            joinStreaksManager.initialize(plugin);
-
             //reload online users data
             for(Player p : Bukkit.getOnlinePlayers()) {
                 OnlineUser user = onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName());
@@ -55,8 +53,17 @@ public class PlaytimeReload implements CommandExecutor {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Goal check schedule has been restarted"));
 
             dbUsersManager.updateTopPlayersFromDB();
-            joinStreaksManager.startIntervalTask();
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Join streak check schedule has been restarted"));
+
+            joinStreaksManager.getRewardRegistry().clearRewards();
+            joinStreaksManager.getRewardRegistry().loadRewards();
+
+            joinStreaksManager.getCycleScheduler().initialize();
+
+            // Only start the task if it's enabled in config
+            if (plugin.getConfiguration().getRewardsCheckScheduleActivation()) {
+                joinStreaksManager.getCycleScheduler().startIntervalTask();
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Join streak check schedule has been restarted"));
+            }
 
             return true;
         } else {

@@ -2,14 +2,12 @@ package me.thegabro.playtimemanager.GUIs.JoinStreak;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreaksManager;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -342,8 +340,8 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                     } else {
                         player.sendMessage(Utils.parseColors("&aRequired joins updated to " + newValue + "!"));
                     }
-                    JoinStreaksManager.getInstance().updateJoinRewardsMap(reward);
-                    JoinStreaksManager.getInstance().updateEndLoopReward();
+                    JoinStreaksManager.getInstance().getRewardRegistry().updateJoinRewardsMap(reward);
+                    JoinStreaksManager.getInstance().getRewardRegistry().updateEndLoopReward();
                 } else {
                     player.sendMessage(Utils.parseColors("&cInvalid format. Please enter a positive number, -1 to deactivate, or a valid range (e.g., 1-25)."));
                 }

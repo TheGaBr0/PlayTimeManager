@@ -35,8 +35,8 @@ public class RewardExecutor {
             try {
                 String[] parts = instance.split("\\.");
                 int instancePart = Integer.parseInt(parts[1]);
-
-                if (onlineUser.getRelativeJoinStreak() <= instancePart) {
+                plugin.getLogger().info(String.valueOf(instancePart) + " " + onlineUser.getRelativeJoinStreak());
+                if (onlineUser.getRelativeJoinStreak() >= instancePart) {
                     onlineUser.addReceivedReward(instance.replace(".R", ""));
                 }
             } catch (NumberFormatException | ArrayIndexOutOfBoundsException ignored) {}

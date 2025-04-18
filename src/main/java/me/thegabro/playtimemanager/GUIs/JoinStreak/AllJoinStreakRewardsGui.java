@@ -240,13 +240,6 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         return item;
     }
 
-    private JoinStreakReward getLatestReward() {
-        if (sortedRewards.isEmpty()) {
-            return null;
-        }
-        return sortedRewards.get(sortedRewards.size() - 1);
-    }
-
     @Override
     public @NotNull Inventory getInventory() {
         return inv;

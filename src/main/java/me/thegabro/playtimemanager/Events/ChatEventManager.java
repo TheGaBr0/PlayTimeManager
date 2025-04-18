@@ -49,7 +49,7 @@ public class ChatEventManager implements Listener {
 
         // Parse the old message into rows if it exists
         if (oldMessage != null && !oldMessage.isEmpty()) {
-            String[] lines = oldMessage.split("\n");
+            String[] lines = oldMessage.split("/n");
             for (String line : lines) {
                 session.addRow(line);
             }
@@ -316,7 +316,7 @@ public class ChatEventManager implements Listener {
         }
 
         public String getMessageAsString() {
-            return String.join("\n", rows);
+            return String.join("/n", rows);
         }
 
         public int getCurrentEditingRow() {

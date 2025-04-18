@@ -166,7 +166,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
             rewardsDescLore.add(Utils.parseColors("&7Current description:"));
 
             // Split the description by newlines and add each line
-            String[] descriptionLines = reward.getRewardDescription().split("\n");
+            String[] descriptionLines = reward.getRewardDescription().split("/n");
             for (String line : descriptionLines) {
                 // Format each line with a bullet point and yellow color
                 rewardsDescLore.add(Utils.parseColors("&7"+line));
@@ -187,7 +187,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
             DescLore.add(Utils.parseColors("&7Current description:"));
 
             // Split the description by newlines and add each line
-            String[] descriptionLines = reward.getDescription().split("\n");
+            String[] descriptionLines = reward.getDescription().split("/n");
             for (String line : descriptionLines) {
                 // Format each line with a bullet point and yellow color
                 DescLore.add(Utils.parseColors("&7"+line));

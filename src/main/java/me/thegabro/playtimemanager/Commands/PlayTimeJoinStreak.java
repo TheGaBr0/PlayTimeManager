@@ -77,8 +77,7 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            if ("seeplayer".startsWith(args[0].toLowerCase()) &&
-                    sender.hasPermission("playtime.joinstreak.seeplayer")) {
+            if (sender.hasPermission("playtime.joinstreak.seeplayer")) {
                 completions.add("seeplayer");
             }
             return completions;

@@ -61,10 +61,10 @@ public class JoinStreakReward {
                 }
             }
 
-            rewardMessage = unescapeNewlines(config.getString("reward-message", getDefaultRewardMessage()));
+            rewardMessage = config.getString("reward-message", getDefaultRewardMessage());
             rewardSound = config.getString("reward-sound", getDefaultRewardSound());
-            description = unescapeNewlines(config.getString("description", ""));
-            rewardDescription = unescapeNewlines(config.getString("reward-description", ""));
+            description = config.getString("description", "");
+            rewardDescription = config.getString("reward-description", "");
             permissions = new ArrayList<>(config.getStringList("permissions"));
             commands = new ArrayList<>(config.getStringList("commands"));
             itemIcon = config.getString("item-icon", Material.SUNFLOWER.toString());
@@ -121,9 +121,9 @@ public class JoinStreakReward {
             config.set("required-joins-range", requiredJoinsRange[0] + "-" + requiredJoinsRange[1]);
 
             config.set("reward-sound", rewardSound);
-            config.set("reward-message", escapeNewlines(rewardMessage));
-            config.set("description", escapeNewlines(description));
-            config.set("reward-description", escapeNewlines(rewardDescription));
+            config.set("reward-message",rewardMessage);
+            config.set("description", description);
+            config.set("reward-description", rewardDescription);
             config.set("permissions", permissions);
             config.set("commands", commands);
             config.set("item-icon", itemIcon);
@@ -327,14 +327,6 @@ public class JoinStreakReward {
                 plugin.getLogger().warning("Failed to delete reward file for " + id);
             }
         }
-    }
-
-    public static String escapeNewlines(String input) {
-        return input == null ? null : input.replace("\n", "\\\\n");
-    }
-
-    public static String unescapeNewlines(String input) {
-        return input == null ? null : input.replace("\\\\n", "\n");
     }
 
     @Override

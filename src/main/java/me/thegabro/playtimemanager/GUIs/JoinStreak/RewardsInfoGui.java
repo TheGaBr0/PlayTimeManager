@@ -387,7 +387,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                     lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.description-separator")));
 
                     String descriptionTemplate = config.getConfig().getString("rewards-gui.reward-items.info-lore.description");
-                    String[] descriptionLines = reward.getDescription().split("\n");
+                    String[] descriptionLines = reward.getDescription().split("/n");
 
                     for (String line : descriptionLines) {
                         lore.add(Utils.parseColors(descriptionTemplate.replace("{description}", line)));
@@ -397,7 +397,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                 if (!reward.getRewardDescription().isEmpty()) {
                     lore.add(Utils.parseColors(config.getConfig().getString("rewards-gui.reward-items.info-lore.reward-description-separator")));
                     String descriptionTemplate = config.getConfig().getString("rewards-gui.reward-items.info-lore.reward-description");
-                    String[] descriptionLines = reward.getRewardDescription().split("\n");
+                    String[] descriptionLines = reward.getRewardDescription().split("/n");
 
                     for (String line : descriptionLines) {
                         lore.add(Utils.parseColors(descriptionTemplate.replace("{reward_description}", line)));

@@ -111,10 +111,10 @@ public class JoinStreakReward {
                     "You can specify multiple permissions and groups that will all be granted.",
                     "---------------------------",
                     "commands defines a list of commands that will be executed when a player reaches this reward",
-                    "Available placeholders: %PLAYER_NAME%",
+                    "Available placeholders: PLAYER_NAME",
                     "Example commands:",
-                    "- '/give %PLAYER_NAME% diamond 64'",
-                    "- '/broadcast %PLAYER_NAME% has reached an amazing join streak!'"
+                    "- '/give PLAYER_NAME diamond 64'",
+                    "- '/broadcast PLAYER_NAME has reached an amazing join streak!'"
             ));
 
             // Save join requirements in the new format

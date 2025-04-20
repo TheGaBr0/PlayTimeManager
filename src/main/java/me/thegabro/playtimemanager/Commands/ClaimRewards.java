@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager.Commands;
 
 import me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -14,7 +15,7 @@ import java.util.UUID;
 
 public class ClaimRewards implements CommandExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-
+    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private static final Map<UUID, Long> lastGuiOpenTime = new HashMap<>();
     private static final long GUI_OPEN_COOLDOWN = 1000;
 
@@ -49,7 +50,7 @@ public class ClaimRewards implements CommandExecutor {
         String sessionToken = UUID.randomUUID().toString();
         plugin.getSessionManager().createSession(player.getUniqueId(), sessionToken);
         // Open the rewards inventory with session validation
-        RewardsInfoGui rewardsGui = new RewardsInfoGui(player, sessionToken, true);
+        RewardsInfoGui rewardsGui = new RewardsInfoGui(player, dbUsersManager.getUserFromNickname(player.getName()), sessionToken);
         rewardsGui.openInventory();
         return true;
     }

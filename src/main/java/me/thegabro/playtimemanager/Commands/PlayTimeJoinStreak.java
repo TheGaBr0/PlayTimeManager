@@ -3,6 +3,8 @@ package me.thegabro.playtimemanager.Commands;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.AllJoinStreakRewardsGui;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUser;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -19,7 +21,7 @@ import java.util.stream.Collectors;
 
 public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-
+    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
@@ -50,17 +52,18 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
             }
 
             String targetPlayerName = args[1];
-            Player targetPlayer = Bukkit.getPlayer(targetPlayerName);
+            DBUser user = dbUsersManager.getUserFromNickname(targetPlayerName);
 
-            if (targetPlayer == null) {
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cPlayer not found or not online."));
+            if (user == null) {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                        " The player &e" + targetPlayerName + "&7 has never joined the server!"));
                 return true;
             }
 
             String sessionToken = UUID.randomUUID().toString();
             plugin.getSessionManager().createSession(player.getUniqueId(), sessionToken);
 
-            RewardsInfoGui rewardsGui = new RewardsInfoGui(player, sessionToken, false);
+            RewardsInfoGui rewardsGui = new RewardsInfoGui(player, user, sessionToken);
             rewardsGui.openInventory();
             return true;
         }

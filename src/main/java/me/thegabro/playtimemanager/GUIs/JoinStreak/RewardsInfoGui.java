@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.GUIs.JoinStreak;
 
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
+import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -35,8 +36,9 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final GUIsConfiguration config;
-    private Player player;
+    private Player sender;
     private boolean isOwner;
+    private DBUser subject;
     private int currentPage = 0;
     private final List<RewardDisplayItem> allDisplayItems = new ArrayList<>();
     private final List<RewardDisplayItem> filteredDisplayItems = new ArrayList<>();
@@ -59,12 +61,17 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     protected static final Map<UUID, RewardsInfoGui> activeGuis = new HashMap<>();
     private final String sessionToken;
 
-    public RewardsInfoGui(Player player, String sessionToken, boolean owner) {
-        this.player = player;
+    public RewardsInfoGui(Player sender, DBUser subject, String sessionToken) {
+        this.sender = sender;
         this.sessionToken = sessionToken;
         this.config = plugin.getGUIsConfig();
-        this.isOwner = owner;
-        inv = Bukkit.createInventory(this, 54, Utils.parseColors(config.getConfig().getString("rewards-gui.gui.title")));
+        this.subject = subject;
+        this.isOwner = sender.getName().equalsIgnoreCase(subject.getNickname());
+
+        if(isOwner)
+            inv = Bukkit.createInventory(this, 54, Utils.parseColors(config.getConfig().getString("rewards-gui.gui.title")));
+        else
+            inv = Bukkit.createInventory(this, 54, Utils.parseColors("&6"+subject.getNickname()+"'s rewards"));
 
         // Register listeners only once
         if (!isListenerRegistered) {
@@ -80,16 +87,16 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         initializeItems();
 
         // Track active GUIs
-        activeGuis.put(player.getUniqueId(), this);
+        activeGuis.put(sender.getUniqueId(), this);
 
-        player.openInventory(inv);
+        sender.openInventory(inv);
     }
 
     public void changePage(int page) {
         currentPage = page;
         initializeItems();
 
-        player.updateInventory();
+        sender.updateInventory();
 
     }
 
@@ -194,8 +201,8 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     private void loadRewards() {
         allDisplayItems.clear();
         Map<Integer, LinkedHashSet<String>> joinRewardsMap = rewardsManager.getRewardRegistry().getJoinRewardsMap();
-        Set<String> rewardsReceived = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getReceivedRewards();
-        Set<String> rewardsToBeClaimed = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed();
+        Set<String> rewardsReceived = subject.getReceivedRewards();
+        Set<String> rewardsToBeClaimed = subject.getRewardsToBeClaimed();
 
         for (Map.Entry<Integer, LinkedHashSet<String>> entry : joinRewardsMap.entrySet()) {
             Integer rewardId = entry.getKey();
@@ -222,7 +229,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             }
         }
 
-        for (String instance : dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed()) {
+        for (String instance : subject.getRewardsToBeClaimed()) {
 
             if (!instance.endsWith("R"))
                 continue;
@@ -372,7 +379,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
                         .replace("{required_joins}", specificJoinCount == -1 ? "-" : String.valueOf(specificJoinCount));
                 lore.add(Utils.parseColors(requiredJoins));
                 if (!(displayItem.getStatus() == RewardStatus.AVAILABLE_OLD) && !(displayItem.getStatus() == RewardStatus.AVAILABLE)) {
-                    int currentStreak = dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRelativeJoinStreak();
+                    int currentStreak = subject.getRelativeJoinStreak();
                     String streakColor = currentStreak < specificJoinCount ?
                             config.getConfig().getString("rewards-gui.reward-items.info-lore.join-streak-color.insufficient") :
                             config.getConfig().getString("rewards-gui.reward-items.info-lore.join-streak-color.sufficient");
@@ -645,7 +652,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
 
                     if (container.has(idKey, PersistentDataType.STRING)) {
                         String instance = container.get(idKey, PersistentDataType.STRING);
-                        claimReward(player, instance);
+                        claimReward(instance);
                     } else {
                         whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
                                 config.getConfig().getString("rewards-gui.messages.not-available")));
@@ -656,59 +663,59 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         }
     }
 
-    private void claimReward(Player player, String instance) {
-        if (!plugin.getSessionManager().validateSession(player.getUniqueId(), sessionToken)) {
-            plugin.getLogger().warning("Player " + player.getName() + " attempted GUI action with invalid session token!");
-            player.closeInventory();
+    private void claimReward(String instance) {
+        if (!plugin.getSessionManager().validateSession(sender.getUniqueId(), sessionToken)) {
+            plugin.getLogger().warning("Player " + sender.getName() + " attempted GUI action with invalid session token!");
+            sender.closeInventory();
             return;
         }
 
-        if (!player.hasPermission("playtime.joinstreak.claim")) {
-            player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
+        if (!sender.hasPermission("playtime.joinstreak.claim")) {
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
                     config.getConfig().getString("rewards-gui.messages.no-permission")));
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return;
         }
 
         JoinStreakReward reward = rewardsManager.getRewardRegistry().getMainInstance(instance);
         if (reward == null) {
-            player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
                     config.getConfig().getString("rewards-gui.messages.reward-not-found")));
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return;
         }
 
         try {
-            rewardsManager.getRewardExecutor().processCompletedReward(player, reward, instance);
+            rewardsManager.getRewardExecutor().processCompletedReward(sender, reward, instance);
 
             loadRewards();
             applyFilters();
             initializeItems();
-            player.updateInventory();
+            sender.updateInventory();
         } catch (Exception e) {
-            plugin.getLogger().severe("Error processing reward for player " + player.getName() + ": " + e.getMessage());
+            plugin.getLogger().severe("Error processing reward for player " + sender.getName() + ": " + e.getMessage());
             e.printStackTrace();
-            player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
                     config.getConfig().getString("rewards-gui.messages.error-processing")));
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
         }
     }
 
     private void claimAllRewards() {
-        if (!plugin.getSessionManager().validateSession(player.getUniqueId(), sessionToken)) {
-            plugin.getLogger().warning("Player " + player.getName() + " attempted GUI action with invalid session token!");
-            player.closeInventory();
+        if (!plugin.getSessionManager().validateSession(sender.getUniqueId(), sessionToken)) {
+            plugin.getLogger().warning("Player " + sender.getName() + " attempted GUI action with invalid session token!");
+            sender.closeInventory();
             return;
         }
 
-        if (!player.hasPermission("playtime.joinstreak.claim")) {
-            player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
+        if (!sender.hasPermission("playtime.joinstreak.claim")) {
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
                     config.getConfig().getString("rewards-gui.messages.no-permission")));
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return;
         }
 
-        Set<String> claimableRewards = new HashSet<>(dbUsersManager.getUserFromUUID(player.getUniqueId().toString()).getRewardsToBeClaimed());
+        Set<String> claimableRewards = new HashSet<>(subject.getRewardsToBeClaimed());
 
         if (claimableRewards.isEmpty()) {
             return;
@@ -719,28 +726,28 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
             JoinStreakReward reward = rewardsManager.getRewardRegistry().getMainInstance(instance);
             if (reward != null) {
                 try {
-                    rewardsManager.getRewardExecutor().processCompletedReward(player, reward, instance);
+                    rewardsManager.getRewardExecutor().processCompletedReward(sender, reward, instance);
                     claimedCount++;
                 } catch (Exception e) {
-                    plugin.getLogger().severe("Error processing reward for player " + player.getName() + ": " + e.getMessage());
+                    plugin.getLogger().severe("Error processing reward for player " + sender.getName() + ": " + e.getMessage());
                 }
             }
         }
 
         if (claimedCount > 0) {
             // Notify the player about claimed rewards
-            player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
                     config.getConfig().getString("rewards-gui.messages.claimed-rewards").replace("{count}", String.valueOf(claimedCount))));
-            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
+            sender.playSound(sender.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
 
             // Reload the rewards to refresh the GUI
             loadRewards();
             applyFilters();
             initializeItems();
         } else {
-            player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " +
                     config.getConfig().getString("rewards-gui.messages.error-processing")));
-            player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
         }
     }
 }

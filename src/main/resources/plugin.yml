@@ -3,7 +3,7 @@ version: '${project.version}'
 main: me.thegabro.playtimemanager.PlayTimeManager
 api-version: '1.19'
 author: TheGabro
-Description: A playtime tracker with customization options and automated rewards for efficient monitoring
+description: A playtime tracker with customization options and automated rewards for efficient monitoring
 
 softdepend: [PlaceholderAPI, LuckPerms]
 

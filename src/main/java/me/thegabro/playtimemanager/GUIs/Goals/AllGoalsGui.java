@@ -24,7 +24,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
 import java.util.*;
 
 public class AllGoalsGui implements InventoryHolder, Listener {
@@ -71,19 +70,22 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 if(slot >= 54) break; // Stop if inventory is full
 
                 // Create goal item
-                inv.setItem(slot, createGuiItem(
-                        Material.EXPERIENCE_BOTTLE,
-                        Component.text("§e" + goal.getName()),
+                ItemStack item = goal.isActive() ?  new ItemStack(Material.EXPERIENCE_BOTTLE) : new ItemStack(Material.RED_DYE);
+                ItemMeta meta = item.getItemMeta();
+                meta.displayName(Component.text("§e" + goal.getName()));
+                List<Component> lore = Arrays.asList(
                         Component.text("§7Required Time: " + Utils.ticksToFormattedPlaytime(goal.getTime())),
                         Component.text("§7Active: ")
                                 .append(Component.text(goal.isActive() ? "true" : "false")
                                         .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
                                 .decoration(TextDecoration.ITALIC, false),
-                        Component.text("§e" + goal.getPermissions().size() + "§7 " +
-                                (goal.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
-                        Component.text("§e" + goal.getCommands().size() + "§7 " +
-                                (goal.getCommands().size() != 1 ? "commands loaded" : "command loaded"))
-                ));
+                        Component.text("§e" + goal.getPermissions().size() + "§7 " + (goal.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
+                        Component.text("§e" + goal.getCommands().size() + "§7 " + (goal.getCommands().size() != 1 ? "commands loaded" : "command loaded"))
+                );
+                meta.lore(lore);
+                item.setItemMeta(meta);
+
+                inv.setItem(slot, item);
                 slot++;
             }
         } else {

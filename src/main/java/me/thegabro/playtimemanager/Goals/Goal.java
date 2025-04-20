@@ -89,10 +89,10 @@ public class Goal {
                     "the group has already been created using the permissions manager plugin specified in the main config.",
                     "---------------------------",
                     "commands defines a list of commands that will be executed when a player reaches this goal",
-                    "Available placeholders: %PLAYER_NAME%",
+                    "Available placeholders: PLAYER_NAME",
                     "Example commands:",
-                    "- '/give %PLAYER_NAME% diamond 64'",
-                    "- '/broadcast %PLAYER_NAME% has reached an amazing milestone!'"
+                    "- '/give PLAYER_NAME diamond 64'",
+                    "- '/broadcast PLAYER_NAME has reached an amazing milestone!'"
             ));
             config.set("time", time);
             config.set("goal-sound", goalSound);

@@ -45,7 +45,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
     @Override
     public @NotNull String getVersion() {
-        return "3.2.0";
+        return "3.3.0";
     }
 
     @Override
@@ -57,7 +57,18 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     public String onRequest(OfflinePlayer player, String params) {
         if (params == null) return null;
 
-        // Handle basic playtime placeholders first
+        // Handle join streak placeholder
+        if (params.equalsIgnoreCase("joinstreak")) {
+            try {
+                return String.valueOf(
+                        onlineUsersManager.getOnlineUser(player.getName()).getAbsoluteJoinStreak()
+                );
+            } catch (Exception e) {
+                return getErrorMessage("couldn't get join streak");
+            }
+        }
+
+        // Handle basic playtime placeholders
         if (params.equalsIgnoreCase("playtime")) {
             try {
                 return Utils.ticksToFormattedPlaytime(
@@ -83,6 +94,11 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         }
 
         String paramLower = params.toLowerCase();
+
+        // Handle join streak placeholders
+        if (paramLower.startsWith("joinstreak_")) {
+            return handleJoinStreak(params.substring(11));
+        }
 
         // Handle LP prefix top
         if (paramLower.startsWith("lp_prefix_top_")) {
@@ -250,12 +266,6 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
                 getErrorMessage("wrong nickname?");
     }
 
-    private String handleCurrentPlayerPlayTime(OfflinePlayer player) {
-        return Utils.ticksToFormattedPlaytime(
-                onlineUsersManager.getOnlineUser(player.getName()).getPlaytime()
-        );
-    }
-
     private String handleLastSeenTop(String posStr) {
         if (!isStringInt(posStr)) return getErrorMessage("wrong top position?");
 
@@ -274,6 +284,13 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
         return user.getLastSeen().format(formatter);
+    }
+
+    private String handleJoinStreak(String nickname) {
+        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        return user != null ?
+                String.valueOf(user.getAbsoluteJoinStreak()) :
+                getErrorMessage("wrong nickname?");
     }
 
     private String getErrorMessage(String error) {

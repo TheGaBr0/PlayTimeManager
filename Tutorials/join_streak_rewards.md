@@ -16,7 +16,7 @@ Use the following cron expression in your config to reset the streak every **30 
 streak-reset-schedule: "0/30 * * ? * *"
 ```
 
-👉 [**Click here to download**](https://github.com/your-repo-url) the template from the GitHub repository.
+👉 [**Click here to download**](https://downgit.github.io/#/home?url=https://github.com/TheGaBr0/PlayTimeManager/tree/dev/Tutorials/Rewards) the template from the GitHub repository.
 
 ---
 

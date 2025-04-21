@@ -99,7 +99,7 @@ public class JoinStreakReward {
                     "Replace '<VERSION>' in the link with your current minecraft version.",
                     "---------------------------",
                     "reward-message is showed to a player if it reaches the join streak specified in this config.",
-                    "Available placeholders: %REQUIRED_JOINS%, %PLAYER_NAME%, %MIN_JOINS%, %MAX_JOINS%",
+                    "Available placeholders: %REQUIRED_JOINS%, %PLAYER_NAME%",
                     "---------------------------",
                     "description provides a short text description of the reward.",
                     "---------------------------",

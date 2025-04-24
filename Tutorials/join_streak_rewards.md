@@ -51,6 +51,7 @@ You can configure:
 - An **item icon** for GUI display (which will appear in `/claimrewards` GUI as well).
 - A short **description** and detailed **reward-description**.
 
+Rewards setup can be done via the `/playtimejoinstreak` GUI directly in-game.
 ---
 
 ## 🗂️ Claiming & Managing Rewards

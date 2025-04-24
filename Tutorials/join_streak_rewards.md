@@ -52,6 +52,7 @@ You can configure:
 - A short **description** and detailed **reward-description**.
 
 Rewards setup can be done via the `/playtimejoinstreak` GUI directly in-game.
+
 ---
 
 ## 🗂️ Claiming & Managing Rewards

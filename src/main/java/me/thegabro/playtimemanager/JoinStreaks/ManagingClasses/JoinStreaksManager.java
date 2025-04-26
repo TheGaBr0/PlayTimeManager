@@ -79,8 +79,6 @@ public class JoinStreaksManager {
                 streakTracker.incrementRelativeStreak(user);
                 rewardProcessor.processEligibleRewards(user, player);
             }
-        } else {
-            streakTracker.resetStreaks(user);
         }
     }
 

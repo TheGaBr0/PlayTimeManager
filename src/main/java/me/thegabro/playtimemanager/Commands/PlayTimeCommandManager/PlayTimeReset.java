@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
 
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
@@ -31,7 +32,7 @@ public class PlayTimeReset {
     private static final Map<UUID, PendingReset> pendingResets = new HashMap<>();
     // Timeout for confirmation (60 seconds)
     private static final long CONFIRMATION_TIMEOUT_SECONDS = 60;
-
+    private final JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
     // Class to store pending reset information
     private static class PendingReset {
         final String resetType;
@@ -253,8 +254,9 @@ public class PlayTimeReset {
         int joinStreakBeforeReset = user.getRelativeJoinStreak();
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            // Reset database record
+            // Reset database records
             user.resetJoinStreaks();
+            joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
 
             // Notify on main thread
             Bukkit.getScheduler().runTask(plugin, () -> {
@@ -278,6 +280,7 @@ public class PlayTimeReset {
             for (DBUser u : users) {
                 totalJoinStreakReset.addAndGet(u.getRelativeJoinStreak());
                 u.resetJoinStreaks();
+                joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(u);
                 totalPlayersReset.getAndIncrement();
             }
 

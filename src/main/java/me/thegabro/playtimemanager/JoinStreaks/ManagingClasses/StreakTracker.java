@@ -30,10 +30,6 @@ public class StreakTracker {
         user.resetJoinStreaks();
     }
 
-    public void resetRelativeStreak(OnlineUser user) {
-        user.resetRelativeJoinStreak();
-    }
-
     public int resetInactivePlayerStreaks(Set<String> playersWithStreaks, long intervalSeconds, int missesAllowed) {
         int playersReset = 0;
 

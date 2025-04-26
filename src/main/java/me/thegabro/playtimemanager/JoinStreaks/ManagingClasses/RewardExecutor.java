@@ -35,7 +35,6 @@ public class RewardExecutor {
             try {
                 String[] parts = instance.split("\\.");
                 int instancePart = Integer.parseInt(parts[1]);
-                plugin.getLogger().info(String.valueOf(instancePart) + " " + onlineUser.getRelativeJoinStreak());
                 if (onlineUser.getRelativeJoinStreak() >= instancePart) {
                     onlineUser.addReceivedReward(instance.replace(".R", ""));
                 }
@@ -50,7 +49,7 @@ public class RewardExecutor {
 
         executeRewardCommands(reward, player);
 
-        messageService.sendRewardRelatedMessage(player, instance, reward.getRewardMessage(), 0);
+        messageService.sendRewardRelatedMessage(player, instance, reward.getRewardMessage(), 1);
 
         playRewardSound(player, reward);
     }

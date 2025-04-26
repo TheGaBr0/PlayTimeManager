@@ -140,7 +140,6 @@ public class CycleScheduler {
 
     public boolean isEligibleForStreak(OnlineUser user) {
         if (!isCurrentCycle()) {
-            // We're in a different cycle than tracked, force a cycle reset
             playersJoinedDuringCurrentCycle.clear();
             currentCycleStartTime = System.currentTimeMillis();
         }

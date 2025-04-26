@@ -164,7 +164,7 @@ public class Version332to34Updater {
         readme.append("!!! IMPORTANT VERSION UPGRADE NOTICE !!!\n");
         readme.append("=====================================\n");
         readme.append("This backup was automatically created during the upgrade from version 3.3.2 to 3.4\n");
-        readme.append("This is a critical backup as the upgrade adds new join streak fieldd.\n\n");
+        readme.append("This is a critical backup as the upgrade adds new join streak fields.\n\n");
 
         readme.append("Backup Information:\n");
         readme.append("------------------\n");

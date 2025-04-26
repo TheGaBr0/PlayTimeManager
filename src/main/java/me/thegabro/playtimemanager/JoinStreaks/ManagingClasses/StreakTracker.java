@@ -54,6 +54,7 @@ public class StreakTracker {
                     user.resetJoinStreaks();
                     restartUserJoinStreakRewards(user);
                     playersReset++;
+
                 }
             }
         }

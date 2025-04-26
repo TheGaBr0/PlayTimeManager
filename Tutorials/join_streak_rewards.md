@@ -29,7 +29,7 @@ The Join Streak system in **PlayTimeManager** allows you to define rewards that 
 There are two key types of streaks tracked for each player:
 
 ### 🔸 Absolute Join Streak  
-This is the total number of consecutive days a player has logged in **without skipping a day**. It is **always tracked**, even if the Join Streak system is deactivated or there are no rewards configured. The streak will only reset if the player breaks the streak.
+This is the total number of consecutive days a player has logged in **without skipping # times**, where **#** is determined by `reset-joinstreak.missed-joins`. It is **always tracked**, even if the Join Streak system is deactivated or there are no rewards configured. The streak will only reset if the player breaks the streak.
 
 > **Note:** Absolute Join Streaks cannot be used in the Join Streak system, as they are always tracked regardless of system configuration.
 
@@ -40,7 +40,7 @@ This is the **looping streak counter** that resets after the last configured rew
 
 ## 🎁 Reward Configuration Overview
 
-Each reward is tied to a specific join count (or a range of counts). When a player reaches that number of joins in their current streak (relative or absolute), the reward becomes available.
+Each reward is tied to a specific join count (or a range of counts). When a player reaches that number of joins in their current relative streak, the reward becomes available.
 
 You can configure:
 - The **range of required joins** (e.g., `5-5` for the 5th join, or `5-10` for a reward spread across days 5 to 10).
@@ -66,7 +66,7 @@ Players with the `playtime.joinstreak.claim.automatic` permission will receive t
 
 Unclaimed rewards from previous streak cycles must be claimed before the same reward can be obtained again. For example, if a player receives a reward at a 2-day streak but never claims it, and their streak resets after reaching day 30, they will **not** receive the 2-day reward again in the next cycle until the first one is claimed.
 
-Additionally, the system is currently based on **looping streaks** — once a player completes all configured rewards (e.g., days 1–7), their relative streak resets to 1 and starts over. This enables smooth weekly or monthly reward cycles with no manual configuration needed.
+Since the system is currently based on **looping streaks** — once a player completes all configured rewards, their relative streak resets to 1 and starts over. This enables smooth weekly or monthly reward cycles with no manual configuration needed.
 
 ---
 
@@ -75,7 +75,7 @@ Additionally, the system is currently based on **looping streaks** — once a pl
 The system includes robust streak reset mechanisms:
 
 ### 🔃 Automatic Reset by Missed Joins  
-You can enable automatic resets if a player misses a set number of days:
+You can enable automatic resets if a player misses a set number of times:
 
 ```yaml
 reset-joinstreak:
@@ -83,13 +83,13 @@ reset-joinstreak:
   missed-joins: 1
 ```
 
-In this example, the streak resets after just one missed login day.
+In this example, the streak resets after just one missed login.
 
 ### 🕰 Scheduled Resets via Cron  
-Streak resets can also be **scheduled using a cron expression** via the `streak-reset-schedule` option. Examples:
-- `"0 0 0 * * ?"` → Every day at midnight  
-- `"0 0 0 ? * MON"` → Every Monday at midnight  
-- `"0 0 6 * * ?"` → Every day at 6 AM  
+Login validity can be **scheduled using a cron expression** via the `streak-reset-schedule` field. The cron does **not** directly reset streaks, but instead defines how long a time window is considered valid for a login. If players miss their valid login window more times than allowed in `reset-joinstreak.missed-joins`, their streak will be reset.
+- `"0 0 0 * * ?"` → Every day at midnight (time window of 1 day)
+- `"0 0 0 ? * MON"` → Every Monday at midnight (time window of 1 week)
+- `"0 0 6 * * ?"` → Every day at 6 AM  (time window of 1 day)
 
 #### ⏳ Timezone Options  
 You can choose which timezone the cron job follows using:

@@ -101,6 +101,19 @@ reset-schedule-timezone: server  # or "utc"
 - `server`: Uses the system's local timezone.  
 - `utc`: Uses Coordinated Universal Time (UTC), which can help maintain consistency across global servers.
 
+#### ⚙️ Handling Server Restarts with Cron
+It's important to understand how server restarts affect streaks when using scheduled resets with the Cron system:
+- If you stop and restart the server during an active login window defined by your cron, the plugin will not reset streaks immediately. It will wait for the next scheduled check time. This behavior is generally safe during automated reboots, which are usually quick (a few minutes).
+- However, in the case of unexpected crashes or scheduled longer downtimes, streaks might be incorrectly reset on startup. This happens because the plugin compares the new schedule against each player's last seen timestamp, possibly considering them as having missed a login.
+
+To protect join streaks during restarts, especially with longer downtimes, disable streak resets temporarily:
+
+```yaml
+reset-joinstreak:
+  enabled: false
+  missed-joins: 1
+```
+Then, re-enable it after the **new login window begins**. This ensures the plugin does not mistakenly treat the downtime as a missed login.
 ---
 
 ## 🧩 GUI & Message Customization

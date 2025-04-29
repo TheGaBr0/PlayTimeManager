@@ -38,37 +38,6 @@ This is the **looping streak counter** that resets after the last configured rew
 
 ---
 
-## 🎁 Reward Configuration Overview
-
-Each reward is tied to a specific join count (or a range of counts). When a player reaches that number of joins in their current relative streak, the reward becomes available.
-
-You can configure:
-- The **range of required joins** (e.g., `5-5` for the 5th join, or `5-10` for a reward spread across days 5 to 10).
-- **Messages** shown to the player.
-- **Sounds** to play when the reward is triggered.
-- **Permissions** to grant.
-- **Commands** to execute (e.g., giving items or announcing a milestone).
-- An **item icon** for GUI display (which will appear in `/claimrewards` GUI as well).
-- A short **description** and detailed **reward-description**.
-
-Rewards setup can be done via the `/playtimejoinstreak` GUI directly in-game.
-
----
-
-## 🗂️ Claiming & Managing Rewards
-
-Players can claim their earned rewards using the `/claimrewards` command, which opens a dedicated GUI that:
-- **Displays all claimable rewards**, both current and from previous streak cycles.
-- **Visually differentiates** between claimed, unclaimed, and pending rewards.
-- Allows **manual claiming**, unless auto-claim is enabled.
-
-Players with the `playtime.joinstreak.claim.automatic` permission will receive their rewards automatically.
-
-Unclaimed rewards from previous streak cycles must be claimed before the same reward can be obtained again. For example, if a player receives a reward at a 2-day streak but never claims it, and their streak resets after reaching day 30, they will **not** receive the 2-day reward again in the next cycle until the first one is claimed.
-
-Since the system is currently based on **looping streaks** — once a player completes all configured rewards, their relative streak resets to 1 and starts over. This enables smooth weekly or monthly reward cycles with no manual configuration needed.
-
----
 
 ## ⏰ Streak Reset Scheduling & Conditions
 
@@ -114,6 +83,38 @@ reset-joinstreak:
   missed-joins: 1
 ```
 Then, re-enable it after the **new login window begins**. This ensures the plugin does not mistakenly treat the downtime as a missed login.
+
+---
+
+## 🎁 Reward Configuration Overview
+
+Each reward is tied to a specific join count (or a range of counts). When a player reaches that number of joins in their current relative streak, the reward becomes available.
+
+You can configure:
+- The **range of required joins** (e.g., `5-5` for the 5th join, or `5-10` for a reward spread across days 5 to 10).
+- **Messages** shown to the player.
+- **Sounds** to play when the reward is triggered.
+- **Permissions** to grant.
+- **Commands** to execute (e.g., giving items or announcing a milestone).
+- An **item icon** for GUI display (which will appear in `/claimrewards` GUI as well).
+- A short **description** and detailed **reward-description**.
+
+Rewards setup can be done via the `/playtimejoinstreak` GUI directly in-game.
+
+---
+
+## 🗂️ Claiming & Managing Rewards
+
+Players can claim their earned rewards using the `/claimrewards` command, which opens a dedicated GUI that:
+- **Displays all claimable rewards**, both current and from previous streak cycles.
+- **Visually differentiates** between claimed, unclaimed, and pending rewards.
+- Allows **manual claiming**, unless auto-claim is enabled.
+
+Players with the `playtime.joinstreak.claim.automatic` permission will receive their rewards automatically.
+
+Unclaimed rewards from previous streak cycles must be claimed before the same reward can be obtained again. For example, if a player receives a reward at a 2-day streak but never claims it, and their streak resets after reaching day 30, they will **not** receive the 2-day reward again in the next cycle until the first one is claimed.
+
+Since the system is currently based on **looping streaks** — once a player completes all configured rewards, their relative streak resets to 1 and starts over. This enables smooth weekly or monthly reward cycles with no manual configuration needed.
 
 ---
 

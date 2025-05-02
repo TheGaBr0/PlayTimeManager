@@ -93,7 +93,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             inv.setItem(22, createGuiItem(
                     Material.BARRIER,
                     Component.text("§l§cNo goals have been set!"),
-                    Component.text("§7Use §e/playtimegoal set §7to add goals")
+                    Component.text("§7Click here to create a new goal")
             ));
         }
     }

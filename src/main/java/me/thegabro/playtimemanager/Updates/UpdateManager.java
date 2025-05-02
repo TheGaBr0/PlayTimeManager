@@ -7,6 +7,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 
 import java.util.Arrays;
+import java.util.logging.Level;
 
 public class UpdateManager {
     private static UpdateManager instance;
@@ -35,6 +36,10 @@ public class UpdateManager {
                     updateChecker.setDownloadLink("https://hangar.papermc.io/TheGabro/PlayTimeManager/versions/" + latestVersion);
                     updateChecker.setChangelogLink("https://hangar.papermc.io/TheGabro/PlayTimeManager/versions/" + latestVersion);
                 })
+                .onFail((commandSenders, exception) -> {
+                    plugin.getLogger().warning("hangar.papermc.io seems offline, update check has failed");
+                })
+                .setNotifyOpsOnJoin(true)
                 .checkNow();
     }
 

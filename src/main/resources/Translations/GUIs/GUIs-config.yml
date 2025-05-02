@@ -14,7 +14,7 @@
 
 rewards-gui:
   gui:
-    title: "&6Claim Your Rewards"
+    title: "Claim Your Rewards"
     border-item-name: "&f[&6P.T.M.&f]&7"
 
   pagination:

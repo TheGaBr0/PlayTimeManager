@@ -71,7 +71,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         if(isOwner)
             inv = Bukkit.createInventory(this, 54, Utils.parseColors(config.getConfig().getString("rewards-gui.gui.title")));
         else
-            inv = Bukkit.createInventory(this, 54, Utils.parseColors("&6"+subject.getNickname()+"'s rewards"));
+            inv = Bukkit.createInventory(this, 54, Utils.parseColors(subject.getNickname()+"'s rewards"));
 
         // Register listeners only once
         if (!isListenerRegistered) {

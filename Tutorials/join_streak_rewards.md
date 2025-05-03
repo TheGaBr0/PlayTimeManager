@@ -116,6 +116,8 @@ Unclaimed rewards from previous streak cycles must be claimed before the same re
 
 Since the system is currently based on **looping streaks** — once a player completes all configured rewards, their relative streak resets to 1 and starts over. This enables smooth weekly or monthly reward cycles with no manual configuration needed.
 
+When a new time window begins, players receive their reward and the corresponding join messages upon their first login during that period. If **they're already online** when the window starts, the reward and messages are triggered automatically as if they had just logged in.
+
 ---
 
 ## 🧩 GUI & Message Customization

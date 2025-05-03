@@ -40,6 +40,11 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if(args.length == 1){
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Too few arguments!"));
+            return false;
+        }
+
         if (args.length >= 2 && args[0].equalsIgnoreCase("seeplayer")) {
             if (!(sender instanceof Player player)) {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Only players can use this command!"));

@@ -44,6 +44,7 @@ public class UpdateManager {
     }
 
     public void performVersionUpdate(String currentVersion, String targetVersion) {
+        plugin.setGlobalLogLevel(Level.OFF);
         switch (currentVersion) {
             case "3.1":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.1 config version detected, updating it to the latest one...");
@@ -71,6 +72,7 @@ public class UpdateManager {
                 plugin.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown config version detected! Something may break!");
                 return;
         }
+        plugin.setGlobalLogLevel(Level.INFO);
 
         Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r" + targetVersion);
     }

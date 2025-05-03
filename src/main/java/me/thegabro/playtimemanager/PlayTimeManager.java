@@ -35,6 +35,11 @@ import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
 
 import java.io.File;
 import java.util.Objects;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class PlayTimeManager extends JavaPlugin{
 
@@ -186,6 +191,13 @@ public class PlayTimeManager extends JavaPlugin{
 
     public CommandsConfiguration getCommandsConfig() {
         return commandsConfig;
+    }
+
+    public void setGlobalLogLevel(Level level) {
+        LogManager.getLogManager().getLogger("").setLevel(level);
+        for (Handler h : Logger.getLogger("").getHandlers()) {
+            h.setLevel(level);
+        }
     }
 
     private boolean checkPermissionsPlugin() {

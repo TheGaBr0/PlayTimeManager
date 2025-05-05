@@ -30,7 +30,7 @@ Additionally, **player data is not strictly tied to the server’s statistics**,
 <div align="center">
   <img src="https://i.imgur.com/Pr4a2KF.png" alt="Customization Preview">
   <br>
-  <img src="https://i.imgur.com/Zhlb2GI.png" alt="Customization Example">
+  <br>
 </div> 
 
 PlayTimeManager aims to provide a highly customizable experience, allowing you to tailor its features to match your server’s unique style. It supports **hex colors alongside legacy formatting and styles**, ensuring vibrant and personalized text displays. 
@@ -50,22 +50,31 @@ PlayTimeManager is designed to run efficiently with minimal impact on server res
 
 
 These optimizations help PlayTimeManager run smoothly and responsively while keeping resource usage low.
-![alt text](https://i.imgur.com/Y8PlFeG.png "Divider 4")
+![alt text](https://i.imgur.com/mQDCfGD.png "Divider 4")
 
 <div align="center">
-  <img src="https://i.imgur.com/NJYGLGF.png" alt="Goals GUI Preview">
+  <img src="https://i.imgur.com/1LXoLZe.png" alt="Goals GUI Preview" width="35%">
+  <img src="https://i.imgur.com/DRqOMyA.png" alt="Join streaks rewards GUI Preview" width="50%">
+  <br>
+  <br>
 </div> 
 
 
-PlayTimeManager's comprehensive **goal system** enables server administrators to create meaningful engagement through customizable playtime milestones. When players achieve designated playtime thresholds, the system can automatically:
-- Grant specialized permissions
-- Assign new ranks through LuckPerms integration
-- Execute configured server commands
-- Display personalized achievement messages
-- Play celebration sounds
+PlayTimeManager offers two powerful and flexible systems for rewarding player activity: **Goals** and **Join Streak Rewards**.
 
+- **Goals**: Track total playtime and reward players as they reach customizable time milestones. 
 
-This robust reward structure allows administrators to recognize player dedication and enhance their server experience through automated progression mechanics, everything through a simple and user-friendly GUI directly in-game.
+- **Join Streak Rewards**: Motivate regular engagement by rewarding players for consecutive joins within a customizable time window. Thanks to the plugin’s high flexibility, streaks aren't limited to daily logins—they can be configured to any time interval that fits your server’s style. The longer the streak, the greater the recognition.
+
+Both systems share the same versatile reward types:
+
+- Grant permissions
+- Assign ranks (LuckPerms support)
+- Run custom server commands
+- Send tailored achievement messages
+- Trigger celebratory sounds
+
+All of this is easily managed through intuitive in-game GUIs, allowing administrators to build engaging progression systems without complex setup.
 
 
 ## Commands and permissions
@@ -75,4 +84,6 @@ For a complete list of commands, permissions, and placeholders, please visit the
 ## To do
 - Anti-afk system?
 - Add possibility to give custom items upon goal completion
-- Daily login rewards/join streak rewards
+- Convert stats command into a customizable GUI
+- Add customizable requirements to goals
+- Add customizable format for playtime display 

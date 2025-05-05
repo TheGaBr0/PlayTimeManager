@@ -25,7 +25,6 @@ public class JoinStreaksManager {
     private RewardExecutor rewardExecutor;
     private RewardMessageService messageService;
 
-    // Singleton pattern
     private JoinStreaksManager() {}
 
     private static final class InstanceHolder {
@@ -40,7 +39,6 @@ public class JoinStreaksManager {
         this.plugin = playTimeManager;
         db = plugin.getDatabase();
 
-        // Initialize components
         this.rewardRegistry = new RewardRegistry(plugin);
         this.cycleScheduler = new CycleScheduler(plugin);
         this.streakTracker = new StreakTracker(plugin, dbUsersManager);
@@ -54,11 +52,9 @@ public class JoinStreaksManager {
                 messageService
         );
 
-        // Load rewards
         rewardRegistry.createRewardsDirectory();
         rewardRegistry.loadRewards();
 
-        // Initialize cycle scheduler
         cycleScheduler.initialize();
 
         if (plugin.getConfiguration().getRewardsCheckScheduleActivation()) {

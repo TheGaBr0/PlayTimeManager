@@ -124,7 +124,6 @@ public class Version332to34Updater {
         String prefix = config.getString("prefix");
         String playtimeSelfMessage = config.getString("playtime-self-message");
         String playtimeOthersMessage = config.getString("playtime-others-message");
-        String leaderboardFormat = config.getString("playtimetop.leaderboard-format");
         long goalsCheckRate = config.getLong("goal-check-rate");
         boolean goalsCheckVerbose = config.getBoolean("goal-check-verbose");
         boolean placeHoldersErrors = config.getBoolean("placeholders.enable-errors");

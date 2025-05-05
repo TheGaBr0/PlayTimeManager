@@ -23,13 +23,11 @@ public class ChatEventManager implements Listener {
     private final Map<UUID, ChatInputSession> activeSessions = new HashMap<>();
     private final PlayTimeManager plugin;
 
-    // Private constructor to prevent instantiation
     public ChatEventManager() {
         this.plugin = PlayTimeManager.getInstance();
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
-    // Singleton accessor method
     public static synchronized ChatEventManager getInstance() {
         if (instance == null) {
             instance = new ChatEventManager();

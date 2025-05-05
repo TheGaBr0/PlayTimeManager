@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -20,14 +21,15 @@ public class PlaytimeReload implements CommandExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
-
+    private final JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
         if (sender.hasPermission("playtime.reload")) {
-            // Reload configuration
+            // Reload configurations
             plugin.getConfiguration().reload();
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The configuration file has been reloaded"));
+            plugin.getGUIsConfig().reload();
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The configuration files have been reloaded"));
 
             // Reload goals
             goalsManager.clearGoals();
@@ -38,7 +40,7 @@ public class PlaytimeReload implements CommandExecutor {
                 OnlineUser user = onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName());
                 if (user != null) {
                     // Update DB with the latest playtime before removing
-                    user.updateDB();
+                    user.updatePlayTime();
                     // Now remove the user
                     onlineUsersManager.removeOnlineUser(user);
                 }
@@ -51,6 +53,17 @@ public class PlaytimeReload implements CommandExecutor {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Goal check schedule has been restarted"));
 
             dbUsersManager.updateTopPlayersFromDB();
+
+            joinStreaksManager.getRewardRegistry().clearRewards();
+            joinStreaksManager.getRewardRegistry().loadRewards();
+
+            joinStreaksManager.getCycleScheduler().initialize();
+
+            // Only start the task if it's enabled in config
+            if (plugin.getConfiguration().getRewardsCheckScheduleActivation()) {
+                joinStreaksManager.getCycleScheduler().startIntervalTask();
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Join streak check schedule has been restarted"));
+            }
 
             return true;
         } else {

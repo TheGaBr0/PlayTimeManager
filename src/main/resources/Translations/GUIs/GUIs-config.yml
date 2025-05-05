@@ -1,0 +1,86 @@
+# PlayTimeManager - GUIs Configuration
+# This file contains all customizable text elements for GUIs (will be added more in the future)
+# Hex colors are supported with the following format: &#rrggbb
+# where rr (red), gg (green) and bb (blue) are
+# hexadecimal values between 00 and ff (same as decimal 0-255)
+# Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
+#
+# Placeholders enclosed in {} are FIELD-DEPENDENT. They can only be used within the specific field
+# where they're defined. All available placeholders are shown in this configuration file.
+
+#=================================================================
+#                   JOIN STREAKS REWARDS GUI
+#=================================================================
+
+rewards-gui:
+  gui:
+    title: "Claim Your Rewards"
+    border-item-name: "&f[&6P.T.M.&f]&7"
+
+  pagination:
+    page-indicator: "&e&lPage {current_page} of {total_pages}"
+    next-page:
+      name: "&a&lNext Page →"
+      lore: "&7Click to view the next page"
+    prev-page:
+      name: "&a&l← Previous Page"
+      lore: "&7Click to view the previous page"
+    no-more-pages: "&c&lNo More Pages"
+    first-page: "&c&lFirst Page"
+
+  filters:
+    claimed:
+      enabled-name: "&9&l[ CLAIMED REWARDS ]"
+      disabled-name: "&7Claimed Rewards"
+      lore-enabled: "&7Currently viewing: &9&lClaimed rewards"
+      lore-disabled: "&7Click to view all claimed rewards"
+    available:
+      enabled-name: "&6&l[ AVAILABLE REWARDS ]"
+      disabled-name: "&7Available Rewards"
+      lore-enabled: "&7Currently viewing: &6&lAvailable rewards"
+      lore-disabled: "&7Click to view rewards ready to claim"
+    locked:
+      enabled-name: "&4&l[ LOCKED REWARDS ]"
+      disabled-name: "&7Locked Rewards"
+      lore-enabled: "&7Currently viewing: &4&lLocked rewards"
+      lore-disabled: "&7Click to view upcoming rewards"
+
+  claim-all:
+    name: "&e&lClaim all"
+
+  no-rewards:
+    name: "&l&cNo rewards to display!"
+    lore: "&7Try changing your filters"
+
+  reward-items:
+    available:
+      prefix: "&a&l[CLAIMABLE] "
+      lore:
+        - "&aThis reward is available to claim!"
+        - "&7Click to receive your reward"
+    claimed:
+      prefix: "&8&l[CLAIMED] "
+      lore:
+        - "&8You've already claimed this reward"
+    locked:
+      prefix: "&c&l[LOCKED] "
+      lore:
+        - "&cYou haven't reached this join streak yet"
+
+    info-lore:
+      required-joins: "&7Required Joins: &e{required_joins}"
+      join-streak: "&7Your current join streak: {color}{current_streak}"
+      join-streak-color:
+        sufficient: "&a"
+        insufficient: "&c"
+      description-separator: ""
+      description: "&7{description}"
+      reward-description-separator: ""
+      reward-description: "&7{reward_description}"
+
+  messages:
+    no-permission: "&cYou don't have permission to claim rewards!"
+    not-available: "&cThis reward is not available to claim!"
+    reward-not-found: "&cCouldn't find the reward details!"
+    error-processing: "&cAn error occurred while processing your reward."
+    claimed-rewards: "&aClaimed {count} rewards!"

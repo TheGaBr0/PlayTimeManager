@@ -10,8 +10,6 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -161,7 +159,8 @@ public class OnlineUsersManager {
             try {
                 onlineUsersByName.values().forEach(user -> {
                     try {
-                        user.updateDB();
+                        user.updatePlayTime();
+                        user.updateLastSeen();
                     } catch (Exception e) {
                         plugin.getLogger().severe(String.format("Failed to update playtime for user %s: %s",
                                 user.getNickname(), e.getMessage()));
@@ -256,8 +255,7 @@ public class OnlineUsersManager {
     }
 
     private void logVerboseInfo() {
-        plugin.getLogger().info(String.format("Goal check schedule started, refresh rate is %s",
-                Utils.ticksToFormattedPlaytime(plugin.getConfiguration().getGoalsCheckRate())));
+        plugin.getLogger().info(String.format("Goal check schedule started, refresh rate is %ss", plugin.getConfiguration().getGoalsCheckRate()));
     }
 
     public void stopSchedules() {

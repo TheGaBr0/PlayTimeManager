@@ -1,5 +1,7 @@
-package me.thegabro.playtimemanager.GUIs;
+package me.thegabro.playtimemanager.GUIs.Goals;
 
+import me.thegabro.playtimemanager.Events.ChatEventManager;
+import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -7,6 +9,11 @@ import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -27,6 +34,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     private Object previousGui;
     private PlayTimeManager plugin;
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
+    private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
     private static final class Slots {
         static final int TIME_SETTING = 10;
         static final int GOAL_PERMISSIONS = 12;
@@ -113,9 +121,9 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.GOAL_MESSAGE, createGuiItem(
                 Material.OAK_SIGN,
                 Component.text("§e§lGoal Message"),
-                Component.text("§cTo update this setting, please edit the"),
-                Component.text("§c'" + goal.getName() + ".yml' configuration file."),
-                Component.text("§cModification via GUI is not currently supported.")
+                Component.text(""),
+                Component.text("§7Left-click to edit the message"),
+                Component.text("§7Right-click to display the message")
         ));
 
         // Sound button
@@ -123,11 +131,9 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Material.NOTE_BLOCK,
                 Component.text("§e§lGoal Sound"),
                 Component.text("§7Current: §f" + goal.getGoalSound()),
-                Component.text("§7Right click to play the sound."),
                 Component.text(""),
-                Component.text("§cTo update this setting, please edit the"),
-                Component.text("§c'" + goal.getName() + ".yml' configuration file."),
-                Component.text("§cModification via GUI is not currently supported.")
+                Component.text("§7Left-click to edit the sound"),
+                Component.text("§7Right click to play the sound.")
         ));
 
         // Activation status button
@@ -168,15 +174,22 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         ));
     }
 
-    protected ItemStack createGuiItem(Material material, @Nullable TextComponent name, @Nullable TextComponent... lore) {
+    public ItemStack createGuiItem(Material material, @Nullable Component name, @Nullable Component... lore) {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(name);
 
-        if (lore != null) {
-            meta.lore(Arrays.asList(lore));
+        if (name != null) {
+            meta.displayName(name.decoration(TextDecoration.ITALIC, false));
         }
 
+        ArrayList<Component> metalore = new ArrayList<>();
+        if (lore != null) {
+            // Disable italic for each lore line
+            for (Component loreLine : lore) {
+                metalore.add(loreLine.decoration(TextDecoration.ITALIC, false));
+            }
+        }
+        meta.lore(metalore);
         item.setItemMeta(meta);
         return item;
     }
@@ -199,23 +212,29 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
             case Slots.GOAL_PERMISSIONS:
                 player.closeInventory();
-                new PermissionsGui(goal, this).openInventory(player);
+                new GoalPermissionsGui(goal, this).openInventory(player);
                 break;
 
             case Slots.GOAL_MESSAGE:
-                // TODO: Implement message editing
+                if (clickType == ClickType.LEFT) {
+                    openMessageEditor(player);
+                } else if (clickType == ClickType.RIGHT) {
+                    // Test the message
+                    player.sendMessage(Utils.parseColors(goal.getGoalMessage()));
+                }
                 break;
 
             case Slots.GOAL_SOUND:
-                if(clickType == ClickType.RIGHT){
+                if (clickType == ClickType.LEFT) {
+                    openSoundEditor(player);
+                } else if (clickType == ClickType.RIGHT) {
                     playGoalSound(player);
                 }
-                // TODO: Implement sound editing
                 break;
 
             case Slots.GOAL_COMMANDS:
                 player.closeInventory();
-                new CommandsGui(goal, this).openInventory(player);
+                new GoalCommandsGui(goal, this).openInventory(player);
                 break;
 
             case Slots.GOAL_ACTIVATION_STATUS:
@@ -235,6 +254,167 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 handleBackButton(player);
                 break;
         }
+    }
+
+    private void openMessageEditor(Player player) {
+        player.closeInventory();
+
+        // Header with goal name
+        Component header = Component.text("✎ Message Editor: ")
+                .color(NamedTextColor.GOLD)
+                .decoration(TextDecoration.BOLD, true)
+                .append(Component.text(goal.getName())
+                        .color(NamedTextColor.YELLOW));
+
+        // Divider for visual separation
+        Component divider = Component.text("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
+                .color(NamedTextColor.DARK_GRAY);
+
+        // Instructions with formatting
+        Component instructions = Component.text("Enter the new message for this goal.")
+                .color(NamedTextColor.WHITE)
+                .append(Component.newline())
+                .append(Component.text("• Supports legacy and hex color codes (e.g. &6 or &#rrggbb)")
+                        .color(NamedTextColor.GRAY))
+                .append(Component.newline())
+                .append(Component.text("• Type ")
+                        .color(NamedTextColor.GRAY)
+                        .append(Component.text("cancel")
+                                .color(NamedTextColor.RED)
+                                .decoration(TextDecoration.ITALIC, true))
+                        .append(Component.text(" to exit")
+                                .color(NamedTextColor.GRAY)));
+
+        // Combine all components with proper spacing
+        Component fullMessage = Component.empty()
+                .append(header)
+                .append(Component.newline())
+                .append(divider)
+                .append(Component.newline())
+                .append(Component.newline())
+                .append(instructions)
+                .append(Component.newline())
+                .append(divider);
+
+        player.sendMessage(fullMessage);
+
+        chatEventManager.startChatInput(player, (p, message) -> {
+            if (!message.equalsIgnoreCase("cancel")) {
+                goal.setGoalMessage(message);
+                player.sendMessage(Component.text("Goal message updated successfully!").color(NamedTextColor.GREEN));
+            } else {
+                player.sendMessage(Component.text("Goal message edit cancelled").color(NamedTextColor.RED));
+            }
+
+            // Reopen the GUI
+            reopenMainGui(player);
+        });
+
+        Component preText = Component.text("You can ")
+                .color(TextColor.color(170,170,170));  // Gray color
+
+        Component clickableText = Component.text("[click here]")
+                .color(TextColor.color(255,170,0))  // Gold color
+                .decoration(TextDecoration.BOLD, true)
+                .clickEvent(ClickEvent.suggestCommand(goal.getGoalMessage()))
+                .hoverEvent(HoverEvent.showText(Component.text("Click to autocomplete the current message")));
+
+        fullMessage = Component.empty()
+                .append(Component.text("\n"))
+                .append(preText)
+                .append(clickableText)
+                .append(Component.text(" to autocomplete the current message")
+                        .color(TextColor.color(170,170,170)));  // Gray color
+
+        player.sendMessage(fullMessage);
+    }
+
+
+    private void openSoundEditor(Player player) {
+        player.closeInventory();
+
+        String actualUrl = "https://jd.papermc.io/paper/1.21.4/org/bukkit/Sound.html";
+
+        // Header with goal name
+        Component header = Component.text("✎ Sound Editor: ")
+                .color(NamedTextColor.GOLD)
+                .decoration(TextDecoration.BOLD, true)
+                .append(Component.text(goal.getName())
+                        .color(NamedTextColor.YELLOW));
+
+        // Divider for visual separation
+        Component divider = Component.text("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
+                .color(NamedTextColor.DARK_GRAY);
+
+        // Instructions with better spacing and formatting
+        Component instructions = Component.text("Enter the new sound for this goal.")
+                .color(NamedTextColor.WHITE)
+                .append(Component.newline())
+                .append(Component.text("• Input is not case-sensitive")
+                        .color(NamedTextColor.GRAY))
+                .append(Component.newline())
+                .append(Component.text("• Type ")
+                        .color(NamedTextColor.GRAY)
+                        .append(Component.text("cancel")
+                                .color(NamedTextColor.RED)
+                                .decoration(TextDecoration.ITALIC, true))
+                        .append(Component.text(" to exit")
+                                .color(NamedTextColor.GRAY)));
+
+        // Sound list link with icon
+        Component linkText = Component.text("» SOUND LIST ")
+                .color(NamedTextColor.YELLOW)
+                .decoration(TextDecoration.BOLD, true)
+                .append(Component.text("«")
+                        .color(NamedTextColor.YELLOW)
+                        .decoration(TextDecoration.BOLD, true))
+                .clickEvent(ClickEvent.openUrl(actualUrl))
+                .hoverEvent(HoverEvent.showText(Component.text("Click to open sounds documentation for 1.21.4")
+                        .color(NamedTextColor.WHITE)));
+
+        // Link description
+        Component linkInfo = Component.text("Documentation for server version 1.21.4")
+                .color(NamedTextColor.GRAY)
+                .decoration(TextDecoration.ITALIC, true);
+
+        // Combine all components with proper spacing
+        Component fullMessage = Component.empty()
+                .append(header)
+                .append(Component.newline())
+                .append(divider)
+                .append(Component.newline())
+                .append(Component.newline())
+                .append(instructions)
+                .append(Component.newline())
+                .append(Component.newline())
+                .append(linkText)
+                .append(Component.newline())
+                .append(linkInfo)
+                .append(Component.newline())
+                .append(divider);
+
+        player.sendMessage(fullMessage);
+
+        chatEventManager.startChatInput(player, (p, input) -> {
+            if (!input.equalsIgnoreCase("cancel")) {
+                Sound sound = null;
+                try {
+                    sound = (Sound) Sound.class.getField(input.toUpperCase()).get(null);
+                } catch (NoSuchFieldException | IllegalAccessException ignored) { }
+
+                if (sound != null) {
+                    goal.setGoalSound(input.toUpperCase());
+                    player.sendMessage(Component.text("Goal sound updated successfully!").color(NamedTextColor.GREEN));
+                } else {
+                    player.sendMessage(Component.text(input.toUpperCase() + " is not a valid sound").color(NamedTextColor.YELLOW));
+                }
+            } else {
+                player.sendMessage(Component.text("Goal sound edit cancelled").color(NamedTextColor.RED));
+            }
+
+            // Reopen the GUI
+            reopenMainGui(player);
+        });
     }
 
     private void playGoalSound(Player player) {

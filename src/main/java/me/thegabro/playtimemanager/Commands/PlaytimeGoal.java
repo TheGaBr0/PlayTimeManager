@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
-import me.thegabro.playtimemanager.GUIs.AllGoalsGui;
+import me.thegabro.playtimemanager.GUIs.Goals.AllGoalsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;

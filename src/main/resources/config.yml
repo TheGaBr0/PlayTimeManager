@@ -17,16 +17,15 @@
 #If you are looking for goals settings, please head to the "Goals" folder
 #To make such folder appear you need to create at least one goal -> /playtimegoal set <goalname> time:<time>
 
+#If you are looking for rewards settings, please head to the "Rewards" folder
+
 # Hex colors are supported with the following format: &#rrggbb
 # where rr (red), gg (green) and bb (blue) are
 # hexadecimal values between 00 and ff (same as decimal 0-255)
-# Standard minecraft colors are still accepted both with classical & or § format. Please avoid mixing & and §, take only one format.
+# Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
 
 #Leave this untouched
-config-version: 3.4
-
-#Leave this untouched
-goals-config-version: 1.0
+config-version: 3.5
 
 #Choose your permissions management plugin
 #Available options: "luckperms"
@@ -52,15 +51,6 @@ playtime-self-message: "[&6PlayTime&eManager&f]&7 Your playtime is &6%PLAYTIME%"
 #Available placeholders: %PLAYTIME%, %PLAYER_NAME%, %PREFIX%
 playtime-others-message: "[&6PlayTime&eManager&f]&7 The playtime of &e%PLAYER_NAME%&7 is &6%PLAYTIME%"
 
-playtimetop:
-  #Format for each line in the leaderboard display
-  #Available placeholders:
-  # %POSITION% - Player's position in the leaderboard (1, 2, 3, etc.)
-  # %PREFIX% - Player's prefix from LuckPerms
-  # %PLAYER_NAME% - Player's username
-  # %PLAYTIME% - Player's total playtime formatted
-  leaderboard-format: "&7&l#%POSITION%&r &e%PLAYER_NAME% &7- &d%PLAYTIME%"
-
 #=================================================================
 #                              GOALS
 #=================================================================
@@ -75,14 +65,70 @@ goal-check-rate: 900
 goal-check-verbose: true
 
 #=================================================================
+#                           JOIN STREAK
+#=================================================================
+
+#Define when the interval resets (in cron format)
+#Format: <seconds> <minute> <hour> <day-of-month> <month> <day-of-week>
+#I know it may seem a little difficult to understand, but it's very powerful and highly customizable.
+#I suggest you to use this website if you need help: https://www.freeformatter.com/cron-expression-generator-quartz.html
+#Also ChatGPT is very useful in these cases :)
+#Examples:
+# "0 0 0 * * ?" - Daily at midnight (00:00) -> Use this if you want to implement rewards based on daily logins.
+# "0 0 6 * * ?" - Daily at 6 AM
+# "0 0 12 * * ?" - Daily at noon (12 PM)
+# "0 0 0 ? * MON" - Weekly on Monday at midnight
+# "0 0 0 1 * ?" - Monthly on the 1st at midnight
+# "0/30 * * ? * *" - Every 30 seconds
+streak-reset-schedule: "0 0 0 * * ?"
+
+#Whether to use server timezone or UTC for cron scheduling
+#Values: "server" or "utc"
+reset-schedule-timezone: "server"
+
+#If set to false the plugin will stop granting rewards, but will still continue to track players' join streaks
+#Useful for maintenance of the rewards
+rewards-check-schedule-activation: true
+
+#Enable or disable debug logging in the console
+#I suggest you to keep this true if you are experimenting with cron expressions defined above
+#Default: true
+streak-check-verbose: true
+
+# Enables or disables the reset of the join streak.
+reset-joinstreak:
+  enabled: true
+  # Number of missed joins allowed before the streak is reset.
+  missed-joins: 1
+
+#Message shown to players who earn a login streak reward but need to claim it manually
+#This appears when a player without the auto-claim permission (playtime.joinstreak.claim.automatic) qualifies for a reward
+# %REQUIRED_JOINS% - Required joins to achieve the reward
+# %PLAYER_NAME% - Player's username
+join-warn-claim-message: "[&6PlayTime&eManager&f]&7 Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times 
+                            and unlocked a new reward! Use &e/claimrewards&7 to collect it!"
+
+# The opposite of 'join-warn-claim-message' field
+join-warn-autoclaim-message: "[&6PlayTime&eManager&f]&7 Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times 
+                            and unlocked a new reward! We have automatically claimed it for you!"
+
+# Message shown to players who qualify for a reward but won't receive it because
+# they didn't claim the previous reward cycle
+# %REQUIRED_JOINS% - Required joins to achieve the reward
+# %PLAYER_NAME% - Player's username
+join-unclaimed-previous-message: "[&6PlayTime&eManager&f]&7 &e%PLAYER_NAME%&7, you've joined &6%REQUIRED_JOINS%&7 consecutive times, 
+                                  but you didn't claim your previous reward! Please use &e/claimrewards&7 to collect your pending 
+                                  rewards before new ones can be granted."
+
+#=================================================================
 #                           PLACEHOLDERS
 #=================================================================
 
 placeholders:
-  # If enabled, errors in placeholders will be displayed
-  # If disabled, the text in 'default-message' will be shown instead of error messages
+  #If enabled, errors in placeholders will be displayed
+  #If disabled, the text in 'default-message' will be shown instead of error messages
   enable-errors: false
-  # The default message to display when 'enable-errors' is set to false
+  #The default message to display when 'enable-errors' is set to false
   default-message: "No data"
 
 

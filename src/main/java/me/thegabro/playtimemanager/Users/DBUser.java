@@ -8,6 +8,9 @@ import org.bukkit.entity.Player;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class DBUser {
     protected String uuid;
@@ -21,51 +24,74 @@ public class DBUser {
     protected LocalDateTime lastSeen;
     protected LocalDateTime firstJoin;
     protected final GoalsManager goalsManager = GoalsManager.getInstance();
+    protected int relativeJoinStreak;
+    protected int absoluteJoinStreak;
+    protected LinkedHashSet<String> receivedRewards = new LinkedHashSet<>();
+    protected LinkedHashSet<String> rewardsToBeClaimed = new LinkedHashSet<>();
 
     // Private constructor
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime,
-                   ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin) {
+                   ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int relativeJoinStreak,
+                   int absoluteJoinStreak, LinkedHashSet<String> receivedRewards, LinkedHashSet<String> rewardsToBeClaimed) {
         this.uuid = uuid;
         this.nickname = nickname;
         this.DBplaytime = playtime;
         this.artificialPlaytime = artificialPlaytime;
         this.completedGoals = completedGoals;
-        fixGhostGoals();
         this.lastSeen = lastSeen;
         this.firstJoin = firstJoin;
+        this.relativeJoinStreak = relativeJoinStreak;
+        this.absoluteJoinStreak = absoluteJoinStreak;
+        this.receivedRewards = receivedRewards;
+        this.rewardsToBeClaimed = rewardsToBeClaimed;
     }
 
     public DBUser(Player p) {
-        fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
         this.uuid = p.getUniqueId().toString();
         this.nickname = p.getName();
+        this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
         userMapping();
-        this.DBplaytime = db.getPlaytime(uuid);
-        this.artificialPlaytime = db.getArtificialPlaytime(uuid);
-        this.completedGoals = db.getCompletedGoals(uuid);
-        fixGhostGoals();
-        this.lastSeen = db.getLastSeen(uuid);
-        this.firstJoin = db.getFirstJoin(uuid);
+        loadUserData();
+
         if(firstJoin == null){
             firstJoin = LocalDateTime.now();
             db.updateFirstJoin(uuid, firstJoin);
+            db.incrementAbsoluteJoinStreak(uuid);
+            db.incrementRelativeJoinStreak(uuid);
         }
     }
 
     // Factory method to create DBUser by UUID
     protected static DBUser fromUUID(String uuid) {
-        String nickname = db.getNickname(uuid);
-
         if(uuid == null)
             return null;
 
+        String nickname = db.getNickname(uuid);
         long playtime = db.getPlaytime(uuid);
         long artificialPlaytime = db.getArtificialPlaytime(uuid);
         ArrayList<String> completedGoals = db.getCompletedGoals(uuid);
         LocalDateTime lastSeen = db.getLastSeen(uuid);
         LocalDateTime firstJoin = db.getFirstJoin(uuid);
+        int relativeJoinStreak = db.getRelativeJoinStreak(uuid);
+        int absoluteJoinStreak = db.getAbsoluteJoinStreak(uuid);
+        LinkedHashSet<String> receivedRewards = db.getReceivedRewards(uuid);
+        LinkedHashSet<String> rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
 
-        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals, lastSeen, firstJoin);
+        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals, lastSeen, firstJoin, relativeJoinStreak,
+                absoluteJoinStreak, receivedRewards, rewardsToBeClaimed);
+    }
+
+    // New method to load user data from database
+    private void loadUserData() {
+        this.DBplaytime = db.getPlaytime(uuid);
+        this.artificialPlaytime = db.getArtificialPlaytime(uuid);
+        this.completedGoals = db.getCompletedGoals(uuid);
+        this.lastSeen = db.getLastSeen(uuid);
+        this.firstJoin = db.getFirstJoin(uuid);
+        this.relativeJoinStreak = db.getRelativeJoinStreak(uuid);
+        this.absoluteJoinStreak = db.getRelativeJoinStreak(uuid);
+        this.receivedRewards = db.getReceivedRewards(uuid);
+        this.rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
     }
 
     public void reset() {
@@ -74,16 +100,24 @@ public class DBUser {
         this.fromServerOnJoinPlayTime = 0;
         this.lastSeen = null;
         this.firstJoin = null;
+        this.relativeJoinStreak = 0;
+        this.absoluteJoinStreak = 0;
 
         // Reset completed goals
         this.completedGoals.clear();
+        this.receivedRewards.clear();
+        this.rewardsToBeClaimed.clear();
 
-        // Update all values in database
+        // Update all values in database - optimize with a single transaction if possible
         db.updatePlaytime(uuid, 0);
         db.updateArtificialPlaytime(uuid, 0);
         db.updateCompletedGoals(uuid, completedGoals);
-        db.updateLastSeen(uuid, this.lastSeen);
-        db.updateFirstJoin(uuid, this.firstJoin);
+        db.updateLastSeen(uuid, null);
+        db.updateFirstJoin(uuid, null);
+        db.resetJoinStreaks(uuid);
+        db.resetJoinStreaks(uuid);
+        db.updateReceivedRewards(uuid, receivedRewards);
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
     }
 
     public LocalDateTime getFirstJoin(){ return firstJoin; }
@@ -129,21 +163,97 @@ public class DBUser {
         db.updateCompletedGoals(uuid, completedGoals);
     }
 
-    // Ensures that every goal in the database is loaded.
-    // If a goal is missing, it is removed from the player's completed goals in the database record.
-    private void fixGhostGoals() {
-        // Create a new ArrayList to store goals that need to be removed, this avoids ConcurrentModificationException
-        ArrayList<String> goalsToRemove = new ArrayList<>();
+    public int getAbsoluteJoinStreak(){
+        return absoluteJoinStreak;
+    }
 
-        for (String completedGoal : completedGoals) {
-            if (goalsManager.getGoal(completedGoal) == null) {
-                goalsToRemove.add(completedGoal);
+    public int getRelativeJoinStreak(){
+        return relativeJoinStreak;
+    }
+
+    public void incrementRelativeJoinStreak(){
+        this.relativeJoinStreak++;
+        db.incrementRelativeJoinStreak(uuid);
+    }
+
+    public void incrementAbsoluteJoinStreak(){
+        this.absoluteJoinStreak++;
+        db.incrementAbsoluteJoinStreak(uuid);
+    }
+
+    public void resetJoinStreaks(){
+        this.relativeJoinStreak = 0;
+        this.absoluteJoinStreak = 0;
+        db.resetJoinStreaks(uuid);
+    }
+
+    public void resetRelativeJoinStreak(){
+        this.relativeJoinStreak = 0;
+        db.resetRelativeJoinStreak(uuid);
+    }
+
+    public void migrateUnclaimedRewards(){
+        LinkedHashSet<String> newRewardsToBeClaimed = new LinkedHashSet<String>();
+        for(String reward : rewardsToBeClaimed){
+            if (reward != null) {
+                if(!reward.endsWith("R")){
+                    String modifiedReward = reward + ".R";
+                    newRewardsToBeClaimed.add(modifiedReward);
+                }else{
+                    //do not delete already stored unclaimed rewards of previous cycles
+                    newRewardsToBeClaimed.add(reward);
+                }
             }
         }
+        rewardsToBeClaimed = newRewardsToBeClaimed;
+        db.updateRewardsToBeClaimed(uuid, newRewardsToBeClaimed);
+    }
 
-        for (String goalToRemove : goalsToRemove) {
-            unmarkGoalAsCompleted(goalToRemove);
-        }
+    public void unclaimReward(String rewardId) {
+        rewardsToBeClaimed.remove(rewardId);
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    }
+
+    public void unreceiveReward(String rewardId) {
+        receivedRewards.remove(rewardId);
+        db.updateReceivedRewards(uuid, receivedRewards);
+    }
+
+    public void wipeRewardToBeClaimed(String rewardId) {
+        // Remove all rewards where the integer part matches rewardId
+        rewardsToBeClaimed.removeIf(reward -> {
+            String mainInstance = reward.split("\\.")[0];
+            return mainInstance.equals(rewardId);
+        });
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    }
+
+    public void wipeReceivedReward(String rewardId) {
+        // Remove all rewards where the integer part matches rewardId
+        receivedRewards.removeIf(reward -> {
+            String mainInstance = reward.split("\\.")[0];
+            return mainInstance.equals(rewardId);
+        });
+        db.updateReceivedRewards(uuid, receivedRewards);
+    }
+
+    public void addRewardToBeClaimed(String rewardKey) {
+        rewardsToBeClaimed.add(rewardKey);
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    }
+
+    public void addReceivedReward(String rewardKey) {
+        receivedRewards.add(rewardKey);
+        db.updateReceivedRewards(uuid, receivedRewards);
+    }
+
+    // Getter methods for reward sets
+    public Set<String> getReceivedRewards() {
+        return new HashSet<>(receivedRewards); // Return a copy to prevent modification
+    }
+
+    public Set<String> getRewardsToBeClaimed() {
+        return new HashSet<>(rewardsToBeClaimed); // Return a copy to prevent modification
     }
 
     private void userMapping() {

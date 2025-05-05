@@ -31,6 +31,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
         resetOptions.add("db");
         resetOptions.add("stats");
         resetOptions.add("all");
+        resetOptions.add("joinstreak");
     }
 
     @Override
@@ -126,7 +127,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
                             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
                             return false;
                         }
-                        new PlayTimeResetTime(sender, args);
+                        new PlayTimeReset(sender, args);
                         return true;
 
                     default:

@@ -4,9 +4,11 @@ import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class OnlineUser extends DBUser {
-    private final Player p;
+    protected final Player p;
 
     public OnlineUser(Player p) {
         super(p);
@@ -18,14 +20,17 @@ public class OnlineUser extends DBUser {
         return DBplaytime + (p.getStatistic(Statistic.PLAY_ONE_MINUTE) - fromServerOnJoinPlayTime);
     }
 
-    public void updateDB() {
+    public void updatePlayTime() {
         db.updatePlaytime(uuid, getCachedPlayTime());
     }
 
     public void updateLastSeen() {
         this.lastSeen = LocalDateTime.now();
         db.updateLastSeen(uuid, this.lastSeen);
+    }
 
+    public Player getPlayer(){
+        return p;
     }
 
     @Override
@@ -40,7 +45,6 @@ public class OnlineUser extends DBUser {
 
     public void refreshFromServerOnJoinPlayTime(){
         this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
-
     }
 
     @Override
@@ -50,9 +54,15 @@ public class OnlineUser extends DBUser {
         this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
         this.lastSeen = null;
         this.firstJoin = null;
+        this.relativeJoinStreak = 0;
+        this.absoluteJoinStreak = 0;
 
         // Reset completed goals
         this.completedGoals.clear();
+
+        // Reset rewards
+        this.receivedRewards.clear();
+        this.rewardsToBeClaimed.clear();
 
         // Update all values in database
         db.updatePlaytime(uuid, 0);
@@ -60,5 +70,8 @@ public class OnlineUser extends DBUser {
         db.updateCompletedGoals(uuid, completedGoals);
         db.updateLastSeen(uuid, this.lastSeen);
         db.updateFirstJoin(uuid, this.firstJoin);
+        db.resetJoinStreaks(uuid);
+        db.updateReceivedRewards(uuid, receivedRewards);
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
     }
 }

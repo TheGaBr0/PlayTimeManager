@@ -1,10 +1,13 @@
-package me.thegabro.playtimemanager.GUIs;
+package me.thegabro.playtimemanager.GUIs.Goals;
 
 import me.thegabro.playtimemanager.Events.ChatEventManager;
+import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
 import me.thegabro.playtimemanager.Goals.Goal;
+import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -22,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class CommandsGui implements InventoryHolder, Listener {
+public class GoalCommandsGui implements InventoryHolder, Listener {
     private static final int GUI_SIZE = 54;
     private static final int COMMANDS_PER_PAGE = 45;
 
@@ -30,7 +33,7 @@ public class CommandsGui implements InventoryHolder, Listener {
     private Goal goal;
     private GoalSettingsGui parentGui;
     private int currentPage = 0;
-    private ChatEventManager chatHandler;
+    private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
 
     private static final class Slots {
         static final int PREV_PAGE = 45;
@@ -40,13 +43,12 @@ public class CommandsGui implements InventoryHolder, Listener {
         static final int DELETE_ALL = 50;
     }
 
-    public CommandsGui(){}
+    public GoalCommandsGui(){}
 
-    public CommandsGui(Goal goal, GoalSettingsGui parentGui) {
+    public GoalCommandsGui(Goal goal, GoalSettingsGui parentGui) {
         this.goal = goal;
         this.parentGui = parentGui;
-        this.chatHandler = new ChatEventManager();
-        this.inventory = Bukkit.createInventory(this, GUI_SIZE, Component.text("§6Commands Editor"));
+        this.inventory = Bukkit.createInventory(this, GUI_SIZE, Utils.parseColors("&6Commands Editor"));
     }
 
     @Override
@@ -70,7 +72,7 @@ public class CommandsGui implements InventoryHolder, Listener {
     private ItemStack createBackgroundItem() {
         return parentGui.createGuiItem(
                 Material.BLACK_STAINED_GLASS_PANE,
-                Component.text("§f")
+                Utils.parseColors("&f")
         );
     }
 
@@ -86,9 +88,9 @@ public class CommandsGui implements InventoryHolder, Listener {
             String command = commands.get(startIndex + i);
             inventory.setItem(i, parentGui.createGuiItem(
                     Material.PAPER,
-                    Component.text("§e" + command),
-                    Component.text("§7Click to edit"),
-                    Component.text("§cRight-click to remove")
+                    Utils.parseColors("&e" + command),
+                    Utils.parseColors("&7Click to edit"),
+                    Utils.parseColors("&cRight-click to remove")
             ));
         }
 
@@ -99,42 +101,42 @@ public class CommandsGui implements InventoryHolder, Listener {
         if (currentPage > 0) {
             inventory.setItem(Slots.PREV_PAGE, parentGui.createGuiItem(
                     Material.ARROW,
-                    Component.text("§ePrevious Page")
+                    Utils.parseColors("&ePrevious Page")
             ));
         }
 
         if ((currentPage + 1) * COMMANDS_PER_PAGE < goal.getCommands().size()) {
             inventory.setItem(Slots.NEXT_PAGE, parentGui.createGuiItem(
                     Material.ARROW,
-                    Component.text("§eNext Page")
+                    Utils.parseColors("&eNext Page")
             ));
         }
 
         inventory.setItem(Slots.ADD_COMMAND, parentGui.createGuiItem(
                 Material.EMERALD,
-                Component.text("§a§lAdd Command"),
-                Component.text("§7Click to add a new command")
+                Utils.parseColors("&a&lAdd Command"),
+                Utils.parseColors("&7Click to add a new command")
         ));
 
         inventory.setItem(Slots.BACK, parentGui.createGuiItem(
                 Material.MAGENTA_GLAZED_TERRACOTTA,
-                Component.text("§6§lBack")
+                Utils.parseColors("&6&lBack")
         ));
 
         inventory.setItem(Slots.DELETE_ALL, parentGui.createGuiItem(
                 Material.BARRIER,
-                Component.text("§c§lDelete all"),
-                Component.text("§7Click to discard every command")
+                Utils.parseColors("&c&lDelete all"),
+                Utils.parseColors("&7Click to discard every command")
         ));
     }
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
-        if (e.getInventory().getHolder() instanceof CommandsGui) {
+        if (e.getInventory().getHolder() instanceof GoalCommandsGui) {
             if ((e.getRawSlot() < e.getInventory().getSize())) {
                 e.setCancelled(true);
-                CommandsGui gui = (CommandsGui) e.getInventory().getHolder();
-                gui.handleGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getAction());
+                GoalCommandsGui gui = (GoalCommandsGui) e.getInventory().getHolder();
+                gui.handleGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e);
             } else {
                 if (e.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
                     e.setCancelled(true);
@@ -143,7 +145,7 @@ public class CommandsGui implements InventoryHolder, Listener {
         }
     }
 
-    private void handleGUIClick(Player whoClicked, int slot, ItemStack clickedItem, InventoryAction action) {
+    private void handleGUIClick(Player whoClicked, int slot, ItemStack clickedItem, InventoryClickEvent event) {
         if (clickedItem == null || clickedItem.getType().equals(Material.AIR)
                 || clickedItem.getType().equals(Material.BLACK_STAINED_GLASS_PANE)) {
             return;
@@ -175,8 +177,8 @@ public class CommandsGui implements InventoryHolder, Listener {
             }
             default -> {
                 if (slot < COMMANDS_PER_PAGE && clickedItem.getType() == Material.PAPER) {
-                    String command = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName()).substring(2);
-                    if (action.equals(InventoryAction.PICKUP_HALF)) {
+                    String command = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName());
+                    if (event.isShiftClick() && event.isRightClick()) {
                         goal.removeCommand(command);
                         updateCommandsPage();
                     } else {
@@ -189,47 +191,49 @@ public class CommandsGui implements InventoryHolder, Listener {
     }
 
     private void startCommandAdd(Player player) {
-        chatHandler.startChatInput(
-                player,
-                """
+        // Create messages using Utils.parseColors for the header and instructions
+        player.sendMessage(Utils.parseColors("&6&l✎ Commands Editor: &e" + goal.getName()));
+        player.sendMessage(Utils.parseColors("&r&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
+        player.sendMessage(Utils.parseColors("&fEnter the new command for this goal."));
+        player.sendMessage(Utils.parseColors("&7• Commands must be valid and use '/' as a prefix."));
+        player.sendMessage(Utils.parseColors("&7• Available placeholders: PLAYER_NAME"));
+        player.sendMessage(Utils.parseColors("&7• Type &c&icancel&r&7 to exit"));
+        player.sendMessage(Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
 
-                        §7Enter a command with '/' or type §ccancel§7 to exit.
-                        You can use the §ePLAYER_NAME §7placeholder to refer to the player.""",
+        chatEventManager.startCommandInput(
+                player,
                 (p, input) -> {
                     if (input.equalsIgnoreCase("cancel")) {
-                        p.sendMessage(Component.text("§7Command add cancelled"));
+                        p.sendMessage(Utils.parseColors("&7Command add cancelled"));
                         openInventory(p);
                         return;
                     }
                     goal.addCommand(input);
-                    p.sendMessage(Component.text("§7Command §e" + input + " §7added. It will be executed when a player reaches the goal §e" + goal.getName()));
+                    p.sendMessage(Utils.parseColors("&7Command &e" + input + " &7added. It will be executed when a player reaches the goal &e" + goal.getName()));
                     openInventory(p);
                 }
         );
     }
 
     private void startCommandEdit(Player player, String oldCommand) {
-        chatHandler.startChatInput(
+        chatEventManager.startCommandInput(
                 player,
-                """
-
-                        §7Please type the new command in chat or type §ccancel§7 to exit.
-                        You can also type §e/cancel §7to exit the process anytime.""",
                 (p, input) -> {
                     if (input.equalsIgnoreCase("cancel")) {
-                        p.sendMessage(Component.text("§cCommand edit cancelled"));
+                        p.sendMessage(Utils.parseColors("&cCommand edit cancelled"));
                         openInventory(p);
                         return;
                     }
 
                     goal.removeCommand(oldCommand);
                     goal.addCommand(input);
-                    p.sendMessage(Component.text("§aCommand edited successfully!"));
+                    p.sendMessage(Utils.parseColors("&aCommand edited successfully!"));
                     openInventory(p);
                 }
         );
 
-
+        // For the clickable message part, we need to keep the Component approach
+        // since Utils.parseColors doesn't support clickable text
         Component preText = Component.text("You can ")
                 .color(TextColor.color(170,170,170));  // Gray color
 
@@ -241,7 +245,7 @@ public class CommandsGui implements InventoryHolder, Listener {
 
         Component fullMessage = Component.empty()
                 .append(Component.text("\n"))
-                .append(preText)  // Added "You can" part
+                .append(preText)
                 .append(clickableText)
                 .append(Component.text(" to autocomplete the old command")
                         .color(TextColor.color(170,170,170)));  // Gray color
@@ -252,8 +256,8 @@ public class CommandsGui implements InventoryHolder, Listener {
     private void handleDeleteAll(Player whoClicked) {
         ItemStack warningItem = parentGui.createGuiItem(
                 Material.BARRIER,
-                Component.text("§c§lDelete All Commands"),
-                Component.text("§7This will remove all commands from this goal")
+                Utils.parseColors("&c&lDelete All Commands"),
+                Utils.parseColors("&7This will remove all commands from this goal")
         );
 
         ConfirmationGui confirmationGui = new ConfirmationGui(warningItem, (confirmed) -> {

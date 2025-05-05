@@ -7,6 +7,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 
 import java.util.Arrays;
+import java.util.logging.Level;
 
 public class UpdateManager {
     private static UpdateManager instance;
@@ -35,30 +36,43 @@ public class UpdateManager {
                     updateChecker.setDownloadLink("https://hangar.papermc.io/TheGabro/PlayTimeManager/versions/" + latestVersion);
                     updateChecker.setChangelogLink("https://hangar.papermc.io/TheGabro/PlayTimeManager/versions/" + latestVersion);
                 })
+                .onFail((commandSenders, exception) -> {
+                    plugin.getLogger().warning("hangar.papermc.io seems offline, update check has failed");
+                })
+                .setNotifyOpsOnJoin(true)
                 .checkNow();
     }
 
     public void performVersionUpdate(String currentVersion, String targetVersion) {
+        plugin.setGlobalLogLevel(Level.OFF);
         switch (currentVersion) {
             case "3.1":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.1 config version detected, updating it to the latest one...");
                 new Version304To31Updater(plugin).performUpgrade();
                 new Version31to32Updater(plugin).performUpgrade();
                 new Version321to33Updater(plugin).performUpgrade();
+                new Version332to34Updater(plugin).performUpgrade();
                 break;
             case "3.2":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.2 config version detected, updating it to the latest one...");
                 new Version31to32Updater(plugin).performUpgrade();
                 new Version321to33Updater(plugin).performUpgrade();
+                new Version332to34Updater(plugin).performUpgrade();
                 break;
             case "3.3":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.3 config version detected, updating it to the latest one...");
                 new Version321to33Updater(plugin).performUpgrade();
+                new Version332to34Updater(plugin).performUpgrade();
+                break;
+            case "3.4":
+                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.4 config version detected, updating it to the latest one...");
+                new Version332to34Updater(plugin).performUpgrade();
                 break;
             default:
                 plugin.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown config version detected! Something may break!");
                 return;
         }
+        plugin.setGlobalLogLevel(Level.INFO);
 
         Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Update completed! Latest version: §r" + targetVersion);
     }

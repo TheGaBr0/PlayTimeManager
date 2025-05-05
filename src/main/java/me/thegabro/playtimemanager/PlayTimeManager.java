@@ -1,8 +1,13 @@
 package me.thegabro.playtimemanager;
 
-import com.jeff_media.updatechecker.UpdateCheckSource;
-import com.jeff_media.updatechecker.UpdateChecker;
-import com.jeff_media.updatechecker.UserAgentBuilder;
+import me.thegabro.playtimemanager.GUIs.Goals.AllGoalsGui;
+import me.thegabro.playtimemanager.GUIs.Goals.GoalCommandsGui;
+import me.thegabro.playtimemanager.GUIs.Goals.GoalPermissionsGui;
+import me.thegabro.playtimemanager.GUIs.Goals.GoalSettingsGui;
+import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
+import me.thegabro.playtimemanager.Translations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Translations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Updates.UpdateManager;
 import me.thegabro.playtimemanager.Commands.*;
 import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeCommandManager;
@@ -30,27 +35,32 @@ import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
 
 import java.io.File;
 import java.util.Objects;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class PlayTimeManager extends JavaPlugin{
 
     private static PlayTimeManager instance;
     private Configuration config;
+    private CommandsConfiguration commandsConfig;
+    private GUIsConfiguration guiConfig;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-    private final String CURRENTCONFIGVERSION = "3.4";
-    private final String CURRENTGOALSCONFIGVERSION = "1.0";
+    private final String CURRENTCONFIGVERSION = "3.5";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
-    private GoalsManager goalsManager;
-    private final int BSTATS_PLUGIN_ID = 24739;
+    private JoinStreaksManager joinStreaksManager;
     private final String serverVersion = Bukkit.getBukkitVersion().split("-")[0];
+    private SessionManager sessionManager;
 
     @Override
     public void onEnable() {
 
+        int BSTATS_PLUGIN_ID = 24739;
         Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
-
-
 
         if (!getDataFolder().exists()) {
             getDataFolder().mkdirs();
@@ -77,10 +87,18 @@ public class PlayTimeManager extends JavaPlugin{
 
         config = new Configuration(this.getDataFolder(), "config", true, true);
 
-        goalsManager = GoalsManager.getInstance();
+        guiConfig = new GUIsConfiguration(this);
+        commandsConfig = new CommandsConfiguration(this);
+
+        GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(this);
+
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
+
+        joinStreaksManager = JoinStreaksManager.getInstance();
+        joinStreaksManager.initialize(this);
+        joinStreaksManager.onServerReload();
 
         permissionsManagerConfigured = checkPermissionsPlugin();
 
@@ -90,13 +108,17 @@ public class PlayTimeManager extends JavaPlugin{
 
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
-        getServer().getPluginManager().registerEvents(new ChatEventManager(), this);
+        getServer().getPluginManager().registerEvents(ChatEventManager.getInstance(), this);
 
         Bukkit.getPluginManager().registerEvents(new AllGoalsGui(), this);
         Bukkit.getPluginManager().registerEvents(new GoalSettingsGui(), this);
-        Bukkit.getPluginManager().registerEvents(new PermissionsGui(), this);
-        Bukkit.getPluginManager().registerEvents(new CommandsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new GoalPermissionsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new GoalCommandsGui(), this);
         Bukkit.getPluginManager().registerEvents(new ConfirmationGui(), this);
+        Bukkit.getPluginManager().registerEvents(new JoinStreakRewardSettingsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new AllJoinStreakRewardsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new JoinStreakPermissionsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new JoinStreakCommandsGui(), this);
 
         Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeGoal());
         Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {
@@ -111,9 +133,16 @@ public class PlayTimeManager extends JavaPlugin{
         });
         Objects.requireNonNull(getCommand("playtimebackup")).setExecutor(new PlayTimeBackup() {
         });
+        Objects.requireNonNull(getCommand("playtimejoinstreak")).setExecutor(new PlayTimeJoinStreak() {
+        });
+        Objects.requireNonNull(getCommand("claimrewards")).setExecutor(new ClaimRewards() {
+        });
 
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();
+
+        sessionManager = new SessionManager();
+
 
         getLogger().info("has been enabled!");
 
@@ -129,6 +158,7 @@ public class PlayTimeManager extends JavaPlugin{
         db.close();
         HandlerList.unregisterAll(this);
         dbUsersManager.clearCache();
+        joinStreaksManager.cleanUp();
         getLogger().info("has been disabled!");
     }
 
@@ -153,7 +183,22 @@ public class PlayTimeManager extends JavaPlugin{
 
     public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
 
-    public String getServerVersion() { return serverVersion; }
+    public SessionManager getSessionManager() { return sessionManager; }
+
+    public GUIsConfiguration getGUIsConfig() {
+        return guiConfig;
+    }
+
+    public CommandsConfiguration getCommandsConfig() {
+        return commandsConfig;
+    }
+
+    public void setGlobalLogLevel(Level level) {
+        LogManager.getLogManager().getLogger("").setLevel(level);
+        for (Handler h : Logger.getLogger("").getHandlers()) {
+            h.setLevel(level);
+        }
+    }
 
     private boolean checkPermissionsPlugin() {
         String configuredPlugin = config.getPermissionsManagerPlugin().toLowerCase();

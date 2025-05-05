@@ -21,7 +21,7 @@ public abstract class PlayTimeDatabase {
     Connection connection;
     protected static HikariDataSource dataSource;
 
-    public PlayTimeDatabase(PlayTimeManager instance){
+    public PlayTimeDatabase(PlayTimeManager instance) {
         plugin = instance;
     }
 
@@ -434,7 +434,7 @@ public abstract class PlayTimeDatabase {
                 int greaterPlayers = rsGreater.getInt("greater_players");
 
                 if (totalPlayers > 0) {
-                    return new Object[] {(greaterPlayers * 100.0) / totalPlayers , greaterPlayers, totalPlayers};
+                    return new Object[]{(greaterPlayers * 100.0) / totalPlayers, greaterPlayers, totalPlayers};
                 }
             }
         } catch (SQLException ex) {
@@ -742,6 +742,411 @@ public abstract class PlayTimeDatabase {
         return null;
     }
 
+    public int getRelativeJoinStreak(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT relative_join_streak FROM play_time WHERE uuid = ?;");
+            ps.setString(1, uuid);
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("relative_join_streak");
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+        return 0; // Default return value if player not found or error occurs
+    }
+
+    public int getAbsoluteJoinStreak(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT absolute_join_streak FROM play_time WHERE uuid = ?;");
+            ps.setString(1, uuid);
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("absolute_join_streak");
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+        return 0; // Default return value if player not found or error occurs
+    }
+
+    public void incrementRelativeJoinStreak(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET relative_join_streak = relative_join_streak + 1 WHERE uuid = ?;");
+            ps.setString(1, uuid);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public void incrementAbsoluteJoinStreak(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET absolute_join_streak = absolute_join_streak + 1 WHERE uuid = ?;");
+            ps.setString(1, uuid);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public void resetJoinStreaks(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET relative_join_streak = 0, absolute_join_streak = 0 WHERE uuid = ?;");
+            ps.setString(1, uuid);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public void resetRelativeJoinStreak(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET relative_join_streak = 0 WHERE uuid = ?;");
+            ps.setString(1, uuid);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public Set<String> getPlayersWithActiveStreaks() {
+        Set<String> players = new HashSet<>();
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT uuid FROM play_time WHERE absolute_join_streak > 0;");
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                players.add(rs.getString("uuid"));
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+
+        return players;
+    }
+
+    public LinkedHashSet<String> getRewardsToBeClaimed(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        LinkedHashSet<String> rewards = new LinkedHashSet<>();
+
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT rewards_to_be_claimed FROM play_time WHERE uuid = ?;");
+            ps.setString(1, uuid);
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                String rewardsStr = rs.getString("rewards_to_be_claimed");
+                if (rewardsStr != null && !rewardsStr.isEmpty()) {
+                    String[] rewardArray = rewardsStr.split(",");
+                    for (String reward : rewardArray) {
+                        rewards.add(reward.trim());
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (ps != null) ps.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+
+        return rewards;
+    }
+
+    public LinkedHashSet<String> getReceivedRewards(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        LinkedHashSet<String> rewards = new LinkedHashSet<>();
+
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT received_rewards FROM play_time WHERE uuid = ?;");
+            ps.setString(1, uuid);
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                String rewardsStr = rs.getString("received_rewards");
+                if (rewardsStr != null && !rewardsStr.isEmpty()) {
+                    String[] rewardArray = rewardsStr.split(",");
+                    for (String reward : rewardArray) {
+                        rewards.add(reward.trim());
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (ps != null) ps.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+
+        return rewards;
+    }
+
+    public void updateReceivedRewards(String uuid, LinkedHashSet<String> rewards) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET received_rewards = ? WHERE uuid = ?;");
+
+            String rewardsStr = String.join(",", rewards);
+
+            ps.setString(1, rewardsStr);
+            ps.setString(2, uuid);
+
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null) ps.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public void updateRewardsToBeClaimed(String uuid, LinkedHashSet<String> rewards) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET rewards_to_be_claimed = ? WHERE uuid = ?;");
+
+            String rewardsStr = String.join(",", rewards);
+
+            ps.setString(1, rewardsStr);
+            ps.setString(2, uuid);
+
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null) ps.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public void removeRewardFromAllUsers(String rewardID) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = getSQLConnection();
+
+            // First, get all players who have received rewards or have rewards to be claimed
+            ps = conn.prepareStatement("SELECT uuid, received_rewards, rewards_to_be_claimed FROM play_time WHERE " +
+                    "(received_rewards IS NOT NULL AND received_rewards != '') OR " +
+                    "(rewards_to_be_claimed IS NOT NULL AND rewards_to_be_claimed != '');");
+            rs = ps.executeQuery();
+
+            PreparedStatement updateStmt = conn.prepareStatement("UPDATE play_time SET received_rewards = ?, rewards_to_be_claimed = ? WHERE uuid = ?;");
+
+            // Get the integer part of the rewardID being removed
+            String rewardIntegerPart = rewardID;
+            if (rewardID != null && rewardID.contains(".")) {
+                String[] parts = rewardID.split("\\.", 2);
+                if (parts.length > 0) {
+                    rewardIntegerPart = parts[0];
+                }
+            }
+
+            while (rs.next()) {
+                String uuid = rs.getString("uuid");
+                String receivedRewards = rs.getString("received_rewards");
+                String rewardsToBeClaimed = rs.getString("rewards_to_be_claimed");
+
+                // Process received_rewards column
+                LinkedHashSet<String> receivedRewardsList = new LinkedHashSet<>();
+                if (receivedRewards != null && !receivedRewards.isEmpty()) {
+                    for (String reward : receivedRewards.split(",")) {
+                        String trimmedReward = reward.trim();
+
+                        // Extract the integer part using split
+                        String integerPart = trimmedReward;
+                        if (trimmedReward.contains(".")) {
+                            String[] parts = trimmedReward.split("\\.", 2);
+                            if (parts.length > 0) {
+                                integerPart = parts[0];
+                            }
+                        }
+
+                        // Keep only if the integer part doesn't match the rewardID's integer part
+                        if (!integerPart.equals(rewardIntegerPart)) {
+                            receivedRewardsList.add(trimmedReward);
+                        }
+                    }
+                }
+
+                // Process rewards_to_be_claimed column
+                LinkedHashSet<String> rewardsToBeClaimedList = new LinkedHashSet<>();
+                if (rewardsToBeClaimed != null && !rewardsToBeClaimed.isEmpty()) {
+                    for (String reward : rewardsToBeClaimed.split(",")) {
+                        String trimmedReward = reward.trim();
+
+                        // Extract the integer part using split
+                        String integerPart = trimmedReward;
+                        if (trimmedReward.contains(".")) {
+                            String[] parts = trimmedReward.split("\\.", 2);
+                            if (parts.length > 0) {
+                                integerPart = parts[0];
+                            }
+                        }
+
+                        // Keep only if the integer part doesn't match the rewardID's integer part
+                        if (!integerPart.equals(rewardIntegerPart)) {
+                            rewardsToBeClaimedList.add(trimmedReward);
+                        }
+                    }
+                }
+
+                // Convert back to comma-separated strings
+                String updatedReceivedRewards = String.join(",", receivedRewardsList);
+                String updatedRewardsToBeClaimed = String.join(",", rewardsToBeClaimedList);
+
+                // Update the database
+                updateStmt.setString(1, updatedReceivedRewards);
+                updateStmt.setString(2, updatedRewardsToBeClaimed);
+                updateStmt.setString(3, uuid);
+                updateStmt.executeUpdate();
+            }
+
+            updateStmt.close();
+
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, "Error removing reward " + rewardID + " from all players: " + ex.getMessage());
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
 
 
 }

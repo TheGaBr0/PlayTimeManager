@@ -3,7 +3,7 @@ version: '${project.version}'
 main: me.thegabro.playtimemanager.PlayTimeManager
 api-version: '1.19'
 author: TheGabro
-Description: A playtime tracker with customization options and automated rewards for efficient monitoring
+description: A playtime tracker with customization options and automated rewards for efficient monitoring
 
 softdepend: [PlaceholderAPI, LuckPerms]
 
@@ -16,27 +16,41 @@ commands:
     description: Command to get the average of play time data
     permission: playtime.average
     permission-message: You don't have the permission to execute this command!
+    aliases: [ptavg]
   playtimepercentage:
     description: Command to get the % of players that have a playtime greater than or equal to a given one
     permission: playtime.playtimepercentage
     permission-message: You don't have the permission to execute this command!
+    aliases: [ptpercent]
   playtimetop:
     description: Command to get the top N players with highest playtime
     permission: playtime.top
     permission-message: You don't have the permission to execute this command!
+    aliases: [pttop]
   playtimegoal:
     description: Command to manage goals
     permission: playtime.goal
     permission-message: You don't have the permission to execute this command!
+    aliases: [ptgoal]
   playtimereload:
     description: Command to reload the main config
     permission: playtime.reload
     permission-message: You don't have the permission to execute this command!
+    aliases: [ptreload]
   playtimebackup:
     description: Command to create a backup of the play_time.db file
     permission: playtime.backup
     permission-message: You don't have the permission to execute this command!
-
+    aliases: [ptbkp]
+  playtimejoinstreak:
+    description: Command to manage join streak rewards
+    permission: playtime.joinstreak
+    permission-message: You don't have the permission to execute this command!
+    aliases: [ptjsk]
+  claimrewards:
+    description: Command to claim join streak rewards
+    permission: playtime.joinstreak.claim
+    permission-message: You don't have the permission to execute this command!
 permissions:
   playtime.*:
     default: op
@@ -53,6 +67,10 @@ permissions:
       playtime.goal: true
       playtime.reload: true
       playtime.backup: true
+      playtime.joinstreak: true
+      playtime.joinstreak.claim: true
+      playtime.joinstreak.claim.automatic: true
+      playtime.joinstreak.seeplayer: true
   playtime:
     default: true
   playtime.others:
@@ -74,4 +92,12 @@ permissions:
   playtime.reload:
     default: false
   playtime.backup:
+    default: false
+  playtime.joinstreak:
+    default: false
+  playtime.joinstreak.claim:
+    default: true
+  playtime.joinstreak.claim.automatic:
+    default: false
+  playtime.joinstreak.seeplayer:
     default: false

@@ -18,7 +18,7 @@ public class QuitEventManager implements Listener {
 
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(event.getPlayer().getName());
         onlineUser.updateLastSeen();
-        onlineUser.updateDB();
+        onlineUser.updatePlayTime();
         onlineUsersManager.removeOnlineUser(onlineUser);
 
         // Remove the user from the cache to ensure fresh data on next access

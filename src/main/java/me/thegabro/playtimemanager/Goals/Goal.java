@@ -89,10 +89,10 @@ public class Goal {
                     "the group has already been created using the permissions manager plugin specified in the main config.",
                     "---------------------------",
                     "commands defines a list of commands that will be executed when a player reaches this goal",
-                    "Available placeholders: %PLAYER_NAME%",
+                    "Available placeholders: PLAYER_NAME",
                     "Example commands:",
-                    "- '/give %PLAYER_NAME% diamond 64'",
-                    "- '/broadcast %PLAYER_NAME% has reached an amazing milestone!'"
+                    "- '/give PLAYER_NAME diamond 64'",
+                    "- '/broadcast PLAYER_NAME has reached an amazing milestone!'"
             ));
             config.set("time", time);
             config.set("goal-sound", goalSound);
@@ -120,7 +120,7 @@ public class Goal {
     }
 
     private String getDefaultGoalMessage() {
-        return "[§6PlayTime§eManager§f]§7 Congratulations §e%PLAYER_NAME%§7 you have reached §6%TIME_REQUIRED%§7 of playtime!";
+        return "[&6PlayTime&eManager&f]&7 Congratulations &e%PLAYER_NAME%&7 you have reached &6%TIME_REQUIRED%&7 of playtime!";
     }
 
     // Basic getters

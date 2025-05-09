@@ -7,7 +7,6 @@ import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -77,7 +76,7 @@ public class GoalCommandsGui implements InventoryHolder, Listener {
     }
 
     private void updateCommandsPage() {
-        List<String> commands = goal.getCommands();
+        List<String> commands = goal.getRewardCommands();
         int startIndex = currentPage * COMMANDS_PER_PAGE;
 
         for (int i = 0; i < COMMANDS_PER_PAGE; i++) {
@@ -105,7 +104,7 @@ public class GoalCommandsGui implements InventoryHolder, Listener {
             ));
         }
 
-        if ((currentPage + 1) * COMMANDS_PER_PAGE < goal.getCommands().size()) {
+        if ((currentPage + 1) * COMMANDS_PER_PAGE < goal.getRewardCommands().size()) {
             inventory.setItem(Slots.NEXT_PAGE, parentGui.createGuiItem(
                     Material.ARROW,
                     Utils.parseColors("&eNext Page")
@@ -159,7 +158,7 @@ public class GoalCommandsGui implements InventoryHolder, Listener {
                 }
             }
             case Slots.NEXT_PAGE -> {
-                if ((currentPage + 1) * COMMANDS_PER_PAGE < goal.getCommands().size()) {
+                if ((currentPage + 1) * COMMANDS_PER_PAGE < goal.getRewardCommands().size()) {
                     currentPage++;
                     updateCommandsPage();
                 }
@@ -262,7 +261,7 @@ public class GoalCommandsGui implements InventoryHolder, Listener {
 
         ConfirmationGui confirmationGui = new ConfirmationGui(warningItem, (confirmed) -> {
             if (confirmed) {
-                for(String cmd: new ArrayList<>(goal.getCommands())) {
+                for(String cmd: new ArrayList<>(goal.getRewardCommands())) {
                     goal.removeCommand(cmd);
                 }
                 openInventory(whoClicked);

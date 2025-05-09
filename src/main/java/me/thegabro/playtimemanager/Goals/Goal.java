@@ -21,8 +21,8 @@ public class Goal {
     private String name;
     private long time;
     private final File goalFile;
-    private ArrayList<String> permissions = new ArrayList<>();
-    private ArrayList<String> commands = new ArrayList<>();
+    private ArrayList<String> rewardPermissions = new ArrayList<>();
+    private ArrayList<String> rewardCommands = new ArrayList<>();
     private String goalMessage;
     private String goalSound;
     private boolean active;
@@ -34,6 +34,7 @@ public class Goal {
         this.time = time == null ? Long.MAX_VALUE : time;
         this.goalFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + name + ".yml");
         this.active = active;
+
         loadFromFile();
         saveToFile();
         goalsManager.addGoal(this);
@@ -46,14 +47,14 @@ public class Goal {
             time = config.getLong("time", time);
             goalMessage = config.getString("goal-message", getDefaultGoalMessage());
             goalSound = config.getString("goal-sound", getDefaultGoalSound());
-            permissions = new ArrayList<>(config.getStringList("permissions"));
-            commands = new ArrayList<>(config.getStringList("commands"));
+            rewardPermissions = new ArrayList<>(config.getStringList("permissions"));
+            rewardCommands = new ArrayList<>(config.getStringList("commands"));
             active = config.getBoolean("active", false);
         } else {
             goalMessage = getDefaultGoalMessage();
             goalSound = getDefaultGoalSound();
-            permissions = new ArrayList<>();
-            commands = new ArrayList<>();
+            rewardPermissions = new ArrayList<>();
+            rewardCommands = new ArrayList<>();
         }
     }
 
@@ -98,8 +99,8 @@ public class Goal {
             config.set("goal-sound", goalSound);
             config.set("goal-message", goalMessage);
             config.set("active", active);
-            config.set("permissions", permissions);
-            config.set("commands", commands);
+            config.set("permissions", rewardPermissions);
+            config.set("commands", rewardCommands);
             config.save(goalFile);
         } catch (IOException e) {
             plugin.getLogger().severe("Could not save goal file for " + name + ": " + e.getMessage());
@@ -144,12 +145,12 @@ public class Goal {
         return active;
     }
 
-    public ArrayList<String> getCommands() {
-        return commands;
+    public ArrayList<String> getRewardCommands() {
+        return rewardCommands;
     }
 
-    public ArrayList<String> getPermissions() {
-        return permissions;
+    public ArrayList<String> getRewardPermissions() {
+        return rewardPermissions;
     }
 
     public void rename(String newName) {
@@ -215,22 +216,22 @@ public class Goal {
     }
 
     public void addCommand(String command) {
-        commands.add(command);
+        rewardCommands.add(command);
         saveToFile();
     }
 
     public void removeCommand(String command) {
-        commands.remove(command);
+        rewardCommands.remove(command);
         saveToFile();
     }
 
     public void addPermission(String permission) {
-        permissions.add(permission);
+        rewardPermissions.add(permission);
         saveToFile();
     }
 
     public void removePermission(String permission) {
-        permissions.remove(permission);
+        rewardPermissions.remove(permission);
         saveToFile();
     }
 
@@ -259,8 +260,8 @@ public class Goal {
                 "name='" + name + '\'' +
                 ", time=" + time +
                 ", active=" + active +
-                ", permissions=" + permissions.size() +
-                ", commands=" + commands.size() +
+                ", permissions=" + rewardPermissions.size() +
+                ", commands=" + rewardCommands.size() +
                 ", message='" + goalMessage + '\'' +
                 ", sound='" + goalSound + '\'' +
                 '}';

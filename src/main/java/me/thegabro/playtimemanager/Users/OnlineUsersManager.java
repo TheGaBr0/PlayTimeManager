@@ -176,7 +176,7 @@ public class OnlineUsersManager {
     }
 
     private void assignPermissionsForGoal(OnlineUser onlineUser, Goal goal) {
-        List<String> permissions = goal.getPermissions();
+        List<String> permissions = goal.getRewardPermissions();
         if (permissions != null && !permissions.isEmpty()) {
             try {
                 LuckPermsManager.getInstance(plugin).assignGoalPermissions(onlineUser.getUuid(), goal);
@@ -188,7 +188,7 @@ public class OnlineUsersManager {
     }
 
     private void executeCommands(Goal goal, Player player) {
-        List<String> commands = goal.getCommands();
+        List<String> commands = goal.getRewardCommands();
         if (commands != null && !commands.isEmpty()) {
             commands.forEach(command -> {
                 try {

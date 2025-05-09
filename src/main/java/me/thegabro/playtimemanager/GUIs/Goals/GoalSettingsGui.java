@@ -99,8 +99,8 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
         // Permissions button
         List<TextComponent> lore = new ArrayList<>();
-        lore.add(Component.text("§7Currently §e" + goal.getPermissions().size() + "§7 " +
-                (goal.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")));
+        lore.add(Component.text("§7Currently §e" + goal.getRewardPermissions().size() + "§7 " +
+                (goal.getRewardPermissions().size() != 1 ? "permissions loaded" : "permission loaded")));
 
         lore.add(Component.text("§7Click to change the permissions"));
 
@@ -147,8 +147,8 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.GOAL_COMMANDS, createGuiItem(
                 Material.COMMAND_BLOCK,
                 Component.text("§e§lCommands"),
-                Component.text("§7Currently §e" + goal.getCommands().size() + "§7 " +
-                        (goal.getCommands().size() != 1 ? "commands loaded" : "command loaded")),
+                Component.text("§7Currently §e" + goal.getRewardCommands().size() + "§7 " +
+                        (goal.getRewardCommands().size() != 1 ? "commands loaded" : "command loaded")),
                 Component.text("§7Click to manage commands")
         ));
 

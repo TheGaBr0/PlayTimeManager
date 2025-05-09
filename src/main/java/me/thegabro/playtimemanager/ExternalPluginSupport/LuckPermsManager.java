@@ -83,11 +83,11 @@ public class LuckPermsManager {
     }
 
     public void assignGoalPermissions(String uuid, Goal goal) {
-        if (goal.getPermissions() == null || goal.getPermissions().isEmpty()) {
+        if (goal.getRewardPermissions() == null || goal.getRewardPermissions().isEmpty()) {
             return;
         }
 
-        for (String permission : goal.getPermissions()) {
+        for (String permission : goal.getRewardPermissions()) {
             assignPermission(uuid, permission);
         }
     }

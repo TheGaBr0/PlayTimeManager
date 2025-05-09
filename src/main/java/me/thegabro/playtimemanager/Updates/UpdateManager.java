@@ -33,8 +33,8 @@ public class UpdateManager {
                 .setUserAgent(new UserAgentBuilder().addPluginNameAndVersion())
                 .checkEveryXHours(24)
                 .onSuccess((commandSenders, latestVersion) -> {
-                    updateChecker.setDownloadLink("https://hangar.papermc.io/TheGabro/PlayTimeManager/versions/" + latestVersion);
-                    updateChecker.setChangelogLink("https://hangar.papermc.io/TheGabro/PlayTimeManager/versions/" + latestVersion);
+                    updateChecker.setDownloadLink("https://modrinth.com/plugin/playtimemanager/version/" + latestVersion);
+                    updateChecker.setChangelogLink("https://modrinth.com/plugin/playtimemanager/version/" + latestVersion);
                 })
                 .onFail((commandSenders, exception) -> {
                     plugin.getLogger().warning("hangar.papermc.io seems offline, update check has failed");

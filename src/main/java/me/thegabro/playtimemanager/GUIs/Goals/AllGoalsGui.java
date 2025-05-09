@@ -79,8 +79,8 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                                 .append(Component.text(goal.isActive() ? "true" : "false")
                                         .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
                                 .decoration(TextDecoration.ITALIC, false),
-                        Component.text("§e" + goal.getPermissions().size() + "§7 " + (goal.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
-                        Component.text("§e" + goal.getCommands().size() + "§7 " + (goal.getCommands().size() != 1 ? "commands loaded" : "command loaded"))
+                        Component.text("§e" + goal.getRewardPermissions().size() + "§7 " + (goal.getRewardPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
+                        Component.text("§e" + goal.getRewardCommands().size() + "§7 " + (goal.getRewardCommands().size() != 1 ? "commands loaded" : "command loaded"))
                 );
                 meta.lore(lore);
                 item.setItemMeta(meta);

@@ -4,7 +4,6 @@ import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -77,7 +76,7 @@ public class GoalPermissionsGui implements InventoryHolder, Listener {
     }
 
     private void updatePermissionsPage() {
-        List<String> permissions = goal.getPermissions();
+        List<String> permissions = goal.getRewardPermissions();
         int startIndex = currentPage * PERMISSIONS_PER_PAGE;
 
         // Clear previous items
@@ -137,7 +136,7 @@ public class GoalPermissionsGui implements InventoryHolder, Listener {
             ));
         }
 
-        if ((currentPage + 1) * PERMISSIONS_PER_PAGE < goal.getPermissions().size()) {
+        if ((currentPage + 1) * PERMISSIONS_PER_PAGE < goal.getRewardPermissions().size()) {
             inventory.setItem(Slots.NEXT_PAGE, parentGui.createGuiItem(
                     Material.ARROW,
                     Utils.parseColors("&eNext Page")
@@ -179,7 +178,7 @@ public class GoalPermissionsGui implements InventoryHolder, Listener {
                 }
             }
             case Slots.NEXT_PAGE -> {
-                if ((currentPage + 1) * PERMISSIONS_PER_PAGE < goal.getPermissions().size()) {
+                if ((currentPage + 1) * PERMISSIONS_PER_PAGE < goal.getRewardPermissions().size()) {
                     currentPage++;
                     updatePermissionsPage();
                 }
@@ -283,7 +282,7 @@ public class GoalPermissionsGui implements InventoryHolder, Listener {
 
         ConfirmationGui confirmationGui = new ConfirmationGui(warningItem, (confirmed) -> {
             if (confirmed) {
-                for(String p: new ArrayList<>(goal.getPermissions())) {
+                for(String p: new ArrayList<>(goal.getRewardPermissions())) {
                     goal.removePermission(p);
                 }
                 openInventory(whoClicked);

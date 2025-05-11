@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Level;
 
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -37,10 +38,12 @@ public class Version304To31Updater {
     }
 
     public void performUpgrade() {
+        plugin.setGlobalLogLevel(Level.OFF);
         performDatabaseMigration();
 
         recreateConfigFile();
         migrateUserGoalData();
+        plugin.setGlobalLogLevel(Level.INFO);
     }
 
     private void performDatabaseMigration() {
@@ -119,7 +122,7 @@ public class Version304To31Updater {
             long userPlaytime = user.getPlaytime();
 
             for (Goal goal : goalsManager.getGoals()) {
-                if (userPlaytime >= goal.getTime()) {
+                if (userPlaytime >= goal.getRequirements().getTime()) {
                     user.markGoalAsCompleted(goal.getName());
                 }
             }

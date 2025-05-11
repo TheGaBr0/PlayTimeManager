@@ -74,7 +74,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 ItemMeta meta = item.getItemMeta();
                 meta.displayName(Component.text("§e" + goal.getName()));
                 List<Component> lore = Arrays.asList(
-                        Component.text("§7Required Time: " + Utils.ticksToFormattedPlaytime(goal.getTime())),
+                        Component.text("§7Required Time: " + Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime())),
                         Component.text("§7Active: ")
                                 .append(Component.text(goal.isActive() ? "true" : "false")
                                         .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))

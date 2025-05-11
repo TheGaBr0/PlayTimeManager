@@ -93,7 +93,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         // Time setting button
         inventory.setItem(Slots.TIME_SETTING, createGuiItem(
                 Material.CLOCK,
-                Component.text("§e§lRequired Time: §6" + Utils.ticksToFormattedPlaytime(goal.getTime())),
+                Component.text("§e§lRequired Time: §6" + Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime())),
                 Component.text("§7Click to modify the required playtime")
         ));
 
@@ -507,7 +507,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                     // Reopen the PermissionsGui when the anvil is closed
                     Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(state.getPlayer()));
                 })
-                .text(Utils.ticksToFormattedPlaytime(goal.getTime()))
+                .text(Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()))
                 .title("Format: 1y,2d,3h,4m,5s")
                 .plugin(PlayTimeManager.getPlugin(PlayTimeManager.class))
                 .open(player);

@@ -116,7 +116,7 @@ public class OnlineUsersManager {
         goals.stream()
                 .filter(Goal::isActive)
                 .filter(goal -> !onlineUser.hasCompletedGoal(goal.getName()))
-                .filter(goal -> onlineUser.getPlaytime() >= goal.getTime())
+                .filter(goal -> goal.getRequirements().checkRequirements(player, onlineUser.getPlaytime()))
                 .forEach(goal -> processCompletedGoal(onlineUser, player, goal));
     }
 
@@ -132,7 +132,7 @@ public class OnlineUsersManager {
 
         if(plugin.getConfiguration().getGoalsCheckVerbose()){
             plugin.getLogger().info(String.format("User %s has reached the goal %s which requires %s!",
-                    onlineUser.getNickname(), goal.getName(),Utils.ticksToFormattedPlaytime(goal.getTime())));
+                    onlineUser.getNickname(), goal.getName(),Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime())));
         }
 
 
@@ -239,7 +239,7 @@ public class OnlineUsersManager {
 
     private void sendGoalMessage(Player player, Goal goal) {
         goalMessageReplacements.put("%PLAYER_NAME%", player.getName());
-        goalMessageReplacements.put("%TIME_REQUIRED%", Utils.ticksToFormattedPlaytime(goal.getTime()));
+        goalMessageReplacements.put("%TIME_REQUIRED%", Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()));
         goalMessageReplacements.put("%GOAL_NAME%", goal.getName());
         player.sendMessage(replacePlaceholders(goal.getGoalMessage()));
     }

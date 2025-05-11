@@ -145,7 +145,7 @@ public class PlaytimeGoal implements TabExecutor {
 
         g.setActivation(activate);
 
-        long gTime = g.getTime();
+        long gTime = g.getRequirements().getTime();
         if(gTime == Long.MAX_VALUE)
             message.append("&7- Required time to reach the goal: &6None\n");
         else

@@ -47,10 +47,8 @@ public class Version34to341Updater {
                 String goalPath = oldGoalFile.getPath();
                 String fileName = oldGoalFile.getName();
 
-                // Load old configuration
                 FileConfiguration oldConfig = YamlConfiguration.loadConfiguration(oldGoalFile);
 
-                // Extract data from old config
                 long time = oldConfig.getLong("time", Long.MAX_VALUE);
                 String goalMessage = oldConfig.getString("goal-message", getDefaultGoalMessage());
                 String goalSound = oldConfig.getString("goal-sound", getDefaultGoalSound());
@@ -58,16 +56,13 @@ public class Version34to341Updater {
                 List<String> rewardCommands = oldConfig.getStringList("commands");
                 boolean active = oldConfig.getBoolean("active", false);
 
-                // Delete the old file
                 if (!oldGoalFile.delete()) {
                     plugin.getLogger().warning("Could not delete old goal file: " + fileName);
-                    continue; // Skip to next file if delete failed
+                    continue;
                 }
 
-                // Create new configuration
                 FileConfiguration newConfig = new YamlConfiguration();
 
-                // Set header
                 newConfig.options().setHeader(Arrays.asList(
                         "GUIDE OF AVAILABLE OPTIONS:",
                         "---------------------------",
@@ -98,23 +93,19 @@ public class Version34to341Updater {
                         "  Available placeholders in commands: PLAYER_NAME"
                 ));
 
-                // Set new configuration values
                 newConfig.set("active", active);
                 newConfig.set("goal-sound", goalSound);
                 newConfig.set("goal-message", goalMessage);
+                plugin.getLogger().info(String.valueOf(time));
                 newConfig.set("requirements.time", time);
                 newConfig.set("requirements.permissions", new ArrayList<>());
                 newConfig.set("requirements.placeholders", new ArrayList<>());
 
-                // Make sure we preserve the permissions from the old file
-                plugin.getLogger().info(String.valueOf(rewardPermissions));
                 newConfig.set("rewards.permissions", rewardPermissions);
                 newConfig.set("rewards.commands", rewardCommands);
 
-                // Create a new file with the same name
                 File newGoalFile = new File(goalPath);
                 newConfig.save(newGoalFile);
-                plugin.getLogger().info(String.valueOf(newConfig.getStringList("reward.permissions")));
 
                 plugin.getLogger().info("Successfully updated goal configuration file: " + fileName);
 

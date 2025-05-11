@@ -25,7 +25,7 @@
 # Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
 
 #Leave this untouched
-config-version: 3.5
+config-version: 3.6
 
 #Choose your permissions management plugin
 #Available options: "luckperms"

@@ -5,7 +5,10 @@ import com.jeff_media.updatechecker.UpdateChecker;
 import com.jeff_media.updatechecker.UserAgentBuilder;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.logging.Level;
 
@@ -49,6 +52,10 @@ public class UpdateManager {
             case "3.1":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.1 config version detected, updating it to the latest one...");
                 new Version304To31Updater(plugin).performUpgrade();
+                File membro = new File(plugin.getDataFolder()+ File.separator+"Goals"+ File.separator+"membro.yml");
+                FileConfiguration oldConfig = YamlConfiguration.loadConfiguration(membro);
+                long time = oldConfig.getLong("time", Long.MAX_VALUE);
+                plugin.getLogger().info(String.valueOf(time));
                 new Version31to32Updater(plugin).performUpgrade();
                 new Version321to33Updater(plugin).performUpgrade();
                 new Version332to34Updater(plugin).performUpgrade();

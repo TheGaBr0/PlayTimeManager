@@ -1,7 +1,6 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
 import me.thegabro.playtimemanager.Events.ChatEventManager;
-import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -42,7 +41,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         static final int GOAL_SOUND = 16;
         static final int GOAL_ACTIVATION_STATUS = 29;
         static final int GOAL_COMMANDS = 31;
-        static final int DELETE_GOAL = 33;
+        static final int GOAL_REQUIREMENTS = 33;
         static final int UNCOMPLETE_GOAL = 36;
         static final int BACK_BUTTON = 44;
     }
@@ -85,7 +84,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 slot == Slots.GOAL_SOUND ||
                 slot == Slots.GOAL_ACTIVATION_STATUS ||
                 slot == Slots.GOAL_COMMANDS ||
-                slot == Slots.DELETE_GOAL ||
                 slot == Slots.BACK_BUTTON;
     }
 
@@ -153,10 +151,10 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         ));
 
         // Delete button
-        inventory.setItem(Slots.DELETE_GOAL, createGuiItem(
-                Material.BARRIER,
-                Component.text("§c§lDelete Goal"),
-                Component.text("§7Click to delete this goal")
+        inventory.setItem(Slots.GOAL_REQUIREMENTS, createGuiItem(
+                Material.PAPER,
+                Component.text("§c§lRequirements"),
+                Component.text("§7Click to manage requirements")
         ));
 
         // Add uncomplete goal button
@@ -242,8 +240,9 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 initializeItems();
                 break;
 
-            case Slots.DELETE_GOAL:
-                handleDeleteGoal(player);
+            case Slots.GOAL_REQUIREMENTS:
+                player.closeInventory();
+                new GoalRequirementsGui(goal, this).openInventory(player);
                 break;
 
             case Slots.UNCOMPLETE_GOAL:
@@ -260,32 +259,25 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         player.closeInventory();
 
         // Header with goal name
-        Component header = Component.text("✎ Message Editor: ")
-                .color(NamedTextColor.GOLD)
-                .decoration(TextDecoration.BOLD, true)
-                .append(Component.text(goal.getName())
-                        .color(NamedTextColor.YELLOW));
+        Component header = Utils.parseColors("&6&l✎ Message Editor: &e" + goal.getName());
 
         // Divider for visual separation
-        Component divider = Component.text("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
-                .color(NamedTextColor.DARK_GRAY);
+        Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
         // Instructions with formatting
-        Component instructions = Component.text("Enter the new message for this goal.")
-                .color(NamedTextColor.WHITE)
-                .append(Component.newline())
-                .append(Component.text("• Supports legacy and hex color codes (e.g. &6 or &#rrggbb)")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Component.text("• Type ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Component.text("cancel")
-                                .color(NamedTextColor.RED)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Component.text(" to exit")
-                                .color(NamedTextColor.GRAY)));
+        Component instructions = Utils.parseColors(
+                "&fEnter the new message for this goal.\n" +
+                        "&7• Supports legacy and hex color codes\n" +
+                        "&7• Type &c&ocancel&7 to exit"
+        );
 
-        // Combine all components with proper spacing
+        Component preText = Utils.parseColors("&7You can ");
+
+
+        Component clickableText = Utils.parseColors("&l&6[click here]")
+                .clickEvent(ClickEvent.suggestCommand(goal.getGoalMessage().replace("§","&")))
+                .hoverEvent(HoverEvent.showText(Component.text("Click to autocomplete the current message")));
+
         Component fullMessage = Component.empty()
                 .append(header)
                 .append(Component.newline())
@@ -293,6 +285,11 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 .append(Component.newline())
                 .append(Component.newline())
                 .append(instructions)
+                .append(Component.newline())
+                .append(Component.newline())
+                .append(preText)
+                .append(clickableText)
+                .append(Utils.parseColors("&7 to autocomplete the current message"))
                 .append(Component.newline())
                 .append(divider);
 
@@ -301,34 +298,16 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         chatEventManager.startChatInput(player, (p, message) -> {
             if (!message.equalsIgnoreCase("cancel")) {
                 goal.setGoalMessage(message);
-                player.sendMessage(Component.text("Goal message updated successfully!").color(NamedTextColor.GREEN));
+                player.sendMessage(Utils.parseColors("&aGoal message updated successfully!"));
             } else {
-                player.sendMessage(Component.text("Goal message edit cancelled").color(NamedTextColor.RED));
+                player.sendMessage(Utils.parseColors("&cGoal message edit cancelled"));
             }
 
             // Reopen the GUI
             reopenMainGui(player);
         });
 
-        Component preText = Component.text("You can ")
-                .color(TextColor.color(170,170,170));  // Gray color
-
-        Component clickableText = Component.text("[click here]")
-                .color(TextColor.color(255,170,0))  // Gold color
-                .decoration(TextDecoration.BOLD, true)
-                .clickEvent(ClickEvent.suggestCommand(goal.getGoalMessage()))
-                .hoverEvent(HoverEvent.showText(Component.text("Click to autocomplete the current message")));
-
-        fullMessage = Component.empty()
-                .append(Component.text("\n"))
-                .append(preText)
-                .append(clickableText)
-                .append(Component.text(" to autocomplete the current message")
-                        .color(TextColor.color(170,170,170)));  // Gray color
-
-        player.sendMessage(fullMessage);
     }
-
 
     private void openSoundEditor(Player player) {
         player.closeInventory();
@@ -336,48 +315,27 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         String actualUrl = "https://jd.papermc.io/paper/1.21.4/org/bukkit/Sound.html";
 
         // Header with goal name
-        Component header = Component.text("✎ Sound Editor: ")
-                .color(NamedTextColor.GOLD)
-                .decoration(TextDecoration.BOLD, true)
-                .append(Component.text(goal.getName())
-                        .color(NamedTextColor.YELLOW));
+        Component header = Utils.parseColors("&6&l✎ Sound Editor: &e" + goal.getName());
 
         // Divider for visual separation
-        Component divider = Component.text("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬")
-                .color(NamedTextColor.DARK_GRAY);
+        Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
         // Instructions with better spacing and formatting
-        Component instructions = Component.text("Enter the new sound for this goal.")
-                .color(NamedTextColor.WHITE)
-                .append(Component.newline())
-                .append(Component.text("• Input is not case-sensitive")
-                        .color(NamedTextColor.GRAY))
-                .append(Component.newline())
-                .append(Component.text("• Type ")
-                        .color(NamedTextColor.GRAY)
-                        .append(Component.text("cancel")
-                                .color(NamedTextColor.RED)
-                                .decoration(TextDecoration.ITALIC, true))
-                        .append(Component.text(" to exit")
-                                .color(NamedTextColor.GRAY)));
+        Component instructions = Utils.parseColors(
+                "&fEnter the new sound for this goal.\n" +
+                        "&7• Input is not case-sensitive\n" +
+                        "&7• Type &c&ocancel&7 to exit"
+        );
 
         // Sound list link with icon
-        Component linkText = Component.text("» SOUND LIST ")
-                .color(NamedTextColor.YELLOW)
-                .decoration(TextDecoration.BOLD, true)
-                .append(Component.text("«")
-                        .color(NamedTextColor.YELLOW)
-                        .decoration(TextDecoration.BOLD, true))
-                .clickEvent(ClickEvent.openUrl(actualUrl))
-                .hoverEvent(HoverEvent.showText(Component.text("Click to open sounds documentation for 1.21.4")
-                        .color(NamedTextColor.WHITE)));
+        Component linkText = Utils.parseColors(
+                "&e&l» SOUND LIST «"
+        ).clickEvent(ClickEvent.openUrl(actualUrl))
+                .hoverEvent(HoverEvent.showText(Utils.parseColors("&fClick to open sounds documentation for 1.21.4")));
 
         // Link description
-        Component linkInfo = Component.text("Documentation for server version 1.21.4")
-                .color(NamedTextColor.GRAY)
-                .decoration(TextDecoration.ITALIC, true);
+        Component linkInfo = Utils.parseColors("&7&oDocumentation for server version 1.21.4");
 
-        // Combine all components with proper spacing
         Component fullMessage = Component.empty()
                 .append(header)
                 .append(Component.newline())
@@ -386,10 +344,10 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 .append(Component.newline())
                 .append(instructions)
                 .append(Component.newline())
-                .append(Component.newline())
                 .append(linkText)
                 .append(Component.newline())
                 .append(linkInfo)
+                .append(Component.newline())
                 .append(Component.newline())
                 .append(divider);
 
@@ -404,12 +362,12 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
                 if (sound != null) {
                     goal.setGoalSound(input.toUpperCase());
-                    player.sendMessage(Component.text("Goal sound updated successfully!").color(NamedTextColor.GREEN));
+                    player.sendMessage(Utils.parseColors("&aGoal sound updated successfully!"));
                 } else {
-                    player.sendMessage(Component.text(input.toUpperCase() + " is not a valid sound").color(NamedTextColor.YELLOW));
+                    player.sendMessage(Utils.parseColors("&e" + input.toUpperCase() + " is not a valid sound"));
                 }
             } else {
-                player.sendMessage(Component.text("Goal sound edit cancelled").color(NamedTextColor.RED));
+                player.sendMessage(Utils.parseColors("&cGoal sound edit cancelled"));
             }
 
             // Reopen the GUI
@@ -442,37 +400,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
             plugin.getLogger().severe(String.format("Failed to play sound '%s' for goal '%s': %s",
                     goal.getGoalSound(), goal.getName(), e.getMessage()));
         }
-    }
-
-    private void handleDeleteGoal(Player player) {
-        ItemStack goalItem = createGuiItem(
-                Material.BARRIER,
-                Component.text("§c§lDelete Goal: " + goal.getName())
-        );
-
-        ConfirmationGui confirmationGui = new ConfirmationGui(goalItem, (confirmed) -> {
-            if (confirmed) {
-                // Run deletion async
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Deleting goal &e" + goal.getName() + "&7..."));
-                Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
-                    goal.kill();
-
-                    // Switch back to main thread for UI updates
-                    Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
-                        player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7deleted goal &e" + goal.getName()));
-                        if (previousGui != null) {
-                            ((AllGoalsGui) previousGui).openInventory(player);
-                        }
-                    });
-                });
-            } else {
-                // No need for async here since we're just handling UI
-                openInventory(player);
-            }
-        });
-
-        player.closeInventory();
-        confirmationGui.openInventory(player);
     }
 
     private void handleBackButton(Player player) {

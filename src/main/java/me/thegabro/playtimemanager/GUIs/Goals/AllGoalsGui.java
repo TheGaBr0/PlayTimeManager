@@ -1,5 +1,7 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
+import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
+import me.thegabro.playtimemanager.GUIs.JoinStreak.JoinStreakRewardSettingsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -74,13 +76,15 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 ItemMeta meta = item.getItemMeta();
                 meta.displayName(Component.text("§e" + goal.getName()));
                 List<Component> lore = Arrays.asList(
-                        Component.text("§7Required Time: " + Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime())),
-                        Component.text("§7Active: ")
+                        Utils.parseColors("§7Required Time: " + Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime())),
+                        Utils.parseColors("§7Active: ")
                                 .append(Component.text(goal.isActive() ? "true" : "false")
                                         .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
                                 .decoration(TextDecoration.ITALIC, false),
-                        Component.text("§e" + goal.getRewardPermissions().size() + "§7 " + (goal.getRewardPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
-                        Component.text("§e" + goal.getRewardCommands().size() + "§7 " + (goal.getRewardCommands().size() != 1 ? "commands loaded" : "command loaded"))
+                        Utils.parseColors("§e" + goal.getRewardPermissions().size() + "§7 " + (goal.getRewardPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
+                        Utils.parseColors("§e" + goal.getRewardCommands().size() + "§7 " + (goal.getRewardCommands().size() != 1 ? "commands loaded" : "command loaded")),
+                        Utils.parseColors(""),
+                        Utils.parseColors("&c&oShift-Right Click to delete")
                 );
                 meta.lore(lore);
                 item.setItemMeta(meta);
@@ -92,18 +96,27 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             // Display message if no goals exist
             inv.setItem(22, createGuiItem(
                     Material.BARRIER,
-                    Component.text("§l§cNo goals have been set!"),
-                    Component.text("§7Click here to create a new goal")
+                    Utils.parseColors("§l§cNo goals have been set!"),
+                    Utils.parseColors("§7Click here to create a new goal")
             ));
         }
     }
 
-    private ItemStack createGuiItem(Material material, @Nullable TextComponent name, @Nullable TextComponent...lore) {
+    private ItemStack createGuiItem(Material material, @Nullable Component name, @Nullable Component...lore) {
         ItemStack item = new ItemStack(material, 1);
         ItemMeta meta = item.getItemMeta();
-        meta.displayName(name);
 
-        ArrayList<Component> metalore = new ArrayList<>(Arrays.asList(lore));
+        if (name != null) {
+            meta.displayName(name.decoration(TextDecoration.ITALIC, false));
+        }
+
+        ArrayList<Component> metalore = new ArrayList<>();
+        if (lore != null) {
+            // Disable italic for each lore line
+            for (Component loreLine : lore) {
+                metalore.add(loreLine.decoration(TextDecoration.ITALIC, false));
+            }
+        }
 
         meta.lore(metalore);
         item.setItemMeta(meta);
@@ -115,7 +128,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
         return inv;
     }
 
-    public void onGUIClick(Player whoClicked, int slot, ItemStack clickedItem, @NotNull InventoryAction action) {
+    public void onGUIClick(Player whoClicked, int slot, ItemStack clickedItem, @NotNull InventoryAction action, InventoryClickEvent event) {
 
         String goalName = "";
 
@@ -159,15 +172,33 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             return;
         }
 
-        if(clickedItem.getItemMeta().hasDisplayName()) {
-            goalName = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName());
-            //if(action.equals(InventoryAction.PICKUP_HALF)){
+        if(clickedItem.getItemMeta().hasDisplayName()){
+            goalName = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName()).substring(2);;
+            Goal g = goalsManager.getGoal(goalName);
 
-            whoClicked.closeInventory();
-            GoalSettingsGui settingsGui = new GoalSettingsGui(goalsManager.getGoal(goalName.substring(2)), this);
-            settingsGui.openInventory(whoClicked);
-
+            if (event.isShiftClick() && event.isRightClick()) {
+                handleDeleteGoal(whoClicked, g);
+            } else if (!event.getClick().isCreativeAction()) {
+                whoClicked.closeInventory();
+                GoalSettingsGui settingsGui = new GoalSettingsGui(g, this);
+                settingsGui.openInventory(whoClicked);
+            }
         }
+
+    }
+
+    private void handleDeleteGoal(Player player, Goal goal) {
+        player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Deleting goal &e" + goal.getName() + "&7..."));
+        Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
+            goal.kill();
+
+            // Switch back to main thread for UI updates
+            Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
+                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7deleted goal &e" + goal.getName()));
+                initializeItems();
+                player.updateInventory();
+            });
+        });
     }
 
     @EventHandler
@@ -177,7 +208,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 e.setCancelled(true);
 
                 AllGoalsGui gui = (AllGoalsGui) e.getInventory().getHolder();
-                gui.onGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getAction());
+                gui.onGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getAction(), e);
 
             }else{
                 if(e.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)){

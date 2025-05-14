@@ -62,7 +62,7 @@ goal-check-rate: 900
 
 #Enable or disable debug logging in the console
 #Default: true
-goal-check-verbose: true
+goal-check-verbose: false
 
 #=================================================================
 #                           JOIN STREAK
@@ -93,7 +93,7 @@ rewards-check-schedule-activation: true
 #Enable or disable debug logging in the console
 #I suggest you to keep this true if you are experimenting with cron expressions defined above
 #Default: true
-streak-check-verbose: true
+streak-check-verbose: false
 
 # Enables or disables the reset of the join streak.
 reset-joinstreak:

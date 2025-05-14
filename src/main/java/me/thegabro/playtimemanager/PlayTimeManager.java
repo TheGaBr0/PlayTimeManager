@@ -1,9 +1,6 @@
 package me.thegabro.playtimemanager;
 
-import me.thegabro.playtimemanager.GUIs.Goals.AllGoalsGui;
-import me.thegabro.playtimemanager.GUIs.Goals.GoalCommandsGui;
-import me.thegabro.playtimemanager.GUIs.Goals.GoalPermissionsGui;
-import me.thegabro.playtimemanager.GUIs.Goals.GoalSettingsGui;
+import me.thegabro.playtimemanager.GUIs.Goals.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Translations.CommandsConfiguration;
@@ -114,6 +111,7 @@ public class PlayTimeManager extends JavaPlugin{
         Bukkit.getPluginManager().registerEvents(new GoalSettingsGui(), this);
         Bukkit.getPluginManager().registerEvents(new GoalPermissionsGui(), this);
         Bukkit.getPluginManager().registerEvents(new GoalCommandsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new GoalRequirementsGui(), this);
         Bukkit.getPluginManager().registerEvents(new ConfirmationGui(), this);
         Bukkit.getPluginManager().registerEvents(new JoinStreakRewardSettingsGui(), this);
         Bukkit.getPluginManager().registerEvents(new AllJoinStreakRewardsGui(), this);

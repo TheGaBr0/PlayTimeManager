@@ -36,8 +36,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
 
     private static final class Slots {
         static final int REQUIRED_JOINS = 10;
-        static final int REWARD_PERMISSIONS = 12;
-        static final int REWARD_COMMANDS = 14;
+        static final int REWARD_PRIZES = 13;
         static final int REWARD_SOUND = 16;
         static final int DESCRIPTION = 29;
         static final int REWARDS_DESCRIPTION = 31;
@@ -80,10 +79,9 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
 
     private boolean isButtonSlot(int slot) {
         return slot == Slots.REQUIRED_JOINS ||
-                slot == Slots.REWARD_PERMISSIONS ||
+                slot == Slots.REWARD_PRIZES ||
                 slot == Slots.REWARD_MESSAGE ||
                 slot == Slots.REWARD_SOUND ||
-                slot == Slots.REWARD_COMMANDS ||
                 slot == Slots.DELETE_REWARD ||
                 slot == Slots.BACK_BUTTON ||
                 slot == Slots.DESCRIPTION ||
@@ -112,10 +110,14 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
             lore.add(Utils.parseColors("&cPermissions will not be assigned"));
         }
 
-        inventory.setItem(Slots.REWARD_PERMISSIONS, createGuiItem(
-                Material.NAME_TAG,
-                Utils.parseColors("&e&lPermissions"),
-                lore.toArray(new Component[0])
+        inventory.setItem(Slots.REWARD_PRIZES, createGuiItem(
+                Material.CHEST_MINECART,
+                Utils.parseColors("&e&lPrizes"),
+                Utils.parseColors("&7Currently &e" + reward.getPermissions().size() + "&7 " +
+                        (reward.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
+                Utils.parseColors("&7Currently &e" + reward.getCommands().size() + "&7 " +
+                        (reward.getCommands().size() != 1 ? "commands loaded" : "command loaded")),
+                Utils.parseColors("&7Click to manage reward's prizes")
         ));
 
         // Message button
@@ -134,15 +136,6 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 Utils.parseColors(""),
                 Utils.parseColors("&7Left-click to edit the sound"),
                 Utils.parseColors("&7Right click to play the sound.")
-        ));
-
-        // Commands button
-        inventory.setItem(Slots.REWARD_COMMANDS, createGuiItem(
-                Material.COMMAND_BLOCK,
-                Utils.parseColors("&e&lCommands"),
-                Utils.parseColors("&7Currently &e" + reward.getCommands().size() + "&7 " +
-                        (reward.getCommands().size() != 1 ? "commands loaded" : "command loaded")),
-                Utils.parseColors("&7Click to manage commands")
         ));
 
         // Delete button
@@ -245,9 +238,9 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 openRequiredJoinsEditor(player);
                 break;
 
-            case Slots.REWARD_PERMISSIONS:
+            case Slots.REWARD_PRIZES:
                 player.closeInventory();
-                new JoinStreakPermissionsGui(reward, this).openInventory(player);
+                new JoinStreakRewardPrizesGui(reward, this).openInventory(player);
                 break;
 
             case Slots.REWARD_MESSAGE:
@@ -265,11 +258,6 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 } else if (clickType == ClickType.RIGHT) {
                     playRewardSound(player);
                 }
-                break;
-
-            case Slots.REWARD_COMMANDS:
-                player.closeInventory();
-                new JoinStreakCommandsGui(reward, this).openInventory(player);
                 break;
 
             case Slots.DELETE_REWARD:

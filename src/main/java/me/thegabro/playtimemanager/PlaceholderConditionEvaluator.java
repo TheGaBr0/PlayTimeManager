@@ -32,7 +32,7 @@ public class PlaceholderConditionEvaluator {
         }
 
         // Replace all placeholders
-        String parsed = PlaceholderAPI.setPlaceholders(player, condition.trim());
+        String parsed = PlaceholderAPI.setPlaceholders(player, condition.replace("PLAYER_NAME", player.getName()).trim());
 
         Matcher matcher = EXPRESSION_PATTERN.matcher(parsed);
         if (!matcher.matches()) {

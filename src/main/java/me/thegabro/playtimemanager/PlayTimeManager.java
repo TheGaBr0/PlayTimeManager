@@ -109,14 +109,12 @@ public class PlayTimeManager extends JavaPlugin{
 
         Bukkit.getPluginManager().registerEvents(new AllGoalsGui(), this);
         Bukkit.getPluginManager().registerEvents(new GoalSettingsGui(), this);
-        Bukkit.getPluginManager().registerEvents(new GoalPermissionsGui(), this);
-        Bukkit.getPluginManager().registerEvents(new GoalCommandsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new GoalRewardsGui(), this);
         Bukkit.getPluginManager().registerEvents(new GoalRequirementsGui(), this);
         Bukkit.getPluginManager().registerEvents(new ConfirmationGui(), this);
         Bukkit.getPluginManager().registerEvents(new JoinStreakRewardSettingsGui(), this);
         Bukkit.getPluginManager().registerEvents(new AllJoinStreakRewardsGui(), this);
-        Bukkit.getPluginManager().registerEvents(new JoinStreakPermissionsGui(), this);
-        Bukkit.getPluginManager().registerEvents(new JoinStreakCommandsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new JoinStreakRewardPrizesGui(), this);
 
         Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeGoal());
         Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {

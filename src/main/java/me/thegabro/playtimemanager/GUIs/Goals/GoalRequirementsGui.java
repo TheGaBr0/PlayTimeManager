@@ -118,7 +118,7 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.ADD_PERMISSION, parentGui.createGuiItem(Material.NAME_TAG, Utils.parseColors("&e&lAdd Permission"),
                 Utils.parseColors("&7Click to add a new permission node")));
 
-        inventory.setItem(Slots.ADD_PLACEHOLDER, parentGui.createGuiItem(Material.ARMOR_STAND, Utils.parseColors("&b&lAdd Placeholder"),
+        inventory.setItem(Slots.ADD_PLACEHOLDER, parentGui.createGuiItem(Material.ARMOR_STAND, Utils.parseColors("&b&lAdd Placeholder condition"),
                 Utils.parseColors("&7Click to add a new placeholder condition")));
 
         inventory.setItem(Slots.BACK, parentGui.createGuiItem(Material.MAGENTA_GLAZED_TERRACOTTA, Utils.parseColors("&6&lBack")));
@@ -264,8 +264,12 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
 
         Component instructions = Utils.parseColors(
                 "&fEnter a new placeholder condition:\n" +
-                        "&7• Must be a boolean expression (e.g. &f%PTM_joinstreak% >= 2&7)\n" +
+                        "&7• Must be a boolean expression\n" +
                         "&7• Only expressions with 2 operands are accepted\n" +
+                        "&7• Available custom placeholder: PLAYER_NAME\n" +
+                        "&7• Examples:\n" +
+                        "&7  • &f%PTM_joinstreak% >= 2\n" +
+                        "&7  • &f%PTM_nickname_top_1% == PLAYER_NAME\n" +
                         "&7• Type &c&ocancel&7 to exit"
         );
 
@@ -346,8 +350,12 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fCurrent Placeholder: &7" + oldPlaceholder + "\n" +
                         "&7Enter a new placeholder condition:\n" +
-                        "&7• Must be a boolean expression (e.g. &f%PTM_joinstreak% >= 2&7)\n" +
+                        "&7• Must be a boolean expression \n" +
                         "&7• Only expressions with 2 operands are accepted\n" +
+                        "&7• Available custom placeholder: PLAYER_NAME\n" +
+                        "&7• Examples:\n" +
+                        "&7  • &f%PTM_joinstreak% >= 2\n" +
+                        "&7  • &f%PTM_nickname_top_1% == PLAYER_NAME\n" +
                         "&7• Type &c&ocancel&7 to exit"
         );
 

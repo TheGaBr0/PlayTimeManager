@@ -32,13 +32,12 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
     private static final class Slots {
-        static final int GOAL_PERMISSIONS = 12;
-        static final int GOAL_MESSAGE = 14;
-        static final int GOAL_SOUND = 16;
-        static final int GOAL_ACTIVATION_STATUS = 29;
-        static final int GOAL_COMMANDS = 31;
-        static final int GOAL_REQUIREMENTS = 33;
+        static final int GOAL_REWARDS = 19;
+        static final int GOAL_REQUIREMENTS = 21;
+        static final int GOAL_MESSAGE = 23;
+        static final int GOAL_SOUND = 25;
         static final int UNCOMPLETE_GOAL = 36;
+        static final int GOAL_ACTIVATION_STATUS = 40;
         static final int BACK_BUTTON = 44;
     }
 
@@ -74,11 +73,10 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     }
 
     private boolean isButtonSlot(int slot) {
-        return slot == Slots.GOAL_PERMISSIONS ||
+        return slot == Slots.GOAL_REWARDS ||
                 slot == Slots.GOAL_MESSAGE ||
                 slot == Slots.GOAL_SOUND ||
                 slot == Slots.GOAL_ACTIVATION_STATUS ||
-                slot == Slots.GOAL_COMMANDS ||
                 slot == Slots.BACK_BUTTON;
     }
 
@@ -98,10 +96,15 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         }
 
 
-        inventory.setItem(Slots.GOAL_PERMISSIONS, createGuiItem(
-                Material.NAME_TAG,
-                Component.text("§e§lPermissions"),
-                lore.toArray(new TextComponent[0])
+        inventory.setItem(Slots.GOAL_REWARDS, createGuiItem(
+                Material.CHEST_MINECART,
+                Component.text("§e§lRewards"),
+                Component.text("§7Currently §e" + goal.getRewardPermissions().size() + "§7 " +
+                        (goal.getRewardPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
+                Component.text("§7Currently §e" + goal.getRewardCommands().size() + "§7 " +
+                        (goal.getRewardCommands().size() != 1 ? "commands loaded" : "command loaded")),
+                Component.text("§7Click to manage rewards")
+
         ));
 
         // Message button
@@ -130,19 +133,14 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text("§7Click to " + (goal.isActive() ? "deactivate" : "activate") + " this goal")
         ));
 
-        // me.thegabro.playtimemanager.Commands button
-        inventory.setItem(Slots.GOAL_COMMANDS, createGuiItem(
-                Material.COMMAND_BLOCK,
-                Component.text("§e§lCommands"),
-                Component.text("§7Currently §e" + goal.getRewardCommands().size() + "§7 " +
-                        (goal.getRewardCommands().size() != 1 ? "commands loaded" : "command loaded")),
-                Component.text("§7Click to manage commands")
-        ));
-
         // Delete button
         inventory.setItem(Slots.GOAL_REQUIREMENTS, createGuiItem(
                 Material.PAPER,
                 Component.text("§c§lRequirements"),
+                Component.text("§7Currently §e" + goal.getRequirements().getPermissions().size() + "§7 " +
+                        (goal.getRequirements().getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
+                Component.text("§7Currently §e" + goal.getRequirements().getPlaceholderConditions().size() + "§7 " +
+                        (goal.getRequirements().getPlaceholderConditions().size() != 1 ? "conditions loaded" : "condition loaded")),
                 Component.text("§7Click to manage requirements")
         ));
 
@@ -194,11 +192,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
         switch (slot) {
 
-            case Slots.GOAL_PERMISSIONS:
-                player.closeInventory();
-                new GoalPermissionsGui(goal, this).openInventory(player);
-                break;
-
             case Slots.GOAL_MESSAGE:
                 if (clickType == ClickType.LEFT) {
                     openMessageEditor(player);
@@ -216,9 +209,9 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 }
                 break;
 
-            case Slots.GOAL_COMMANDS:
+            case Slots.GOAL_REWARDS:
                 player.closeInventory();
-                new GoalCommandsGui(goal, this).openInventory(player);
+                new GoalRewardsGui(goal, this).openInventory(player);
                 break;
 
             case Slots.GOAL_ACTIVATION_STATUS:

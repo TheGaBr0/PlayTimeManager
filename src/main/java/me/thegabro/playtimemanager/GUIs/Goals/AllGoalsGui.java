@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
+import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.JoinStreakRewardSettingsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
@@ -37,6 +38,9 @@ public class AllGoalsGui implements InventoryHolder, Listener {
     public AllGoalsGui() {
         inv = Bukkit.createInventory(this, 54, Component.text("Goals"));
     }
+    private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
+    private final int CREATE_GOAL = 4;
+
 
     public void openInventory(Player p) {
         initializeItems();
@@ -64,6 +68,12 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             }
         }
 
+        inv.setItem(CREATE_GOAL, createGuiItem(
+                Material.EMERALD,
+                Utils.parseColors("&a&lCreate New Goal"),
+                Utils.parseColors("&7Click to create a new goal")
+        ));
+
         if(!sortedGoals.isEmpty()) {
             int slot = 0;
             for(Goal goal : sortedGoals) {
@@ -76,7 +86,8 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 ItemMeta meta = item.getItemMeta();
                 meta.displayName(Component.text("§e" + goal.getName()));
                 List<Component> lore = Arrays.asList(
-                        Utils.parseColors("§7Required Time: " + Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime())),
+                        Utils.parseColors("§7Required Time: " + (goal.getRequirements().getTime() == Long.MAX_VALUE
+                                ? "-" : Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()))),
                         Utils.parseColors("§7Active: ")
                                 .append(Component.text(goal.isActive() ? "true" : "false")
                                         .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
@@ -96,8 +107,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             // Display message if no goals exist
             inv.setItem(22, createGuiItem(
                     Material.BARRIER,
-                    Utils.parseColors("§l§cNo goals have been set!"),
-                    Utils.parseColors("§7Click here to create a new goal")
+                    Utils.parseColors("§l§cNo goals have been created!")
             ));
         }
     }
@@ -137,40 +147,10 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             return;
         }
 
-        if(clickedItem.getType() == Material.BARRIER) {
-            whoClicked.closeInventory();
-
-            // Create the base message
-            Component baseMessage = Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + """
-                To create a goal use:
-                
-                /playtimegoal set §e<name> §7time:§e<time> §7[activate:§etrue§7|§efalse§7]
-            """);
-
-            // Create the command text
-            String command = "/playtimegoal set goal1 time:1d,2h,3m,4s";
-
-            // Create the surrounding text parts
-            Component preText = Component.text("You can ")
-                    .color(TextColor.color(170,170,170));  // Gray color
-
-            Component clickableText = Component.text("[click here]")
-                    .color(TextColor.color(255,170,0))  // Gold color
-                    .decoration(TextDecoration.BOLD, true)
-                    .clickEvent(ClickEvent.suggestCommand(command))
-                    .hoverEvent(HoverEvent.showText(Component.text("Click to autocomplete command")));
-
-            Component fullMessage = Component.empty()
-                    .append(baseMessage)
-                    .append(Component.text("\n"))
-                    .append(preText)  // Added "You can" part
-                    .append(clickableText)
-                    .append(Component.text(" to autocomplete the command")
-                            .color(TextColor.color(170,170,170)));  // Gray color
-
-            whoClicked.sendMessage(fullMessage);
-            return;
+        if(slot == CREATE_GOAL){
+            createGoalDialog(whoClicked);
         }
+
 
         if(clickedItem.getItemMeta().hasDisplayName()){
             goalName = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName()).substring(2);;
@@ -198,6 +178,44 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 initializeItems();
                 player.updateInventory();
             });
+        });
+    }
+
+    private void createGoalDialog(Player player) {
+        Component header = Utils.parseColors("&6&l➕ Goal creation");
+        Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+
+        Component instructions = Utils.parseColors(
+                "&7Create a new goal, enter a name below:\n" +
+                        "&7• Choose a unique name (not already in use)\n" +
+                        "&7• Goal will be set as &einactive&7 by default\n" +
+                        "&7• Type &c&ocancel&7 to exit creation"
+        );
+
+        Component fullMessage = Component.empty()
+                .append(header)
+                .append(Component.newline())
+                .append(divider)
+                .append(Component.newline())
+                .append(Component.newline())
+                .append(instructions)
+                .append(Component.newline())
+                .append(divider);
+
+        player.closeInventory();
+        player.sendMessage(fullMessage);
+
+        chatEventManager.startChatInput(player, (p, message) -> {
+            if (!message.equalsIgnoreCase("cancel")) {
+                if(!message.isEmpty()){
+                    new Goal(plugin, message, false);
+                }
+                player.sendMessage(Utils.parseColors("&aGoal §e" + message + " &ahas been created"));
+            } else {
+                player.sendMessage(Utils.parseColors("&cGoal creation cancelled"));
+            }
+
+            openInventory(player);
         });
     }
 

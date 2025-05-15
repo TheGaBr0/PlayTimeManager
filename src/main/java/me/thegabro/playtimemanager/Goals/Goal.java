@@ -29,17 +29,13 @@ public class Goal {
     private boolean active;
 
     // Constructor
-    public Goal(PlayTimeManager plugin, String name, Long time, boolean active) {
+    public Goal(PlayTimeManager plugin, String name, boolean active) {
         this.plugin = plugin;
         this.name = name;
         this.goalFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + name + ".yml");
 
         this.requirements = new GoalRewardRequirement();
         loadFromFile(); // Load before modifying anything
-
-        if (time != null) {
-            this.requirements.setTime(time);
-        }
 
         this.active = active;
         saveToFile(); // Now save the updated object

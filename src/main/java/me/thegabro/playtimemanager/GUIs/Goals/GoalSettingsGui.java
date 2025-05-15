@@ -10,8 +10,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -21,7 +19,6 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.checkerframework.checker.nullness.qual.Nullable;
-import net.wesjd.anvilgui.AnvilGUI;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -35,7 +32,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
     private static final class Slots {
-        static final int TIME_SETTING = 10;
         static final int GOAL_PERMISSIONS = 12;
         static final int GOAL_MESSAGE = 14;
         static final int GOAL_SOUND = 16;
@@ -78,8 +74,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     }
 
     private boolean isButtonSlot(int slot) {
-        return slot == Slots.TIME_SETTING ||
-                slot == Slots.GOAL_PERMISSIONS ||
+        return slot == Slots.GOAL_PERMISSIONS ||
                 slot == Slots.GOAL_MESSAGE ||
                 slot == Slots.GOAL_SOUND ||
                 slot == Slots.GOAL_ACTIVATION_STATUS ||
@@ -88,12 +83,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     }
 
     private void initializeButtons() {
-        // Time setting button
-        inventory.setItem(Slots.TIME_SETTING, createGuiItem(
-                Material.CLOCK,
-                Component.text("§e§lRequired Time: §6" + Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime())),
-                Component.text("§7Click to modify the required playtime")
-        ));
 
         // Permissions button
         List<TextComponent> lore = new ArrayList<>();
@@ -204,9 +193,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         }
 
         switch (slot) {
-            case Slots.TIME_SETTING:
-                openTimeEditor(player);
-                break;
 
             case Slots.GOAL_PERMISSIONS:
                 player.closeInventory();
@@ -409,81 +395,56 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         }
     }
 
-    private void openTimeEditor(Player player) {
-        player.closeInventory();
-        new AnvilGUI.Builder()
-                .onClick((slot, stateSnapshot) -> {
-                    if (slot != AnvilGUI.Slot.OUTPUT) {
-                        return Collections.emptyList();
-                    }
-
-                    String text = stateSnapshot.getText();
-                    long time = Utils.formattedPlaytimeToTicks(text);
-
-                    if (time != -1L) {
-                        goal.setTime(time);
-                        reopenMainGui(player);
-                        return Collections.singletonList(AnvilGUI.ResponseAction.close());
-                    } else {
-                        return Collections.singletonList(
-                                AnvilGUI.ResponseAction.updateTitle("Invalid format!", true)
-                        );
-                    }
-                })
-                .onClose(state -> {
-                    // Reopen the PermissionsGui when the anvil is closed
-                    Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(state.getPlayer()));
-                })
-                .text(Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()))
-                .title("Format: 1y,2d,3h,4m,5s")
-                .plugin(PlayTimeManager.getPlugin(PlayTimeManager.class))
-                .open(player);
-    }
 
     private void openUncompleteGoalDialog(Player player) {
-        ItemStack item = new ItemStack(Material.PLAYER_HEAD);
-        ItemMeta meta = item.getItemMeta();
-        meta.displayName(Component.text(" "));
-        item.setItemMeta(meta);
-
         player.closeInventory();
-        new AnvilGUI.Builder()
-                .onClick((slot, stateSnapshot) -> {
-                    if (slot != AnvilGUI.Slot.OUTPUT) {
-                        return Collections.emptyList();
-                    }
 
-                    String playerName = stateSnapshot.getText().replace(" ", "");
+        Component header = Utils.parseColors("&c&l✎ Uncomplete Goal: &e" + goal.getName());
 
-                    DBUser user = dbUsersManager.getUserFromNickname(playerName);
+        Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
-                    if(user == null){
-                        return Collections.singletonList(
-                                AnvilGUI.ResponseAction.updateTitle("Player not found!", true)
-                        );
-                    }
+        // Instructions with better spacing and formatting
+        Component instructions = Utils.parseColors(
+                "&fEnter the player name to uncomplete this goal for.\n" +
+                        "&7• Player must have completed this goal\n" +
+                        "&7• Type &c&ocancel&7 to exit"
+        );
 
-                    if (user.hasCompletedGoal(goal.getName())) {
-                        user.unmarkGoalAsCompleted(goal.getName());
-                        player.sendMessage(Component.text("[§6PlayTime§eManager§f]§7 Successfully uncompleted goal §a" +
-                                goal.getName() + "§7 for player §a" + playerName));
+        // Create full message
+        Component fullMessage = Component.empty()
+                .append(header)
+                .append(Component.newline())
+                .append(divider)
+                .append(Component.newline())
+                .append(Component.newline())
+                .append(instructions)
+                .append(Component.newline())
+                .append(Component.newline())
+                .append(divider);
 
-                        reopenMainGui(player);
-                        return Collections.singletonList(AnvilGUI.ResponseAction.close());
-                    } else {
-                        return Collections.singletonList(
-                                AnvilGUI.ResponseAction.updateTitle("Player hasn't reach that goal!", true)
-                        );
-                    }
-                })
-                .onClose(state -> {
-                    Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class),
-                            () -> openInventory(state.getPlayer()));
-                })
-                .itemLeft(item)
-                .title("Enter player name:")
-                .plugin(PlayTimeManager.getPlugin(PlayTimeManager.class))
-                .open(player);
+        player.sendMessage(fullMessage);
+
+        chatEventManager.startChatInput(player, (p, input) -> {
+            if (!input.equalsIgnoreCase("cancel")) {
+                String playerName = input.replace(" ", "");
+                DBUser user = dbUsersManager.getUserFromNickname(playerName);
+
+                if (user == null) {
+                    player.sendMessage(Utils.parseColors("&cPlayer not found!"));
+                } else if (user.hasCompletedGoal(goal.getName())) {
+                    user.unmarkGoalAsCompleted(goal.getName());
+                    player.sendMessage(Component.text("[§6PlayTime§eManager§f]§7 Successfully uncompleted goal §a" +
+                            goal.getName() + "§7 for player §a" + playerName));
+                } else {
+                    player.sendMessage(Utils.parseColors("&cPlayer hasn't completed that goal!"));
+                }
+            } else {
+                player.sendMessage(Utils.parseColors("&cUncomplete goal operation cancelled"));
+            }
+
+            // Reopen the GUI
+            reopenMainGui(player);
+        });
     }
 
     private void reopenMainGui(Player player) {

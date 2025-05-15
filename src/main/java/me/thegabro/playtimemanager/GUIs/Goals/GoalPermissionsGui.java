@@ -1,9 +1,11 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
+import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -15,7 +17,6 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import net.wesjd.anvilgui.AnvilGUI;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -29,6 +30,7 @@ public class GoalPermissionsGui implements InventoryHolder, Listener {
     private Goal goal;
     private GoalSettingsGui parentGui;
     private int currentPage;
+    private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
 
     private static final class Slots {
         static final int PREV_PAGE = 45;
@@ -229,48 +231,79 @@ public class GoalPermissionsGui implements InventoryHolder, Listener {
 
 
     private void openAddPermissionDialog(Player player) {
-        new AnvilGUI.Builder()
-                .onClick((slot, state) -> {
-                    if (slot != AnvilGUI.Slot.OUTPUT) return Collections.emptyList();
+        Component header = Utils.parseColors("&e&l➕ Add Permission");
+        Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
-                    String permission = state.getText();
-                    if (!permission.isEmpty()) {
-                        goal.addPermission(permission);
-                    }
-                    Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(player));
-                    return Collections.singletonList(AnvilGUI.ResponseAction.close());
-                })
-                .onClose(state -> {
-                    // Reopen the PermissionsGui when the anvil is closed
-                    Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(state.getPlayer()));
-                })
-                .text("Enter permission")
-                .title("Add Permission")
-                .plugin(PlayTimeManager.getPlugin(PlayTimeManager.class))
-                .open(player);
+        Component instructions = Utils.parseColors(
+                "&fEnter a new permission node:\n" +
+                        "&7• Standard permission or 'group.groupname'\n" +
+                        "&7• Type &c&ocancel&7 to exit"
+        );
+
+        Component fullMessage = Component.empty()
+                .append(header)
+                .append(Component.newline())
+                .append(divider)
+                .append(Component.newline())
+                .append(Component.newline())
+                .append(instructions)
+                .append(Component.newline())
+                .append(divider);
+
+        player.closeInventory();
+        player.sendMessage(fullMessage);
+
+        chatEventManager.startChatInput(player, (p, message) -> {
+            if (!message.equalsIgnoreCase("cancel")) {
+                if(!message.isEmpty()){
+                    goal.addPermission(message);
+                    player.sendMessage(Utils.parseColors("&aPermission added: &f" + message));
+                }
+            } else {
+                player.sendMessage(Utils.parseColors("&cPermission addition cancelled"));
+            }
+
+            openInventory(player);
+        });
     }
 
     private void openEditPermissionDialog(Player player, String oldPermission) {
-        new AnvilGUI.Builder()
-                .onClick((slot, state) -> {
-                    if (slot != AnvilGUI.Slot.OUTPUT) return Collections.emptyList();
+        Component header = Utils.parseColors("&6&l✎ Edit Permission");
+        Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
-                    String newPermission = state.getText();
-                    if (!newPermission.isEmpty()) {
-                        goal.removePermission(oldPermission);
-                        goal.addPermission(newPermission);
-                    }
-                    Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(player));
-                    return Collections.singletonList(AnvilGUI.ResponseAction.close());
-                })
-                .onClose(state -> {
-                    // Reopen the PermissionsGui when the anvil is closed
-                    Bukkit.getScheduler().runTask(PlayTimeManager.getPlugin(PlayTimeManager.class), () -> openInventory(state.getPlayer()));
-                })
-                .text(oldPermission)
-                .title("Edit Permission")
-                .plugin(PlayTimeManager.getPlugin(PlayTimeManager.class))
-                .open(player);
+        Component instructions = Utils.parseColors(
+                "&fCurrent Permission: &7" + oldPermission + "\n" +
+                        "&7Enter a new permission node:\n" +
+                        "&7• Type the new permission\n" +
+                        "&7• Type &c&ocancel&7 to exit"
+        );
+
+        Component fullMessage = Component.empty()
+                .append(header)
+                .append(Component.newline())
+                .append(divider)
+                .append(Component.newline())
+                .append(Component.newline())
+                .append(instructions)
+                .append(Component.newline())
+                .append(divider);
+
+        player.closeInventory();
+        player.sendMessage(fullMessage);
+
+        chatEventManager.startChatInput(player, (p, message) -> {
+            if (!message.equalsIgnoreCase("cancel")) {
+                if(!message.isEmpty()){
+                    goal.removePermission(oldPermission);
+                    goal.addPermission(message);
+                }
+                player.sendMessage(Utils.parseColors("&aPermission updated from &f" + oldPermission + " &ato &f" + message));
+            } else {
+                player.sendMessage(Utils.parseColors("&cPermission edit cancelled"));
+            }
+
+            openInventory(player);
+        });
     }
 
     private void handleDeleteAll(Player whoClicked) {

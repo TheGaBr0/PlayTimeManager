@@ -266,6 +266,16 @@ public class Goal {
         saveToFile();
     }
 
+    public void clearPlaceholderConditions(){
+        getRequirements().getPlaceholderConditions().clear();
+        saveToFile();
+    }
+
+    public void clearRequirementPermissions(){
+        getRequirements().getPermissions().clear();
+        saveToFile();
+    }
+
     public void kill() {
         goalsManager.removeGoal(this);
         DBUsersManager.getInstance().removeGoalFromAllUsers(name);

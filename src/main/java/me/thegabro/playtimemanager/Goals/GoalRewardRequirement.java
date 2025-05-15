@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.Goals;
 
-import me.thegabro.playtimemanager.PlaceholderCondition;
+import me.thegabro.playtimemanager.PlaceholderConditionEvaluator;
 import org.bukkit.entity.Player;
 import java.util.List;
 import java.util.ArrayList;
@@ -9,6 +9,8 @@ public class GoalRewardRequirement {
     private List<String> permissions;
     private List<String> placeholderConditions;
     private long time;
+    private PlaceholderConditionEvaluator placeholderConditionEvaluator = PlaceholderConditionEvaluator.getInstance();
+
 
     public GoalRewardRequirement() {
         this.permissions = new ArrayList<>();
@@ -32,7 +34,7 @@ public class GoalRewardRequirement {
 
         // Check placeholder conditions
         for (String condition : placeholderConditions) {
-            if (!PlaceholderCondition.evaluate(player, condition)) {
+            if (!placeholderConditionEvaluator.evaluate(player, condition)) {
                 return false;
             }
         }

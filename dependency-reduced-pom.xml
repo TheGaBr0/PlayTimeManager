@@ -32,10 +32,6 @@
             <configuration>
               <relocations>
                 <relocation>
-                  <pattern>net.wesjd.anvilgui</pattern>
-                  <shadedPattern>me.thegabro.playtimemanager.anvilgui</shadedPattern>
-                </relocation>
-                <relocation>
                   <pattern>com.jeff_media.updatechecker</pattern>
                   <shadedPattern>me.thegabro.playtimemanager.updatechecker</shadedPattern>
                 </relocation>

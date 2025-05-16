@@ -410,9 +410,10 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
             if (confirmed) {
                 goal.clearPlaceholderConditions();
                 goal.clearRequirementPermissions();
+                goal.setTime(Long.MAX_VALUE);
             }
-            initializeItems();
-            player.updateInventory();
+            player.closeInventory();
+            openInventory(player);
         }).openInventory(player);
     }
 }

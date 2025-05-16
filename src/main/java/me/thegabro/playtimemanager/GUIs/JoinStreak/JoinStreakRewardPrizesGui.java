@@ -393,18 +393,16 @@ public class JoinStreakRewardPrizesGui implements InventoryHolder, Listener {
         ItemStack warning = parentGui.createGuiItem(Material.BARRIER, Utils.parseColors("&c&lDelete All Rewards"), Utils.parseColors("&7This will remove all permissions and commands from this join streak reward"));
         new ConfirmationGui(warning, confirmed -> {
             if (confirmed) {
-                // Remove all permissions
                 for(String perm: new ArrayList<>(reward.getPermissions())) {
                     reward.removePermission(perm);
                 }
 
-                // Remove all commands
                 for(String cmd: new ArrayList<>(reward.getCommands())) {
                     reward.removeCommand(cmd);
                 }
             }
-            initializeItems();
-            whoClicked.updateInventory();
+            whoClicked.closeInventory();
+            openInventory(whoClicked);
         }).openInventory(whoClicked);
     }
 }

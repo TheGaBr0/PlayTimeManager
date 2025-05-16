@@ -295,7 +295,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                         "&7  This represents a range of joins from x1 to x2\n" +
                         "&7  Example: \"1-25\" triggers on ALL joins from 1st to 25th\n" +
                         "&7• Enter &c-1 &7to deactivate this reward\n" +
-                        "&7• Type &c&o" + "cancel" + " &7to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component fullMessage = Component.empty()
@@ -344,11 +344,11 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 "&fEnter a description of what the player receives when achieving this reward.\n" +
                         "&7• Describe the specific rewards or benefits\n" +
                         "&7• This will be returned by the placeholder %REWARD_DETAILS%\n" +
-                        "&e&o• Example: '500 coins, VIP rank for 7 days'\n" +
-                        "&7• Type &c&o" + "cancel" + " &7to exit\n" +
-                        "&7• Type &a&o" + "confirm" + " &7to submit\n" +
-                        "&7• Type &e&o" + "newline" + " &7to start a new line\n" +
-                        "&7• Type &e&o" + "removeline" + " &7to remove the last line"
+                        "&e&o• Example: '500 coins, VIP rank for 7 days&r'\n" +
+                        "&7• Type &c&ocancel&r&7 to exit\n" +
+                        "&7• Type &a&oconfirm&r&7 to submit\n" +
+                        "&7• Type &e&onewline&r&7 to start a new line\n" +
+                        "&7• Type &e&oremoveline&r&7 to remove the last line"
         );
 
         Component fullMessage = Component.empty()
@@ -384,11 +384,11 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter a brief, general description for this reward.\n" +
                         "&7• Keep it short and concise\n" +
-                        "&e&o• Example: 'A 30 days achievement for dedicated players!'\n" +
-                        "&7• Type &c&o" + "cancel" + " &7to exit\n" +
-                        "&7• Type &a&o" + "confirm" + " &7to submit\n" +
-                        "&7• Type &e&o" + "newline" + " &7to start a new line\n" +
-                        "&7• Type &e&o" + "removeline" + " &7to remove the last line"
+                        "&e&o• Example: 'A 30 days achievement for dedicated players!&r'\n" +
+                        "&7• Type &c&ocancel&r&7 to exit\n" +
+                        "&7• Type &a&oconfirm&r&7 to submit\n" +
+                        "&7• Type &e&onewline&r&7 to start a new line\n" +
+                        "&7• Type &e&oremoveline&r&7 to remove the last line"
         );
 
         Component fullMessage = Component.empty()
@@ -420,8 +420,9 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         Component header = Utils.parseColors("&6&lItem Icon Selector");
 
         Component instructions = Utils.parseColors(
-                "&fHold the item you want to use as the reward icon and type &a&lconfirm &fin chat.\n" +
-                        "&7• Type &c&o" + "cancel" + " &7to exit"
+                "&7Hold the item you want to use as the reward icon and type &a&lconfirm &r&7in chat.\n" +
+                        "&7• Custom items with NBT are currently &a&cnot supported\n"+
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         player.sendMessage(header);
@@ -457,9 +458,9 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
 
         Component instructions = Utils.parseColors(
                 "&fEnter the new message for this reward.\n" +
-                        "&7• Supports legacy and hex color codes (e.g. &6 or &#rrggbb)\n" +
+                        "&7• Supports legacy and hex color codes \n" +
                         "&7• Available placeholders: %PLAYER_NAME%, %REQUIRED_JOINS%\n" +
-                        "&7• Type &c&o" + "cancel" + " &7to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component fullMessage = Component.empty()
@@ -508,7 +509,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter the new sound for this reward.\n" +
                         "&7• Input is not case-sensitive\n" +
-                        "&7• Type &c&o" + "cancel" + " &7to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component linkText = Utils.parseColors("&e&l» SOUND LIST «")

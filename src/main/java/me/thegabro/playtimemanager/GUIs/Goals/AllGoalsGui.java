@@ -152,7 +152,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
             return;
         }
 
-        if(clickedItem.getItemMeta().hasDisplayName()){
+        if(clickedItem.getItemMeta().hasDisplayName() && clickedItem.getType() != Material.BARRIER){
             goalName = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName());
             Goal g = goalsManager.getGoal(goalName);
 
@@ -186,7 +186,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
         Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
         Component instructions = Utils.parseColors(
-                "&7Create a new goal, enter a name below:\n" +
+                "&7Create a new goal, type a new name:\n" +
                         "&7• Choose a unique name (not already in use)\n" +
                         "&7• Goal will be set as &einactive&7 by default\n" +
                         "&7• Type &c&ocancel&7 to exit creation"

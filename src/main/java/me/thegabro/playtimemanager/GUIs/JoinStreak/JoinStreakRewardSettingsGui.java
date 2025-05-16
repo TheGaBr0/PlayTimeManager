@@ -94,21 +94,9 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.REQUIRED_JOINS, createGuiItem(
                 Material.EXPERIENCE_BOTTLE,
                 Utils.parseColors("&e&lRequired Joins: &6" + (reward.getMinRequiredJoins() == -1 ? "-" : reward.getRequiredJoinsDisplay())),
+                Component.text(""),
                 Utils.parseColors("&7Click to edit the required joins")
         ));
-
-        // Permissions button
-        List<Component> lore = new ArrayList<>();
-        lore.add(Utils.parseColors("&7Currently &e" + reward.getPermissions().size() + "&7 " +
-                (reward.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")));
-
-        lore.add(Utils.parseColors("&7Click to change the permissions"));
-
-        if (!PlayTimeManager.getInstance().isPermissionsManagerConfigured()) {
-            lore.add(Utils.parseColors(""));
-            lore.add(Utils.parseColors("&4&lWARNING: &cNo permissions plugin detected!"));
-            lore.add(Utils.parseColors("&cPermissions will not be assigned"));
-        }
 
         inventory.setItem(Slots.REWARD_PRIZES, createGuiItem(
                 Material.CHEST_MINECART,
@@ -117,6 +105,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                         (reward.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
                 Utils.parseColors("&7Currently &e" + reward.getCommands().size() + "&7 " +
                         (reward.getCommands().size() != 1 ? "commands loaded" : "command loaded")),
+                Component.text(""),
                 Utils.parseColors("&7Click to manage reward's prizes")
         ));
 
@@ -124,6 +113,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.REWARD_MESSAGE, createGuiItem(
                 Material.OAK_SIGN,
                 Utils.parseColors("&e&lReward Achieved Message"),
+                Component.text(""),
                 Utils.parseColors("&7Left-click to edit the message"),
                 Utils.parseColors("&7Right-click to display the message")
         ));
@@ -142,6 +132,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.DELETE_REWARD, createGuiItem(
                 Material.BARRIER,
                 Utils.parseColors("&c&lDelete Reward"),
+                Component.text(""),
                 Utils.parseColors("&7Click to delete this reward")
         ));
 
@@ -198,6 +189,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         ItemStack iconItem =
                 createGuiItem(Material.valueOf(reward.getItemIcon()),
                         Utils.parseColors("&e&lReward Icon"),
+                        Component.text(""),
                         Utils.parseColors("&7Click to set an icon"));
         inventory.setItem(Slots.REWARD_ICON, iconItem);
     }

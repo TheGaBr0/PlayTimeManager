@@ -20,9 +20,12 @@ public class GoalRewardRequirement {
 
     // Check if a player meets all requirements
     public boolean checkRequirements(Player player, long playerTime) {
+
         // Check time requirement
-        if (playerTime < time) {
-            return false;
+        if(time != Long.MAX_VALUE){
+            if (playerTime < time) {
+                return false;
+            }
         }
 
         // Check permissions

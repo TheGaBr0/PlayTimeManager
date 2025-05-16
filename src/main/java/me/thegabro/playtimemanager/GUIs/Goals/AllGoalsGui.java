@@ -84,7 +84,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 // Create goal item
                 ItemStack item = goal.isActive() ?  new ItemStack(Material.EXPERIENCE_BOTTLE) : new ItemStack(Material.RED_DYE);
                 ItemMeta meta = item.getItemMeta();
-                meta.displayName(Component.text("§e" + goal.getName()));
+                meta.displayName(Utils.parseColors("&e" + goal.getName()).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = Arrays.asList(
                         Utils.parseColors("§7Required Time: " + (goal.getRequirements().getTime() == Long.MAX_VALUE
                                 ? "-" : Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()))),
@@ -149,11 +149,11 @@ public class AllGoalsGui implements InventoryHolder, Listener {
 
         if(slot == CREATE_GOAL){
             createGoalDialog(whoClicked);
+            return;
         }
 
-
         if(clickedItem.getItemMeta().hasDisplayName()){
-            goalName = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName()).substring(2);;
+            goalName = PlainTextComponentSerializer.plainText().serialize(clickedItem.getItemMeta().displayName());
             Goal g = goalsManager.getGoal(goalName);
 
             if (event.isShiftClick() && event.isRightClick()) {

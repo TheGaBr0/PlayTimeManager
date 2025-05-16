@@ -28,7 +28,15 @@ public class Goal {
     private String goalSound;
     private boolean active;
 
-    // Constructor
+    public Goal(PlayTimeManager plugin, String name) {
+        this.plugin = plugin;
+        this.name = name;
+        this.goalFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + name + ".yml");
+        this.requirements = new GoalRewardRequirement();
+        loadFromFile(); // Load before modifying anything
+        goalsManager.addGoal(this);
+    }
+
     public Goal(PlayTimeManager plugin, String name, boolean active) {
         this.plugin = plugin;
         this.name = name;
@@ -91,6 +99,7 @@ public class Goal {
                     "---------------------------",
                     "requirements:",
                     "  time: Required playtime (in seconds) for the goal to be completed",
+                    "   - Note: if time isn't set, it defaults to a very long number, it is intended!",
                     "  permissions: List of permissions that the player must have to complete this goal",
                     "  placeholders: List of placeholder conditions that must be met to complete this goal",
                     "---------------------------",

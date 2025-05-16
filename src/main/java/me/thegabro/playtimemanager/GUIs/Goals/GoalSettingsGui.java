@@ -103,6 +103,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                         (goal.getRewardPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
                 Component.text("§7Currently §e" + goal.getRewardCommands().size() + "§7 " +
                         (goal.getRewardCommands().size() != 1 ? "commands loaded" : "command loaded")),
+                Component.text(""),
                 Component.text("§7Click to manage rewards")
 
         ));
@@ -141,6 +142,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                         (goal.getRequirements().getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
                 Component.text("§7Currently §e" + goal.getRequirements().getPlaceholderConditions().size() + "§7 " +
                         (goal.getRequirements().getPlaceholderConditions().size() != 1 ? "conditions loaded" : "condition loaded")),
+                Component.text(""),
                 Component.text("§7Click to manage requirements")
         ));
 
@@ -148,6 +150,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.UNCOMPLETE_GOAL, createGuiItem(
                 Material.PLAYER_HEAD,
                 Component.text("§e§lUncomplete Goal for Player"),
+                Component.text(""),
                 Component.text("§7Click to remove this goal's completion"),
                 Component.text("§7from a specific player")
         ));
@@ -247,7 +250,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter the new message for this goal.\n" +
                         "&7• Supports legacy and hex color codes\n" +
-                        "&7• Type &c&ocancel&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component preText = Utils.parseColors("&7You can ");
@@ -303,7 +306,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter the new sound for this goal.\n" +
                         "&7• Input is not case-sensitive\n" +
-                        "&7• Type &c&ocancel&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         // Sound list link with icon
@@ -400,7 +403,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter the player name to uncomplete this goal for.\n" +
                         "&7• Player must have completed this goal\n" +
-                        "&7• Type &c&ocancel&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         // Create full message

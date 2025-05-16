@@ -108,7 +108,8 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
 
         inventory.setItem(Slots.TIME_SETTING, parentGui.createGuiItem(
                 Material.CLOCK,
-                Component.text("§e§lRequired Time: §6" + Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime())),
+                Utils.parseColors("&6&lRequired Time: &r" + (goal.getRequirements().getTime() == Long.MAX_VALUE
+                        ? "&e-" : "&e"+Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()))),
                 Component.text("§7Click to modify the required playtime")
         ));
 
@@ -185,8 +186,11 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter the new time requirement for this goal.\n" +
                         "&7• Format: &e1y,2d,3h,4m,5s\n" +
-                        "&7• Current value: &e" + Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()) + "\n" +
-                        "&7• Type &c&ocancel&7 to exit"
+                        "&7• Current value: &e" +
+                        (goal.getRequirements().getTime() != Long.MAX_VALUE ?
+                                Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()) : "-") + "\n" +
+                        "&7• Type &d&onone&r&7 to remove this requirement\n" +
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         // Create full message
@@ -203,14 +207,24 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
 
         player.sendMessage(fullMessage);
 
-        chatEventManager.startChatInput(player, (p, input) -> {
-            if (!input.equalsIgnoreCase("cancel")) {
-                long time = Utils.formattedPlaytimeToTicks(input);
+        chatEventManager.startChatInput(player, (p, message) -> {
+            if (!message.equalsIgnoreCase("cancel")) {
+                if(!message.isEmpty()) {
+                    if(message.equalsIgnoreCase("none")){
+                        goal.setTime(Long.MAX_VALUE);
+                        player.sendMessage(Utils.parseColors("&aGoal time requirement has been removed!"));
+                    }else{
+                        long time = Utils.formattedPlaytimeToTicks(message);
 
-                if (time != -1L) {
-                    goal.setTime(time);
-                    player.sendMessage(Utils.parseColors("&aGoal time requirement updated successfully!"));
-                } else {
+                        if (time != -1L) {
+                            goal.setTime(time);
+                            player.sendMessage(Utils.parseColors("&aGoal time requirement updated successfully!"));
+                        } else {
+                            player.sendMessage(Utils.parseColors("&cInvalid time format! Please use format: 1y,2d,3h,4m,5s"));
+                        }
+                    }
+                }
+                else{
                     player.sendMessage(Utils.parseColors("&cInvalid time format! Please use format: 1y,2d,3h,4m,5s"));
                 }
             } else {
@@ -228,7 +242,7 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter a new permission node:\n" +
                         "&7• Standard permission or 'group.groupname'\n" +
-                        "&7• Type &c&ocancel&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component fullMessage = Component.empty()
@@ -270,7 +284,7 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
                         "&7• Examples:\n" +
                         "&7  • &f%PTM_joinstreak% >= 2\n" +
                         "&7  • &f%PTM_nickname_top_1% == PLAYER_NAME\n" +
-                        "&7• Type &c&ocancel&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component fullMessage = Component.empty()
@@ -312,7 +326,7 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
                 "&fCurrent Permission: &7" + oldPermission + "\n" +
                         "&7Enter a new permission node:\n" +
                         "&7• Type the new permission\n" +
-                        "&7• Type &c&ocancel&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component fullMessage = Component.empty()
@@ -356,7 +370,7 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
                         "&7• Examples:\n" +
                         "&7  • &f%PTM_joinstreak% >= 2\n" +
                         "&7  • &f%PTM_nickname_top_1% == PLAYER_NAME\n" +
-                        "&7• Type &c&ocancel&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component fullMessage = Component.empty()

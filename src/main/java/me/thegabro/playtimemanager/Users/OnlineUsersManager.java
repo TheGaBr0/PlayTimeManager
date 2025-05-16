@@ -239,9 +239,10 @@ public class OnlineUsersManager {
 
     private void sendGoalMessage(Player player, Goal goal) {
         goalMessageReplacements.put("%PLAYER_NAME%", player.getName());
-        goalMessageReplacements.put("%TIME_REQUIRED%", Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()));
+        goalMessageReplacements.put("%TIME_REQUIRED%",
+                goal.getRequirements().getTime() != Long.MAX_VALUE ? Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()) : "-");
         goalMessageReplacements.put("%GOAL_NAME%", goal.getName());
-        player.sendMessage(replacePlaceholders(goal.getGoalMessage()));
+        player.sendMessage(Utils.parseColors(replacePlaceholders(goal.getGoalMessage())));
     }
 
 

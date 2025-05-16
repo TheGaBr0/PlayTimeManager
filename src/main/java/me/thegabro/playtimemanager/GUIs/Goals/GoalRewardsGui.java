@@ -220,7 +220,7 @@ public class GoalRewardsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter a new permission node:\n" +
                         "&7• Standard permission or 'group.groupname'\n" +
-                        "&7• Type &c&ocancel&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component fullMessage = Component.empty()
@@ -258,7 +258,7 @@ public class GoalRewardsGui implements InventoryHolder, Listener {
                 "&fCurrent Permission: &7" + oldPermission + "\n" +
                         "&7Enter a new permission node:\n" +
                         "&7• Type the new permission\n" +
-                        "&7• Type &c&ocancel&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component fullMessage = Component.empty()
@@ -297,7 +297,7 @@ public class GoalRewardsGui implements InventoryHolder, Listener {
                 "&fEnter a new command for this goal:\n" +
                         "&7• Commands must be valid and use '/' as a prefix\n" +
                         "&7• Available placeholders: PLAYER_NAME\n" +
-                        "&7• Type &c&ocancel&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component fullMessage = Component.empty()
@@ -337,7 +337,7 @@ public class GoalRewardsGui implements InventoryHolder, Listener {
                         "&7Enter a new command:\n" +
                         "&7• Commands must be valid and use '/' as a prefix\n" +
                         "&7• Available placeholders: PLAYER_NAME\n" +
-                        "&7• Type &c&ocancel&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component fullMessage = Component.empty()

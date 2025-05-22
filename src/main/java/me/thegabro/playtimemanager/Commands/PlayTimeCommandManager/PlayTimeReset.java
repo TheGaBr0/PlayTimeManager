@@ -75,10 +75,8 @@ public class PlayTimeReset {
                 resetPlayerJoinstreak(sender, targetPlayer);
                 break;
             case "all":
-                // Reset all three: stats, database AND joinstreak
                 resetPlayerStats(sender, targetPlayer);
                 resetPlayerDatabase(sender, targetPlayer);
-                resetPlayerJoinstreak(sender, targetPlayer);
                 break;
             default:
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
@@ -377,9 +375,9 @@ public class PlayTimeReset {
             case "stats":
                 return "in-game statistics";
             case "joinstreak":
-                return "join streaks";
+                return "join streaks data";
             case "all":
-                return "database records, in-game statistics, and join streaks";
+                return "database records, in-game statistics";
             default:
                 return "unknown data";
         }

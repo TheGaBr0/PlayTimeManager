@@ -115,7 +115,6 @@ public class DBUser {
         db.updateLastSeen(uuid, null);
         db.updateFirstJoin(uuid, null);
         db.resetJoinStreaks(uuid);
-        db.resetJoinStreaks(uuid);
         db.updateReceivedRewards(uuid, receivedRewards);
         db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
     }

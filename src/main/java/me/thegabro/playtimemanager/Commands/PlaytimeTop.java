@@ -48,7 +48,8 @@ public class PlaytimeTop implements TabExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
         if (!sender.hasPermission("playtime.top")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
+            String noPermMessage = config.getConfig().getString("playtimetop.messages.no-permission");
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " + noPermMessage));
             return false;
         }
 
@@ -58,11 +59,14 @@ public class PlaytimeTop implements TabExecutor {
                 if (getPages().contains(args[0])) {
                     page = Integer.parseInt(args[0].substring(1));
                 } else {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Page " + args[0].substring(1) + " doesn't exist!"));
+                    String pageNotExistsMessage = config.getConfig().getString("playtimetop.messages.page-not-exists")
+                            .replace("%PAGE_NUMBER%", args[0].substring(1));
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " + pageNotExistsMessage));
                     return false;
                 }
             } else {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The argument is not valid! Use p1, p2, etc."));
+                String invalidArgMessage = config.getConfig().getString("playtimetop.messages.invalid-argument");
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " + invalidArgMessage));
                 return false;
             }
         } else {
@@ -80,7 +84,8 @@ public class PlaytimeTop implements TabExecutor {
 
                 org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
                     if (topPlayers.isEmpty()) {
-                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " No players joined!"));
+                        String noPlayersMessage = config.getConfig().getString("playtimetop.messages.no-players");
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " + noPlayersMessage));
                         return;
                     }
 
@@ -88,7 +93,8 @@ public class PlaytimeTop implements TabExecutor {
                     int totalPages = (int) Math.ceil(Float.parseFloat(String.valueOf(totalUsers)) / 10);
 
                     if (page <= 0 || page > totalPages) {
-                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid page!"));
+                        String invalidPageMessage = config.getConfig().getString("playtimetop.messages.invalid-page");
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " + invalidPageMessage));
                         return;
                     }
 
@@ -191,8 +197,9 @@ public class PlaytimeTop implements TabExecutor {
                 });
             } catch (InterruptedException | ExecutionException e) {
                 org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                            " Error while loading top players: " + e.getMessage()));
+                    String loadingErrorMessage = config.getConfig().getString("playtimetop.messages.loading-error")
+                            .replace("%ERROR%", e.getMessage());
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " + loadingErrorMessage));
                 });
                 plugin.getLogger().severe("Error in PlaytimeTop command: " + e.getMessage());
             }

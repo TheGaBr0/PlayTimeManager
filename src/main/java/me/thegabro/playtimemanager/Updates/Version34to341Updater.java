@@ -24,6 +24,7 @@ public class Version34to341Updater {
     public void performUpgrade() {
         recreateGoalsConfigFiles();
         recreateConfigFile();
+        updateCommandsConfigFile();
     }
 
     private void recreateGoalsConfigFiles() {
@@ -168,6 +169,108 @@ public class Version34to341Updater {
         newConfig.reload();
 
         plugin.setConfiguration(newConfig);
+    }
+
+    private void updateCommandsConfigFile() {
+        File commandsConfigFile = new File(plugin.getDataFolder(), "Translations/Commands/commands-config.yml");
+
+        // If the file doesn't exist, skip the update
+        if (!commandsConfigFile.exists()) {
+            plugin.getLogger().info("Commands configuration file not found. Skipping commands config update.");
+            return;
+        }
+
+        try {
+            // Load the existing configuration
+            FileConfiguration existingConfig = YamlConfiguration.loadConfiguration(commandsConfigFile);
+
+            // Preserve all existing values
+            String header = existingConfig.getString("playtimetop.header",
+                    "[&6PlayTime&eManager&f]&7 Top 100 players - page: %PAGE_NUMBER%");
+            String leaderboardFormat = existingConfig.getString("playtimetop.leaderboard-format",
+                    "&7&l#%POSITION%&r &e%PLAYER_NAME% &7- &d%PLAYTIME%");
+            String middleText = existingConfig.getString("playtimetop.footer.middle-text",
+                    "&7Page %PAGE_NUMBER%/%TOTAL_PAGES%");
+
+            // Previous page configuration
+            String prevPageExists = existingConfig.getString("playtimetop.footer.previous-page.text-if-page-exists", "&6«");
+            String prevPageNotExists = existingConfig.getString("playtimetop.footer.previous-page.text-if-page-not-exists", "&7«");
+            String prevPageHover = existingConfig.getString("playtimetop.footer.previous-page.over-text",
+                    "&7Click to go to previous page");
+
+            // Next page configuration
+            String nextPageExists = existingConfig.getString("playtimetop.footer.next-page.text-if-page-exists", "&6»");
+            String nextPageNotExists = existingConfig.getString("playtimetop.footer.next-page.text-if-page-not-exists", "&7»");
+            String nextPageHover = existingConfig.getString("playtimetop.footer.next-page.over-text",
+                    "&7Click to go to next page");
+
+            // Check if messages section already exists (to avoid overwriting custom messages)
+            String noPermission = existingConfig.getString("playtimetop.messages.no-permission",
+                    "&cYou don't have the permission to execute this command");
+            String pageNotExists = existingConfig.getString("playtimetop.messages.page-not-exists",
+                    "&cPage %PAGE_NUMBER% doesn't exist!");
+            String invalidArgument = existingConfig.getString("playtimetop.messages.invalid-argument",
+                    "&cThe argument is not valid! Use p1, p2, etc.");
+            String noPlayers = existingConfig.getString("playtimetop.messages.no-players",
+                    "&cNo players joined!");
+            String invalidPage = existingConfig.getString("playtimetop.messages.invalid-page",
+                    "&cInvalid page!");
+            String loadingError = existingConfig.getString("playtimetop.messages.loading-error",
+                    "&cError while loading top players: %ERROR%");
+
+
+            // Delete the original file
+            if (!commandsConfigFile.delete()) {
+                plugin.getLogger().warning("Could not delete old commands configuration file");
+                return;
+            }
+
+            // Create new configuration with updated structure
+            FileConfiguration newConfig = new YamlConfiguration();
+
+            // Set header with comprehensive documentation
+            newConfig.options().setHeader(Arrays.asList(
+                    "PlayTimeManager - Commands Configuration",
+                    "This file contains all customizable text elements for commands (will be added more in the future)",
+                    "",
+                    "Hex colors are supported with the following format: &#rrggbb",
+                    "where rr (red), gg (green) and bb (blue) are",
+                    "hexadecimal values between 00 and ff (same as decimal 0-255)",
+                    "Standard minecraft colors and styles are accepted using & format (e.g. \"&5&lTest\").",
+                    "",
+                    "Placeholders enclosed in {} are FIELD-DEPENDENT. They can only be used within the specific field",
+                    "where they're defined. All available placeholders are shown in this configuration file"
+            ));
+
+            // Set all existing playtimetop configuration
+            newConfig.set("playtimetop.header", header);
+            newConfig.set("playtimetop.leaderboard-format", leaderboardFormat);
+
+            // Add messages section with preserved or default values
+            newConfig.set("playtimetop.messages.no-permission", noPermission);
+            newConfig.set("playtimetop.messages.page-not-exists", pageNotExists);
+            newConfig.set("playtimetop.messages.invalid-argument", invalidArgument);
+            newConfig.set("playtimetop.messages.no-players", noPlayers);
+            newConfig.set("playtimetop.messages.invalid-page", invalidPage);
+            newConfig.set("playtimetop.messages.loading-error", loadingError);
+
+            // Footer configuration
+            newConfig.set("playtimetop.footer.middle-text", middleText);
+            newConfig.set("playtimetop.footer.previous-page.text-if-page-exists", prevPageExists);
+            newConfig.set("playtimetop.footer.previous-page.text-if-page-not-exists", prevPageNotExists);
+            newConfig.set("playtimetop.footer.previous-page.over-text", prevPageHover);
+            newConfig.set("playtimetop.footer.next-page.text-if-page-exists", nextPageExists);
+            newConfig.set("playtimetop.footer.next-page.text-if-page-not-exists", nextPageNotExists);
+            newConfig.set("playtimetop.footer.next-page.over-text", nextPageHover);
+
+            // Save the updated configuration
+            newConfig.save(commandsConfigFile);
+
+            plugin.getLogger().info("Successfully updated commands configuration file with new message fields");
+
+        } catch (IOException e) {
+            plugin.getLogger().severe("Failed to update commands configuration file: " + e.getMessage());
+        }
     }
 
     private String getDefaultGoalSound() {

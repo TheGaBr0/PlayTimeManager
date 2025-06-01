@@ -49,6 +49,10 @@ public class StreakTracker {
                 // Calculate seconds since last seen
                 long secondsSinceLastSeen = Duration.between(lastSeen, LocalDateTime.now()).getSeconds();
 
+                //misses can't be lower than 0... otherwise it will reset immediately
+                if(missesAllowed <=0)
+                    missesAllowed = 1;
+
                 // Reset if seconds since last seen is greater than interval
                 if (secondsSinceLastSeen > intervalSeconds * missesAllowed) {
                     user.resetJoinStreaks();

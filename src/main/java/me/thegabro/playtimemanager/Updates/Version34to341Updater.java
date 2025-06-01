@@ -97,7 +97,7 @@ public class Version34to341Updater {
                 newConfig.set("active", active);
                 newConfig.set("goal-sound", goalSound);
                 newConfig.set("goal-message", goalMessage);
-                plugin.getLogger().info(String.valueOf(time));
+
                 newConfig.set("requirements.time", time);
                 newConfig.set("requirements.permissions", new ArrayList<>());
                 newConfig.set("requirements.placeholders", new ArrayList<>());
@@ -107,8 +107,6 @@ public class Version34to341Updater {
 
                 File newGoalFile = new File(goalPath);
                 newConfig.save(newGoalFile);
-
-                plugin.getLogger().info("Successfully updated goal configuration file: " + fileName);
 
             } catch (IOException e) {
                 plugin.getLogger().severe("Failed to update goal configuration file " + oldGoalFile.getName() + ": " + e.getMessage());
@@ -131,7 +129,7 @@ public class Version34to341Updater {
         boolean rewardsCheckScheduleActivation = config.getBoolean("rewards-check-schedule-activation");
         boolean streakCheckVerbose = config.getBoolean("streak-check-verbose");
         boolean resetJoinStreakEnabled = config.getBoolean("reset-joinstreak.enabled");
-        int resetJoinstreakMissedJoins = config.getInt("missed-joins");
+        int resetJoinstreakMissedJoins = config.getInt("reset-joinstreak.missed-joins");
         String joinWarnClaimMessage = config.getString("join-warn-claim-message");
         String joinWarnAutoclaimMessage = config.getString("join-warn-autoclaim-message");
         String joinUnclaimedPreviousMessage = config.getString("join-unclaimed-previous-message");

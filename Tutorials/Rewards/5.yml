@@ -1,0 +1,40 @@
+# GUIDE OF AVAILABLE OPTIONS:
+# ---------------------------
+# required-joins-range specifies the range of joins for which this reward is active.
+# Format: 'min-max' (e.g., '5-10' means the reward is active for 5th through 10th joins)
+# For a single join count, use the same number twice (e.g., '5-5' for just the 5th join)
+# ---------------------------
+# reward-sound is played to a player if it reaches the join streak specified in this config.
+# A list of available sounds can be found here: https://jd.papermc.io/paper/<VERSION>/org/bukkit/Sound.html
+# Replace '<VERSION>' in the link with your current minecraft version.
+# ---------------------------
+# reward-message is showed to a player if it reaches the join streak specified in this config.
+# Available placeholders: %REQUIRED_JOINS%, %PLAYER_NAME%
+# ---------------------------
+# description provides a short text description of the reward.
+# ---------------------------
+# reward-description provides detailed information about the reward.
+# ---------------------------
+# item-icon represents the visual representation of the reward in GUI.
+# ---------------------------
+# permissions defines what permissions will be granted to a player when they reach this reward
+# You can specify multiple permissions and groups that will all be granted.
+# ---------------------------
+# commands defines a list of commands that will be executed when a player reaches this reward
+# Available placeholders: PLAYER_NAME
+# Example commands:
+# - '/give PLAYER_NAME diamond 64'
+# - '/broadcast PLAYER_NAME has reached an amazing join streak!'
+
+required-joins-range: 21-29
+reward-sound: ENTITY_PLAYER_LEVELUP
+reward-message: '[&6PlayTime&eManager&f]&7 Congratulations &e%PLAYER_NAME%&7, you
+  have redeemed your reward successfully!'
+description: '&7Here you can place a description/n&7of this reward. It is optional/n&7and
+  should be concise.'
+reward-description: '&7Here you can add a brief list of what the player/n&7will receive
+  upon completion. E.g.:/n&l&eRewards:/n&l&e- &r&a+200&7 claim blocks blocks'
+permissions: []
+commands:
+- /tell PLAYER_NAME This is a tutorial!
+item-icon: GOLD_INGOT

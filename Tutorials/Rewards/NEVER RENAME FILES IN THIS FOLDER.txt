@@ -1,0 +1,7 @@
+NEVER RENAME FILES IN THIS FOLDER
+--------------------------------------------------
+WARNING: The files in this folder are named according to their ID.
+Changing the names of these files will cause the configuration files to be missing in the database.
+This could result in failures as IDs are used by the plugin, and modifying the file names will break the mapping.
+ID values should never be changed by the user.
+--------------------------------------------------

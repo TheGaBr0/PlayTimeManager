@@ -802,13 +802,14 @@ public abstract class PlayTimeDatabase {
         return 0; // Default return value if player not found or error occurs
     }
 
-    public void incrementRelativeJoinStreak(String uuid) {
+    public void setRelativeJoinStreak(String uuid, int value) {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
             conn = getSQLConnection();
-            ps = conn.prepareStatement("UPDATE play_time SET relative_join_streak = relative_join_streak + 1 WHERE uuid = ?;");
-            ps.setString(1, uuid);
+            ps = conn.prepareStatement("UPDATE play_time SET relative_join_streak = ? WHERE uuid = ?;");
+            ps.setInt(1, value);
+            ps.setString(2, uuid);
             ps.executeUpdate();
         } catch (SQLException ex) {
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
@@ -824,13 +825,14 @@ public abstract class PlayTimeDatabase {
         }
     }
 
-    public void incrementAbsoluteJoinStreak(String uuid) {
+    public void setAbsoluteJoinStreak(String uuid, int value) {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
             conn = getSQLConnection();
-            ps = conn.prepareStatement("UPDATE play_time SET absolute_join_streak = absolute_join_streak + 1 WHERE uuid = ?;");
-            ps.setString(1, uuid);
+            ps = conn.prepareStatement("UPDATE play_time SET absolute_join_streak = ? WHERE uuid = ?;");
+            ps.setInt(1, value);
+            ps.setString(2, uuid);
             ps.executeUpdate();
         } catch (SQLException ex) {
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
@@ -846,49 +848,6 @@ public abstract class PlayTimeDatabase {
         }
     }
 
-    public void resetJoinStreaks(String uuid) {
-        Connection conn = null;
-        PreparedStatement ps = null;
-        try {
-            conn = getSQLConnection();
-            ps = conn.prepareStatement("UPDATE play_time SET relative_join_streak = 0, absolute_join_streak = 0 WHERE uuid = ?;");
-            ps.setString(1, uuid);
-            ps.executeUpdate();
-        } catch (SQLException ex) {
-            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
-        } finally {
-            try {
-                if (ps != null)
-                    ps.close();
-                if (conn != null)
-                    conn.close();
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
-            }
-        }
-    }
-
-    public void resetRelativeJoinStreak(String uuid) {
-        Connection conn = null;
-        PreparedStatement ps = null;
-        try {
-            conn = getSQLConnection();
-            ps = conn.prepareStatement("UPDATE play_time SET relative_join_streak = 0 WHERE uuid = ?;");
-            ps.setString(1, uuid);
-            ps.executeUpdate();
-        } catch (SQLException ex) {
-            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
-        } finally {
-            try {
-                if (ps != null)
-                    ps.close();
-                if (conn != null)
-                    conn.close();
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
-            }
-        }
-    }
 
     public Set<String> getPlayersWithActiveStreaks() {
         Set<String> players = new HashSet<>();

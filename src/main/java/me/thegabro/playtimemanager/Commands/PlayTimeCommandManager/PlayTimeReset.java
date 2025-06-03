@@ -75,10 +75,12 @@ public class PlayTimeReset {
                 resetPlayerJoinstreak(sender, targetPlayer);
                 break;
             case "all":
-            default:
-                // Reset both stats and database
                 resetPlayerStats(sender, targetPlayer);
                 resetPlayerDatabase(sender, targetPlayer);
+                break;
+            default:
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                        " Unknown reset type: &e" + resetType + "&7. Valid types: stats, db, joinstreak, all"));
                 break;
         }
     }
@@ -334,14 +336,18 @@ public class PlayTimeReset {
                 case "db":
                     resetAllPlayerDatabase(sender);
                     break;
-                case "all":
                 case "joinstreak":
                     resetAllPlayerJoinstreak(sender);
                     break;
-                default:
-                    // Reset both stats and database
+                case "all":
+                    // Reset all three: stats, database AND joinstreak
                     resetAllPlayerStats(sender);
                     resetAllPlayerDatabase(sender);
+                    resetAllPlayerJoinstreak(sender);
+                    break;
+                default:
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                            " Unknown reset type: &e" + resetType + "&7. Valid types: stats, db, joinstreak, all"));
                     break;
             }
         } else {
@@ -368,9 +374,12 @@ public class PlayTimeReset {
                 return "database records";
             case "stats":
                 return "in-game statistics";
+            case "joinstreak":
+                return "join streaks data";
             case "all":
+                return "database records, in-game statistics";
             default:
-                return "database records and in-game statistics";
+                return "unknown data";
         }
     }
 

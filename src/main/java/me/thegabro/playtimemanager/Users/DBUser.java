@@ -56,8 +56,8 @@ public class DBUser {
         if(firstJoin == null){
             firstJoin = LocalDateTime.now();
             db.updateFirstJoin(uuid, firstJoin);
-            db.incrementAbsoluteJoinStreak(uuid);
-            db.incrementRelativeJoinStreak(uuid);
+            db.setAbsoluteJoinStreak(uuid, 1);
+            db.setRelativeJoinStreak(uuid, 1);
         }
     }
 
@@ -114,8 +114,8 @@ public class DBUser {
         db.updateCompletedGoals(uuid, completedGoals);
         db.updateLastSeen(uuid, null);
         db.updateFirstJoin(uuid, null);
-        db.resetJoinStreaks(uuid);
-        db.resetJoinStreaks(uuid);
+        db.setRelativeJoinStreak(uuid, 0);
+        db.setAbsoluteJoinStreak(uuid, 0);
         db.updateReceivedRewards(uuid, receivedRewards);
         db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
     }
@@ -173,23 +173,29 @@ public class DBUser {
 
     public void incrementRelativeJoinStreak(){
         this.relativeJoinStreak++;
-        db.incrementRelativeJoinStreak(uuid);
+        db.setRelativeJoinStreak(uuid, this.relativeJoinStreak);
     }
 
     public void incrementAbsoluteJoinStreak(){
         this.absoluteJoinStreak++;
-        db.incrementAbsoluteJoinStreak(uuid);
+        db.setAbsoluteJoinStreak(uuid, this.absoluteJoinStreak);
+    }
+
+    public void setRelativeJoinStreak(int value){
+        this.relativeJoinStreak = value;
+        db.setRelativeJoinStreak(uuid, this.relativeJoinStreak);
     }
 
     public void resetJoinStreaks(){
         this.relativeJoinStreak = 0;
         this.absoluteJoinStreak = 0;
-        db.resetJoinStreaks(uuid);
+        db.setAbsoluteJoinStreak(uuid, 0);
+        db.setRelativeJoinStreak(uuid, 0);
     }
 
     public void resetRelativeJoinStreak(){
         this.relativeJoinStreak = 0;
-        db.resetRelativeJoinStreak(uuid);
+        db.setRelativeJoinStreak(uuid, 0);
     }
 
     public void migrateUnclaimedRewards(){

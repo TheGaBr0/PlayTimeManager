@@ -49,14 +49,7 @@ public class Configuration {
     private boolean joinStreakResetActivation;
     private int joinStreakResetMissesAllowed;
 
-    /**
-     * Constructor for Configuration
-     *
-     * @param path             Location of the configuration file
-     * @param name             Name of the configuration file (without extension)
-     * @param createIfNotExist Whether to create the file if it doesn't exist
-     * @param resource         Whether to use plugin resource as default
-     */
+
     public Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
         this.path = path;
         this.name = name + ".yml";
@@ -70,9 +63,6 @@ public class Configuration {
     // File operations
     //-------------------------------------------------------------------------
 
-    /**
-     * Creates the configuration file if it doesn't exist
-     */
     private void create() {
         if (file == null) {
             reloadFile();
@@ -92,9 +82,6 @@ public class Configuration {
         }
     }
 
-    /**
-     * Saves the configuration to file
-     */
     private void save() {
         try {
             config.save(file);
@@ -103,23 +90,17 @@ public class Configuration {
         }
     }
 
-    /**
-     * Reloads the file reference
-     */
+
     private void reloadFile() {
         file = new File(path, name);
     }
 
-    /**
-     * Reloads the config from file
-     */
+
     private void reloadConfig() {
         config = YamlConfiguration.loadConfiguration(file);
     }
 
-    /**
-     * Reloads the configuration completely
-     */
+
     public void reload() {
         reloadFile();
         reloadConfig();
@@ -130,9 +111,7 @@ public class Configuration {
     // Settings update methods
     //-------------------------------------------------------------------------
 
-    /**
-     * Updates all configuration settings from the config file
-     */
+
     private void updateAllSettings() {
         updateGeneralSettings();
         updatePlaytimeSettings();
@@ -142,9 +121,6 @@ public class Configuration {
         updateStreakSettings();
     }
 
-    /**
-     * Updates general plugin settings
-     */
     private void updateGeneralSettings() {
         // Update plugin prefix
         this.pluginChatPrefix = config.getString("prefix", "[§6PlayTime§eManager§f]§7");
@@ -162,9 +138,6 @@ public class Configuration {
         }
     }
 
-    /**
-     * Updates playtime message settings
-     */
     private void updatePlaytimeSettings() {
         this.playtimeSelfMessage = config.getString("playtime-self-message",
                 "[&6PlayTime&eManager&f]&7 Your playtime is &6%PLAYTIME%");
@@ -172,32 +145,20 @@ public class Configuration {
                 "[&6PlayTime&eManager&f]&7 The playtime of &e%PLAYER_NAME%&7 is &6%PLAYTIME%");
     }
 
-    /**
-     * Updates goals settings
-     */
     private void updateGoalsSettings() {
         this.goalsCheckRate = config.getLong("goal-check-rate", 900);
         this.goalsCheckVerbose = config.getBoolean("goal-check-verbose", true);
     }
 
-    /**
-     * Updates placeholders settings
-     */
     private void updatePlaceholdersSettings() {
         this.placeholdersEnableErrors = config.getBoolean("placeholders.enable-errors", false);
         this.placeholdersDefaultMessage = config.getString("placeholders.default-message", "No data");
     }
 
-    /**
-     * Updates permissions settings
-     */
     private void updatePermissionsSettings() {
         this.permissionsManagerPlugin = config.getString("permissions-manager-plugin", "luckperms");
     }
 
-    /**
-     * Updates streak settings
-     */
     private void updateStreakSettings() {
         this.joinClaimMessage = config.getString("join-warn-claim-message", "[&6PlayTime&eManager&f]&7 Great job, " +
                 "&e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times " +

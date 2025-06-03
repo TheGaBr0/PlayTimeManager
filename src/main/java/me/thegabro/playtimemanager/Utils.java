@@ -117,15 +117,15 @@ public class Utils {
 
 
     private static long safeAdd(long a, long b) {
-        if (a > 0 && b > Long.MAX_VALUE - a) return -1L; // Positive overflow
-        if (a < 0 && b < Long.MIN_VALUE - a) return -1L; // Negative overflow
-        return a + b;
+        long result = a + b;
+        if (((a ^ result) & (b ^ result)) < 0) return -1L; // Overflow or underflow
+        return result;
     }
 
     private static long safeMultiply(long a, long b) {
         if (a == 0 || b == 0) return 0;
         long result = a * b;
-        if (a != result / b) return -1L; // Overflow check
+        if (a != result / b) return -1L; // Overflow or underflow
         return result;
     }
 
@@ -134,13 +134,13 @@ public class Utils {
             return -1L;
         }
 
-        String[] timeParts = input.split(",");
+        String[] timeParts = input.split("\\s*,\\s*");
         long timeToTicks = 0;
         boolean hasYear = false, hasDay = false, hasHour = false, hasMinute = false, hasSecond = false;
 
         for (String part : timeParts) {
             try {
-                int time = Integer.parseInt(part.replaceAll("[^\\d.]", ""));
+                int time = Integer.parseInt(part.replaceAll("[^\\d-]", ""));
                 if (time < 0) return -1L; // Prevent negative values
 
                 String format = part.replaceAll("\\d", "");
@@ -203,9 +203,9 @@ public class Utils {
     }
 
     public static String ticksToFormattedPlaytime(long ticks) {
-        if (ticks < 0) {
-            return "0s";
-        }
+
+        boolean isNegative = ticks < 0;
+        ticks = Math.abs(ticks);
 
         long seconds = ticks / TICKS_PER_SECOND;
 
@@ -249,7 +249,7 @@ public class Utils {
             result.append(seconds).append("s");
         }
 
-        return result.toString();
+        return isNegative ? "-" + result.toString() : result.toString();
     }
 
     public static long ticksToTimeUnit(long ticks, String unit) {

@@ -6,7 +6,7 @@
 
     <groupId>me.theGabro</groupId>
     <artifactId>PlayTimeManager</artifactId>
-    <version>3.4</version>
+    <version>3.4.1</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -37,10 +37,6 @@
                         </goals>
                         <configuration>
                             <relocations>
-                                <relocation>
-                                    <pattern>net.wesjd.anvilgui</pattern>
-                                    <shadedPattern>me.thegabro.playtimemanager.anvilgui</shadedPattern>
-                                </relocation>
                                 <relocation>
                                     <pattern>com.jeff_media.updatechecker</pattern>
                                     <shadedPattern>me.thegabro.playtimemanager.updatechecker</shadedPattern>
@@ -104,11 +100,6 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
             <version>2.23.1</version>
-        </dependency>
-        <dependency>
-            <groupId>net.wesjd</groupId>
-            <artifactId>anvilgui</artifactId>
-            <version>1.10.4-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>net.luckperms</groupId>

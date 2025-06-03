@@ -6,6 +6,9 @@
 # hexadecimal values between 00 and ff (same as decimal 0-255)
 # Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
 
+# Placeholders enclosed in %% are FIELD-DEPENDENT. They can only be used within the specific field
+# where they're defined. All available placeholders are shown in this configuration file.
+
 #=================================================================
 #                         PLAYTIMETOP
 #=================================================================
@@ -14,15 +17,40 @@ playtimetop:
   # The header text shown at the top of the leaderboard menu
   # %PAGE_NUMBER% displays the current page number
   header: "[&6PlayTime&eManager&f]&7 Top 100 players - page: %PAGE_NUMBER%"
-  #Format for each line in the leaderboard display
-  #Available placeholders:
+
+  # Format for each line in the leaderboard display
+  # Available placeholders:
   # %POSITION% - Player's position in the leaderboard (1, 2, 3, etc.)
   # %PREFIX% - Player's prefix from LuckPerms
   # %PLAYER_NAME% - Player's username
   # %PLAYTIME% - Player's total playtime formatted
   leaderboard-format: "&7&l#%POSITION%&r &e%PLAYER_NAME% &7- &d%PLAYTIME%"
+
+  # Messages section for various command responses
+  messages:
+    # Message shown when player doesn't have permission to use the command
+    no-permission: "&cYou don't have the permission to execute this command"
+
+    # Message shown when a specific page doesn't exist
+    # %PAGE_NUMBER% - The page number that was requested
+    page-not-exists: "&cPage %PAGE_NUMBER% doesn't exist!"
+
+    # Message shown when the page argument format is invalid
+    invalid-argument: "&cThe argument is not valid! Use p1, p2, etc."
+
+    # Message shown when no players have joined the server yet
+    no-players: "&cNo players joined!"
+
+    # Message shown when an invalid page number is provided
+    invalid-page: "&cInvalid page!"
+
+    # Message shown when there's an error loading the top players data
+    # %ERROR% - The error message details
+    loading-error: "&cError while loading top players: %ERROR%"
+
   footer:
     middle-text: "&7Page %PAGE_NUMBER%/%TOTAL_PAGES%"
+
     # Configuration for the previous page button
     previous-page:
       # Text shown when there is a previous page available

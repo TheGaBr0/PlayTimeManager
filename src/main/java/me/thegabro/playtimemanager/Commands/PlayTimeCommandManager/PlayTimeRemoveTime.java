@@ -34,10 +34,6 @@ public class PlayTimeRemoveTime {
         long oldPlaytime = user.getPlaytime();
 
         long newArtificialPlaytime = user.getArtificialPlaytime() + timeToTicks;
-        if (oldPlaytime + timeToTicks < 0) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Error: Cannot remove more time than the user has!"));
-            return;
-        }
 
         String formattedOldPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime);
         user.setArtificialPlaytime(newArtificialPlaytime);

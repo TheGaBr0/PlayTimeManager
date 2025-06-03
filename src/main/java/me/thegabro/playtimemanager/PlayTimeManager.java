@@ -1,9 +1,6 @@
 package me.thegabro.playtimemanager;
 
-import me.thegabro.playtimemanager.GUIs.Goals.AllGoalsGui;
-import me.thegabro.playtimemanager.GUIs.Goals.GoalCommandsGui;
-import me.thegabro.playtimemanager.GUIs.Goals.GoalPermissionsGui;
-import me.thegabro.playtimemanager.GUIs.Goals.GoalSettingsGui;
+import me.thegabro.playtimemanager.GUIs.Goals.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Translations.CommandsConfiguration;
@@ -49,7 +46,7 @@ public class PlayTimeManager extends JavaPlugin{
     private GUIsConfiguration guiConfig;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-    private final String CURRENTCONFIGVERSION = "3.5";
+    private final String CURRENTCONFIGVERSION = "3.6";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private JoinStreaksManager joinStreaksManager;
@@ -112,13 +109,12 @@ public class PlayTimeManager extends JavaPlugin{
 
         Bukkit.getPluginManager().registerEvents(new AllGoalsGui(), this);
         Bukkit.getPluginManager().registerEvents(new GoalSettingsGui(), this);
-        Bukkit.getPluginManager().registerEvents(new GoalPermissionsGui(), this);
-        Bukkit.getPluginManager().registerEvents(new GoalCommandsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new GoalRewardsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new GoalRequirementsGui(), this);
         Bukkit.getPluginManager().registerEvents(new ConfirmationGui(), this);
         Bukkit.getPluginManager().registerEvents(new JoinStreakRewardSettingsGui(), this);
         Bukkit.getPluginManager().registerEvents(new AllJoinStreakRewardsGui(), this);
-        Bukkit.getPluginManager().registerEvents(new JoinStreakPermissionsGui(), this);
-        Bukkit.getPluginManager().registerEvents(new JoinStreakCommandsGui(), this);
+        Bukkit.getPluginManager().registerEvents(new JoinStreakRewardPrizesGui(), this);
 
         Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeGoal());
         Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {

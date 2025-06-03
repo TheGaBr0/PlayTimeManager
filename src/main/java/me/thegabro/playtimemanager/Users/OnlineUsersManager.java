@@ -116,7 +116,7 @@ public class OnlineUsersManager {
         goals.stream()
                 .filter(Goal::isActive)
                 .filter(goal -> !onlineUser.hasCompletedGoal(goal.getName()))
-                .filter(goal -> onlineUser.getPlaytime() >= goal.getTime())
+                .filter(goal -> goal.getRequirements().checkRequirements(player, onlineUser.getPlaytime()))
                 .forEach(goal -> processCompletedGoal(onlineUser, player, goal));
     }
 
@@ -132,7 +132,7 @@ public class OnlineUsersManager {
 
         if(plugin.getConfiguration().getGoalsCheckVerbose()){
             plugin.getLogger().info(String.format("User %s has reached the goal %s which requires %s!",
-                    onlineUser.getNickname(), goal.getName(),Utils.ticksToFormattedPlaytime(goal.getTime())));
+                    onlineUser.getNickname(), goal.getName(),Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime())));
         }
 
 
@@ -176,7 +176,7 @@ public class OnlineUsersManager {
     }
 
     private void assignPermissionsForGoal(OnlineUser onlineUser, Goal goal) {
-        List<String> permissions = goal.getPermissions();
+        List<String> permissions = goal.getRewardPermissions();
         if (permissions != null && !permissions.isEmpty()) {
             try {
                 LuckPermsManager.getInstance(plugin).assignGoalPermissions(onlineUser.getUuid(), goal);
@@ -188,7 +188,7 @@ public class OnlineUsersManager {
     }
 
     private void executeCommands(Goal goal, Player player) {
-        List<String> commands = goal.getCommands();
+        List<String> commands = goal.getRewardCommands();
         if (commands != null && !commands.isEmpty()) {
             commands.forEach(command -> {
                 try {
@@ -239,9 +239,10 @@ public class OnlineUsersManager {
 
     private void sendGoalMessage(Player player, Goal goal) {
         goalMessageReplacements.put("%PLAYER_NAME%", player.getName());
-        goalMessageReplacements.put("%TIME_REQUIRED%", Utils.ticksToFormattedPlaytime(goal.getTime()));
+        goalMessageReplacements.put("%TIME_REQUIRED%",
+                goal.getRequirements().getTime() != Long.MAX_VALUE ? Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()) : "-");
         goalMessageReplacements.put("%GOAL_NAME%", goal.getName());
-        player.sendMessage(replacePlaceholders(goal.getGoalMessage()));
+        player.sendMessage(Utils.parseColors(replacePlaceholders(goal.getGoalMessage())));
     }
 
 

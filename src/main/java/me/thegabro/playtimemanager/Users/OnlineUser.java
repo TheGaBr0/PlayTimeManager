@@ -70,7 +70,8 @@ public class OnlineUser extends DBUser {
         db.updateCompletedGoals(uuid, completedGoals);
         db.updateLastSeen(uuid, this.lastSeen);
         db.updateFirstJoin(uuid, this.firstJoin);
-        db.resetJoinStreaks(uuid);
+        db.setRelativeJoinStreak(uuid, 0);
+        db.setAbsoluteJoinStreak(uuid, 0);
         db.updateReceivedRewards(uuid, receivedRewards);
         db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
     }

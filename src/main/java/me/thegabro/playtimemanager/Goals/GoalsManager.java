@@ -62,7 +62,7 @@ public class GoalsManager {
             if (goalFiles != null) {
                 for (File file : goalFiles) {
                     String goalName = file.getName().replace(".yml", "");
-                    new Goal(plugin, goalName, 0L, false);
+                    new Goal(plugin, goalName);
                 }
             }
         }

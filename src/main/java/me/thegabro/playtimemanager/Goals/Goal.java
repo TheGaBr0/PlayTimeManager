@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class Goal {
@@ -19,23 +20,33 @@ public class Goal {
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private String name;
-    private long time;
     private final File goalFile;
-    private ArrayList<String> permissions = new ArrayList<>();
-    private ArrayList<String> commands = new ArrayList<>();
+    private GoalRewardRequirement requirements;
+    private ArrayList<String> rewardPermissions = new ArrayList<>();
+    private ArrayList<String> rewardCommands = new ArrayList<>();
     private String goalMessage;
     private String goalSound;
     private boolean active;
 
-    // Constructor
-    public Goal(PlayTimeManager plugin, String name, Long time, boolean active) {
+    public Goal(PlayTimeManager plugin, String name) {
         this.plugin = plugin;
         this.name = name;
-        this.time = time == null ? Long.MAX_VALUE : time;
         this.goalFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + name + ".yml");
+        this.requirements = new GoalRewardRequirement();
+        loadFromFile(); // Load before modifying anything
+        goalsManager.addGoal(this);
+    }
+
+    public Goal(PlayTimeManager plugin, String name, boolean active) {
+        this.plugin = plugin;
+        this.name = name;
+        this.goalFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + name + ".yml");
+
+        this.requirements = new GoalRewardRequirement();
+        loadFromFile(); // Load before modifying anything
+
         this.active = active;
-        loadFromFile();
-        saveToFile();
+        saveToFile(); // Now save the updated object
         goalsManager.addGoal(this);
     }
 
@@ -43,17 +54,19 @@ public class Goal {
     private void loadFromFile() {
         if (goalFile.exists()) {
             FileConfiguration config = YamlConfiguration.loadConfiguration(goalFile);
-            time = config.getLong("time", time);
+            requirements.setTime(config.getLong("requirements.time", Long.MAX_VALUE));
+            requirements.setPermissions(new ArrayList<>(config.getStringList("requirements.permissions")));
+            requirements.setPlaceholderConditions(new ArrayList<>(config.getStringList("requirements.placeholders")));
             goalMessage = config.getString("goal-message", getDefaultGoalMessage());
             goalSound = config.getString("goal-sound", getDefaultGoalSound());
-            permissions = new ArrayList<>(config.getStringList("permissions"));
-            commands = new ArrayList<>(config.getStringList("commands"));
+            rewardPermissions = new ArrayList<>(config.getStringList("rewards.permissions"));
+            rewardCommands = new ArrayList<>(config.getStringList("rewards.commands"));
             active = config.getBoolean("active", false);
         } else {
             goalMessage = getDefaultGoalMessage();
             goalSound = getDefaultGoalSound();
-            permissions = new ArrayList<>();
-            commands = new ArrayList<>();
+            rewardPermissions = new ArrayList<>();
+            rewardCommands = new ArrayList<>();
         }
     }
 
@@ -84,22 +97,26 @@ public class Goal {
                     "* Testing new goals before making them live",
                     "* Managing seasonal or event-specific goals",
                     "---------------------------",
-                    "permissions defines what permissions will be granted to a player when they reach this goal",
-                    "You can specify multiple permissions and groups that will all be granted. The plugin will assume that",
-                    "the group has already been created using the permissions manager plugin specified in the main config.",
+                    "requirements:",
+                    "  time: Required playtime (in seconds) for the goal to be completed",
+                    "   - Note: if time isn't set, it defaults to a very long number, it is intended!",
+                    "  permissions: List of permissions that the player must have to complete this goal",
+                    "  placeholders: List of placeholder conditions that must be met to complete this goal",
                     "---------------------------",
-                    "commands defines a list of commands that will be executed when a player reaches this goal",
-                    "Available placeholders: PLAYER_NAME",
-                    "Example commands:",
-                    "- '/give PLAYER_NAME diamond 64'",
-                    "- '/broadcast PLAYER_NAME has reached an amazing milestone!'"
+                    "reward:",
+                    "  permissions: Permissions that will be granted to a player when they reach this goal",
+                    "  commands: List of commands that will be executed when a player reaches this goal",
+                    "  Available placeholders in commands: PLAYER_NAME"
+
             ));
-            config.set("time", time);
+            config.set("active", active);
             config.set("goal-sound", goalSound);
             config.set("goal-message", goalMessage);
-            config.set("active", active);
-            config.set("permissions", permissions);
-            config.set("commands", commands);
+            config.set("requirements.time", requirements.getTime());
+            config.set("requirements.permissions", requirements.getPermissions());
+            config.set("requirements.placeholders", requirements.getPlaceholderConditions());
+            config.set("rewards.permissions", rewardPermissions);
+            config.set("rewards.commands", rewardCommands);
             config.save(goalFile);
         } catch (IOException e) {
             plugin.getLogger().severe("Could not save goal file for " + name + ": " + e.getMessage());
@@ -120,7 +137,7 @@ public class Goal {
     }
 
     private String getDefaultGoalMessage() {
-        return "[&6PlayTime&eManager&f]&7 Congratulations &e%PLAYER_NAME%&7 you have reached &6%TIME_REQUIRED%&7 of playtime!";
+        return "[&6PlayTime&eManager&f]&7 Congratulations &e%PLAYER_NAME%&7 you have completed a new goal!";
     }
 
     // Basic getters
@@ -128,8 +145,8 @@ public class Goal {
         return name;
     }
 
-    public long getTime() {
-        return time;
+    public GoalRewardRequirement getRequirements() {
+        return requirements;
     }
 
     public String getGoalMessage() {
@@ -144,12 +161,12 @@ public class Goal {
         return active;
     }
 
-    public ArrayList<String> getCommands() {
-        return commands;
+    public ArrayList<String> getRewardCommands() {
+        return rewardCommands;
     }
 
-    public ArrayList<String> getPermissions() {
-        return permissions;
+    public ArrayList<String> getRewardPermissions() {
+        return rewardPermissions;
     }
 
     public void rename(String newName) {
@@ -195,7 +212,7 @@ public class Goal {
 
     // Setters and modifiers
     public void setTime(long time) {
-        this.time = time;
+        this.requirements.setTime(time);
         saveToFile();
     }
 
@@ -215,22 +232,52 @@ public class Goal {
     }
 
     public void addCommand(String command) {
-        commands.add(command);
+        rewardCommands.add(command);
         saveToFile();
     }
 
     public void removeCommand(String command) {
-        commands.remove(command);
+        rewardCommands.remove(command);
         saveToFile();
     }
 
     public void addPermission(String permission) {
-        permissions.add(permission);
+        rewardPermissions.add(permission);
         saveToFile();
     }
 
     public void removePermission(String permission) {
-        permissions.remove(permission);
+        rewardPermissions.remove(permission);
+        saveToFile();
+    }
+
+    public void addRequirementPermission(String permission) {
+        requirements.addPermission(permission);
+        saveToFile();
+    }
+
+    public void removeRequirementPermission(String permission) {
+        requirements.removePermission(permission);
+        saveToFile();
+    }
+
+    public void addPlaceholderCondition(String condition) {
+        requirements.addPlaceholderCondition(condition);
+        saveToFile();
+    }
+
+    public void removePlaceholderCondition(String condition) {
+        requirements.removePlaceholderCondition(condition);
+        saveToFile();
+    }
+
+    public void clearPlaceholderConditions(){
+        getRequirements().getPlaceholderConditions().clear();
+        saveToFile();
+    }
+
+    public void clearRequirementPermissions(){
+        getRequirements().getPermissions().clear();
         saveToFile();
     }
 
@@ -257,12 +304,15 @@ public class Goal {
     public String toString() {
         return "Goal{" +
                 "name='" + name + '\'' +
-                ", time=" + time +
+                ", time=" + requirements.getTime() +
                 ", active=" + active +
-                ", permissions=" + permissions.size() +
-                ", commands=" + commands.size() +
+                ", requirementPermissions=" + requirements.getPermissions().size() +
+                ", placeholderConditions=" + requirements.getPlaceholderConditions().size() +
+                ", rewardPermissions=" + rewardPermissions.size() +
+                ", commands=" + rewardCommands.size() +
                 ", message='" + goalMessage + '\'' +
                 ", sound='" + goalSound + '\'' +
                 '}';
     }
+
 }

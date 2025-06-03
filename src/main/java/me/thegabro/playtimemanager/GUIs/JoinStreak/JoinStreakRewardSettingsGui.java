@@ -36,8 +36,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
 
     private static final class Slots {
         static final int REQUIRED_JOINS = 10;
-        static final int REWARD_PERMISSIONS = 12;
-        static final int REWARD_COMMANDS = 14;
+        static final int REWARD_PRIZES = 13;
         static final int REWARD_SOUND = 16;
         static final int DESCRIPTION = 29;
         static final int REWARDS_DESCRIPTION = 31;
@@ -80,10 +79,9 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
 
     private boolean isButtonSlot(int slot) {
         return slot == Slots.REQUIRED_JOINS ||
-                slot == Slots.REWARD_PERMISSIONS ||
+                slot == Slots.REWARD_PRIZES ||
                 slot == Slots.REWARD_MESSAGE ||
                 slot == Slots.REWARD_SOUND ||
-                slot == Slots.REWARD_COMMANDS ||
                 slot == Slots.DELETE_REWARD ||
                 slot == Slots.BACK_BUTTON ||
                 slot == Slots.DESCRIPTION ||
@@ -96,32 +94,26 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.REQUIRED_JOINS, createGuiItem(
                 Material.EXPERIENCE_BOTTLE,
                 Utils.parseColors("&e&lRequired Joins: &6" + (reward.getMinRequiredJoins() == -1 ? "-" : reward.getRequiredJoinsDisplay())),
+                Component.text(""),
                 Utils.parseColors("&7Click to edit the required joins")
         ));
 
-        // Permissions button
-        List<Component> lore = new ArrayList<>();
-        lore.add(Utils.parseColors("&7Currently &e" + reward.getPermissions().size() + "&7 " +
-                (reward.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")));
-
-        lore.add(Utils.parseColors("&7Click to change the permissions"));
-
-        if (!PlayTimeManager.getInstance().isPermissionsManagerConfigured()) {
-            lore.add(Utils.parseColors(""));
-            lore.add(Utils.parseColors("&4&lWARNING: &cNo permissions plugin detected!"));
-            lore.add(Utils.parseColors("&cPermissions will not be assigned"));
-        }
-
-        inventory.setItem(Slots.REWARD_PERMISSIONS, createGuiItem(
-                Material.NAME_TAG,
-                Utils.parseColors("&e&lPermissions"),
-                lore.toArray(new Component[0])
+        inventory.setItem(Slots.REWARD_PRIZES, createGuiItem(
+                Material.CHEST_MINECART,
+                Utils.parseColors("&e&lPrizes"),
+                Utils.parseColors("&7Currently &e" + reward.getPermissions().size() + "&7 " +
+                        (reward.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
+                Utils.parseColors("&7Currently &e" + reward.getCommands().size() + "&7 " +
+                        (reward.getCommands().size() != 1 ? "commands loaded" : "command loaded")),
+                Component.text(""),
+                Utils.parseColors("&7Click to manage reward's prizes")
         ));
 
         // Message button
         inventory.setItem(Slots.REWARD_MESSAGE, createGuiItem(
                 Material.OAK_SIGN,
                 Utils.parseColors("&e&lReward Achieved Message"),
+                Component.text(""),
                 Utils.parseColors("&7Left-click to edit the message"),
                 Utils.parseColors("&7Right-click to display the message")
         ));
@@ -136,19 +128,11 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 Utils.parseColors("&7Right click to play the sound.")
         ));
 
-        // Commands button
-        inventory.setItem(Slots.REWARD_COMMANDS, createGuiItem(
-                Material.COMMAND_BLOCK,
-                Utils.parseColors("&e&lCommands"),
-                Utils.parseColors("&7Currently &e" + reward.getCommands().size() + "&7 " +
-                        (reward.getCommands().size() != 1 ? "commands loaded" : "command loaded")),
-                Utils.parseColors("&7Click to manage commands")
-        ));
-
         // Delete button
         inventory.setItem(Slots.DELETE_REWARD, createGuiItem(
                 Material.BARRIER,
                 Utils.parseColors("&c&lDelete Reward"),
+                Component.text(""),
                 Utils.parseColors("&7Click to delete this reward")
         ));
 
@@ -205,6 +189,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         ItemStack iconItem =
                 createGuiItem(Material.valueOf(reward.getItemIcon()),
                         Utils.parseColors("&e&lReward Icon"),
+                        Component.text(""),
                         Utils.parseColors("&7Click to set an icon"));
         inventory.setItem(Slots.REWARD_ICON, iconItem);
     }
@@ -245,9 +230,9 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 openRequiredJoinsEditor(player);
                 break;
 
-            case Slots.REWARD_PERMISSIONS:
+            case Slots.REWARD_PRIZES:
                 player.closeInventory();
-                new JoinStreakPermissionsGui(reward, this).openInventory(player);
+                new JoinStreakRewardPrizesGui(reward, this).openInventory(player);
                 break;
 
             case Slots.REWARD_MESSAGE:
@@ -265,11 +250,6 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 } else if (clickType == ClickType.RIGHT) {
                     playRewardSound(player);
                 }
-                break;
-
-            case Slots.REWARD_COMMANDS:
-                player.closeInventory();
-                new JoinStreakCommandsGui(reward, this).openInventory(player);
                 break;
 
             case Slots.DELETE_REWARD:
@@ -315,7 +295,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                         "&7  This represents a range of joins from x1 to x2\n" +
                         "&7  Example: \"1-25\" triggers on ALL joins from 1st to 25th\n" +
                         "&7• Enter &c-1 &7to deactivate this reward\n" +
-                        "&7• Type &c&o" + "cancel" + " &7to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component fullMessage = Component.empty()
@@ -364,11 +344,11 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 "&fEnter a description of what the player receives when achieving this reward.\n" +
                         "&7• Describe the specific rewards or benefits\n" +
                         "&7• This will be returned by the placeholder %REWARD_DETAILS%\n" +
-                        "&e&o• Example: '500 coins, VIP rank for 7 days'\n" +
-                        "&7• Type &c&o" + "cancel" + " &7to exit\n" +
-                        "&7• Type &a&o" + "confirm" + " &7to submit\n" +
-                        "&7• Type &e&o" + "newline" + " &7to start a new line\n" +
-                        "&7• Type &e&o" + "removeline" + " &7to remove the last line"
+                        "&e&o• Example: '500 coins, VIP rank for 7 days&r'\n" +
+                        "&7• Type &c&ocancel&r&7 to exit\n" +
+                        "&7• Type &a&oconfirm&r&7 to submit\n" +
+                        "&7• Type &e&onewline&r&7 to start a new line\n" +
+                        "&7• Type &e&oremoveline&r&7 to remove the last line"
         );
 
         Component fullMessage = Component.empty()
@@ -404,11 +384,11 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter a brief, general description for this reward.\n" +
                         "&7• Keep it short and concise\n" +
-                        "&e&o• Example: 'A 30 days achievement for dedicated players!'\n" +
-                        "&7• Type &c&o" + "cancel" + " &7to exit\n" +
-                        "&7• Type &a&o" + "confirm" + " &7to submit\n" +
-                        "&7• Type &e&o" + "newline" + " &7to start a new line\n" +
-                        "&7• Type &e&o" + "removeline" + " &7to remove the last line"
+                        "&e&o• Example: 'A 30 days achievement for dedicated players!&r'\n" +
+                        "&7• Type &c&ocancel&r&7 to exit\n" +
+                        "&7• Type &a&oconfirm&r&7 to submit\n" +
+                        "&7• Type &e&onewline&r&7 to start a new line\n" +
+                        "&7• Type &e&oremoveline&r&7 to remove the last line"
         );
 
         Component fullMessage = Component.empty()
@@ -440,8 +420,9 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         Component header = Utils.parseColors("&6&lItem Icon Selector");
 
         Component instructions = Utils.parseColors(
-                "&fHold the item you want to use as the reward icon and type &a&lconfirm &fin chat.\n" +
-                        "&7• Type &c&o" + "cancel" + " &7to exit"
+                "&7Hold the item you want to use as the reward icon and type &a&lconfirm &r&7in chat.\n" +
+                        "&7• Custom items with NBT are currently &a&cnot supported\n"+
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         player.sendMessage(header);
@@ -477,9 +458,9 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
 
         Component instructions = Utils.parseColors(
                 "&fEnter the new message for this reward.\n" +
-                        "&7• Supports legacy and hex color codes (e.g. &6 or &#rrggbb)\n" +
+                        "&7• Supports legacy and hex color codes \n" +
                         "&7• Available placeholders: %PLAYER_NAME%, %REQUIRED_JOINS%\n" +
-                        "&7• Type &c&o" + "cancel" + " &7to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component fullMessage = Component.empty()
@@ -519,7 +500,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
     private void openSoundEditor(Player player) {
         player.closeInventory();
 
-        String actualUrl = "https://jd.papermc.io/paper/1.21.4/org/bukkit/Sound.html";
+        String actualUrl = "https://jd.papermc.io/paper/1.21.5/org/bukkit/Sound.html";
 
         Component header = Utils.parseColors("&6&l✎ Sound Editor: &eReward " + reward.getId());
 
@@ -528,14 +509,14 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter the new sound for this reward.\n" +
                         "&7• Input is not case-sensitive\n" +
-                        "&7• Type &c&o" + "cancel" + " &7to exit"
+                        "&7• Type &c&ocancel&r&7 to exit"
         );
 
         Component linkText = Utils.parseColors("&e&l» SOUND LIST «")
                 .clickEvent(ClickEvent.openUrl(actualUrl))
-                .hoverEvent(HoverEvent.showText(Utils.parseColors("&fClick to open sounds documentation for 1.21.4")));
+                .hoverEvent(HoverEvent.showText(Utils.parseColors("&fClick to open sounds documentation for 1.21.5")));
 
-        Component linkInfo = Utils.parseColors("&7&oDocumentation for server version 1.21.4");
+        Component linkInfo = Utils.parseColors("&7&oDocumentation for server version 1.21.5");
 
         Component fullMessage = Component.empty()
                 .append(header)

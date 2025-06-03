@@ -16,8 +16,7 @@ import java.util.*;
 
 public class PlaytimeGoal implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final String[] SUBCOMMANDS = {"set", "remove", "rename"};  // Removed "list" from subcommands
-    private final String[] SUBSUBCOMMANDS = {"time:", "activate:"};
+    private final String[] SUBCOMMANDS = {"remove", "rename"};  // Removed "list" from subcommands
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
 
@@ -79,8 +78,6 @@ public class PlaytimeGoal implements TabExecutor {
                         return false;
                     }
                 }
-
-                setGoal(sender, goalName, time != null ? Utils.formattedPlaytimeToTicks(time) : null, activate);
                 break;
             case "remove":
                 if (args.length < 2) {
@@ -130,31 +127,6 @@ public class PlaytimeGoal implements TabExecutor {
         });
     }
 
-    private void setGoal(CommandSender sender, String goalName, Long time, boolean activate) {
-        Goal g = goalsManager.getGoal(goalName);
-        StringBuilder message = new StringBuilder();
-
-        if (g != null) {
-            message.append(plugin.getConfiguration().getPluginPrefix()).append(" Goal &e").append(goalName).append(" &7updated:\n");
-            if(time != null)
-                g.setTime(time);
-        } else {
-            g = new Goal(plugin, goalName, time, activate);
-            message.append(plugin.getConfiguration().getPluginPrefix()).append(" Goal &e").append(goalName).append(" &7created:\n");
-        }
-
-        g.setActivation(activate);
-
-        long gTime = g.getTime();
-        if(gTime == Long.MAX_VALUE)
-            message.append("&7- Required time to reach the goal: &6None\n");
-        else
-            message.append("&7- Required time to reach the goal: &6").append(Utils.ticksToFormattedPlaytime(gTime)).append("\n");
-        message.append("&7- Active: ").append(activate ? "&a" : "&c").append(activate).append("\n");
-
-        sender.sendMessage(Utils.parseColors(message.toString()));
-        onlineUsersManager.startGoalCheckSchedule();
-    }
 
     private void removeGoal(CommandSender sender, String goalName) {
         Goal goal = goalsManager.getGoal(goalName);
@@ -185,31 +157,12 @@ public class PlaytimeGoal implements TabExecutor {
         }
 
         if (args.length == 2) {
-            if (args[0].equalsIgnoreCase("set")) {
-                StringUtil.copyPartialMatches(args[1], goalsManager.getGoalsNames(), completions);
-            } else if (args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("rename")) {
+            if(args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("rename")) {
                 StringUtil.copyPartialMatches(args[1], goalsManager.getGoalsNames(), completions);
             }
             return completions;
         }
 
-        if (args.length >= 3) {
-            if (args[0].equalsIgnoreCase("set")) {
-                List<String> availableSubSubCommands = new ArrayList<>(Arrays.asList(SUBSUBCOMMANDS));
-
-                // Remove already used arguments
-                for (int i = 2; i < args.length - 1; i++) {
-                    for (String subSubCmd : SUBSUBCOMMANDS) {
-                        if (args[i].startsWith(subSubCmd)) {
-                            availableSubSubCommands.remove(subSubCmd);
-                        }
-                    }
-                }
-
-                StringUtil.copyPartialMatches(args[args.length - 1], availableSubSubCommands, completions);
-                return completions;
-            }
-        }
 
         return null;
     }

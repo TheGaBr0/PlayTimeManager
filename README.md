@@ -62,9 +62,12 @@ These optimizations help PlayTimeManager run smoothly and responsively while kee
 
 PlayTimeManager offers two powerful and flexible systems for rewarding player activity: **Goals** and **Join Streak Rewards**.
 
-- **Goals**: Track total playtime and reward players as they reach customizable time milestones. 
+- **Goals**: Reward players as they reach customizable milestones with flexible requirement systems that can be combined or used individually:
+    - **Total playtime** tracking
+    - **Permission checks** for rank-based goals
+    - **PAPI placeholder** conditions that dynamically respond to **leaderboards**, **economy**, or **any plugin data** through customizable criteria based on placeholders
 
-- **Join Streak Rewards**: Motivate regular engagement by rewarding players for consecutive joins within a customizable time window. Thanks to the plugin’s high flexibility, streaks aren't limited to daily logins—they can be configured to any time interval that fits your server’s style. The longer the streak, the greater the recognition.
+- **Join Streak Rewards**: Motivate regular engagement by rewarding players for consecutive joins within a customizable time window. Thanks to the plugin’s high flexibility, streaks aren't limited to daily logins, they can be configured to any time interval that fits your server’s style. The longer the streak, the greater the recognition.
 
 Both systems share the same versatile reward types:
 
@@ -77,13 +80,12 @@ Both systems share the same versatile reward types:
 All of this is easily managed through intuitive in-game GUIs, allowing administrators to build engaging progression systems without complex setup.
 
 
-## Commands and permissions
-For a complete list of commands, permissions, and placeholders, please visit the [PlayTimeManager Wiki](https://github.com/TheGaBr0/PlayTimeManager/wiki).
+## Commands, permissions, placeholders and tutorials
+Ready to get started? The comprehensive [PlayTimeManager Wiki](https://github.com/TheGaBr0/PlayTimeManager/wiki) contains everything you need including detailed command references, permission configurations, placeholder listings, and step-by-step setup tutorials. 
 
 
 ## To do
 - Anti-afk system?
 - Add possibility to give custom items upon goal completion
 - Convert stats command into a customizable GUI
-- Add customizable requirements to goals
 - Add customizable format for playtime display 

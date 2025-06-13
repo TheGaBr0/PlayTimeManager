@@ -189,7 +189,9 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 "&7Create a new goal, type a new name:\n" +
                         "&7• Choose a unique name (not already in use)\n" +
                         "&7• Goal will be set as &einactive&7 by default\n" +
-                        "&7• Type &c&ocancel&7 to exit creation"
+                        "&7• Type &c&ocancel&r&7 to exit creation\n"+
+                        "Use &f/playtimegoal create &7if chat input &cdoesn't work&7\n"+
+                        "&7For more info take a look at the wiki"
         );
 
         Component fullMessage = Component.empty()

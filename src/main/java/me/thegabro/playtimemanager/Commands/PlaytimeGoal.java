@@ -16,7 +16,7 @@ import java.util.*;
 
 public class PlaytimeGoal implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final String[] SUBCOMMANDS = {"remove", "rename"};  // Removed "list" from subcommands
+    private final String[] SUBCOMMANDS = {"create", "remove", "rename"};  // Added "create" subcommand
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
 
@@ -42,6 +42,14 @@ public class PlaytimeGoal implements TabExecutor {
         String goalName;
         String subCommand = args[0].toLowerCase();
         switch (subCommand) {
+            case "create":
+                if (args.length < 2) {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal create <goalName>"));
+                    return false;
+                }
+                goalName = args[1];
+                createGoal(sender, goalName);
+                break;
             case "set":
                 if (args.length < 2) {
                     sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal set <goalName> [time:<time>] [activate:true|false]"));
@@ -102,6 +110,32 @@ public class PlaytimeGoal implements TabExecutor {
         }
 
         return true;
+    }
+
+    private void createGoal(CommandSender sender, String goalName) {
+        // Check if goal already exists
+        if (goalsManager.getGoal(goalName) != null) {
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " A goal with the name &e" + goalName + " &7already exists!"));
+            return;
+        }
+
+        // Check if goal name is empty or invalid
+        if (goalName.trim().isEmpty()) {
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Goal name cannot be empty!"));
+            return;
+        }
+
+        // Run the creation process async
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            // Create new goal with inactive status (false)
+            new Goal(plugin, goalName, false);
+
+            // Switch back to main thread for UI update
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Goal &e" + goalName + " has been created &asuccessfully &7(inactive by default)." +
+                        " &7To edit this goal, use the GUI or manually modify the &e" + goalName + ".yml &7file."));
+            });
+        });
     }
 
     private void renameGoal(CommandSender sender, String oldName, String newName) {

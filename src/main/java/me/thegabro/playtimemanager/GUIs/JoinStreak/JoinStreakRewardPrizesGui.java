@@ -89,7 +89,7 @@ public class JoinStreakRewardPrizesGui implements InventoryHolder, Listener {
 
             List<Component> lore = new ArrayList<>(List.of(
                     Utils.parseColors("&7Click to edit"),
-                    Utils.parseColors("&cRight-click to remove")));
+                    Utils.parseColors("&cShift-Right Click to remove")));
 
             if (isPermission && item.startsWith("group.")) {
                 String groupName = item.substring(6);
@@ -220,7 +220,9 @@ public class JoinStreakRewardPrizesGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter a new permission node:\n" +
                         "&7• Standard permission or 'group.groupname'\n" +
-                        "&7• Type &c&ocancel&r&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit\n"+
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7For more info regarding the issue and workarounds."
         );
 
         Component fullMessage = Component.empty()
@@ -258,7 +260,9 @@ public class JoinStreakRewardPrizesGui implements InventoryHolder, Listener {
                 "&fCurrent Permission: &7" + oldPermission + "\n" +
                         "&7Enter a new permission node:\n" +
                         "&7• Type the new permission\n" +
-                        "&7• Type &c&ocancel&r&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit\n"+
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7For more info regarding the issue and workarounds."
         );
 
         Component fullMessage = Component.empty()
@@ -297,7 +301,9 @@ public class JoinStreakRewardPrizesGui implements InventoryHolder, Listener {
                 "&fEnter a new command for this join streak reward:\n" +
                         "&7• Commands must be valid and use '/' as a prefix\n" +
                         "&7• Available placeholders: PLAYER_NAME\n" +
-                        "&7• Type &c&ocancel&r&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit\n"+
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7For more info regarding the issue and workarounds."
         );
 
         Component fullMessage = Component.empty()
@@ -337,7 +343,9 @@ public class JoinStreakRewardPrizesGui implements InventoryHolder, Listener {
                         "&7Enter a new command:\n" +
                         "&7• Commands must be valid and use '/' as a prefix\n" +
                         "&7• Available placeholders: PLAYER_NAME\n" +
-                        "&7• Type &c&ocancel&r&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit\n"+
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7For more info regarding the issue and workarounds."
         );
 
         Component fullMessage = Component.empty()

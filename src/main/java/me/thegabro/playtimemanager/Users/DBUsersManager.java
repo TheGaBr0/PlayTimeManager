@@ -1,10 +1,13 @@
 package me.thegabro.playtimemanager.Users;
 
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
 import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -74,22 +77,49 @@ public class DBUsersManager {
         return userCache.computeIfAbsent(uuid, k -> DBUser.fromUUID(uuid));
     }
 
+    private boolean hasHidePermission(DBUser user) {
+        // Convert User to Player/OfflinePlayer to check permissions
+        UUID userUUID = UUID.fromString(user.getUuid()); // Assuming User has getUuid() method
+        Player onlinePlayer = Bukkit.getPlayer(userUUID);
+
+        if (onlinePlayer != null) {
+            return onlinePlayer.hasPermission("playtime.hidefromleaderboard");
+        }
+
+        if (plugin.getServer().getPluginManager().getPlugin("LuckPerms") != null)
+            return LuckPermsManager.getInstance(plugin).hasPermission(user.getUuid(), "playtime.hidefromleaderboard");
+
+        return false; // Default to not hidden if we can't determine
+    }
+
     public void updateTopPlayersFromDB() {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
-                // Wait for all online users to be updated
                 onlineUsersManager.updateAllOnlineUsersPlaytime().get();
 
-                // Now that updates are complete, get the top players
-                Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT);
+                // Get count of players with hide permission asynchronously
+                CompletableFuture<Integer> permissionCountFuture = CompletableFuture.supplyAsync(() ->
+                        LuckPermsManager.getInstance(plugin).getPlayersWithPermissionCount("your.hide.permission"));
 
-                synchronized (topPlayers) {
-                    topPlayers.clear();
-                    dbTopPlayers.entrySet().stream()
-                            .map(entry -> getUserFromUUID(entry.getKey()))
+                int playersWithHidePermission = permissionCountFuture.get();
+
+                // Fetch more players from DB to account for those that will be filtered out
+                Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersWithHidePermission);
+
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    List<DBUser> validTopPlayers = dbTopPlayers.keySet().stream()
+                            .map(this::getUserFromUUID)
                             .filter(Objects::nonNull)
-                            .forEach(topPlayers::add);
-                }
+                            .filter(user -> !hasHidePermission(user))
+                            .limit(TOP_PLAYERS_LIMIT)
+                            .toList();
+
+                    synchronized (topPlayers) {
+                        topPlayers.clear();
+                        topPlayers.addAll(validTopPlayers);
+                    }
+                });
+
             } catch (InterruptedException | ExecutionException e) {
                 plugin.getLogger().severe("Error updating top players: " + e.getMessage());
             }
@@ -120,7 +150,7 @@ public class DBUsersManager {
         synchronized (topPlayers) {
             List<DBUser> sortedPlayers = topPlayers.stream()
                     .sorted(Comparator.comparing(DBUser::getPlaytime).reversed())
-                    .collect(Collectors.toList());
+                    .toList();
             return sortedPlayers.get(position - 1);
         }
     }

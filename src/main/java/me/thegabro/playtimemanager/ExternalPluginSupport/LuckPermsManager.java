@@ -9,6 +9,8 @@ import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
 import net.luckperms.api.node.types.InheritanceNode;
+
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -124,5 +126,30 @@ public class LuckPermsManager {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public int getPlayersWithPermissionCount(String permission) {
+        int count = 0;
+
+        try {
+            // Get all loaded users from LuckPerms
+            Set<User> loadedUsers = luckPermsApi.getUserManager().getLoadedUsers();
+
+            for (User user  : loadedUsers) {
+                if (user != null) {
+                    // Check if the user has the specified permission
+                    boolean hasPermission = user.getCachedData().getPermissionData()
+                            .checkPermission(permission).asBoolean();
+
+                    if (hasPermission) {
+                        count++;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to count players with permission " + permission + ": " + e.getMessage());
+        }
+
+        return count;
     }
 }

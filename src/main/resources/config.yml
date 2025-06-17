@@ -130,5 +130,7 @@ placeholders:
   enable-errors: false
   #The default message to display when 'enable-errors' is set to false
   default-message: "No data"
+  #The message displayed when %PTM_rank% is called but the target player isn't in the leaderboard.
+  not-in-leaderboard-message: "-"
 
 

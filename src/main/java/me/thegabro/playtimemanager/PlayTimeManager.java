@@ -46,7 +46,7 @@ public class PlayTimeManager extends JavaPlugin{
     private GUIsConfiguration guiConfig;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-    private final String CURRENTCONFIGVERSION = "3.6";
+    private final String CURRENTCONFIGVERSION = "3.7";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private JoinStreaksManager joinStreaksManager;

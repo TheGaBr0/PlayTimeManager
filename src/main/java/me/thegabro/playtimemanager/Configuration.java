@@ -34,6 +34,7 @@ public class Configuration {
     // Placeholders settings
     private boolean placeholdersEnableErrors;
     private String placeholdersDefaultMessage;
+    private String notInLeaderboardMessage;
 
     // Permissions settings
     private String permissionsManagerPlugin;
@@ -153,6 +154,7 @@ public class Configuration {
     private void updatePlaceholdersSettings() {
         this.placeholdersEnableErrors = config.getBoolean("placeholders.enable-errors", false);
         this.placeholdersDefaultMessage = config.getString("placeholders.default-message", "No data");
+        this.notInLeaderboardMessage = config.getString("placeholders.not-in-leaderboard-message", "-");
     }
 
     private void updatePermissionsSettings() {
@@ -273,6 +275,16 @@ public class Configuration {
     public void setPlaceholdersDefaultMessage(String message) {
         this.placeholdersDefaultMessage = message;
         config.set("placeholders.default-message", message);
+        save();
+    }
+
+    public String getNotInLeaderboardMessage(){
+        return notInLeaderboardMessage;
+    }
+
+    public void setNotInLeaderboardMessage(String message){
+        this.notInLeaderboardMessage = message;
+        config.set("placeholders.not-in-leaderboard-message", message);
         save();
     }
 

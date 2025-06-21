@@ -8,41 +8,36 @@ import org.bukkit.command.CommandSender;
 
 public class PlayTimeAddTime {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
 
-    public PlayTimeAddTime(CommandSender sender, String[] args) {
-        execute(sender, args);
-    }
-
-    public void execute(CommandSender sender, String[] args) {
-
-        if (args.length < 3) {
+    public PlayTimeAddTime(CommandSender sender, DBUser target, String time) {
+        PlayTimeManager plugin = PlayTimeManager.getInstance();
+        if(time == null)
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Too few arguments!"));
-            return;
-        }
 
-        long timeToTicks = Utils.formattedPlaytimeToTicks(args[2]);
+        long timeToTicks = Utils.formattedPlaytimeToTicks(time);
         if (timeToTicks == -1L) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid time format: " + args[2]));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid time format: " + time));
             return;
         }
 
-        DBUser user = dbUsersManager.getUserFromNickname(args[0]);
-        long oldPlaytime = user.getPlaytime();
+        long oldPlaytime = target.getPlaytime();
 
-        long newArtificialPlaytime = user.getArtificialPlaytime() + timeToTicks;
+        long newArtificialPlaytime = target.getArtificialPlaytime() + timeToTicks;
         if (newArtificialPlaytime < 0) { // Overflow check
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Error: Time value too large!"));
             return;
         }
 
         String formattedOldPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime);
-        user.setArtificialPlaytime(newArtificialPlaytime);
+        target.setArtificialPlaytime(newArtificialPlaytime);
         String formattedNewPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime + timeToTicks);
 
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " PlayTime of &e" + args[0] +
+        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " PlayTime of &e" + target +
                 "&7 has been updated from &6" + formattedOldPlaytime + "&7 to &6" + formattedNewPlaytime + "!"));
 
+        DBUsersManager dbUsersManager = DBUsersManager.getInstance();
         dbUsersManager.updateTopPlayersFromDB();
     }
+
+
 }

@@ -7,41 +7,37 @@ import me.thegabro.playtimemanager.Utils;
 import org.bukkit.command.CommandSender;
 
 public class PlayTimeRemoveTime {
-    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
 
-    public PlayTimeRemoveTime(CommandSender sender, String[] args){
-        execute(sender, args);
-    }
+    public PlayTimeRemoveTime(CommandSender sender, DBUser target, String time){
 
-    public void execute(CommandSender sender, String[] args){
-
-        if(args.length < 3){
+        PlayTimeManager plugin = PlayTimeManager.getInstance();
+        if(time == null)
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Too few arguments!"));
-            return;
-        }
 
-        long timeToTicks = Utils.formattedPlaytimeToTicks(args[2]);
+        long timeToTicks = Utils.formattedPlaytimeToTicks(time);
         if (timeToTicks == -1L) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid time format: " + args[2]));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid time format: " + time));
             return;
         }
 
         // Make the time negative since we're removing
         timeToTicks = -timeToTicks;
 
-        DBUser user = dbUsersManager.getUserFromNickname(args[0]);
-        long oldPlaytime = user.getPlaytime();
+        DBUsersManager dbUsersManager = DBUsersManager.getInstance();
 
-        long newArtificialPlaytime = user.getArtificialPlaytime() + timeToTicks;
+        long oldPlaytime = target.getPlaytime();
+
+        long newArtificialPlaytime = target.getArtificialPlaytime() + timeToTicks;
 
         String formattedOldPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime);
-        user.setArtificialPlaytime(newArtificialPlaytime);
+        target.setArtificialPlaytime(newArtificialPlaytime);
         String formattedNewPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime + timeToTicks);
 
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " PlayTime of &e" + args[0] +
+        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " PlayTime of &e" + target +
                 "&7 has been updated from &6" + formattedOldPlaytime + "&7 to &6" + formattedNewPlaytime + "!"));
 
         dbUsersManager.updateTopPlayersFromDB();
+
     }
+
 }

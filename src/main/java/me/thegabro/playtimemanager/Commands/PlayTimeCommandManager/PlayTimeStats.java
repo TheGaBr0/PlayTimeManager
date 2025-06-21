@@ -14,28 +14,21 @@ public class PlayTimeStats {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
 
-    public PlayTimeStats(CommandSender sender, String[] args) {
-
-        DBUser user = dbUsersManager.getUserFromNickname(args[0]);
-
-        if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Player not found!"));
-            return;
-        }
+    public PlayTimeStats(CommandSender sender, DBUser target) {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
 
         // Get all necessary data
-        LocalDateTime lastSeen = user.getLastSeen();
-        LocalDateTime firstJoin = user.getFirstJoin();
-        long totalPlaytime = user.getPlaytime();
-        long artificialPlaytime = user.getArtificialPlaytime();
-        int relativeJoinStreak = user.getRelativeJoinStreak();
-        int absoluteJoinStreak = user.getAbsoluteJoinStreak();
+        LocalDateTime lastSeen = target.getLastSeen();
+        LocalDateTime firstJoin = target.getFirstJoin();
+        long totalPlaytime = target.getPlaytime();
+        long artificialPlaytime = target.getArtificialPlaytime();
+        int relativeJoinStreak = target.getRelativeJoinStreak();
+        int absoluteJoinStreak = target.getAbsoluteJoinStreak();
 
         // Header
         sender.sendMessage(Utils.parseColors("&8&l===============[ &6&lPlayer Stats &8&l]==============="));
-        sender.sendMessage(Utils.parseColors("&7Player: &e" + user.getNickname()));
+        sender.sendMessage(Utils.parseColors("&7Player: &e" + target.getNickname()));
 
         // Playtime Information
         sender.sendMessage(Utils.parseColors("\n&6&lPlaytime Information:"));
@@ -68,10 +61,10 @@ public class PlayTimeStats {
 
         // Goals Information
         sender.sendMessage(Utils.parseColors("\n&6&lCompleted Goals:"));
-        if (user.getCompletedGoals().isEmpty()) {
+        if (target.getCompletedGoals().isEmpty()) {
             sender.sendMessage(Utils.parseColors("&7No goals completed yet"));
         } else {
-            for (String goal : user.getCompletedGoals()) {
+            for (String goal : target.getCompletedGoals()) {
                 sender.sendMessage(Utils.parseColors("&7- &e" + goal));
             }
         }

@@ -12,8 +12,6 @@ import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public class PlaytimeCommand {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
@@ -21,7 +19,7 @@ public class PlaytimeCommand {
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private LuckPermsManager luckPermsManager = null;
 
-    public PlaytimeCommand(CommandSender sender, String[] args) {
+    public PlaytimeCommand(CommandSender sender, String... target) {
         if (plugin.isPermissionsManagerConfigured()) {
             try {
                 this.luckPermsManager = LuckPermsManager.getInstance(plugin);
@@ -29,37 +27,25 @@ public class PlaytimeCommand {
                 // LuckPerms is not loaded, leave luckPermsManager as null
             }
         }
-        execute(sender, args);
-    }
 
-    public boolean execute(CommandSender sender, String[] args) {
-        // Check base permissions first
-        if (args.length == 0) {
-            if (!sender.hasPermission("playtime")) {
+        if(target.length == 0){
+            if (!sender.hasPermission("playtime"))
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to check playtime."));
-                return false;
-            }
-            return handleSelf(sender);
-        }
-
-        // Check other player playtime permissions
-        if (args.length == 1) {
-            if (!sender.hasPermission("playtime.others")) {
+            else
+                handleSelf(sender);
+        }else{
+            if (!sender.hasPermission("playtime.others"))
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to check other players' playtime."));
-                return false;
-            }
-            return handleOther(sender, args[0]);
+            else
+                handleOther(sender, target[0]);
         }
-
-        // Invalid command usage
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtime [player]"));
-        return false;
     }
 
-    private boolean handleSelf(CommandSender sender) {
+
+    private void handleSelf(CommandSender sender) {
         if (!(sender instanceof Player)) {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You must be a player to execute this command"));
-            return false;
+            return;
         }
 
         Player player = (Player) sender;
@@ -88,7 +74,6 @@ public class PlaytimeCommand {
             sender.sendMessage(Utils.parseColors(message));
         }
 
-        return true;
     }
 
     private boolean handleOther(CommandSender sender, String playerName) {

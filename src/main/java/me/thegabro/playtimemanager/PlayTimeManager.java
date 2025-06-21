@@ -1,5 +1,7 @@
 package me.thegabro.playtimemanager;
 
+import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPIBukkitConfig;
 import me.thegabro.playtimemanager.GUIs.Goals.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
@@ -52,9 +54,16 @@ public class PlayTimeManager extends JavaPlugin{
     private JoinStreaksManager joinStreaksManager;
     private final String serverVersion = Bukkit.getBukkitVersion().split("-")[0];
     private SessionManager sessionManager;
+    private PlayTimeCommandManager playTimeCommandManager;
+    private PlayTimeReset playTimeReset;
+    @Override
+    public void onLoad(){
+        CommandAPI.onLoad(new CommandAPIBukkitConfig(this).silentLogs(true));
+    }
 
     @Override
     public void onEnable() {
+        CommandAPI.onEnable();
 
         int BSTATS_PLUGIN_ID = 24739;
         Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
@@ -116,37 +125,25 @@ public class PlayTimeManager extends JavaPlugin{
         Bukkit.getPluginManager().registerEvents(new AllJoinStreakRewardsGui(), this);
         Bukkit.getPluginManager().registerEvents(new JoinStreakRewardPrizesGui(), this);
 
-        Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeGoal());
-        Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {
-        });
-        Objects.requireNonNull(getCommand("playtimeaverage")).setExecutor(new PlaytimeAverage() {
-        });
-        Objects.requireNonNull(getCommand("playtimepercentage")).setExecutor(new PlaytimePercentage() {
-        });
-        Objects.requireNonNull(getCommand("playtimetop")).setExecutor(new PlaytimeTop() {
-        });
-        Objects.requireNonNull(getCommand("playtimereload")).setExecutor(new PlaytimeReload() {
-        });
-        Objects.requireNonNull(getCommand("playtimebackup")).setExecutor(new PlayTimeBackup() {
-        });
-        Objects.requireNonNull(getCommand("playtimejoinstreak")).setExecutor(new PlayTimeJoinStreak() {
-        });
-        Objects.requireNonNull(getCommand("claimrewards")).setExecutor(new ClaimRewards() {
-        });
+        // Register CommandAPI commands
+        playTimeCommandManager = new PlayTimeCommandManager();
+        playTimeCommandManager.registerCommands();
+        playTimeReset = new PlayTimeReset();
+        playTimeReset.registerCommands();
+
 
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();
 
         sessionManager = new SessionManager();
 
-
         getLogger().info("has been enabled!");
-
-
     }
 
     @Override
     public void onDisable() {
+        CommandAPI.onDisable();
+
         onlineUsersManager.stopSchedules();
         for(Player p : Bukkit.getOnlinePlayers()){
             onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
@@ -157,7 +154,6 @@ public class PlayTimeManager extends JavaPlugin{
         joinStreaksManager.cleanUp();
         getLogger().info("has been disabled!");
     }
-
 
     public static PlayTimeManager getInstance() {
         return instance;
@@ -203,7 +199,7 @@ public class PlayTimeManager extends JavaPlugin{
             Plugin luckPerms = Bukkit.getPluginManager().getPlugin("LuckPerms");
             if (luckPerms != null && luckPerms.isEnabled()) {
                 try {
-                    LuckPermsManager.getInstance(this);
+                    LuckPermsManager.getInstance(this).registerPermissionListener();;
                     getLogger().info("LuckPerms detected! Launching related functions");
                     return true;
                 } catch (Exception e) {
@@ -220,5 +216,4 @@ public class PlayTimeManager extends JavaPlugin{
         }
         return false;
     }
-
 }

@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>me.theGabro</groupId>
   <artifactId>PlayTimeManager</artifactId>
-  <version>3.4.2-beta</version>
+  <version>3.4.2-exp</version>
   <build>
     <resources>
       <resource>
@@ -25,11 +25,15 @@
         <version>3.5.1</version>
         <executions>
           <execution>
+            <id>shade</id>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>
             <configuration>
+              <minimizeJar>true</minimizeJar>
+              <shadedArtifactAttached>false</shadedArtifactAttached>
+              <shadedClassifierName />
               <relocations>
                 <relocation>
                   <pattern>com.jeff_media.updatechecker</pattern>
@@ -38,6 +42,10 @@
                 <relocation>
                   <pattern>org.bstats</pattern>
                   <shadedPattern>me.thegabro.playtimemanager.bstats</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>dev.jorel.commandapi</pattern>
+                  <shadedPattern>me.thegabro.playtimemanager.commandapi</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>

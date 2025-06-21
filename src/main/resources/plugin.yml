@@ -6,50 +6,6 @@ author: TheGabro
 description: A playtime tracker with customization options and automated rewards for efficient monitoring
 softdepend: [PlaceholderAPI, LuckPerms]
 
-commands:
-  playtime:
-    description: Command to get/modify play time stats of players
-    permission: playtime
-    permission-message: You don't have the permission to execute this command!
-  playtimeaverage:
-    description: Command to get the average of play time data
-    permission: playtime.average
-    permission-message: You don't have the permission to execute this command!
-    aliases: [ptavg]
-  playtimepercentage:
-    description: Command to get the % of players that have a playtime greater than or equal to a given one
-    permission: playtime.playtimepercentage
-    permission-message: You don't have the permission to execute this command!
-    aliases: [ptpercent]
-  playtimetop:
-    description: Command to get the top N players with highest playtime
-    permission: playtime.top
-    permission-message: You don't have the permission to execute this command!
-    aliases: [pttop]
-  playtimegoal:
-    description: Command to manage goals
-    permission: playtime.goal
-    permission-message: You don't have the permission to execute this command!
-    aliases: [ptgoal]
-  playtimereload:
-    description: Command to reload the main config
-    permission: playtime.reload
-    permission-message: You don't have the permission to execute this command!
-    aliases: [ptreload]
-  playtimebackup:
-    description: Command to create a backup of the play_time.db file
-    permission: playtime.backup
-    permission-message: You don't have the permission to execute this command!
-    aliases: [ptbkp]
-  playtimejoinstreak:
-    description: Command to manage join streak rewards
-    permission: playtime.joinstreak
-    permission-message: You don't have the permission to execute this command!
-    aliases: [ptjsk]
-  claimrewards:
-    description: Command to claim join streak rewards
-    permission: playtime.joinstreak.claim
-    permission-message: You don't have the permission to execute this command!
 permissions:
   playtime.*:
     default: op

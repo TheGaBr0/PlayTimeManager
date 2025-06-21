@@ -1,14 +1,19 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport;
 
+import dev.jorel.commandapi.CommandAPI;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.event.EventBus;
+import net.luckperms.api.event.node.NodeMutateEvent;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
 import net.luckperms.api.node.types.InheritanceNode;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 
 import java.util.Set;
 import java.util.UUID;
@@ -152,4 +157,19 @@ public class LuckPermsManager {
 
         return count;
     }
+
+    public void registerPermissionListener() {
+        EventBus eventBus = luckPermsApi.getEventBus();
+        eventBus.subscribe(NodeMutateEvent.class, event -> {
+            if (!(event.getTarget() instanceof User user)) return;
+
+            UUID uuid = user.getUniqueId();
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null && player.isOnline()) {
+                CommandAPI.updateRequirements(player);
+            }
+        });
+    }
+
+
 }

@@ -56,6 +56,7 @@ public class PlayTimeManager extends JavaPlugin{
     private SessionManager sessionManager;
     private PlayTimeCommandManager playTimeCommandManager;
     private PlayTimeReset playTimeReset;
+    private PlaytimeTop playtimeTop;
     @Override
     public void onLoad(){
         CommandAPI.onLoad(new CommandAPIBukkitConfig(this).silentLogs(true));
@@ -130,7 +131,8 @@ public class PlayTimeManager extends JavaPlugin{
         playTimeCommandManager.registerCommands();
         playTimeReset = new PlayTimeReset();
         playTimeReset.registerCommands();
-
+        playtimeTop = new PlaytimeTop();
+        playtimeTop.registerCommands();
 
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();

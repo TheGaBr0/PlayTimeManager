@@ -1,8 +1,11 @@
 package me.thegabro.playtimemanager.Commands;
 
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.ArgumentSuggestions;
+import dev.jorel.commandapi.arguments.StringArgument;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Translations.CommandsConfiguration;
-import me.thegabro.playtimemanager.Translations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
@@ -11,19 +14,14 @@ import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
-import org.bukkit.util.StringUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 
-public class PlaytimeTop implements TabExecutor {
+public class PlaytimeTop {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
@@ -31,7 +29,6 @@ public class PlaytimeTop implements TabExecutor {
     private LuckPermsManager luckPermsManager = null;
     private final int TOP_MAX = 100;
     private final Pattern pagePattern = Pattern.compile("p\\d+");
-    private int page;
     private final CommandsConfiguration config;
 
     public PlaytimeTop() {
@@ -45,33 +42,49 @@ public class PlaytimeTop implements TabExecutor {
         }
     }
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
+    public void registerCommands() {
+        new CommandAPICommand("playtimetop")
+                .withPermission(CommandPermission.fromString("playtime.top"))
+                .withOptionalArguments(new StringArgument("page")
+                        .replaceSuggestions(ArgumentSuggestions.stringsAsync(info ->
+                                CompletableFuture.supplyAsync(() -> getPages().toArray(new String[0]))
+                        ))
+                )
+                .executes((sender, args) -> {
+                    String pageString = (String) args.getOptional("page").orElse("p1");
+
+                    // Extract page number from "p1", "p2", etc.
+                    int page = 1;
+                    if (pageString.startsWith("p")) {
+                        try {
+                            page = Integer.parseInt(pageString.substring(1));
+                        } catch (NumberFormatException e) {
+                            // If parsing fails, default to page 1
+                            page = 1;
+                        }
+                    }
+
+                    executePlaytimeTop(sender, page);
+                })
+                .register();
+    }
+
+    private void executePlaytimeTop(CommandSender sender, int page) {
+        // Check permission (though CommandAPI should handle this)
         if (!sender.hasPermission("playtime.top")) {
             String noPermMessage = config.getConfig().getString("playtimetop.messages.no-permission");
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " + noPermMessage));
-            return false;
+            return;
         }
 
-        // Parse page number
-        if (args.length > 0) {
-            if (pagePattern.matcher(args[0]).matches()) {
-                if (getPages().contains(args[0])) {
-                    page = Integer.parseInt(args[0].substring(1));
-                } else {
-                    String pageNotExistsMessage = config.getConfig().getString("playtimetop.messages.page-not-exists")
-                            .replace("%PAGE_NUMBER%", args[0].substring(1));
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " + pageNotExistsMessage));
-                    return false;
-                }
-            } else {
-                String invalidArgMessage = config.getConfig().getString("playtimetop.messages.invalid-argument");
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " + invalidArgMessage));
-                return false;
-            }
-        } else {
-            page = 1;
+        // Validate page number
+        if (page <= 0) {
+            String invalidArgMessage = config.getConfig().getString("playtimetop.messages.invalid-argument");
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " + invalidArgMessage));
+            return;
         }
+
+        final int finalPage = page;
 
         // Process asynchronously
         org.bukkit.Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -90,9 +103,9 @@ public class PlaytimeTop implements TabExecutor {
                     }
 
                     int totalUsers = Math.min(TOP_MAX, topPlayers.size());
-                    int totalPages = (int) Math.ceil(Float.parseFloat(String.valueOf(totalUsers)) / 10);
+                    int totalPages = (int) Math.ceil((double) totalUsers / 10);
 
-                    if (page <= 0 || page > totalPages) {
+                    if (finalPage <= 0 || finalPage > totalPages) {
                         String invalidPageMessage = config.getConfig().getString("playtimetop.messages.invalid-page");
                         sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " + invalidPageMessage));
                         return;
@@ -100,11 +113,11 @@ public class PlaytimeTop implements TabExecutor {
 
                     // Send header message
                     String headerFormat = config.getConfig().getString("playtimetop.header");
-                    String header = headerFormat.replace("%PAGE_NUMBER%", String.valueOf(page));
+                    String header = headerFormat.replace("%PAGE_NUMBER%", String.valueOf(finalPage));
                     sender.sendMessage(Utils.parseColors(header));
 
-                    int startIndex = (page - 1) * 10;
-                    int endIndex = Math.min(page * 10, totalUsers);
+                    int startIndex = (finalPage - 1) * 10;
+                    int endIndex = Math.min(finalPage * 10, totalUsers);
 
                     // Create an array to store messages in order
                     CompletableFuture<Component>[] messageFutures = new CompletableFuture[endIndex - startIndex];
@@ -158,12 +171,12 @@ public class PlaytimeTop implements TabExecutor {
                                 Component navigationMessage = Component.empty();
 
                                 // Previous page arrow
-                                if (page > 1) {
+                                if (finalPage > 1) {
                                     String prevPageText = config.getConfig().getString("playtimetop.footer.previous-page.text-if-page-exists");
                                     String prevPageHoverText = config.getConfig().getString("playtimetop.footer.previous-page.over-text");
 
                                     Component previousArrow = Utils.parseColors(prevPageText)
-                                            .clickEvent(ClickEvent.runCommand("/playtimetop p" + (page - 1)))
+                                            .clickEvent(ClickEvent.runCommand("/playtimetop p" + (finalPage - 1)))
                                             .hoverEvent(HoverEvent.showText(Utils.parseColors(prevPageHoverText)));
                                     navigationMessage = navigationMessage.append(previousArrow);
                                 } else {
@@ -174,17 +187,17 @@ public class PlaytimeTop implements TabExecutor {
                                 // Middle text
                                 String middleTextFormat = config.getConfig().getString("playtimetop.footer.middle-text");
                                 String middleText = middleTextFormat
-                                        .replace("%PAGE_NUMBER%", String.valueOf(page))
+                                        .replace("%PAGE_NUMBER%", String.valueOf(finalPage))
                                         .replace("%TOTAL_PAGES%", String.valueOf(totalPages));
                                 navigationMessage = navigationMessage.append(Utils.parseColors(" " + middleText + " "));
 
                                 // Next page arrow
-                                if (page < totalPages) {
+                                if (finalPage < totalPages) {
                                     String nextPageText = config.getConfig().getString("playtimetop.footer.next-page.text-if-page-exists");
                                     String nextPageHoverText = config.getConfig().getString("playtimetop.footer.next-page.over-text");
 
                                     Component nextArrow = Utils.parseColors(nextPageText)
-                                            .clickEvent(ClickEvent.runCommand("/playtimetop p" + (page + 1)))
+                                            .clickEvent(ClickEvent.runCommand("/playtimetop p" + (finalPage + 1)))
                                             .hoverEvent(HoverEvent.showText(Utils.parseColors(nextPageHoverText)));
                                     navigationMessage = navigationMessage.append(nextArrow);
                                 } else {
@@ -204,28 +217,17 @@ public class PlaytimeTop implements TabExecutor {
                 plugin.getLogger().severe("Error in PlaytimeTop command: " + e.getMessage());
             }
         });
-
-        return true;
     }
 
     public List<String> getPages() {
         List<String> result = new ArrayList<>();
-        for (int i = 0; i < Math.ceil(Float.parseFloat(String.valueOf(TOP_MAX)) / 10); i++) {
+        List<DBUser> topPlayers = dbUsersManager.getTopPlayers();
+        int totalUsers = Math.min(TOP_MAX, topPlayers.size());
+        int totalPages = (int) Math.ceil((double) totalUsers / 10);
+
+        for (int i = 0; i < totalPages; i++) {
             result.add("p" + (i + 1));
         }
         return result;
-    }
-
-    @Override
-    public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] args) {
-        final List<String> completions = new ArrayList<>();
-
-        if (args.length > 0) {
-            List<String> pages = getPages();
-            StringUtil.copyPartialMatches(args[0], pages, completions);
-            return completions;
-        }
-
-        return null;
     }
 }

@@ -73,12 +73,16 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         // Handle first join placeholder
         if (params.equalsIgnoreCase("firstjoin")) {
             try {
+                DBUser user = onlineUsersManager.getOnlineUser(player.getName());
+                if (user == null) return getErrorMessage("user not found");
+
+                LocalDateTime firstJoin = user.getFirstJoin();
+                if (firstJoin == null) return getErrorMessage("first join data missing");
+
                 formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
-                return String.valueOf(
-                        onlineUsersManager.getOnlineUser(player.getName()).getFirstJoin().format(formatter)
-                );
+                return firstJoin.format(formatter);
             } catch (Exception e) {
-                return getErrorMessage("couldn't get join streak");
+                return getErrorMessage("couldn't get first join date");
             }
         }
 
@@ -331,10 +335,17 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
     private String handleFirstJoin(String nickname){
         DBUser user = dbUsersManager.getUserFromNickname(nickname);
-        formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
-        return user != null ?
-                user.getFirstJoin().format(formatter) :
-                getErrorMessage("wrong nickname?");
+        if (user == null) return getErrorMessage("wrong nickname?");
+
+        LocalDateTime firstJoin = user.getFirstJoin();
+        if (firstJoin == null) return getErrorMessage("first join data missing");
+
+        try {
+            formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+            return firstJoin.format(formatter);
+        } catch (Exception e) {
+            return getErrorMessage("date formatting error");
+        }
     }
 
     private String handleRank(String nickname){

@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.CommandTree;
 import dev.jorel.commandapi.arguments.*;
+import me.thegabro.playtimemanager.Commands.CommandRegistrar;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -11,7 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 
-public class PlayTimeCommandManager {
+public class PlayTimeCommandManager implements CommandRegistrar {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
 
@@ -36,6 +37,9 @@ public class PlayTimeCommandManager {
         // Base command: /playtime (self stats)
         new CommandTree("playtime")
                 .withPermission(CommandPermission.fromString("playtime"))
+                .executesConsole((console, args) -> {
+                    console.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You must be a player to execute this command."));
+                })
                 .executesPlayer((sender, args) -> {
                     try {
                         new PlaytimeCommand(sender);

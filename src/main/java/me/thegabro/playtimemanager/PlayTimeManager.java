@@ -54,9 +54,8 @@ public class PlayTimeManager extends JavaPlugin{
     private JoinStreaksManager joinStreaksManager;
     private final String serverVersion = Bukkit.getBukkitVersion().split("-")[0];
     private SessionManager sessionManager;
-    private PlayTimeCommandManager playTimeCommandManager;
-    private PlayTimeReset playTimeReset;
-    private PlaytimeTop playtimeTop;
+    private CommandsManager commandsManager;
+
     @Override
     public void onLoad(){
         CommandAPI.onLoad(new CommandAPIBukkitConfig(this).silentLogs(true));
@@ -126,25 +125,42 @@ public class PlayTimeManager extends JavaPlugin{
         Bukkit.getPluginManager().registerEvents(new AllJoinStreakRewardsGui(), this);
         Bukkit.getPluginManager().registerEvents(new JoinStreakRewardPrizesGui(), this);
 
-        // Register CommandAPI commands
-        playTimeCommandManager = new PlayTimeCommandManager();
-        playTimeCommandManager.registerCommands();
-        playTimeReset = new PlayTimeReset();
-        playTimeReset.registerCommands();
-        playtimeTop = new PlaytimeTop();
-        playtimeTop.registerCommands();
 
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();
 
         sessionManager = new SessionManager();
 
+        // Register CommandAPI commands
+        commandsManager = new CommandsManager(this);
+        commandsManager.registerAllCommands();
+
+        if (permissionsManagerConfigured) {
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                try {
+                    LuckPermsManager.getInstance(this).registerPermissionListener();
+                } catch (Exception e) {
+                    getLogger().warning("Failed to register LuckPerms permission listener: " + e.getMessage());
+                }
+            }, 1L); // 1 tick delay
+        }
+
         getLogger().info("has been enabled!");
     }
+
 
     @Override
     public void onDisable() {
         CommandAPI.onDisable();
+
+        // Clean up LuckPerms listener first
+        if (permissionsManagerConfigured) {
+            try {
+                LuckPermsManager.getInstance(this).unregisterPermissionListener();
+            } catch (Exception e) {
+                getLogger().warning("Failed to unregister LuckPerms permission listener: " + e.getMessage());
+            }
+        }
 
         onlineUsersManager.stopSchedules();
         for(Player p : Bukkit.getOnlinePlayers()){
@@ -187,12 +203,7 @@ public class PlayTimeManager extends JavaPlugin{
         return commandsConfig;
     }
 
-    public void setGlobalLogLevel(Level level) {
-        LogManager.getLogManager().getLogger("").setLevel(level);
-        for (Handler h : Logger.getLogger("").getHandlers()) {
-            h.setLevel(level);
-        }
-    }
+   
 
     private boolean checkPermissionsPlugin() {
         String configuredPlugin = config.getPermissionsManagerPlugin().toLowerCase();
@@ -201,7 +212,6 @@ public class PlayTimeManager extends JavaPlugin{
             Plugin luckPerms = Bukkit.getPluginManager().getPlugin("LuckPerms");
             if (luckPerms != null && luckPerms.isEnabled()) {
                 try {
-                    LuckPermsManager.getInstance(this).registerPermissionListener();;
                     getLogger().info("LuckPerms detected! Launching related functions");
                     return true;
                 } catch (Exception e) {

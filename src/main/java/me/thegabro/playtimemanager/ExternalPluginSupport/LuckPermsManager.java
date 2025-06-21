@@ -1,12 +1,14 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport;
 
 import dev.jorel.commandapi.CommandAPI;
+import dev.jorel.commandapi.CommandAPIHandler;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.event.EventBus;
+import net.luckperms.api.event.EventSubscription;
 import net.luckperms.api.event.node.NodeMutateEvent;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
@@ -18,14 +20,18 @@ import org.bukkit.entity.Player;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 public class LuckPermsManager {
     private final PlayTimeManager plugin;
     private static LuckPerms luckPermsApi;
     private static LuckPermsManager instance;
+    private EventSubscription<NodeMutateEvent> eventSubscription;
+    private PermissionEventHandler eventHandler;
 
     private LuckPermsManager(PlayTimeManager plugin) {
         this.plugin = plugin;
+        this.eventHandler = new PermissionEventHandler(plugin);
     }
 
     public static LuckPermsManager getInstance(PlayTimeManager plugin) {
@@ -159,17 +165,67 @@ public class LuckPermsManager {
     }
 
     public void registerPermissionListener() {
-        EventBus eventBus = luckPermsApi.getEventBus();
-        eventBus.subscribe(NodeMutateEvent.class, event -> {
-            if (!(event.getTarget() instanceof User user)) return;
-
-            UUID uuid = user.getUniqueId();
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null && player.isOnline()) {
-                CommandAPI.updateRequirements(player);
-            }
-        });
+        try {
+            EventBus eventBus = luckPermsApi.getEventBus();
+            // Use the separate event handler class to avoid ClassLoader issues
+            eventSubscription = eventBus.subscribe(NodeMutateEvent.class, eventHandler);
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to register LuckPerms event listener: " + e.getMessage());
+        }
     }
 
 
+    public void unregisterPermissionListener() {
+        if (eventSubscription != null) {
+            try {
+                eventSubscription.close();
+                eventSubscription = null;
+            } catch (Exception e) {
+                // Silently handle any exceptions during cleanup
+            }
+        }
+        eventHandler = null;
+    }
+
+
+    private static class PermissionEventHandler implements Consumer<NodeMutateEvent> {
+        private final String pluginName;
+
+        public PermissionEventHandler(PlayTimeManager plugin) {
+            this.pluginName = plugin.getName();
+        }
+
+        @Override
+        public void accept(NodeMutateEvent event) {
+            try {
+                // Get plugin instance dynamically to avoid ClassLoader references
+                PlayTimeManager plugin = (PlayTimeManager) Bukkit.getPluginManager().getPlugin(pluginName);
+                if (plugin == null || !plugin.isEnabled()) {
+                    return;
+                }
+
+                if (!(event.getTarget() instanceof User user)) return;
+
+                UUID uuid = user.getUniqueId();
+
+                // Schedule the CommandAPI update on the main thread
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    try {
+                        Player player = Bukkit.getPlayer(uuid);
+                        if (player != null && player.isOnline()) {
+                            // Check if CommandAPIHandler is ready before calling updateRequirements
+                            CommandAPIHandler<?, ?, ?> handler = CommandAPIHandler.getInstance();
+                            if (handler != null) {
+                                CommandAPI.updateRequirements(player);
+                            }
+                        }
+                    } catch (Exception e) {
+                        // Silently handle any exceptions during CommandAPI update
+                    }
+                });
+            } catch (Exception e) {
+                // Catch any exceptions to prevent them from being logged by LuckPerms
+            }
+        }
+    }
 }

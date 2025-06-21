@@ -1,5 +1,8 @@
 package me.thegabro.playtimemanager.Commands;
 
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.arguments.StringArgument;
 import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
@@ -8,20 +11,18 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
-public class PlaytimeAverage implements CommandExecutor {
+public class PlaytimeAverage implements CommandRegistrar {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final PlayTimeDatabase db = plugin.getDatabase();
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
-
-        if (sender.hasPermission("playtime.average")){
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The average playtime is:&6 " + Utils.ticksToFormattedPlaytime((long) (Math.ceil(db.getAveragePlaytime())))));
-            return true;
-        } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
+    public void registerCommands() {
+        new CommandAPICommand("playtimeaverage")
+                .withPermission(CommandPermission.fromString("playtime.average"))
+                .executes((sender, args) -> {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                            " The average playtime is:&6 " + Utils.ticksToFormattedPlaytime((long) (Math.ceil(db.getAveragePlaytime())))));
+                })
+                .register();
         }
-        return false;
-    }
 }

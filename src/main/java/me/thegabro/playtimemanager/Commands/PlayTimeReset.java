@@ -57,111 +57,41 @@ public class PlayTimeReset {
 
     public Argument<String> customPlayerArgument(String nodeName) {
         return new CustomArgument<>(new StringArgument(nodeName), info -> {
-            // Check if player exists in database (as your command logic requires)
-            if (dbUsersManager.getUserFromNickname(info.input()) == null) {
-                throw CustomArgument.CustomArgumentException.fromMessageBuilder(
-                        new CustomArgument.MessageBuilder("Player has never joined: ").appendArgInput());
-            } else {
-                return info.input(); // Return the input string as-is
+            String input = info.input();
+
+            if (input.equals("+")) {
+                return input;
             }
+
+            if (dbUsersManager.getUserFromNickname(input) == null) {
+                throw CustomArgument.CustomArgumentException.fromMessageBuilder(
+                        new CustomArgument.MessageBuilder("Player has never joined: ").appendArgInput()
+                );
+            }
+
+            return input;
         }).replaceSuggestions(ArgumentSuggestions.strings(info -> {
-            // Only suggest online players
-            return Bukkit.getOnlinePlayers().stream()
+            List<String> suggestions = Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .toArray(String[]::new);
+                    .collect(Collectors.toList());
+
+            if (info.sender().hasPermission("playtime.others.modify.all")) {
+                suggestions.add("+");
+            }
+
+            return suggestions.toArray(new String[0]);
         }));
     }
 
     public void registerCommands() {
         new CommandTree("playtimereset")
                 .withPermission(CommandPermission.fromString("playtime.others.modify"))
-                // Branch for "*" (all players)
-                .then(new LiteralArgument("*")
-                        .then(new LiteralArgument("stats")
-                                .executes((sender, args) -> {
-                                    try {
-                                        if(!sender.hasPermission("playtime.others.modify.all")){
-                                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                    " &cYou don't have permission to reset all players' data!"));
-                                            return;
-                                        }
-                                        handleResetAllConfirmation(sender, "stats");
-                                    } catch (Exception e) {
-                                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                " &cAn error occurred while executing the command."));
-                                        plugin.getLogger().severe("Error executing playtime reset stats command: " + e.getMessage());
-                                        e.printStackTrace();
-                                    }
-                                })
-                        )
-                        .then(new LiteralArgument("db")
-                                .executes((sender, args) -> {
-                                    try {
-                                        if(!sender.hasPermission("playtime.others.modify.all")){
-                                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                    " &cYou don't have permission to reset all players' data!"));
-                                            return;
-                                        }
-                                        handleResetAllConfirmation(sender, "db");
-                                    } catch (Exception e) {
-                                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                " &cAn error occurred while executing the command."));
-                                        plugin.getLogger().severe("Error executing playtime reset db command: " + e.getMessage());
-                                        e.printStackTrace();
-                                    }
-                                })
-                        )
-                        .then(new LiteralArgument("joinstreak")
-                                .executes((sender, args) -> {
-                                    try {
-                                        if(!sender.hasPermission("playtime.others.modify.all")){
-                                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                    " &cYou don't have permission to reset all players' data!"));
-                                            return;
-                                        }
-                                        handleResetAllConfirmation(sender, "joinstreak");
-                                    } catch (Exception e) {
-                                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                " &cAn error occurred while executing the command."));
-                                        plugin.getLogger().severe("Error executing playtime reset joinstreak command: " + e.getMessage());
-                                        e.printStackTrace();
-                                    }
-                                })
-                        )
-                        .then(new LiteralArgument("all")
-                                .executes((sender, args) -> {
-                                    try {
-                                        if(!sender.hasPermission("playtime.others.modify.all")){
-                                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                    " &cYou don't have permission to reset all players' data!"));
-                                            return;
-                                        }
-                                        handleResetAllConfirmation(sender, "all");
-                                    } catch (Exception e) {
-                                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                " &cAn error occurred while executing the command."));
-                                        plugin.getLogger().severe("Error executing playtime reset all command: " + e.getMessage());
-                                        e.printStackTrace();
-                                    }
-                                })
-                        )
-                )
-                // Branch for specific players
                 .then(customPlayerArgument("target")
                         .then(new LiteralArgument("stats")
                                 .executes((sender, args) -> {
                                     try {
                                         String target = (String) args.get("target");
-
-                                        DBUser user = dbUsersManager.getUserFromNickname(target);
-                                        if (user == null) {
-                                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                    " The player &e" + target + "&7 has never joined the server!"));
-                                            return;
-                                        }
-
-                                        resetPlayerStats(sender, target);
-
+                                        handleResetCommand(sender, target, "stats");
                                     } catch (Exception e) {
                                         sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
                                                 " &cAn error occurred while executing the command."));
@@ -174,16 +104,7 @@ public class PlayTimeReset {
                                 .executes((sender, args) -> {
                                     try {
                                         String target = (String) args.get("target");
-
-                                        DBUser user = dbUsersManager.getUserFromNickname(target);
-                                        if (user == null) {
-                                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                    " The player &e" + target + "&7 has never joined the server!"));
-                                            return;
-                                        }
-
-                                        resetPlayerDatabase(sender, target);
-
+                                        handleResetCommand(sender, target, "db");
                                     } catch (Exception e) {
                                         sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
                                                 " &cAn error occurred while executing the command."));
@@ -196,16 +117,7 @@ public class PlayTimeReset {
                                 .executes((sender, args) -> {
                                     try {
                                         String target = (String) args.get("target");
-
-                                        DBUser user = dbUsersManager.getUserFromNickname(target);
-                                        if (user == null) {
-                                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                    " The player &e" + target + "&7 has never joined the server!"));
-                                            return;
-                                        }
-
-                                        resetPlayerJoinstreak(sender, target);
-
+                                        handleResetCommand(sender, target, "joinstreak");
                                     } catch (Exception e) {
                                         sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
                                                 " &cAn error occurred while executing the command."));
@@ -218,18 +130,7 @@ public class PlayTimeReset {
                                 .executes((sender, args) -> {
                                     try {
                                         String target = (String) args.get("target");
-
-                                        DBUser user = dbUsersManager.getUserFromNickname(target);
-                                        if (user == null) {
-                                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                    " The player &e" + target + "&7 has never joined the server!"));
-                                            return;
-                                        }
-
-                                        // Reset both stats and database for single player
-                                        resetPlayerStats(sender, target);
-                                        resetPlayerDatabase(sender, target);
-
+                                        handleResetCommand(sender, target, "all");
                                     } catch (Exception e) {
                                         sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
                                                 " &cAn error occurred while executing the command."));
@@ -239,6 +140,49 @@ public class PlayTimeReset {
                                 })
                         )
                 ).register();
+    }
+
+    private void handleResetCommand(CommandSender sender, String target, String resetType) {
+        // Check if targeting all players ("+")
+        if (target.equals("+")) {
+            // Check permission for all players reset
+            if (!sender.hasPermission("playtime.others.modify.all")) {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                        " &cYou don't have permission to reset all players' data!"));
+                return;
+            }
+            handleResetAllConfirmation(sender, resetType);
+        } else {
+            // Single player reset
+            DBUser user = dbUsersManager.getUserFromNickname(target);
+            if (user == null) {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                        " The player &e" + target + "&7 has never joined the server!"));
+                return;
+            }
+
+            switch (resetType) {
+                case "stats":
+                    resetPlayerStats(sender, target);
+                    break;
+                case "db":
+                    resetPlayerDatabase(sender, target);
+                    break;
+                case "joinstreak":
+                    resetPlayerJoinstreak(sender, target);
+                    break;
+                case "all":
+                    // Reset both stats and database for single player
+                    resetPlayerStats(sender, target);
+                    resetPlayerDatabase(sender, target);
+                    resetPlayerJoinstreak(sender, target);
+                    break;
+                default:
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                            " Unknown reset type: &e" + resetType + "&7. Valid types: stats, db, joinstreak, all"));
+                    break;
+            }
+        }
     }
 
     public void resetPlayerStats(CommandSender sender, String playerName) {

@@ -5,7 +5,6 @@ import dev.jorel.commandapi.CommandTree;
 import dev.jorel.commandapi.arguments.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.AllJoinStreakRewardsGui;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui;
-import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -19,8 +18,6 @@ import java.util.UUID;
 public class PlayTimeJoinStreak implements CommandRegistrar {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
-    private final JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
-
 
     public void registerCommands(){
 

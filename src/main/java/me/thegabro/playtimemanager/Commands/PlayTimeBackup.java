@@ -1,41 +1,34 @@
 package me.thegabro.playtimemanager.Commands;
 
-import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
+import dev.jorel.commandapi.CommandAPICommand;
+import dev.jorel.commandapi.CommandPermission;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Updates.DatabaseBackupUtility;
 import me.thegabro.playtimemanager.Utils;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class PlayTimeBackup implements CommandExecutor {
+public class PlayTimeBackup implements CommandRegistrar {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
-
-        if (sender.hasPermission("playtime.backup")){
-
-            DatabaseBackupUtility backupUtility = new DatabaseBackupUtility(plugin);
-            File success = backupUtility.createBackup("play_time", generateReadmeContent());
-            if (success != null) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                        " &7Database backup created successfully!"));
-            } else {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                        " &7Failed to create database backup. Check console for details."));
-            }
-            return true;
-        } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
-        }
-        return false;
+    public void registerCommands(){
+        new CommandAPICommand("playtimebackup")
+                .withPermission(CommandPermission.fromString("playtime.backup"))
+                .executes((sender, args) -> {
+                    DatabaseBackupUtility backupUtility = new DatabaseBackupUtility(plugin);
+                    File success = backupUtility.createBackup("play_time", generateReadmeContent());
+                    if (success != null) {
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                                " &7Database backup created successfully!"));
+                    } else {
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                                " &7Failed to create database backup. Check console for details."));
+                    }
+                })
+                .register();
     }
 
     private String generateReadmeContent() {

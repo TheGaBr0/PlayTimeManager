@@ -25,6 +25,8 @@ public class CommandsManager {
         commandRegistrars.add(new PlaytimeAverage());
         commandRegistrars.add(new PlaytimeGoal());
         commandRegistrars.add(new PlayTimeJoinStreak());
+        commandRegistrars.add(new PlayTimeBackup());
+        commandRegistrars.add(new PlaytimeReload());
     }
 
     public void registerAllCommands() {

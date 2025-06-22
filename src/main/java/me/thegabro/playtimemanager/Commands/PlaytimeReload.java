@@ -36,16 +36,7 @@ public class PlaytimeReload implements CommandExecutor {
             goalsManager.loadGoals();
 
             //reload online users data
-            for(Player p : Bukkit.getOnlinePlayers()) {
-                OnlineUser user = onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName());
-                if (user != null) {
-                    // Update DB with the latest playtime before removing
-                    user.updatePlayTime();
-                    // Now remove the user
-                    onlineUsersManager.removeOnlineUser(user);
-                }
-            }
-            onlineUsersManager.loadOnlineUsers();
+            onlineUsersManager.reload();
 
 
             // Restart LuckPerms schedule if applicable

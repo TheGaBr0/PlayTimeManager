@@ -1,10 +1,8 @@
 package me.thegabro.playtimemanager.Commands;
 
-import dev.jorel.commandapi.CommandAPICommand;
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.CommandTree;
 import dev.jorel.commandapi.arguments.*;
-import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlaytimeCommand;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -55,38 +53,10 @@ public class PlayTimeReset implements CommandRegistrar{
         }
     }
 
-    public Argument<String> customPlayerArgument(String nodeName) {
-        return new CustomArgument<>(new StringArgument(nodeName), info -> {
-            String input = info.input();
-
-            if (input.equals("+")) {
-                return input;
-            }
-
-            if (dbUsersManager.getUserFromNickname(input) == null) {
-                throw CustomArgument.CustomArgumentException.fromMessageBuilder(
-                        new CustomArgument.MessageBuilder("Player has never joined: ").appendArgInput()
-                );
-            }
-
-            return input;
-        }).replaceSuggestions(ArgumentSuggestions.strings(info -> {
-            List<String> suggestions = Bukkit.getOnlinePlayers().stream()
-                    .map(Player::getName)
-                    .collect(Collectors.toList());
-
-            if (info.sender().hasPermission("playtime.others.modify.all")) {
-                suggestions.add("+");
-            }
-
-            return suggestions.toArray(new String[0]);
-        }));
-    }
-
     public void registerCommands() {
         new CommandTree("playtimereset")
                 .withPermission(CommandPermission.fromString("playtime.others.modify"))
-                .then(customPlayerArgument("target")
+                .then(customTargetArgument("target")
                         .then(new LiteralArgument("stats")
                                 .executes((sender, args) -> {
                                     try {
@@ -153,14 +123,6 @@ public class PlayTimeReset implements CommandRegistrar{
             }
             handleResetAllConfirmation(sender, resetType);
         } else {
-            // Single player reset
-            DBUser user = dbUsersManager.getUserFromNickname(target);
-            if (user == null) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                        " The player &e" + target + "&7 has never joined the server!"));
-                return;
-            }
-
             switch (resetType) {
                 case "stats":
                     resetPlayerStats(sender, target);
@@ -187,13 +149,6 @@ public class PlayTimeReset implements CommandRegistrar{
 
     public void resetPlayerStats(CommandSender sender, String playerName) {
         DBUser user = dbUsersManager.getUserFromNickname(playerName);
-
-        if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                    " The player &e" + playerName + "&7 has never joined the server!"));
-            return;
-        }
-
         Bukkit.getScheduler().runTask(plugin, () -> {
             long resetPlaytime = 0;
 
@@ -289,12 +244,6 @@ public class PlayTimeReset implements CommandRegistrar{
     public void resetPlayerDatabase(CommandSender sender, String playerName) {
         DBUser user = dbUsersManager.getUserFromNickname(playerName);
 
-        if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                    " The player &e" + playerName + "&7 has never joined the server!"));
-            return;
-        }
-
         long playtimeBeforeReset = user.getPlaytime();
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -344,12 +293,6 @@ public class PlayTimeReset implements CommandRegistrar{
 
     public void resetPlayerJoinstreak(CommandSender sender, String playerName) {
         DBUser user = dbUsersManager.getUserFromNickname(playerName);
-
-        if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                    " The player &e" + playerName + "&7 has never joined the server!"));
-            return;
-        }
 
         int joinStreakBeforeReset = user.getRelativeJoinStreak();
 

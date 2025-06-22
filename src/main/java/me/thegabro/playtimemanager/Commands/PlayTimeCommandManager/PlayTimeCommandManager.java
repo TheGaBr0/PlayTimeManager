@@ -16,23 +16,6 @@ public class PlayTimeCommandManager implements CommandRegistrar {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
 
-    public Argument<String> customPlayerArgument(String nodeName) {
-        return new CustomArgument<>(new StringArgument(nodeName), info -> {
-            // Check if player exists in database (as your command logic requires)
-            if (dbUsersManager.getUserFromNickname(info.input()) == null) {
-                throw CustomArgument.CustomArgumentException.fromMessageBuilder(
-                        new CustomArgument.MessageBuilder("Player has never joined: ").appendArgInput());
-            } else {
-                return info.input(); // Return the input string as-is
-            }
-        }).replaceSuggestions(ArgumentSuggestions.strings(info -> {
-            // Only suggest online players
-            return Bukkit.getOnlinePlayers().stream()
-                    .map(Player::getName)
-                    .toArray(String[]::new);
-        }));
-    }
-
     public void registerCommands() {
         // Base command: /playtime (self stats)
         new CommandTree("playtime")
@@ -56,13 +39,6 @@ public class PlayTimeCommandManager implements CommandRegistrar {
                             try {
                                 String playerName = (String) args.get("player");
 
-                                // Check if player exists
-                                if (dbUsersManager.getUserFromNickname(playerName) == null) {
-                                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                            " The player &e" + playerName + "&7 has never joined the server!"));
-                                    return;
-                                }
-
                                 new PlaytimeCommand(sender, playerName);
                             } catch (Exception e) {
                                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
@@ -80,12 +56,6 @@ public class PlayTimeCommandManager implements CommandRegistrar {
                                             String time = (String) args.get("time");
 
                                             DBUser user = dbUsersManager.getUserFromNickname(playerName);
-
-                                            if (user == null) {
-                                                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                        " The player &e" + playerName + "&7 has never joined the server!"));
-                                                return;
-                                            }
 
                                             new PlayTimeAddTime(sender, user, time);
                                         } catch (Exception e) {
@@ -107,13 +77,6 @@ public class PlayTimeCommandManager implements CommandRegistrar {
 
                                         DBUser user = dbUsersManager.getUserFromNickname(playerName);
 
-                                        if (user == null) {
-                                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                    " The player &e" + playerName + "&7 has never joined the server!"));
-                                            return;
-                                        }
-
-                                        // Fixed: changed "add" to "remove"
                                         new PlayTimeRemoveTime(sender, user, time);
                                     } catch (Exception e) {
                                         sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
@@ -132,13 +95,6 @@ public class PlayTimeCommandManager implements CommandRegistrar {
 
                                         DBUser user = dbUsersManager.getUserFromNickname(playerName);
 
-                                        if (user == null) {
-                                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                    " The player &e" + playerName + "&7 has never joined the server!"));
-                                            return;
-                                        }
-
-                                        // Fixed: changed "add" to "remove"
                                         new PlayTimeStats(sender, user);
                                     } catch (Exception e) {
                                         sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +

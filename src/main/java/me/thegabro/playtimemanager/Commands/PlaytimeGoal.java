@@ -2,7 +2,6 @@ package me.thegabro.playtimemanager.Commands;
 
 import dev.jorel.commandapi.CommandPermission;
 import dev.jorel.commandapi.CommandTree;
-import dev.jorel.commandapi.arguments.Argument;
 import dev.jorel.commandapi.arguments.ArgumentSuggestions;
 import dev.jorel.commandapi.arguments.LiteralArgument;
 import dev.jorel.commandapi.arguments.StringArgument;
@@ -15,11 +14,8 @@ import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.*;
 
-import java.util.*;
-
 public class PlaytimeGoal implements CommandRegistrar {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final String[] SUBCOMMANDS = {"create", "remove", "rename"};  // Added "create" subcommand
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
 

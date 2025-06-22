@@ -72,6 +72,19 @@ public class OnlineUsersManager {
         });
     }
 
+    public void reload(){
+        for(Player p : Bukkit.getOnlinePlayers()) {
+            OnlineUser user = getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName());
+            if (user != null) {
+                // Update DB with the latest playtime before removing
+                user.updatePlayTime();
+                // Now remove the user
+                removeOnlineUser(user);
+            }
+        }
+        loadOnlineUsers();
+    }
+
     public OnlineUser getOnlineUser(String nickname) {
         return onlineUsersByName.get(nickname.toLowerCase());
     }

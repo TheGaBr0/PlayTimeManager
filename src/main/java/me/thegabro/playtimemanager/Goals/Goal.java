@@ -172,12 +172,7 @@ public class Goal {
     public void rename(String newName) {
         File oldFile = this.goalFile;
 
-        for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
-            if(user.hasCompletedGoal(name)){
-                user.unmarkGoalAsCompleted(name);
-                user.markGoalAsCompleted(newName);
-            }
-        }
+        OnlineUsersManager.getInstance().reload();
 
         this.name = newName;
 

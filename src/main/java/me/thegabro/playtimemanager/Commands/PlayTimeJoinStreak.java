@@ -1,134 +1,82 @@
 package me.thegabro.playtimemanager.Commands;
 
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.CommandTree;
+import dev.jorel.commandapi.arguments.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.AllJoinStreakRewardsGui;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
-import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
-public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
+public class PlayTimeJoinStreak implements CommandRegistrar {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
-        if (!sender.hasPermission("playtime.joinstreak")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
-            return false;
-        }
+    public void registerCommands(){
 
-        if (args.length == 0) {
-            if (!(sender instanceof Player)) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Only players can use the GUI!"));
-                return false;
-            }
-            AllJoinStreakRewardsGui gui = new AllJoinStreakRewardsGui();
-            gui.openInventory((Player) sender);
-            return true;
-        }
+        new CommandTree("playtimejoinstreak")
+                .withPermission(CommandPermission.fromString("playtime.joinstreak"))
+                .executesConsole((console, args) -> {
+                    console.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You must be a player to execute this command."));
+                })
+                .executesPlayer((player, args) -> {
+                    AllJoinStreakRewardsGui gui = new AllJoinStreakRewardsGui();
+                    gui.openInventory(player);
+                })
+                .then(new LiteralArgument("seeplayer")
+                        .withPermission(CommandPermission.fromString("playtime.joinstreak.seeplayer"))
+                                .then(customPlayerArgument("target")
+                                .executesConsole((console, args) -> {
+                                    console.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You must be a player to execute this command."));
+                                })
+                                .executesPlayer((player, args) -> {
+                                    String playerTarget = (String) args.get("target");
+                                    DBUser user = dbUsersManager.getUserFromNickname(playerTarget);
 
-        if(args.length == 1){
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Too few arguments!"));
-            return false;
-        }
+                                    String sessionToken = UUID.randomUUID().toString();
+                                    plugin.getSessionManager().createSession(player.getUniqueId(), sessionToken);
 
-        if (args[0].equalsIgnoreCase("seeplayer")) {
-            if (!(sender instanceof Player player)) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Only players can use this command!"));
-                return false;
-            }
-
-            if (!player.hasPermission("playtime.joinstreak.seeplayer")) {
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cYou don't have permission to view other players' rewards."));
-                return true;
-            }
-
-            String targetPlayerName = args[1];
-            DBUser user = dbUsersManager.getUserFromNickname(targetPlayerName);
-
-            if (user == null) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                        " The player &e" + targetPlayerName + "&7 has never joined the server!"));
-                return true;
-            }
-
-            String sessionToken = UUID.randomUUID().toString();
-            plugin.getSessionManager().createSession(player.getUniqueId(), sessionToken);
-
-            RewardsInfoGui rewardsGui = new RewardsInfoGui(player, user, sessionToken);
-            rewardsGui.openInventory();
-            return true;
-        }
-
-        if (args.length >= 3 && args[0].equalsIgnoreCase("set")) {
-            String targetPlayerName = args[1];
-            String valueString = args[2];
-
-            if (targetPlayerName.equals("*")) {
-                if (!sender.hasPermission("playtime.others.modify.all")) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                            " &cYou don't have permission to modify all players' join streaks."));
-                    return true;
-                }
-            } else {
-                if (!sender.hasPermission("playtime.others.modify")) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                            " &cYou don't have permission to modify other players' join streaks."));
-                    return true;
-                }
-            }
-
-            int newStreakValue;
-            try {
-                newStreakValue = Integer.parseInt(valueString);
-                if (newStreakValue < 0) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                            " &cJoin streak value must be 0 or greater!"));
-                    return true;
-                }
-            } catch (NumberFormatException e) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                        " &cInvalid number: &e" + valueString + "&c. Please enter a valid integer."));
-                return true;
-            }
-
-            if (targetPlayerName.equals("*")) {
-                setAllPlayersJoinStreak(sender, newStreakValue);
-                return true;
-            }
-
-            setPlayerJoinStreak(sender, targetPlayerName, newStreakValue);
-            return true;
-        }
-
-        return false;
+                                    RewardsInfoGui rewardsGui = new RewardsInfoGui(player, user, sessionToken);
+                                    rewardsGui.openInventory();
+                                })
+                        )
+                )
+                .then(new LiteralArgument("set")
+                        .withPermission("playtime.others.modify")
+                        .then(customTargetArgument("target")
+                                .then(new IntegerArgument("value", 1)
+                                    .executes((sender, args) -> {
+                                        String target = (String) args.get("target");
+                                        int value = (Integer) args.get("value");
+                                        if (target.equals("+")) {
+                                            if (!sender.hasPermission("playtime.others.modify.all")) {
+                                                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                                                        " &cYou don't have permission to modify all players' join streaks."));
+                                            } else {
+                                                setAllPlayersJoinStreak(sender, value);
+                                            }
+                                        }else{
+                                            DBUser user = dbUsersManager.getUserFromNickname(target);
+                                            setPlayerJoinStreak(sender, user, value);
+                                        }
+                                    })
+                                )
+                        )
+                )
+                .register();
     }
 
-    private void setPlayerJoinStreak(CommandSender sender, String playerName, int newValue) {
-        DBUser user = dbUsersManager.getUserFromNickname(playerName);
-
-        if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                    " The player &e" + playerName + "&7 has never joined the server!"));
-            return;
-        }
+    private void setPlayerJoinStreak(CommandSender sender, DBUser user, int newValue) {
 
         int oldStreakValue = user.getRelativeJoinStreak();
 
@@ -137,7 +85,7 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                        " Set join streak for player &e" + playerName +
+                        " Set join streak for player &e" + user.getNickname() +
                         "&7 from &e" + oldStreakValue + "&7 to &e" + newValue + "&7 joins"));
             });
         });
@@ -148,69 +96,17 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
                 " Starting to set all players' join streaks to &e" + newValue + "&7, this will take some time..."));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<DBUser> users = dbUsersManager.getAllDBUsers();
-            AtomicInteger totalPlayersModified = new AtomicInteger();
 
-            for (DBUser u : users) {
-                u.setRelativeJoinStreak(newValue);
-                totalPlayersModified.getAndIncrement();
-            }
+            PlayTimeManager.getInstance().getDatabase().setRelativeJoinStreakForAll(newValue);
+            OnlineUsersManager.getInstance().reload();
 
             dbUsersManager.clearCache();
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                        " All players' join streaks have been set to &e" + newValue + "&7! Total: &e" + totalPlayersModified + "&7 players modified"));
+                        " All players' join streaks have been set to &e" + newValue + "&7!"));
             });
         });
     }
 
-    @Override
-    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
-        List<String> completions = new ArrayList<>();
-
-        if (!(sender instanceof Player) || !sender.hasPermission("playtime.joinstreak")) {
-            return completions;
-        }
-
-        if (args.length == 1) {
-            if (sender.hasPermission("playtime.joinstreak.seeplayer")) {
-                completions.add("seeplayer");
-            }
-            if (sender.hasPermission("playtime.others.modify")) {
-                completions.add("set");
-            }
-            return completions;
-        }
-
-        if (args.length == 2) {
-            if (args[0].equalsIgnoreCase("seeplayer") &&
-                    sender.hasPermission("playtime.joinstreak.seeplayer")) {
-                String partialName = args[1].toLowerCase();
-                return Bukkit.getOnlinePlayers().stream()
-                        .map(Player::getName)
-                        .filter(name -> name.toLowerCase().startsWith(partialName))
-                        .collect(Collectors.toList());
-            }
-
-            if (args[0].equalsIgnoreCase("set") &&
-                    sender.hasPermission("playtime.others.modify")) {
-                String partialName = args[1].toLowerCase();
-                List<String> playerCompletions = Bukkit.getOnlinePlayers().stream()
-                        .map(Player::getName)
-                        .filter(name -> name.toLowerCase().startsWith(partialName))
-                        .collect(Collectors.toList());
-
-                // Add wildcard option if user has the all permission
-                if (sender.hasPermission("playtime.others.modify.all") && "*".startsWith(partialName)) {
-                    playerCompletions.add("*");
-                }
-
-                return playerCompletions;
-            }
-        }
-
-
-        return completions;
-    }
 }

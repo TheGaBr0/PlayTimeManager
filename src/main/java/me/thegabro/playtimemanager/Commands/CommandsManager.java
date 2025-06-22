@@ -24,6 +24,7 @@ public class CommandsManager {
         commandRegistrars.add(new ClaimRewards());
         commandRegistrars.add(new PlaytimeAverage());
         commandRegistrars.add(new PlaytimeGoal());
+        commandRegistrars.add(new PlayTimeJoinStreak());
     }
 
     public void registerAllCommands() {

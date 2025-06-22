@@ -1,5 +1,11 @@
 package me.thegabro.playtimemanager.Commands;
 
+import dev.jorel.commandapi.CommandPermission;
+import dev.jorel.commandapi.CommandTree;
+import dev.jorel.commandapi.arguments.Argument;
+import dev.jorel.commandapi.arguments.ArgumentSuggestions;
+import dev.jorel.commandapi.arguments.LiteralArgument;
+import dev.jorel.commandapi.arguments.StringArgument;
 import me.thegabro.playtimemanager.GUIs.Goals.AllGoalsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
@@ -8,108 +14,56 @@ import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.*;
-import org.bukkit.entity.Player;
-import org.bukkit.util.StringUtil;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class PlaytimeGoal implements TabExecutor {
+public class PlaytimeGoal implements CommandRegistrar {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final String[] SUBCOMMANDS = {"create", "remove", "rename"};  // Added "create" subcommand
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
 
-    @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
-        if (!sender.hasPermission("playtime.goal")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
-            return false;
-        }
+    public void registerCommands(){
 
-        // If no arguments provided and sender is a player, open GUI
-        if (args.length == 0) {
-            if (!(sender instanceof Player)) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Only players can use the GUI!"));
-                return false;
-            }
-            AllGoalsGui gui = new AllGoalsGui();
-            gui.openInventory((Player) sender);
-            return true;
-        }
-
-        String goalName;
-        String subCommand = args[0].toLowerCase();
-        switch (subCommand) {
-            case "create":
-                if (args.length < 2) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal create <goalName>"));
-                    return false;
-                }
-                goalName = args[1];
-                createGoal(sender, goalName);
-                break;
-            case "set":
-                if (args.length < 2) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal set <goalName> [time:<time>] [activate:true|false]"));
-                    return false;
-                }
-
-                goalName = args[1];
-                String time = null;
-                boolean activate = false;
-
-                // Process optional arguments
-                for (int i = 2; i < args.length; i++) {
-                    if (args[i].startsWith("time:")) {
-                        time = args[i].substring(5);
-                        if (time.isEmpty()) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Missing time value!"));
-                            return false;
-                        }
-                        long timeToTicks = Utils.formattedPlaytimeToTicks(time);
-                        if (timeToTicks == -1L) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid time format!"));
-                            return false;
-                        }
-                    } else if (args[i].startsWith("activate:")) {
-                        String activateValue = args[i].substring(9).toLowerCase();
-                        if (activateValue.equals("true")) {
-                            activate = true;
-                        } else if (!activateValue.equals("false")) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid activate value! Use true or false"));
-                            return false;
-                        }
-                    } else {
-                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid argument: " + args[i]));
-                        return false;
-                    }
-                }
-                break;
-            case "remove":
-                if (args.length < 2) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal remove <goalName>"));
-                    return false;
-                }
-                goalName = args[1];
-                removeGoal(sender, goalName);
-                break;
-            case "rename":
-                if (args.length != 3) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal rename <oldName> <newName>"));
-                    return false;
-                }
-                String oldName = args[1];
-                String newName = args[2];
-                renameGoal(sender, oldName, newName);
-                break;
-            default:
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Subcommand " + subCommand + " is not valid."));
-                return false;
-        }
-
-        return true;
+        new CommandTree("playtimegoal")
+                .withPermission(CommandPermission.fromString("playtime.goal"))
+                .executesConsole((console, args) -> {
+                    console.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You must be a player to execute this command."));
+                })
+                .executesPlayer((player, args) -> {
+                    AllGoalsGui gui = new AllGoalsGui();
+                    gui.openInventory(player);
+                })
+                .then(new LiteralArgument("create")
+                        .then(new StringArgument("goalName")
+                            .executes((sender, args) -> {
+                                String goalName = (String) args.get("goalName");
+                                createGoal(sender, goalName);
+                            })
+                        )
+                )
+                .then(new LiteralArgument("remove")
+                        .then(new StringArgument("goalName").replaceSuggestions(
+                                ArgumentSuggestions.stringCollection(info -> goalsManager.getGoalsNames()))
+                                .executes((sender, args) -> {
+                                    String goalName = (String) args.get("goalName");
+                                    removeGoal(sender, goalName);
+                                })
+                        )
+                )
+                .then(new LiteralArgument("rename")
+                        .then(new StringArgument("oldGoalName").replaceSuggestions(
+                                ArgumentSuggestions.stringCollection(info -> goalsManager.getGoalsNames()))
+                                .then(new StringArgument("newGoalName")
+                                    .executes((sender, args) -> {
+                                        String oldGoalName = (String) args.get("oldGoalName");
+                                        String newGoalName = (String) args.get("newGoalName");
+                                        renameGoal(sender, oldGoalName, newGoalName);
+                                    })
+                                )
+                        )
+                ).register();
     }
 
     private void createGoal(CommandSender sender, String goalName) {
@@ -181,23 +135,4 @@ public class PlaytimeGoal implements TabExecutor {
         });
     }
 
-    @Override
-    public List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, String[] args) {
-        final List<String> completions = new ArrayList<>();
-
-        if (args.length == 1) {
-            StringUtil.copyPartialMatches(args[0], Arrays.asList(SUBCOMMANDS), completions);
-            return completions;
-        }
-
-        if (args.length == 2) {
-            if(args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("rename")) {
-                StringUtil.copyPartialMatches(args[1], goalsManager.getGoalsNames(), completions);
-            }
-            return completions;
-        }
-
-
-        return null;
-    }
 }

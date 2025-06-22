@@ -173,8 +173,10 @@ public class Goal {
         File oldFile = this.goalFile;
 
         for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
-            user.unmarkGoalAsCompleted(name);
-            user.markGoalAsCompleted(newName);
+            if(user.hasCompletedGoal(name)){
+                user.unmarkGoalAsCompleted(name);
+                user.markGoalAsCompleted(newName);
+            }
         }
 
         this.name = newName;

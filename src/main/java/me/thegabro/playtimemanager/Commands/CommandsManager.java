@@ -23,6 +23,7 @@ public class CommandsManager {
         commandRegistrars.add(new PlaytimePercentage());
         commandRegistrars.add(new ClaimRewards());
         commandRegistrars.add(new PlaytimeAverage());
+        commandRegistrars.add(new PlaytimeGoal());
     }
 
     public void registerAllCommands() {

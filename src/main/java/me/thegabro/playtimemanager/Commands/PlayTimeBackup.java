@@ -16,6 +16,7 @@ public class PlayTimeBackup implements CommandRegistrar {
 
     public void registerCommands(){
         new CommandAPICommand("playtimebackup")
+                .withAliases("ptbkp")
                 .withPermission(CommandPermission.fromString("playtime.backup"))
                 .executes((sender, args) -> {
                     DatabaseBackupUtility backupUtility = new DatabaseBackupUtility(plugin);

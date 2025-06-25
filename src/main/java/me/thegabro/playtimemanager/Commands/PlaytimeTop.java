@@ -44,6 +44,7 @@ public class PlaytimeTop implements CommandRegistrar{
 
     public void registerCommands() {
         new CommandAPICommand("playtimetop")
+                .withAliases("pttop")
                 .withPermission(CommandPermission.fromString("playtime.top"))
                 .withOptionalArguments(new StringArgument("page")
                         .replaceSuggestions(ArgumentSuggestions.stringsAsync(info ->

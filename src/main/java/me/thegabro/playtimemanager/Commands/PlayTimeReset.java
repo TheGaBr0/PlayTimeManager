@@ -55,6 +55,7 @@ public class PlayTimeReset implements CommandRegistrar{
 
     public void registerCommands() {
         new CommandTree("playtimereset")
+                .withAliases("ptreset")
                 .withPermission(CommandPermission.fromString("playtime.others.modify"))
                 .then(customTargetArgument("target")
                         .then(new LiteralArgument("stats")

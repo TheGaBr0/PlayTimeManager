@@ -23,6 +23,7 @@ public class PlaytimeGoal implements CommandRegistrar {
     public void registerCommands(){
 
         new CommandTree("playtimegoal")
+                .withAliases("ptgoal")
                 .withPermission(CommandPermission.fromString("playtime.goal"))
                 .executesConsole((console, args) -> {
                     console.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You must be a player to execute this command."));

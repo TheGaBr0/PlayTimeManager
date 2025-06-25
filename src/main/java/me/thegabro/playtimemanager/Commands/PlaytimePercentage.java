@@ -22,6 +22,7 @@ public class PlaytimePercentage implements CommandRegistrar {
 
     public void registerCommands() {
         new CommandAPICommand("playtimepercentage")
+                .withAliases("ptpercent")
                 .withPermission(CommandPermission.fromString("playtime.percentage"))
                 .withArguments(new StringArgument("time"))
                 .executes((sender, args) -> {

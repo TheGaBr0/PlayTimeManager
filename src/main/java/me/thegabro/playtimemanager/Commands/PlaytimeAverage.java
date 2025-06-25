@@ -14,6 +14,7 @@ public class PlaytimeAverage implements CommandRegistrar {
 
     public void registerCommands() {
         new CommandAPICommand("playtimeaverage")
+                .withAliases("ptavg")
                 .withPermission(CommandPermission.fromString("playtime.average"))
                 .executes((sender, args) -> {
                     sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +

@@ -19,6 +19,7 @@ public class PlaytimeReload implements CommandRegistrar {
 
     public void registerCommands(){
         new CommandAPICommand("playtimereload")
+                .withAliases("ptreload")
                 .withPermission(CommandPermission.fromString("playtime.reload"))
                 .executes((sender, args) -> {
                     // Reload configurations

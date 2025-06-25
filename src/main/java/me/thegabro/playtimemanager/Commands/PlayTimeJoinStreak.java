@@ -22,6 +22,7 @@ public class PlayTimeJoinStreak implements CommandRegistrar {
     public void registerCommands(){
 
         new CommandTree("playtimejoinstreak")
+                .withAliases("ptjsk")
                 .withPermission(CommandPermission.fromString("playtime.joinstreak"))
                 .executesConsole((console, args) -> {
                     console.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You must be a player to execute this command."));

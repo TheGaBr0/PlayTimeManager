@@ -8,8 +8,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
+
 
 
 public class PlayTimeCommandManager implements CommandRegistrar {

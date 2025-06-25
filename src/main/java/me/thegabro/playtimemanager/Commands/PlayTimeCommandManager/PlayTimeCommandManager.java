@@ -9,8 +9,6 @@ import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
 
-
-
 public class PlayTimeCommandManager implements CommandRegistrar {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
@@ -18,6 +16,14 @@ public class PlayTimeCommandManager implements CommandRegistrar {
     public void registerCommands() {
         // Base command: /playtime (self stats)
         new CommandTree("playtime")
+                .withHelp("View playtime statistics", "View your own playtime statistics or manage other players' playtime data")
+                .withUsage(
+                        "/playtime - View your playtime",
+                        "/playtime <player> - View another player's playtime",
+                        "/playtime <player> add <time> - Add playtime to a player",
+                        "/playtime <player> remove <time> - Remove playtime from a player",
+                        "/playtime <player> stats - View detailed player statistics"
+                )
                 .withPermission(CommandPermission.fromString("playtime"))
                 .executesConsole((console, args) -> {
                     console.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You must be a player to execute this command."));
@@ -47,44 +53,44 @@ public class PlayTimeCommandManager implements CommandRegistrar {
                             }
                         })
                         .then(new LiteralArgument("add")
-                            .withPermission(CommandPermission.fromString("playtime.others.modify"))
-                            .then(new StringArgument("time")
-                                    .executes((sender, args) -> {
-                                        try {
-                                            String playerName = (String) args.get("player");
-                                            String time = (String) args.get("time");
+                                .withPermission(CommandPermission.fromString("playtime.others.modify"))
+                                .then(new StringArgument("time")
+                                        .executes((sender, args) -> {
+                                            try {
+                                                String playerName = (String) args.get("player");
+                                                String time = (String) args.get("time");
 
-                                            DBUser user = dbUsersManager.getUserFromNickname(playerName);
+                                                DBUser user = dbUsersManager.getUserFromNickname(playerName);
 
-                                            new PlayTimeAddTime(sender, user, time);
-                                        } catch (Exception e) {
-                                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                    " &cAn error occurred while executing the command."));
-                                            plugin.getLogger().severe("Error executing playtime add command: " + e.getMessage());
-                                            e.printStackTrace();
-                                        }
-                                    })
-                            )
+                                                new PlayTimeAddTime(sender, user, time);
+                                            } catch (Exception e) {
+                                                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                                                        " &cAn error occurred while executing the command."));
+                                                plugin.getLogger().severe("Error executing playtime add command: " + e.getMessage());
+                                                e.printStackTrace();
+                                            }
+                                        })
+                                )
                         )
                         .then(new LiteralArgument("remove")
-                            .withPermission(CommandPermission.fromString("playtime.others.modify"))
-                            .then(new StringArgument("time")
-                                .executes((sender, args) -> {
-                                    try {
-                                        String playerName = (String) args.get("player");
-                                        String time = (String) args.get("time");
+                                .withPermission(CommandPermission.fromString("playtime.others.modify"))
+                                .then(new StringArgument("time")
+                                        .executes((sender, args) -> {
+                                            try {
+                                                String playerName = (String) args.get("player");
+                                                String time = (String) args.get("time");
 
-                                        DBUser user = dbUsersManager.getUserFromNickname(playerName);
+                                                DBUser user = dbUsersManager.getUserFromNickname(playerName);
 
-                                        new PlayTimeRemoveTime(sender, user, time);
-                                    } catch (Exception e) {
-                                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
-                                                " &cAn error occurred while executing the command."));
-                                        plugin.getLogger().severe("Error executing playtime remove command: " + e.getMessage());
-                                        e.printStackTrace();
-                                    }
-                                })
-                            )
+                                                new PlayTimeRemoveTime(sender, user, time);
+                                            } catch (Exception e) {
+                                                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                                                        " &cAn error occurred while executing the command."));
+                                                plugin.getLogger().severe("Error executing playtime remove command: " + e.getMessage());
+                                                e.printStackTrace();
+                                            }
+                                        })
+                                )
                         )
                         .then(new LiteralArgument("stats")
                                 .withPermission(CommandPermission.fromString("playtime.others.stats"))
@@ -106,6 +112,4 @@ public class PlayTimeCommandManager implements CommandRegistrar {
                 )
                 .register();
     }
-
-
 }

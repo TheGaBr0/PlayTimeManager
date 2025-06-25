@@ -23,6 +23,13 @@ public class PlaytimeGoal implements CommandRegistrar {
     public void registerCommands(){
 
         new CommandTree("playtimegoal")
+                .withHelp("Manage playtime goals", "Create, edit, and manage playtime goals for players. Opens the goals GUI when used without arguments")
+                .withUsage(
+                        "/playtimegoal - Open goals GUI",
+                        "/playtimegoal create <goalName> - Create a new goal",
+                        "/playtimegoal remove <goalName> - Remove an existing goal",
+                        "/playtimegoal rename <oldName> <newName> - Rename a goal"
+                )
                 .withAliases("ptgoal")
                 .withPermission(CommandPermission.fromString("playtime.goal"))
                 .executesConsole((console, args) -> {

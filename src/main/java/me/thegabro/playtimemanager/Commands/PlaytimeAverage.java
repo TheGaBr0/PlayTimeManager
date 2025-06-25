@@ -14,6 +14,8 @@ public class PlaytimeAverage implements CommandRegistrar {
 
     public void registerCommands() {
         new CommandAPICommand("playtimeaverage")
+                .withHelp("View average playtime", "Display the average playtime across all players on the server")
+                .withUsage("/playtimeaverage", "/ptavg")
                 .withAliases("ptavg")
                 .withPermission(CommandPermission.fromString("playtime.average"))
                 .executes((sender, args) -> {

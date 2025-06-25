@@ -20,6 +20,12 @@ public class ClaimRewards implements CommandRegistrar {
 
     public void registerCommands(){
         new CommandAPICommand("claimrewards")
+                .withHelp(
+                        "Open the rewards claiming interface",
+                        "Opens a graphical interface where you can view and claim available rewards based on your playtime " +
+                                "and join streak achievements. This command can only be used by players."
+                )
+                .withUsage("/claimrewards")
                 .withPermission(CommandPermission.fromString("playtime.claim"))
                 .executesConsole((console, args) -> {
                     console.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You must be a player to execute this command."));

@@ -22,6 +22,13 @@ public class PlayTimeJoinStreak implements CommandRegistrar {
     public void registerCommands(){
 
         new CommandTree("playtimejoinstreak")
+                .withHelp("Manage join streak rewards", "View and manage join streak rewards and player join streak data. Opens the join streak rewards GUI when used without arguments")
+                .withUsage(
+                        "/playtimejoinstreak - Open join streak rewards GUI",
+                        "/playtimejoinstreak seeplayer <player> - View a player's join streak info",
+                        "/playtimejoinstreak set <player> <value> - Set a player's join streak",
+                        "/playtimejoinstreak set + <value> - Set all players' join streaks"
+                )
                 .withAliases("ptjsk")
                 .withPermission(CommandPermission.fromString("playtime.joinstreak"))
                 .executesConsole((console, args) -> {

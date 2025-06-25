@@ -44,6 +44,18 @@ public class PlaytimeTop implements CommandRegistrar{
 
     public void registerCommands() {
         new CommandAPICommand("playtimetop")
+                .withHelp(
+                        "Shows the top players by playtime",
+                        "Displays a leaderboard of players ranked by their total playtime. " +
+                                "The leaderboard shows 10 players per page and supports pagination. " +
+                                "Use the page parameter to navigate through different pages (e.g., p1, p2, p3)."
+                )
+                .withUsage(
+                        "/playtimetop",
+                        "/playtimetop <page>",
+                        "/pttop",
+                        "/pttop <page>"
+                )
                 .withAliases("pttop")
                 .withPermission(CommandPermission.fromString("playtime.top"))
                 .withOptionalArguments(new StringArgument("page")

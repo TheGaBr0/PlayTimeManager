@@ -55,6 +55,15 @@ public class PlayTimeReset implements CommandRegistrar{
 
     public void registerCommands() {
         new CommandTree("playtimereset")
+                .withHelp("Reset player playtime data",
+                        "Resets various types of playtime data for individual players or all players. " +
+                                "Available reset types: 'stats' (resets in-game statistics), 'db' (resets database records), " +
+                                "'joinstreak' (resets join streak data), 'all' (resets everything). " +
+                                "Use '+' as the target to reset all players (requires confirmation). " +
+                                "WARNING: This action cannot be undone!")
+                .withUsage("/playtimereset <player> <stats|db|joinstreak|all>",
+                        "/playtimereset + <stats|db|joinstreak|all>",
+                        "/ptreset <player> <stats|db|joinstreak|all>")
                 .withAliases("ptreset")
                 .withPermission(CommandPermission.fromString("playtime.others.modify"))
                 .then(customTargetArgument("target")

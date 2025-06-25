@@ -6,10 +6,7 @@ import dev.jorel.commandapi.arguments.StringArgument;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.jetbrains.annotations.NotNull;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -22,6 +19,11 @@ public class PlaytimePercentage implements CommandRegistrar {
 
     public void registerCommands() {
         new CommandAPICommand("playtimepercentage")
+                .withHelp("Calculate percentage of players with specific playtime",
+                        "Calculates what percentage of players have a playtime greater than or equal to the specified time. " +
+                                "This command helps analyze player engagement by showing how many players have reached certain playtime milestones. " +
+                                "The time format supports various formats like '1h30m', '2d', '45m', etc.")
+                .withUsage("/playtimepercentage <time>")
                 .withAliases("ptpercent")
                 .withPermission(CommandPermission.fromString("playtime.percentage"))
                 .withArguments(new StringArgument("time"))

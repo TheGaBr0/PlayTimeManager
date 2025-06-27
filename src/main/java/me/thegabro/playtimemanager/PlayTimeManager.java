@@ -153,7 +153,6 @@ public class PlayTimeManager extends JavaPlugin{
     public void onDisable() {
         CommandAPI.onDisable();
 
-        // Clean up LuckPerms listener first
         if (permissionsManagerConfigured) {
             try {
                 LuckPermsManager.getInstance(this).unregisterPermissionListener();

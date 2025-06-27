@@ -24,8 +24,7 @@ public class PlaytimeReload implements CommandRegistrar {
                                 "This command refreshes: configuration files, GUI settings, goals system, online users data, " +
                                 "top players rankings, join streak rewards, and all background schedulers. " +
                                 "Use this command after making changes to plugin configuration files to apply them without restarting the server.")
-                .withUsage("/playtimereload",
-                        "/ptreload")
+                .withUsage("/playtimereload")
                 .withAliases("ptreload")
                 .withPermission(CommandPermission.fromString("playtime.reload"))
                 .executes((sender, args) -> {

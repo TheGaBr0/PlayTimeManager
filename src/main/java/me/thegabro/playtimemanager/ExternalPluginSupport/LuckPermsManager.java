@@ -123,13 +123,6 @@ public class LuckPermsManager {
         return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
     }
 
-    public boolean isInGroup(String uuid, String groupName) {
-        User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));
-        if (user == null) {
-            return false;
-        }
-        return user.getCachedData().getPermissionData().checkPermission("group." + groupName).asBoolean();
-    }
 
     public boolean groupExists(String groupName) {
         try {
@@ -146,7 +139,7 @@ public class LuckPermsManager {
             // Get all loaded users from LuckPerms
             Set<User> loadedUsers = luckPermsApi.getUserManager().getLoadedUsers();
 
-            for (User user  : loadedUsers) {
+            for (User user : loadedUsers) {
                 if (user != null) {
                     // Check if the user has the specified permission
                     boolean hasPermission = user.getCachedData().getPermissionData()
@@ -188,44 +181,21 @@ public class LuckPermsManager {
     }
 
 
-    private static class PermissionEventHandler implements Consumer<NodeMutateEvent> {
-        private final String pluginName;
-
-        public PermissionEventHandler(PlayTimeManager plugin) {
-            this.pluginName = plugin.getName();
-        }
+    private record PermissionEventHandler(PlayTimeManager plugin) implements Consumer<NodeMutateEvent> {
 
         @Override
         public void accept(NodeMutateEvent event) {
-            try {
-                // Get plugin instance dynamically to avoid ClassLoader references
-                PlayTimeManager plugin = (PlayTimeManager) Bukkit.getPluginManager().getPlugin(pluginName);
-                if (plugin == null || !plugin.isEnabled()) {
-                    return;
+            if (!(event.getTarget() instanceof User user)) return;
+
+            UUID uuid = user.getUniqueId();
+
+            // Schedule the CommandAPI update on the main thread
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                Player player = Bukkit.getPlayer(uuid);
+                if (player != null && player.isOnline()) {
+                    CommandAPI.updateRequirements(player);
                 }
-
-                if (!(event.getTarget() instanceof User user)) return;
-
-                UUID uuid = user.getUniqueId();
-
-                // Schedule the CommandAPI update on the main thread
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    try {
-                        Player player = Bukkit.getPlayer(uuid);
-                        if (player != null && player.isOnline()) {
-                            // Check if CommandAPIHandler is ready before calling updateRequirements
-                            CommandAPIHandler<?, ?, ?> handler = CommandAPIHandler.getInstance();
-                            if (handler != null) {
-                                CommandAPI.updateRequirements(player);
-                            }
-                        }
-                    } catch (Exception e) {
-                        // Silently handle any exceptions during CommandAPI update
-                    }
-                });
-            } catch (Exception e) {
-                // Catch any exceptions to prevent them from being logged by LuckPerms
-            }
+            });
         }
     }
 }

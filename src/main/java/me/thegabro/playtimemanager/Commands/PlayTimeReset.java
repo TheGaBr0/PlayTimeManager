@@ -62,8 +62,7 @@ public class PlayTimeReset implements CommandRegistrar{
                                 "Use '+' as the target to reset all players (requires confirmation). " +
                                 "WARNING: This action cannot be undone!")
                 .withUsage("/playtimereset <player> <stats|db|joinstreak|all>",
-                        "/playtimereset + <stats|db|joinstreak|all>",
-                        "/ptreset <player> <stats|db|joinstreak|all>")
+                        "/playtimereset + <stats|db|joinstreak|all>")
                 .withAliases("ptreset")
                 .withPermission(CommandPermission.fromString("playtime.others.modify"))
                 .then(customTargetArgument("target")

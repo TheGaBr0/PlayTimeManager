@@ -19,7 +19,6 @@ import org.bukkit.command.CommandSender;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
 
 public class PlaytimeTop implements CommandRegistrar{
 
@@ -28,7 +27,6 @@ public class PlaytimeTop implements CommandRegistrar{
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private LuckPermsManager luckPermsManager = null;
     private final int TOP_MAX = 100;
-    private final Pattern pagePattern = Pattern.compile("p\\d+");
     private final CommandsConfiguration config;
 
     public PlaytimeTop() {
@@ -52,9 +50,7 @@ public class PlaytimeTop implements CommandRegistrar{
                 )
                 .withUsage(
                         "/playtimetop",
-                        "/playtimetop <page>",
-                        "/pttop",
-                        "/pttop <page>"
+                        "/playtimetop <page>"
                 )
                 .withAliases("pttop")
                 .withPermission(CommandPermission.fromString("playtime.top"))
@@ -73,7 +69,6 @@ public class PlaytimeTop implements CommandRegistrar{
                             page = Integer.parseInt(pageString.substring(1));
                         } catch (NumberFormatException e) {
                             // If parsing fails, default to page 1
-                            page = 1;
                         }
                     }
 
@@ -118,7 +113,7 @@ public class PlaytimeTop implements CommandRegistrar{
                     int totalUsers = Math.min(TOP_MAX, topPlayers.size());
                     int totalPages = (int) Math.ceil((double) totalUsers / 10);
 
-                    if (finalPage <= 0 || finalPage > totalPages) {
+                    if (finalPage > totalPages) {
                         String invalidPageMessage = config.getConfig().getString("playtimetop.messages.invalid-page");
                         sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " " + invalidPageMessage));
                         return;

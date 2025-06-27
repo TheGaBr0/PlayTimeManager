@@ -17,7 +17,7 @@ public class PlayTimeBackup implements CommandRegistrar {
     public void registerCommands(){
         new CommandAPICommand("playtimebackup")
                 .withHelp("Create database backup", "Create a manual backup of the PlayTimeManager database")
-                .withUsage("/playtimebackup", "/ptbkp")
+                .withUsage("/playtimebackup")
                 .withAliases("ptbkp")
                 .withPermission(CommandPermission.fromString("playtime.backup"))
                 .executes((sender, args) -> {
@@ -41,10 +41,10 @@ public class PlayTimeBackup implements CommandRegistrar {
         StringBuilder readme = new StringBuilder();
         readme.append("PlayTimeManager Database Backup\n");
         readme.append("==============================\n\n");
-        readme.append("Backup created on: " + timestamp + "\n\n");
+        readme.append("Backup created on: ").append(timestamp).append("\n\n");
         readme.append("Plugin information:\n");
         readme.append("- Plugin name: PlayTimeManager\n");
-        readme.append("- Version: " + plugin.getDescription().getVersion() + "\n");
+        readme.append("- Version: ").append(plugin.getDescription().getVersion()).append("\n");
         readme.append("- Author: TheGabro\n\n");
         readme.append("Database information:\n");
         readme.append("- Database name: play_time\n");

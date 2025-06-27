@@ -78,18 +78,7 @@ public class DBUsersManager {
     }
 
     private boolean hasHidePermission(DBUser user) {
-        // Convert User to Player/OfflinePlayer to check permissions
-        UUID userUUID = UUID.fromString(user.getUuid()); // Assuming User has getUuid() method
-        Player onlinePlayer = Bukkit.getPlayer(userUUID);
-
-        if (onlinePlayer != null) {
-            return onlinePlayer.hasPermission("playtime.hidefromleaderboard");
-        }
-
-        if (plugin.getServer().getPluginManager().getPlugin("LuckPerms") != null)
-            return LuckPermsManager.getInstance(plugin).hasPermission(user.getUuid(), "playtime.hidefromleaderboard");
-
-        return false; // Default to not hidden if we can't determine
+        return LuckPermsManager.getInstance(plugin).hasPermission(user.getUuid(), "playtime.hidefromleaderboard");
     }
 
     public void updateTopPlayersFromDB() {
@@ -97,28 +86,46 @@ public class DBUsersManager {
             try {
                 onlineUsersManager.updateAllOnlineUsersPlaytime().get();
 
-                // Get count of players with hide permission asynchronously
-                CompletableFuture<Integer> permissionCountFuture = CompletableFuture.supplyAsync(() ->
-                        LuckPermsManager.getInstance(plugin).getPlayersWithPermissionCount("your.hide.permission"));
+                if (plugin.getServer().getPluginManager().getPlugin("LuckPerms") != null) {
+                    // Get count of players with hide permission asynchronously
+                    CompletableFuture<Integer> permissionCountFuture = CompletableFuture.supplyAsync(() ->
+                            LuckPermsManager.getInstance(plugin).getPlayersWithPermissionCount("playtime.hidefromleaderboard"));
 
-                int playersWithHidePermission = permissionCountFuture.get();
+                    int playersWithHidePermission = permissionCountFuture.get();
 
-                // Fetch more players from DB to account for those that will be filtered out
-                Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersWithHidePermission);
+                    // Fetch more players from DB to account for those that will be filtered out
+                    Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersWithHidePermission);
 
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    List<DBUser> validTopPlayers = dbTopPlayers.keySet().stream()
-                            .map(this::getUserFromUUID)
-                            .filter(Objects::nonNull)
-                            .filter(user -> !hasHidePermission(user))
-                            .limit(TOP_PLAYERS_LIMIT)
-                            .toList();
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        List<DBUser> validTopPlayers = dbTopPlayers.keySet().stream()
+                                .map(this::getUserFromUUID)
+                                .filter(Objects::nonNull)
+                                .filter(user -> !hasHidePermission(user))
+                                .limit(TOP_PLAYERS_LIMIT)
+                                .toList();
 
-                    synchronized (topPlayers) {
-                        topPlayers.clear();
-                        topPlayers.addAll(validTopPlayers);
-                    }
-                });
+                        synchronized (topPlayers) {
+                            topPlayers.clear();
+                            topPlayers.addAll(validTopPlayers);
+                        }
+                    });
+                } else {
+                    // No LuckPerms, just get the top players without permission filtering
+                    Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT);
+
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        List<DBUser> validTopPlayers = dbTopPlayers.keySet().stream()
+                                .map(this::getUserFromUUID)
+                                .filter(Objects::nonNull)
+                                .limit(TOP_PLAYERS_LIMIT)
+                                .toList();
+
+                        synchronized (topPlayers) {
+                            topPlayers.clear();
+                            topPlayers.addAll(validTopPlayers);
+                        }
+                    });
+                }
 
             } catch (InterruptedException | ExecutionException e) {
                 plugin.getLogger().severe("Error updating top players: " + e.getMessage());

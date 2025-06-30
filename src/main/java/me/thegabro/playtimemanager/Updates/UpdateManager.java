@@ -28,7 +28,11 @@ public class UpdateManager {
     }
 
     public void initialize() {
-        setupUpdateChecker();
+        if (plugin.getConfiguration().getUpdatesCheckActivation()) {
+            setupUpdateChecker();
+        } else {
+            plugin.getLogger().info("Update checking is disabled in configuration.");
+        }
     }
 
     private void setupUpdateChecker() {

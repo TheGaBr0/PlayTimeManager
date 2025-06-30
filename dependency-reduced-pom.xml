@@ -25,11 +25,15 @@
         <version>3.5.1</version>
         <executions>
           <execution>
+            <id>shade</id>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>
             <configuration>
+              <minimizeJar>true</minimizeJar>
+              <shadedArtifactAttached>false</shadedArtifactAttached>
+              <shadedClassifierName />
               <relocations>
                 <relocation>
                   <pattern>com.jeff_media.updatechecker</pattern>

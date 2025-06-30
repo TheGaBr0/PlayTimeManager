@@ -50,43 +50,6 @@ public class PlaytimeGoal implements TabExecutor {
                 goalName = args[1];
                 createGoal(sender, goalName);
                 break;
-            case "set":
-                if (args.length < 2) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal set <goalName> [time:<time>] [activate:true|false]"));
-                    return false;
-                }
-
-                goalName = args[1];
-                String time = null;
-                boolean activate = false;
-
-                // Process optional arguments
-                for (int i = 2; i < args.length; i++) {
-                    if (args[i].startsWith("time:")) {
-                        time = args[i].substring(5);
-                        if (time.isEmpty()) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Missing time value!"));
-                            return false;
-                        }
-                        long timeToTicks = Utils.formattedPlaytimeToTicks(time);
-                        if (timeToTicks == -1L) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid time format!"));
-                            return false;
-                        }
-                    } else if (args[i].startsWith("activate:")) {
-                        String activateValue = args[i].substring(9).toLowerCase();
-                        if (activateValue.equals("true")) {
-                            activate = true;
-                        } else if (!activateValue.equals("false")) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid activate value! Use true or false"));
-                            return false;
-                        }
-                    } else {
-                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid argument: " + args[i]));
-                        return false;
-                    }
-                }
-                break;
             case "remove":
                 if (args.length < 2) {
                     sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal remove <goalName>"));

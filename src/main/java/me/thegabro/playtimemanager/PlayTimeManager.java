@@ -71,7 +71,6 @@ public class PlayTimeManager extends JavaPlugin{
         this.db.load();
 
         UpdateManager updateManager = UpdateManager.getInstance(this);
-        updateManager.initialize();
 
         // Check config version and perform updates if needed
         File configFile = new File(getDataFolder(), "config.yml");
@@ -83,6 +82,8 @@ public class PlayTimeManager extends JavaPlugin{
         }
 
         config = new Configuration(this.getDataFolder(), "config", true, true);
+
+        updateManager.initialize();
 
         guiConfig = new GUIsConfiguration(this);
         commandsConfig = new CommandsConfiguration(this);

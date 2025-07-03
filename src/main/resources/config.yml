@@ -68,7 +68,7 @@ playtime-others-message: "[&6PlayTime&eManager&f]&7 The playtime of &e%PLAYER_NA
 goal-check-rate: 900
 
 #Enable or disable debug logging in the console
-#Default: true
+#Default: false
 goal-check-verbose: false
 
 #=================================================================
@@ -99,7 +99,7 @@ rewards-check-schedule-activation: true
 
 #Enable or disable debug logging in the console
 #I suggest you to keep this true if you are experimenting with cron expressions defined above
-#Default: true
+#Default: false
 streak-check-verbose: false
 
 # Enables or disables the reset of the join streak.

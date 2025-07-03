@@ -10,6 +10,7 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import io.papermc.paper.event.player.AsyncChatEvent;
@@ -64,7 +65,7 @@ public class ChatEventManager implements Listener {
         activeSessions.put(playerId, new ChatInputSession(callback, true, false));
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
         UUID playerId = player.getUniqueId();
@@ -90,7 +91,9 @@ public class ChatEventManager implements Listener {
         Bukkit.getScheduler().runTask(plugin, () -> handleInput(player, command, session));
     }
 
-    @EventHandler(ignoreCancelled = true)
+
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerChat(AsyncChatEvent event) {
         Player player = event.getPlayer();
         UUID playerId = player.getUniqueId();

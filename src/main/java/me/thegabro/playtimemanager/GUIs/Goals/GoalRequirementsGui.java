@@ -83,7 +83,7 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
             String item = combined.get(index);
             boolean isPermission = index < permissions.size();
             Material icon = isPermission ? (item.startsWith("group.") ? Material.BOOK : Material.NAME_TAG) : Material.ARMOR_STAND;
-            List<Component> lore = new ArrayList<>(List.of(Utils.parseColors("&7Click to edit"), Utils.parseColors("&cRight-click to remove")));
+            List<Component> lore = new ArrayList<>(List.of(Utils.parseColors("&7Click to edit"), Utils.parseColors("&cShift-Right Click to remove")));
 
             if (isPermission && item.startsWith("group.")) {
                 String group = item.substring(6);
@@ -114,10 +114,10 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
         ));
 
         inventory.setItem(Slots.ADD_PERMISSION, parentGui.createGuiItem(Material.CLOCK, Utils.parseColors("&e&lC"),
-                Utils.parseColors("&7Click to add a new permission node")));
+                Utils.parseColors("&7Click to add a new permission/group requirement")));
 
         inventory.setItem(Slots.ADD_PERMISSION, parentGui.createGuiItem(Material.NAME_TAG, Utils.parseColors("&e&lAdd Permission"),
-                Utils.parseColors("&7Click to add a new permission node")));
+                Utils.parseColors("&7Click to add a new permission/group requirement")));
 
         inventory.setItem(Slots.ADD_PLACEHOLDER, parentGui.createGuiItem(Material.ARMOR_STAND, Utils.parseColors("&b&lAdd Placeholder condition"),
                 Utils.parseColors("&7Click to add a new placeholder condition")));
@@ -190,7 +190,9 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
                         (goal.getRequirements().getTime() != Long.MAX_VALUE ?
                                 Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()) : "-") + "\n" +
                         "&7• Type &d&onone&r&7 to remove this requirement\n" +
-                        "&7• Type &c&ocancel&r&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit\n"+
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7For more info regarding the issue and workarounds."
         );
 
         // Create full message
@@ -242,7 +244,9 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter a new permission node:\n" +
                         "&7• Standard permission or 'group.groupname'\n" +
-                        "&7• Type &c&ocancel&r&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit\n"+
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7For more info regarding the issue and workarounds."
         );
 
         Component fullMessage = Component.empty()
@@ -284,7 +288,9 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
                         "&7• Examples:\n" +
                         "&7  • &f%PTM_joinstreak% >= 2\n" +
                         "&7  • &f%PTM_nickname_top_1% == PLAYER_NAME\n" +
-                        "&7• Type &c&ocancel&r&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit\n"+
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7For more info regarding the issue and workarounds."
         );
 
         Component fullMessage = Component.empty()
@@ -326,7 +332,9 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
                 "&fCurrent Permission: &7" + oldPermission + "\n" +
                         "&7Enter a new permission node:\n" +
                         "&7• Type the new permission\n" +
-                        "&7• Type &c&ocancel&r&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit\n"+
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7For more info regarding the issue and workarounds."
         );
 
         Component fullMessage = Component.empty()
@@ -370,7 +378,9 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
                         "&7• Examples:\n" +
                         "&7  • &f%PTM_joinstreak% >= 2\n" +
                         "&7  • &f%PTM_nickname_top_1% == PLAYER_NAME\n" +
-                        "&7• Type &c&ocancel&r&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit\n"+
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7For more info regarding the issue and workarounds."
         );
 
         Component fullMessage = Component.empty()

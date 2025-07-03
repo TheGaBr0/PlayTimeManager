@@ -18,11 +18,10 @@ public class Configuration {
     private final File path;
     private final String name;
 
-    // Config settings fields - grouped by category
     // General settings
     private String pluginChatPrefix;
     private String datetimeFormat;
-
+    private Boolean updatesCheck;
     // Playtime settings
     private String playtimeSelfMessage;
     private String playtimeOthersMessage;
@@ -34,6 +33,7 @@ public class Configuration {
     // Placeholders settings
     private boolean placeholdersEnableErrors;
     private String placeholdersDefaultMessage;
+    private String notInLeaderboardMessage;
 
     // Permissions settings
     private String permissionsManagerPlugin;
@@ -122,10 +122,8 @@ public class Configuration {
     }
 
     private void updateGeneralSettings() {
-        // Update plugin prefix
         this.pluginChatPrefix = config.getString("prefix", "[§6PlayTime§eManager§f]§7");
 
-        // Update datetime format
         String configFormat = config.getString("datetime-format", "MMM dd, yyyy HH:mm:ss");
         try {
             new SimpleDateFormat(configFormat);
@@ -136,6 +134,8 @@ public class Configuration {
             save();
             plugin.getLogger().warning("Invalid datetime format in config. Resetting to default: " + this.datetimeFormat);
         }
+
+        this.updatesCheck = config.getBoolean("check-for-updates", true);
     }
 
     private void updatePlaytimeSettings() {
@@ -153,6 +153,7 @@ public class Configuration {
     private void updatePlaceholdersSettings() {
         this.placeholdersEnableErrors = config.getBoolean("placeholders.enable-errors", false);
         this.placeholdersDefaultMessage = config.getString("placeholders.default-message", "No data");
+        this.notInLeaderboardMessage = config.getString("placeholders.not-in-leaderboard-message", "-");
     }
 
     private void updatePermissionsSettings() {
@@ -202,6 +203,16 @@ public class Configuration {
     public void setDateTimeFormat(String format) {
         this.datetimeFormat = format;
         config.set("datetime-format", format);
+        save();
+    }
+
+    public Boolean getUpdatesCheckActivation() {
+        return updatesCheck;
+    }
+
+    public void setUpdatesCheckActivation(Boolean value) {
+        this.updatesCheck = value;
+        config.set("check-for-updates", value);
         save();
     }
 
@@ -273,6 +284,16 @@ public class Configuration {
     public void setPlaceholdersDefaultMessage(String message) {
         this.placeholdersDefaultMessage = message;
         config.set("placeholders.default-message", message);
+        save();
+    }
+
+    public String getNotInLeaderboardMessage(){
+        return notInLeaderboardMessage;
+    }
+
+    public void setNotInLeaderboardMessage(String message){
+        this.notInLeaderboardMessage = message;
+        config.set("placeholders.not-in-leaderboard-message", message);
         save();
     }
 

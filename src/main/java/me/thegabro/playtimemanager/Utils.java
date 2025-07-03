@@ -5,9 +5,6 @@ import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public class Utils {
     // Constants for tick conversions
     private static final long TICKS_PER_SECOND = 20L;

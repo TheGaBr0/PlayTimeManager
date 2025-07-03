@@ -16,7 +16,7 @@ import java.util.*;
 
 public class PlaytimeGoal implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final String[] SUBCOMMANDS = {"remove", "rename"};  // Removed "list" from subcommands
+    private final String[] SUBCOMMANDS = {"create", "remove", "rename"};  // Added "create" subcommand
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
 
@@ -42,42 +42,13 @@ public class PlaytimeGoal implements TabExecutor {
         String goalName;
         String subCommand = args[0].toLowerCase();
         switch (subCommand) {
-            case "set":
+            case "create":
                 if (args.length < 2) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal set <goalName> [time:<time>] [activate:true|false]"));
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Usage: /playtimegoal create <goalName>"));
                     return false;
                 }
-
                 goalName = args[1];
-                String time = null;
-                boolean activate = false;
-
-                // Process optional arguments
-                for (int i = 2; i < args.length; i++) {
-                    if (args[i].startsWith("time:")) {
-                        time = args[i].substring(5);
-                        if (time.isEmpty()) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Missing time value!"));
-                            return false;
-                        }
-                        long timeToTicks = Utils.formattedPlaytimeToTicks(time);
-                        if (timeToTicks == -1L) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid time format!"));
-                            return false;
-                        }
-                    } else if (args[i].startsWith("activate:")) {
-                        String activateValue = args[i].substring(9).toLowerCase();
-                        if (activateValue.equals("true")) {
-                            activate = true;
-                        } else if (!activateValue.equals("false")) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid activate value! Use true or false"));
-                            return false;
-                        }
-                    } else {
-                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid argument: " + args[i]));
-                        return false;
-                    }
-                }
+                createGoal(sender, goalName);
                 break;
             case "remove":
                 if (args.length < 2) {
@@ -102,6 +73,32 @@ public class PlaytimeGoal implements TabExecutor {
         }
 
         return true;
+    }
+
+    private void createGoal(CommandSender sender, String goalName) {
+        // Check if goal already exists
+        if (goalsManager.getGoal(goalName) != null) {
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " A goal with the name &e" + goalName + " &7already exists!"));
+            return;
+        }
+
+        // Check if goal name is empty or invalid
+        if (goalName.trim().isEmpty()) {
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Goal name cannot be empty!"));
+            return;
+        }
+
+        // Run the creation process async
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            // Create new goal with inactive status (false)
+            new Goal(plugin, goalName, false);
+
+            // Switch back to main thread for UI update
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Goal &e" + goalName + " has been created &asuccessfully &7(inactive by default)." +
+                        " &7To edit this goal, use the GUI or manually modify the &e" + goalName + ".yml &7file."));
+            });
+        });
     }
 
     private void renameGoal(CommandSender sender, String oldName, String newName) {

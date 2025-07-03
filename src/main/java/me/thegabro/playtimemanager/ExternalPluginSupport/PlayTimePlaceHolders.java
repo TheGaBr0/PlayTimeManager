@@ -21,6 +21,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private LuckPermsManager luckPermsManager = null;
+    private DateTimeFormatter formatter;
 
     public PlayTimePlaceHolders() {
 
@@ -56,6 +57,35 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     @Override
     public String onRequest(OfflinePlayer player, String params) {
         if (params == null) return null;
+
+        // Handle rank placeholder
+        if (params.equalsIgnoreCase("rank")) {
+            try {
+
+                int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(player.getName()))  + 1;
+
+                return position != -1 ? String.valueOf(position) : plugin.getConfiguration().getNotInLeaderboardMessage();
+            } catch (Exception e) {
+                return e.getMessage();
+            }
+        }
+
+        // Handle first join placeholder
+        if (params.equalsIgnoreCase("firstjoin")) {
+            try {
+                DBUser user = onlineUsersManager.getOnlineUser(player.getName());
+                if (user == null) return getErrorMessage("user not found");
+
+                LocalDateTime firstJoin = user.getFirstJoin();
+                if (firstJoin == null) return getErrorMessage("first join data missing");
+
+                formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+                return firstJoin.format(formatter);
+            } catch (Exception e) {
+                return getErrorMessage("couldn't get first join date");
+            }
+        }
+
 
         // Handle join streak placeholder
         if (params.equalsIgnoreCase("joinstreak")) {
@@ -94,6 +124,16 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         }
 
         String paramLower = params.toLowerCase();
+
+        // Handle rank placeholders
+        if (paramLower.startsWith("rank_")) {
+            return handleRank(params.substring(5));
+        }
+
+        // Handle first join placeholders
+        if (paramLower.startsWith("firstjoin_")) {
+            return handleFirstJoin(params.substring(10));
+        }
 
         // Handle join streak placeholders
         if (paramLower.startsWith("joinstreak_")) {
@@ -291,6 +331,32 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         return user != null ?
                 String.valueOf(user.getAbsoluteJoinStreak()) :
                 getErrorMessage("wrong nickname?");
+    }
+
+    private String handleFirstJoin(String nickname){
+        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        if (user == null) return getErrorMessage("wrong nickname?");
+
+        LocalDateTime firstJoin = user.getFirstJoin();
+        if (firstJoin == null) return getErrorMessage("first join data missing");
+
+        try {
+            formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+            return firstJoin.format(formatter);
+        } catch (Exception e) {
+            return getErrorMessage("date formatting error");
+        }
+    }
+
+    private String handleRank(String nickname){
+        try {
+
+            int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(nickname)) + 1;
+            return position != -1 ? String.valueOf(position) : plugin.getConfiguration().getNotInLeaderboardMessage();
+
+        } catch (Exception e) {
+            return e.getMessage();
+        }
     }
 
     private String getErrorMessage(String error) {

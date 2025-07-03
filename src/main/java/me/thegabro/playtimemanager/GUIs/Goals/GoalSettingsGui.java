@@ -250,7 +250,9 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter the new message for this goal.\n" +
                         "&7• Supports legacy and hex color codes\n" +
-                        "&7• Type &c&ocancel&r&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit\n" +
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+ 
+                        "&7For more info regarding the issue and workarounds."
         );
 
         Component preText = Utils.parseColors("&7You can ");
@@ -306,7 +308,9 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter the new sound for this goal.\n" +
                         "&7• Input is not case-sensitive\n" +
-                        "&7• Type &c&ocancel&r&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit\n"+
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7For more info regarding the issue and workarounds."
         );
 
         // Sound list link with icon
@@ -403,7 +407,9 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         Component instructions = Utils.parseColors(
                 "&fEnter the player name to uncomplete this goal for.\n" +
                         "&7• Player must have completed this goal\n" +
-                        "&7• Type &c&ocancel&r&7 to exit"
+                        "&7• Type &c&ocancel&r&7 to exit\n"+
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7For more info regarding the issue and workarounds."
         );
 
         // Create full message

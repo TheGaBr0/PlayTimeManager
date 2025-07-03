@@ -46,7 +46,7 @@ public class PlayTimeManager extends JavaPlugin{
     private GUIsConfiguration guiConfig;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-    private final String CURRENTCONFIGVERSION = "3.6";
+    private final String CURRENTCONFIGVERSION = "3.7";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private JoinStreaksManager joinStreaksManager;
@@ -71,7 +71,6 @@ public class PlayTimeManager extends JavaPlugin{
         this.db.load();
 
         UpdateManager updateManager = UpdateManager.getInstance(this);
-        updateManager.initialize();
 
         // Check config version and perform updates if needed
         File configFile = new File(getDataFolder(), "config.yml");
@@ -83,6 +82,8 @@ public class PlayTimeManager extends JavaPlugin{
         }
 
         config = new Configuration(this.getDataFolder(), "config", true, true);
+
+        updateManager.initialize();
 
         guiConfig = new GUIsConfiguration(this);
         commandsConfig = new CommandsConfiguration(this);

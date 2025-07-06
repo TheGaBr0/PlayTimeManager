@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport;
 
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;

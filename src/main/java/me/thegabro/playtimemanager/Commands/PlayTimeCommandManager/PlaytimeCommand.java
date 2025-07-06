@@ -6,14 +6,12 @@ import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
-import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public class PlaytimeCommand {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();

@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.Users;
 
-import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;

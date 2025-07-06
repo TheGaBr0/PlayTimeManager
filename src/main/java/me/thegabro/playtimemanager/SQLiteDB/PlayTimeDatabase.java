@@ -1107,5 +1107,88 @@ public abstract class PlayTimeDatabase {
         }
     }
 
+    public boolean getHideFromLeaderboard(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT hide_from_leaderboard FROM play_time WHERE uuid = ?;");
+            ps.setString(1, uuid);
+
+            rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getBoolean("hide_from_leaderboard");
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+        return false; // Default return value if player not found or error occurs
+    }
+
+    public void setHideFromLeaderboard(String uuid, boolean hideFromLeaderboard) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("UPDATE play_time SET hide_from_leaderboard = ? WHERE uuid = ?;");
+            ps.setBoolean(1, hideFromLeaderboard);
+            ps.setString(2, uuid);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public int countHiddenPlayersFromLeaderboard() {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT COUNT(*) FROM play_time WHERE hide_from_leaderboard = true;");
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+
+        return 0; // Default return value if error occurs
+    }
 
 }

@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
-import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;

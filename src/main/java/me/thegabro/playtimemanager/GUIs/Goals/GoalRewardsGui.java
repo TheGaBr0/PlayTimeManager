@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -95,7 +96,7 @@ public class GoalRewardsGui implements InventoryHolder, Listener {
                 String groupName = item.substring(6);
                 boolean groupExists = PlayTimeManager.getInstance().isPermissionsManagerConfigured() &&
                         PlayTimeManager.getInstance().getLuckPermsApi() != null &&
-                        me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager
+                        LuckPermsManager
                                 .getInstance(PlayTimeManager.getInstance()).groupExists(groupName);
 
                 if (!groupExists) {

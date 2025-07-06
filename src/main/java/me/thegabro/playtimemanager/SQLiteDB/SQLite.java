@@ -29,6 +29,7 @@ public class SQLite extends PlayTimeDatabase {
             "absolute_join_streak INT DEFAULT 0,"+
             "received_rewards TEXT DEFAULT '',"+
             "rewards_to_be_claimed TEXT DEFAULT '',"+
+            "hide_from_leaderboard BOOLEAN DEFAULT FALSE,"+
             "PRIMARY KEY (uuid)" +
             ");";
 

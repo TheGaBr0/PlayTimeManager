@@ -28,7 +28,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 
 import java.io.File;
 import java.util.Objects;
@@ -46,7 +46,7 @@ public class PlayTimeManager extends JavaPlugin{
     private GUIsConfiguration guiConfig;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-    private final String CURRENTCONFIGVERSION = "3.7";
+    private final String CURRENTCONFIGVERSION = "3.8";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private JoinStreaksManager joinStreaksManager;
@@ -91,14 +91,14 @@ public class PlayTimeManager extends JavaPlugin{
         GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(this);
 
+        permissionsManagerConfigured = checkPermissionsPlugin();
+
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
 
         joinStreaksManager = JoinStreaksManager.getInstance();
         joinStreaksManager.initialize(this);
         joinStreaksManager.onServerReload();
-
-        permissionsManagerConfigured = checkPermissionsPlugin();
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlayTimePlaceHolders().register();
@@ -140,10 +140,7 @@ public class PlayTimeManager extends JavaPlugin{
 
         sessionManager = new SessionManager();
 
-
         getLogger().info("has been enabled!");
-
-
     }
 
     @Override
@@ -152,13 +149,22 @@ public class PlayTimeManager extends JavaPlugin{
         for(Player p : Bukkit.getOnlinePlayers()){
             onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
         }
+
+        // Clean up LuckPerms listener
+        if (permissionsManagerConfigured) {
+            try {
+                LuckPermsManager.getInstance(this).cleanup();
+            } catch (Exception e) {
+                getLogger().warning("Failed to cleanup LuckPerms integration: " + e.getMessage());
+            }
+        }
+
         db.close();
         HandlerList.unregisterAll(this);
         dbUsersManager.clearCache();
         joinStreaksManager.cleanUp();
         getLogger().info("has been disabled!");
     }
-
 
     public static PlayTimeManager getInstance() {
         return instance;
@@ -190,12 +196,6 @@ public class PlayTimeManager extends JavaPlugin{
         return commandsConfig;
     }
 
-    public void setGlobalLogLevel(Level level) {
-        LogManager.getLogManager().getLogger("").setLevel(level);
-        for (Handler h : Logger.getLogger("").getHandlers()) {
-            h.setLevel(level);
-        }
-    }
 
     private boolean checkPermissionsPlugin() {
         String configuredPlugin = config.getPermissionsManagerPlugin().toLowerCase();
@@ -221,5 +221,4 @@ public class PlayTimeManager extends JavaPlugin{
         }
         return false;
     }
-
 }

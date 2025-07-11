@@ -1,7 +1,7 @@
 package me.thegabro.playtimemanager.Commands;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.Translations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;

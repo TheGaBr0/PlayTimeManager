@@ -8,8 +8,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -170,7 +168,7 @@ public class Version34to341Updater {
     }
 
     private void updateCommandsConfigFile() {
-        File commandsConfigFile = new File(plugin.getDataFolder(), "Translations/Commands/commands-config.yml");
+        File commandsConfigFile = new File(plugin.getDataFolder(), "Customizations/Commands/commands-config.yml");
 
         // If the file doesn't exist, skip the update
         if (!commandsConfigFile.exists()) {

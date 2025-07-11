@@ -3,8 +3,8 @@ package me.thegabro.playtimemanager;
 import me.thegabro.playtimemanager.GUIs.Goals.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
-import me.thegabro.playtimemanager.Translations.CommandsConfiguration;
-import me.thegabro.playtimemanager.Translations.GUIsConfiguration;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Updates.UpdateManager;
 import me.thegabro.playtimemanager.Commands.*;
 import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeCommandManager;
@@ -32,10 +32,6 @@ import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsMana
 
 import java.io.File;
 import java.util.Objects;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class PlayTimeManager extends JavaPlugin{

@@ -1,0 +1,34 @@
+#=================================================================
+#                      CUSTOM PLAYTIME FORMATS
+#=================================================================
+
+# Here you can specify your own custom formats which can be called around the plugin config using {name-of-custom-format}.
+#
+# HOW TO CREATE A CUSTOM FORMAT:
+# Create a new section under 'custom-formats' with your desired format name and define the text for each time unit
+# (years, days, hours, minutes, seconds) you need - these are not mandatory. Then create the formatting string that combines all units.
+#
+# SINGULAR/PLURAL VERSIONS:
+# You can set different versions for singular and plural forms. If not specified, the default versions will be used (y, d, h, m, s).
+# The placeholders {years}, {days}, {hours}, {minutes}, {seconds} are replaced automatically by the singular or plural version based on the actual time value.
+#
+# FORMATTING STRING:
+# Use %y%, %d%, %h%, %m%, %s% as placeholders for the actual time values (these cannot be modified).
+# Use {years}, {days}, {hours}, {minutes}, {seconds} for the unit labels.
+# If a time unit is 0 (e.g. 0 years), it will not be displayed in the final output.
+#
+# USAGE:
+# Use {format-name} anywhere in the plugin configuration to apply your custom format
+# Example: playtime-self-message: "Your playtime is {verbose} %PLAYTIME%"
+
+years-singular: "y"
+years-plural: "y"
+days-singular: "d"
+days-plural: "d"
+hours-singular: "h"
+hours-plural: "h"
+minutes-singular: "m"
+minutes-plural: "m"
+seconds-singular: "s"
+seconds-plural: "s"
+formatting: "%y%{years}, %d%{days}, %h%{hours}, %m%{minutes}, %s%{seconds}"

@@ -1,7 +1,7 @@
 
 ![Modrinth Downloads](https://img.shields.io/modrinth/dt/playtimemanager?logo=modrinth&label=Modrinth%20downloads&color=1ad96b&link=https%3A%2F%2Fmodrinth.com%2Fplugin%2Fplaytimemanager)
 ![Hangar Downloads](https://img.shields.io/hangar/dt/PlayTimeManager?logo=&style=flat&label=Hangar%20downloads&color=3271ec&link=https%3A%2F%2Fhangar.papermc.io%2FTheGabro%2FPlayTimeManager)
-![Spiget Downloads](https://img.shields.io/spiget/downloads/118284?logo=spigotmc&label=Spigot%20downloads&color=f0972e&cacheSeconds=https%3A%2F%2Fwww.spigotmc.org%2Fresources%2Fplaytimemanager.118284%2F)
+![Spiget Downloads](https://img.shields.io/spiget/downloads/118284?logo=spigotmc&label=Spigot%20downloads&color=f0972e&cacheSeconds=https%3A%2F%2Fwww.spigotmc.org%2Fresources%2Fplaytimemanager.118284%2F&link=https%3A%2F%2Fwww.spigotmc.org%2Fresources%2Fplaytimemanager.118284%2F)
 
 
 ![alt text](https://i.imgur.com/cMGDraE.png "PlayTime Logo")

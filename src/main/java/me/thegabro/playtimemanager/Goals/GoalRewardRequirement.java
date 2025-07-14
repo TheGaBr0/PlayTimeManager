@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.Goals;
 
-import me.thegabro.playtimemanager.PlaceholderConditionEvaluator;
+import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlaceholderConditionEvaluator;
 import org.bukkit.entity.Player;
 import java.util.List;
 import java.util.ArrayList;

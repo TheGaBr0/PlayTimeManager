@@ -1,0 +1,36 @@
+#    WARNING: This is a default template that gets overwritten after each plugin reload.
+#    Copy this file or create your own custom format definitions to preserve changes.
+
+# OVERVIEW:
+# This file defines custom time display formats that can be referenced throughout the plugin
+# using %PLAYTIME:format-name% syntax in configuration messages, where format-name is the name of the related format file.
+# For example, to use the default format you would write %PLAYTIME:default% or simply %PLAYTIME% (default is used when format is omitted).
+
+# HOW IT WORKS:
+# Create a new file under 'Customization/PlaytimeFormats' with your desired format name, then define text
+# labels for time units (years, days, hours, minutes, seconds) and create a formatting string
+# that combines all units you need. You can then reference your format using %PLAYTIME:file-name% in plugin
+# messages like "Your playtime is %PLAYTIME:short%" or "Player time: %PLAYTIME:compact%".
+
+# FORMATTING SYSTEM:
+# Use %y%, %d%, %h%, %m%, %s% as time value placeholders (these cannot be modified) and
+# {years}, {days}, {hours}, {minutes}, {seconds} for unit labels. Zero values are automatically
+# hidden (e.g., 0 years won't display), and singular/plural forms are automatically selected
+# based on the time value.
+
+# CUSTOMIZATION OPTIONS:
+# You can omit time units you don't need from the formatting field
+# and use different separators like commas, spaces, or custom text to create
+# the exact display style you want.
+
+years-singular: "y"
+years-plural: "y"
+days-singular: "d"
+days-plural: "d"
+hours-singular: "h"
+hours-plural: "h"
+minutes-singular: "m"
+minutes-plural: "m"
+seconds-singular: "s"
+seconds-plural: "s"
+formatting: "%y%{years}, %d%{days}, %h%{hours}, %m%{minutes}, %s%{seconds}"

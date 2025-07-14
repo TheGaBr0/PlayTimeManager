@@ -7,9 +7,16 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Comparator;
+import java.util.stream.Stream;
 
 public class Version342to343Updater {
 
@@ -23,6 +30,7 @@ public class Version342to343Updater {
 
     public void performUpgrade() {
         addHideLeaderboardAttribute();
+        renameCustomizationsFolder();
         recreateConfigFile();
     }
 
@@ -44,6 +52,61 @@ public class Version342to343Updater {
             }
         } catch (SQLException e) {
             plugin.getLogger().severe("Database error during hide_from_leaderboard column addition: " + e.getMessage());
+        }
+    }
+
+    public void renameCustomizationsFolder(){
+
+        try {
+
+            Path sourcePath = Paths.get(String.valueOf(plugin.getDataFolder()), "Translations");
+            Path targetPath = Paths.get(String.valueOf(plugin.getDataFolder()), "Customizations");
+
+            if (Files.exists(sourcePath)) {
+                if (Files.exists(targetPath)) {
+                    plugin.getLogger().warning("Customizations folder already exists. Deleting it");
+                    deleteDirectory(targetPath);
+                }
+
+                // Rename the folder
+                copyDirectory(sourcePath, targetPath);
+                deleteDirectory(sourcePath);
+                plugin.getLogger().info("Successfully created 'Customizations' folder from 'Translations'");
+
+            } else {
+                plugin.getLogger().severe("Translations folder does not exist. Please create a 'Translations' folder and try again.");
+                plugin.onDisable();
+            }
+
+        } catch (IOException e) {
+            plugin.getLogger().severe("Failed to rename Translations folder: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            plugin.getLogger().severe("Unexpected error while renaming folder: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void deleteDirectory(Path path) throws IOException {
+        if (Files.exists(path)) {
+            try (Stream<Path> pathStream = Files.walk(path)) {
+                pathStream.sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+            }
+        }
+    }
+
+    private void copyDirectory(Path source, Path target) throws IOException {
+        try (Stream<Path> pathStream = Files.walk(source)) {
+            pathStream.forEach(sourcePath -> {
+                try {
+                    Path targetPath = target.resolve(source.relativize(sourcePath));
+                    Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to copy: " + sourcePath, e);
+                }
+            });
         }
     }
 

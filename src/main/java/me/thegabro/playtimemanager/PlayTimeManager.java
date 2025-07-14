@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager;
 
+import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.GUIs.Goals.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
@@ -16,7 +17,7 @@ import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.SQLiteDB.LogFilter;
 import me.thegabro.playtimemanager.SQLiteDB.SQLite;
 import me.thegabro.playtimemanager.Events.QuitEventManager;
-import me.thegabro.playtimemanager.ExternalPluginSupport.PlayTimePlaceHolders;
+import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlayTimePlaceHolders;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
@@ -40,6 +41,7 @@ public class PlayTimeManager extends JavaPlugin{
     private Configuration config;
     private CommandsConfiguration commandsConfig;
     private GUIsConfiguration guiConfig;
+    private PlaytimeFormatsConfiguration playtimeFormatsConfiguration;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
     private final String CURRENTCONFIGVERSION = "3.8";
@@ -81,8 +83,16 @@ public class PlayTimeManager extends JavaPlugin{
 
         updateManager.initialize();
 
-        guiConfig = new GUIsConfiguration(this);
-        commandsConfig = new CommandsConfiguration(this);
+        // Initialize singleton configurations
+
+        playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
+        playtimeFormatsConfiguration.initialize(this);
+
+        guiConfig = GUIsConfiguration.getInstance();
+        guiConfig.initialize(this);
+
+        commandsConfig = CommandsConfiguration.getInstance();
+        commandsConfig.initialize(this);
 
         GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(this);
@@ -159,6 +169,7 @@ public class PlayTimeManager extends JavaPlugin{
         HandlerList.unregisterAll(this);
         dbUsersManager.clearCache();
         joinStreaksManager.cleanUp();
+
         getLogger().info("has been disabled!");
     }
 
@@ -183,14 +194,6 @@ public class PlayTimeManager extends JavaPlugin{
     public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
 
     public SessionManager getSessionManager() { return sessionManager; }
-
-    public GUIsConfiguration getGUIsConfig() {
-        return guiConfig;
-    }
-
-    public CommandsConfiguration getCommandsConfig() {
-        return commandsConfig;
-    }
 
 
     private boolean checkPermissionsPlugin() {

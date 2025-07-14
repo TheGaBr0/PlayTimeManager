@@ -62,7 +62,6 @@ public class PlaytimeCommand {
 
         Player player = (Player) sender;
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
-        String formattedPlaytime = Utils.ticksToFormattedPlaytime(onlineUser.getPlaytime());
 
         // Check if prefix placeholder is used and LuckPerms is configured
         if (plugin.getConfiguration().getPlaytimeSelfMessage().contains("%PREFIX%") && plugin.isPermissionsManagerConfigured()) {
@@ -70,7 +69,7 @@ public class PlaytimeCommand {
                     .thenAccept(prefix -> {
                         String message = createMessage(plugin.getConfiguration().getPlaytimeSelfMessage(),
                                 player.getName(),
-                                formattedPlaytime,
+                                String.valueOf(onlineUser.getPlaytime()),
                                 prefix,
                                 sender.hasPermission("playtime.others.modify"),
                                 onlineUser.getArtificialPlaytime());
@@ -79,7 +78,7 @@ public class PlaytimeCommand {
         } else {
             String message = createMessage(plugin.getConfiguration().getPlaytimeSelfMessage(),
                     player.getName(),
-                    formattedPlaytime,
+                    String.valueOf(onlineUser.getPlaytime()),
                     "",
                     sender.hasPermission("playtime.others.modify"),
                     onlineUser.getArtificialPlaytime());
@@ -91,7 +90,6 @@ public class PlaytimeCommand {
 
     private boolean handleOther(CommandSender sender, String playerName) {
         DBUser user = dbUsersManager.getUserFromNickname(playerName);
-        String formattedPlaytime = Utils.ticksToFormattedPlaytime(user.getPlaytime());
 
         // Check if prefix placeholder is used and LuckPerms is configured
         if (plugin.getConfiguration().getPlaytimeOthersMessage().contains("%PREFIX%") && plugin.isPermissionsManagerConfigured()) {
@@ -99,7 +97,7 @@ public class PlaytimeCommand {
                     .thenAccept(prefix -> {
                         String message = createMessage(plugin.getConfiguration().getPlaytimeOthersMessage(),
                                 playerName,
-                                formattedPlaytime,
+                                String.valueOf(user.getPlaytime()),
                                 prefix,
                                 sender.hasPermission("playtime.others.modify"),
                                 user.getArtificialPlaytime());
@@ -108,7 +106,7 @@ public class PlaytimeCommand {
         } else {
             String message = createMessage(plugin.getConfiguration().getPlaytimeOthersMessage(),
                     playerName,
-                    formattedPlaytime,
+                    String.valueOf(user.getPlaytime()),
                     "",
                     sender.hasPermission("playtime.others.modify"),
                     user.getArtificialPlaytime());
@@ -123,20 +121,13 @@ public class PlaytimeCommand {
         placeholders.put("%PLAYER_NAME%", playerName);
         placeholders.put("%PLAYTIME%", playtime);
 
-        String message = template;
         if (prefix != null && !prefix.isEmpty()) {
             placeholders.put("%PREFIX%", prefix);  // No extra space added
         } else {
-            message = message.replace("%PREFIX%", "");
+            placeholders.put("%PREFIX%", "");
         }
 
-        // Apply remaining placeholders
-        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-            message = message.replace(entry.getKey(), entry.getValue());
-        }
-
-        // Normalize multiple spaces to single space
-        message = message.replaceAll("\\s+", " ");
+        String message = Utils.placeholdersReplacer(template, placeholders);
 
         if (showArtificial) {
             message = message + " (" + Utils.ticksToFormattedPlaytime(artificialPlaytime) + ")";

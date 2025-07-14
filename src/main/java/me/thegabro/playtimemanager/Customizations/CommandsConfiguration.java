@@ -1,4 +1,5 @@
 package me.thegabro.playtimemanager.Customizations;
+
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -7,18 +8,36 @@ import java.io.File;
 
 public class CommandsConfiguration {
 
-    private final PlayTimeManager plugin;
+    private static CommandsConfiguration instance;
+    private PlayTimeManager plugin;
     private FileConfiguration config;
     private File file;
 
     private static final String CONFIG_FILENAME = "commands-config.yml";
     private static final String CONFIG_PATH = "Customizations/Commands/";
 
-    public CommandsConfiguration(PlayTimeManager plugin) {
-        this.plugin = plugin;
-        create();
-        reload();
+    // Private constructor to prevent instantiation
+    private CommandsConfiguration() {
+        // Empty constructor - initialization happens in initialize()
     }
+
+    // Thread-safe singleton instance getter
+    public static synchronized CommandsConfiguration getInstance() {
+        if (instance == null) {
+            instance = new CommandsConfiguration();
+        }
+        return instance;
+    }
+
+    // Initialize the configuration with the plugin instance
+    public void initialize(PlayTimeManager plugin) {
+        if (this.plugin == null) {
+            this.plugin = plugin;
+            create();
+            reload();
+        }
+    }
+
 
     private void create() {
         if (file == null) {
@@ -27,7 +46,7 @@ public class CommandsConfiguration {
 
         if (!file.exists()) {
             file.getParentFile().mkdirs();
-            plugin.saveResource(CONFIG_PATH+CONFIG_FILENAME, false);
+            plugin.saveResource(CONFIG_PATH + CONFIG_FILENAME, false);
         }
     }
 
@@ -40,14 +59,15 @@ public class CommandsConfiguration {
     }
 
     private void reloadFile() {
+        if (plugin == null) {
+            throw new IllegalStateException("Plugin not initialized. Call initialize() first.");
+        }
         file = new File(plugin.getDataFolder(), CONFIG_PATH + CONFIG_FILENAME);
     }
-
 
     private void reloadConfig() {
         config = YamlConfiguration.loadConfiguration(file);
     }
-
 
     public void reload() {
         reloadFile();
@@ -70,4 +90,5 @@ public class CommandsConfiguration {
         config.set(path, value);
         save();
     }
+
 }

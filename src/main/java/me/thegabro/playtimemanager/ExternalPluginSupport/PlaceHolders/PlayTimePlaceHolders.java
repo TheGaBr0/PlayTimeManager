@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.ExternalPluginSupport;
+package me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders;
 
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.Users.DBUser;

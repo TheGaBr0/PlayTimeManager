@@ -64,7 +64,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     public RewardsInfoGui(Player sender, DBUser subject, String sessionToken) {
         this.sender = sender;
         this.sessionToken = sessionToken;
-        this.config = plugin.getGUIsConfig();
+        this.config = GUIsConfiguration.getInstance();
         this.subject = subject;
         this.isOwner = sender.getName().equalsIgnoreCase(subject.getNickname());
 

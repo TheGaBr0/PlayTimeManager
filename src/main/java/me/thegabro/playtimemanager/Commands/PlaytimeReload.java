@@ -1,5 +1,8 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
+import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
@@ -28,8 +31,10 @@ public class PlaytimeReload implements CommandExecutor {
         if (sender.hasPermission("playtime.reload")) {
             // Reload configurations
             plugin.getConfiguration().reload();
-            plugin.getGUIsConfig().reload();
-            plugin.getCommandsConfig().reload();
+
+            PlaytimeFormatsConfiguration.getInstance().reload();
+            GUIsConfiguration.getInstance().reload();
+            CommandsConfiguration.getInstance().reload();
 
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The configuration files have been reloaded"));
 

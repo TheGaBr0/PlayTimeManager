@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Users.DBUser;
@@ -34,7 +35,7 @@ public class PlaytimeTop implements TabExecutor {
     private final CommandsConfiguration config;
 
     public PlaytimeTop() {
-        this.config = plugin.getCommandsConfig();
+        this.config = CommandsConfiguration.getInstance();
         if (plugin.isPermissionsManagerConfigured()) {
             try {
                 this.luckPermsManager = LuckPermsManager.getInstance(plugin);
@@ -117,28 +118,29 @@ public class PlaytimeTop implements TabExecutor {
                         final int rank = i + 1;
                         final int arrayIndex = i - startIndex;
                         DBUser user = topPlayers.get(i);
+                        Map<String, String> placeholders = new HashMap<>();
 
                         if (usePrefixes) {
+
                             messageFutures[arrayIndex] = luckPermsManager.getPrefixAsync(user.getUuid())
                                     .thenApply(prefix -> {
-                                        String formattedMessage = format
-                                                .replace("%POSITION%", String.valueOf(rank))
-                                                .replace("%PREFIX%", prefix != null ? prefix : "")
-                                                .replace("%PLAYER_NAME%", user.getNickname())
-                                                .replace("%PLAYTIME%", Utils.ticksToFormattedPlaytime(user.getPlaytime()));
+                                        placeholders.put("%PLAYER_NAME%", user.getNickname());
+                                        placeholders.put("%PLAYTIME%", String.valueOf(user.getPlaytime()));
+                                        placeholders.put("%POSITION%", String.valueOf(rank));
+                                        placeholders.put("%PREFIX%", prefix != null ? prefix : "");
 
-                                        // Normalize multiple spaces to single space after all replacements
-                                        formattedMessage = formattedMessage.replaceAll("\\s+", " ");
+                                        String formattedMessage = Utils.placeholdersReplacer(format, placeholders);
 
                                         return Component.empty().append(Utils.parseColors(formattedMessage));
                                     });
                         } else {
-                            String formattedMessage = format
-                                    .replace("%POSITION%", String.valueOf(rank))
-                                    .replace("%PREFIX%", "")
-                                    .replace("%PLAYER_NAME%", user.getNickname())
-                                    .replace("%PLAYTIME%", Utils.ticksToFormattedPlaytime(user.getPlaytime()))
-                                    .replaceAll("\\s+", " "); // Normalize multiple spaces to single space
+
+                            placeholders.put("%PLAYER_NAME%", user.getNickname());
+                            placeholders.put("%PLAYTIME%", String.valueOf(user.getPlaytime()));
+                            placeholders.put("%POSITION%", String.valueOf(rank));
+                            placeholders.put("%PREFIX%", "");
+
+                            String formattedMessage = Utils.placeholdersReplacer(format, placeholders);
 
                             messageFutures[arrayIndex] = CompletableFuture.completedFuture(
                                     Component.empty().append(Utils.parseColors(formattedMessage))

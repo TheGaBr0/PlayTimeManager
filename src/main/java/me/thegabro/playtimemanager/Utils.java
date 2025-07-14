@@ -307,10 +307,6 @@ public class Utils {
 
 
     public static String placeholdersReplacer(String message, Map<String, String> combinations){
-        // Apply passed placeholders
-        for (Map.Entry<String, String> entry : combinations.entrySet()) {
-            message = message.replace(entry.getKey(), entry.getValue());
-        }
 
         //Apply %PLAYTIME% special placeholder with custom format
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("%PLAYTIME(?::(\\w+))?%");
@@ -319,11 +315,12 @@ public class Utils {
 
         while (matcher.find()) {
             String formatName = matcher.group(1);
-
             // Get the PlaytimeFormat for this placeholder, or default if not found
             PlaytimeFormatsConfiguration config = PlaytimeFormatsConfiguration.getInstance();
             String actualFormatName = (formatName == null) ? "default" : formatName;
             PlaytimeFormat format = config.getFormat(actualFormatName);
+
+            format = (format == null) ? config.getFormat("default") : format;
 
             // Check if we have a playtime value in the combinations map
             String playtimeValue = null;
@@ -344,6 +341,10 @@ public class Utils {
         matcher.appendTail(result);
         message = result.toString();
 
+        // Apply passed placeholders
+        for (Map.Entry<String, String> entry : combinations.entrySet()) {
+            message = message.replace(entry.getKey(), entry.getValue());
+        }
 
         // Normalize multiple spaces to single space
         message = message.replaceAll("\\s+", " ");

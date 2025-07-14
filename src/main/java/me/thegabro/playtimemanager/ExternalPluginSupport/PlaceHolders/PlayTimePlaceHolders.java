@@ -1,5 +1,7 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders;
 
+import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormat;
+import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -21,6 +23,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+    private final PlaytimeFormatsConfiguration playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
     private LuckPermsManager luckPermsManager = null;
     private DateTimeFormatter formatter;
 
@@ -103,7 +106,8 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (params.equalsIgnoreCase("playtime")) {
             try {
                 return Utils.ticksToFormattedPlaytime(
-                        onlineUsersManager.getOnlineUser(player.getName()).getPlaytime()
+                        onlineUsersManager.getOnlineUser(player.getName()).getPlaytime(),
+                        getPlaytimeFormat()
                 );
             } catch (Exception e) {
                 return getErrorMessage("couldn't get playtime");
@@ -211,6 +215,15 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         return null;
     }
 
+    private PlaytimeFormat getPlaytimeFormat() {
+        String customFormatName = plugin.getConfiguration().getCustomPlaytimeFormatName();
+        PlaytimeFormat format = playtimeFormatsConfiguration.getFormat(customFormatName);
+        if (format == null) {
+            format = playtimeFormatsConfiguration.getFormat("default");
+        }
+        return format;
+    }
+
     private String handleLPPrefixTop(String posStr) {
         if (!isStringInt(posStr)) return getErrorMessage("wrong top position?");
 
@@ -289,7 +302,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
         DBUser user = dbUsersManager.getTopPlayerAtPosition(Integer.parseInt(posStr));
         return user != null ?
-                Utils.ticksToFormattedPlaytime(user.getPlaytime()) :
+                Utils.ticksToFormattedPlaytime(user.getPlaytime(), getPlaytimeFormat()) :
                 getErrorMessage("wrong top position?");
     }
 
@@ -303,7 +316,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private String handlePlayTime(String nickname) {
         DBUser user = dbUsersManager.getUserFromNickname(nickname);
         return user != null ?
-                Utils.ticksToFormattedPlaytime(user.getPlaytime()) :
+                Utils.ticksToFormattedPlaytime(user.getPlaytime(), getPlaytimeFormat()) :
                 getErrorMessage("wrong nickname?");
     }
 
@@ -352,8 +365,8 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private String handleRank(String nickname){
         try {
 
-            int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(nickname)) + 1;
-            return position != -1 ? String.valueOf(position) : plugin.getConfiguration().getNotInLeaderboardMessage();
+            int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(nickname));
+            return position != -1 ? String.valueOf(position + 1) : plugin.getConfiguration().getNotInLeaderboardMessage();
 
         } catch (Exception e) {
             return e.getMessage();

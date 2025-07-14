@@ -139,5 +139,9 @@ placeholders:
   default-message: "No data"
   #The message displayed when %PTM_rank% is called but the target player isn't in the leaderboard.
   not-in-leaderboard-message: "-"
+  # Defines which time format to use for PAPI placeholders. References format files in 'Customization/PlaytimeFormats' folder.
+  # Use "default" for the built-in format, or specify a custom format name (e.g. "short", "compact") to use your own format definitions.
+  # If the specified format is invalid, the default one will be used instead.
+  time-format: "default"
 
 

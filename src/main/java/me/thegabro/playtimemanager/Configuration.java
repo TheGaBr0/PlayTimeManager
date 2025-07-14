@@ -34,6 +34,7 @@ public class Configuration {
     private boolean placeholdersEnableErrors;
     private String placeholdersDefaultMessage;
     private String notInLeaderboardMessage;
+    private String customPlaytimeFormatName;
 
     // Permissions settings
     private String permissionsManagerPlugin;
@@ -154,6 +155,7 @@ public class Configuration {
         this.placeholdersEnableErrors = config.getBoolean("placeholders.enable-errors", false);
         this.placeholdersDefaultMessage = config.getString("placeholders.default-message", "No data");
         this.notInLeaderboardMessage = config.getString("placeholders.not-in-leaderboard-message", "-");
+        this.customPlaytimeFormatName = config.getString("placeholders.time-format", "default");
     }
 
     private void updatePermissionsSettings() {
@@ -294,6 +296,16 @@ public class Configuration {
     public void setNotInLeaderboardMessage(String message){
         this.notInLeaderboardMessage = message;
         config.set("placeholders.not-in-leaderboard-message", message);
+        save();
+    }
+
+    public String getCustomPlaytimeFormatName(){
+        return customPlaytimeFormatName;
+    }
+
+    public void setCustomPlaytimeFormatName(String newname){
+        this.customPlaytimeFormatName = newname;
+        config.set("placeholders.time-format", newname);
         save();
     }
 

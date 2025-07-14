@@ -51,7 +51,7 @@ public class PermissionChangeListener {
             if (!(event.getTarget() instanceof User user)) return;
 
             String uuid = user.getUniqueId().toString();
-
+            plugin.getLogger().info("aaa");
             // Check if the user has the playtime.hidefromleaderboard permission
             boolean hasPermission = user.getCachedData()
                     .getPermissionData(QueryOptions.nonContextual())

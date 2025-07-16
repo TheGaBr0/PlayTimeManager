@@ -2,10 +2,6 @@ package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Configuration;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-
-import java.io.File;
 
 public class Version341to342Updater {
 

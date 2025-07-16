@@ -48,36 +48,7 @@ public class Version321to33Updater {
     }
 
     private void recreateConfigFile() {
-        File configFile = new File(plugin.getDataFolder(), "config.yml");
-        FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-
-        String playtimeSelfMessage = config.getString("playtime-self-message");
-        String playtimeOthersMessage = config.getString("playtime-others-message");
-
-        long goalsCheckRate = config.getLong("goal-check-rate");
-        boolean goalsCheckVerbose = config.getBoolean("goal-check-verbose");
-
-        String permissionsManagerPlugin = config.getString("permissions-manager-plugin");
-        String datetimeFormat = config.getString("datetime-format");
-
-        configFile.delete();
-
-        Configuration newConfig = new Configuration(
-                plugin.getDataFolder(),
-                "config",
-                true,
-                true
-        );
-
-        newConfig.setPlaytimeSelfMessage(playtimeSelfMessage);
-        newConfig.setPlaytimeOthersMessage(playtimeOthersMessage);
-        newConfig.setGoalsCheckRate(goalsCheckRate);
-        newConfig.setGoalsCheckVerbose(goalsCheckVerbose);
-        newConfig.setPermissionsManagerPlugin(permissionsManagerPlugin);
-        newConfig.setDateTimeFormat(datetimeFormat);
-        newConfig.reload();
-
-        plugin.setConfiguration(newConfig);
+        Configuration.getInstance().updateConfig(true);
     }
 
     private String generateReadmeContent() {

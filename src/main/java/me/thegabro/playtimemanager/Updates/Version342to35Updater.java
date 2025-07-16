@@ -1,10 +1,9 @@
 package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Configuration;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.SQLiteDB.SQLite;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,20 +14,24 @@ import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.stream.Stream;
 
-public class Version342to343Updater {
+public class Version342to35Updater {
 
     private final PlayTimeManager plugin;
     private final SQLite database;
-
-    public Version342to343Updater(PlayTimeManager plugin) {
+    private CommandsConfiguration commandsConfiguration = CommandsConfiguration.getInstance();
+    public Version342to35Updater(PlayTimeManager plugin) {
         this.plugin = plugin;
         this.database = (SQLite) plugin.getDatabase();
     }
 
     public void performUpgrade() {
+        DatabaseBackupUtility backupUtility = new DatabaseBackupUtility(plugin);
+        backupUtility.createBackup("play_time", generateReadmeContent());
         addHideLeaderboardAttribute();
         renameCustomizationsFolder();
         recreateConfigFile();
@@ -74,8 +77,11 @@ public class Version342to343Updater {
                 plugin.getLogger().info("Successfully created 'Customizations' folder from 'Translations'");
 
             } else {
-                plugin.getLogger().severe("Translations folder does not exist. Please create a 'Translations' folder and try again.");
-                plugin.onDisable();
+                try {
+                    Files.createDirectories(targetPath);
+                } catch (IOException e) {
+                    plugin.getLogger().severe("Failed to create 'Customizations' folder: " + e.getMessage());
+                }
             }
 
         } catch (IOException e) {
@@ -111,60 +117,55 @@ public class Version342to343Updater {
     }
 
     private void recreateConfigFile() {
-        File configFile = new File(plugin.getDataFolder(), "config.yml");
-        FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-        String permissionsManagerPlugin = config.getString("permissions-manager-plugin");
-        String datetimeFormat = config.getString("datetime-format");
-        boolean checkForUpdates = config.getBoolean("check-for-updates");
-        String prefix = config.getString("prefix");
-        String playtimeSelfMessage = config.getString("playtime-self-message");
-        String playtimeOthersMessage = config.getString("playtime-others-message");
-        long goalsCheckRate = config.getLong("goal-check-rate");
-        boolean goalsCheckVerbose = config.getBoolean("goal-check-verbose");
-        String streakResetSchedule = config.getString("streak-reset-schedule");
-        String streakResetTimezone = config.getString("reset-schedule-timezone");
-        boolean rewardsCheckScheduleActivation = config.getBoolean("rewards-check-schedule-activation");
-        boolean streakCheckVerbose = config.getBoolean("streak-check-verbose");
-        boolean resetJoinStreakEnabled = config.getBoolean("reset-joinstreak.enabled");
-        int resetJoinstreakMissedJoins = config.getInt("reset-joinstreak.missed-joins");
-        String joinWarnClaimMessage = config.getString("join-warn-claim-message");
-        String joinWarnAutoclaimMessage = config.getString("join-warn-autoclaim-message");
-        String joinUnclaimedPreviousMessage = config.getString("join-unclaimed-previous-message");
-        boolean placeHoldersErrors = config.getBoolean("placeholders.enable-errors");
-        String placeHoldersDefaultMSG = config.getString("placeholders.default-message");
 
+        String playtimeSelfMessage = Configuration.getInstance().getConfig().getString("playtime-self-message");
+        String playtimeOthersMessage = Configuration.getInstance().getConfig().getString("playtime-others-message");
+        Configuration.getInstance().updateConfig(false);
+        recreateCommandsConfigurationFile(playtimeSelfMessage, playtimeOthersMessage);
+    }
 
-        configFile.delete();
+    public void recreateCommandsConfigurationFile(String playtimeSelfMessage, String playtimeOthersMessage){
 
-        Configuration newConfig = new Configuration(
-                plugin.getDataFolder(),
-                "config",
-                true,
-                true
-        );
+        commandsConfiguration.initialize(plugin);
+        commandsConfiguration.updateConfig();
 
-        newConfig.setPermissionsManagerPlugin(permissionsManagerPlugin);
-        newConfig.setDateTimeFormat(datetimeFormat);
-        newConfig.setUpdatesCheckActivation(checkForUpdates);
-        newConfig.setPluginChatPrefix(prefix);
-        newConfig.setPlaytimeSelfMessage(playtimeSelfMessage);
-        newConfig.setPlaytimeOthersMessage(playtimeOthersMessage);
-        newConfig.setGoalsCheckRate(goalsCheckRate);
-        newConfig.setGoalsCheckVerbose(goalsCheckVerbose);
-        newConfig.setStreakResetSchedule(streakResetSchedule);
-        newConfig.setStreakTimeZone(streakResetTimezone);
-        newConfig.setRewardsCheckScheduleActivation(rewardsCheckScheduleActivation);
-        newConfig.setStreakCheckVerbose(streakCheckVerbose);
-        newConfig.setJoinStreakResetActivation(resetJoinStreakEnabled);
-        newConfig.setJoinStreakResetMissesAllowed(resetJoinstreakMissedJoins);
-        newConfig.setJoinClaimMessage(joinWarnClaimMessage);
-        newConfig.setJoinAutoClaimMessage(joinWarnAutoclaimMessage);
-        newConfig.setJoinCantClaimMessage(joinUnclaimedPreviousMessage);
-        newConfig.setPlaceholdersEnableErrors(placeHoldersErrors);
-        newConfig.setPlaceholdersDefaultMessage(placeHoldersDefaultMSG);
+        commandsConfiguration.set("playtime-self-message", playtimeSelfMessage);
+        commandsConfiguration.set("playtime-others-message", playtimeOthersMessage);
 
-        newConfig.reload();
+        commandsConfiguration.reload();
+    }
 
-        plugin.setConfiguration(newConfig);
+    private String generateReadmeContent() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+        String timestamp = dateFormat.format(new Date());
+
+        StringBuilder readme = new StringBuilder();
+        readme.append("PlayTimeManager Database Backup\n");
+        readme.append("============================\n\n");
+        readme.append("!!! IMPORTANT VERSION UPGRADE NOTICE !!!\n");
+        readme.append("=====================================\n");
+        readme.append("This backup was automatically created during the upgrade from version 3.4.2 to 3.4.3\n");
+        readme.append("This is a critical backup as the upgrade adds hide leaderboard field.\n\n");
+
+        readme.append("Backup Information:\n");
+        readme.append("------------------\n");
+        readme.append("Backup created: ").append(timestamp).append("\n");
+
+        readme.append("Restore Instructions:\n");
+        readme.append("-------------------\n");
+        readme.append("!!! CRITICAL: The restored database file MUST be named 'play_time.db' !!!\n");
+        readme.append("If the file is not named exactly 'play_time.db', the plugin will not load it.\n\n");
+        readme.append("Steps to restore:\n");
+        readme.append("1. Stop your server\n");
+        readme.append("2. Delete the current 'play_time.db'\n");
+        readme.append("3. Extract the database.db file from this backup zip\n");
+        readme.append("4. Rename the extracted file to 'play_time.db'\n");
+        readme.append("5. Place it in your plugin's data folder\n");
+        readme.append("6. Start your server\n\n");
+
+        readme.append("Warning: This backup contains data from before the data integrity changes.\n");
+        readme.append("Restoring this backup will revert your data to the 3.4.2 format.\n");
+
+        return readme.toString();
     }
 }

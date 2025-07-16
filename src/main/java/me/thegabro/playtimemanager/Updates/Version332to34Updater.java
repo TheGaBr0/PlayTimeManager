@@ -117,40 +117,7 @@ public class Version332to34Updater {
     }
 
     private void recreateConfigFile() {
-        File configFile = new File(plugin.getDataFolder(), "config.yml");
-        FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-        String permissionsManagerPlugin = config.getString("permissions-manager-plugin");
-        String datetimeFormat = config.getString("datetime-format");
-        String prefix = config.getString("prefix");
-        String playtimeSelfMessage = config.getString("playtime-self-message");
-        String playtimeOthersMessage = config.getString("playtime-others-message");
-        long goalsCheckRate = config.getLong("goal-check-rate");
-        boolean goalsCheckVerbose = config.getBoolean("goal-check-verbose");
-        boolean placeHoldersErrors = config.getBoolean("placeholders.enable-errors");
-        String placeHoldersDefaultMSG = config.getString("placeholders.default-message");
-
-        configFile.delete();
-
-        Configuration newConfig = new Configuration(
-                plugin.getDataFolder(),
-                "config",
-                true,
-                true
-        );
-
-        newConfig.setPermissionsManagerPlugin(permissionsManagerPlugin);
-        newConfig.setDateTimeFormat(datetimeFormat);
-        newConfig.setPluginChatPrefix(prefix);
-        newConfig.setPlaytimeSelfMessage(playtimeSelfMessage);
-        newConfig.setPlaytimeOthersMessage(playtimeOthersMessage);
-        newConfig.setGoalsCheckRate(goalsCheckRate);
-        newConfig.setGoalsCheckVerbose(goalsCheckVerbose);
-        newConfig.setPlaceholdersEnableErrors(placeHoldersErrors);
-        newConfig.setPlaceholdersDefaultMessage(placeHoldersDefaultMSG);
-
-        newConfig.reload();
-
-        plugin.setConfiguration(newConfig);
+        Configuration.getInstance().updateConfig(true);
     }
 
     private String generateReadmeContent() {

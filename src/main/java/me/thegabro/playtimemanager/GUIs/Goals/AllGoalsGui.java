@@ -168,13 +168,13 @@ public class AllGoalsGui implements InventoryHolder, Listener {
     }
 
     private void handleDeleteGoal(Player player, Goal goal) {
-        player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Deleting goal &e" + goal.getName() + "&7..."));
+        player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &7Deleting goal &e" + goal.getName() + "&7..."));
         Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
             goal.kill();
 
             // Switch back to main thread for UI updates
             Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7deleted goal &e" + goal.getName()));
+                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &aSuccessfully &7deleted goal &e" + goal.getName()));
                 initializeItems();
                 player.updateInventory();
             });

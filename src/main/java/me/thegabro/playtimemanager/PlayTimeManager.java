@@ -44,7 +44,7 @@ public class PlayTimeManager extends JavaPlugin{
     private PlaytimeFormatsConfiguration playtimeFormatsConfiguration;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-    private final String CURRENTCONFIGVERSION = "3.8";
+    public final String CURRENTCONFIGVERSION = "3.8";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private JoinStreaksManager joinStreaksManager;
@@ -70,16 +70,12 @@ public class PlayTimeManager extends JavaPlugin{
 
         UpdateManager updateManager = UpdateManager.getInstance(this);
 
-        // Check config version and perform updates if needed
-        File configFile = new File(getDataFolder(), "config.yml");
-        if (configFile.exists()) {
-            FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-            if (!config.getString("config-version").equals(CURRENTCONFIGVERSION)) {
-                updateManager.performVersionUpdate(config.getString("config-version"), CURRENTCONFIGVERSION);
-            }
-        }
+        config = Configuration.getInstance(this.getDataFolder(), "config", true, true);
 
-        config = new Configuration(this.getDataFolder(), "config", true, true);
+        // Check config version and perform updates if needed
+        if (!config.getString("config-version").equals(CURRENTCONFIGVERSION)) {
+            updateManager.performVersionUpdate(config.getString("config-version"), CURRENTCONFIGVERSION);
+        }
 
         updateManager.initialize();
 
@@ -167,7 +163,7 @@ public class PlayTimeManager extends JavaPlugin{
 
         db.close();
         HandlerList.unregisterAll(this);
-        dbUsersManager.clearCache();
+        dbUsersManager.clearCaches();
         joinStreaksManager.cleanUp();
 
         getLogger().info("has been disabled!");
@@ -197,7 +193,7 @@ public class PlayTimeManager extends JavaPlugin{
 
 
     private boolean checkPermissionsPlugin() {
-        String configuredPlugin = config.getPermissionsManagerPlugin().toLowerCase();
+        String configuredPlugin = config.getString("permissions-manager-plugin").toLowerCase();
 
         if ("luckperms".equals(configuredPlugin)) {
             Plugin luckPerms = Bukkit.getPluginManager().getPlugin("LuckPerms");

@@ -68,7 +68,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
                 int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(player.getName()))  + 1;
 
-                return position != -1 ? String.valueOf(position) : plugin.getConfiguration().getNotInLeaderboardMessage();
+                return position != -1 ? String.valueOf(position) : plugin.getConfiguration().getString("placeholders.not-in-leaderboard-message");
             } catch (Exception e) {
                 return e.getMessage();
             }
@@ -83,7 +83,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
                 LocalDateTime firstJoin = user.getFirstJoin();
                 if (firstJoin == null) return getErrorMessage("first join data missing");
 
-                formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+                formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
                 return firstJoin.format(formatter);
             } catch (Exception e) {
                 return getErrorMessage("couldn't get first join date");
@@ -216,7 +216,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     }
 
     private PlaytimeFormat getPlaytimeFormat() {
-        String customFormatName = plugin.getConfiguration().getCustomPlaytimeFormatName();
+        String customFormatName = plugin.getConfiguration().getString("placeholder.playtime-format");
         PlaytimeFormat format = playtimeFormatsConfiguration.getFormat(customFormatName);
         if (format == null) {
             format = playtimeFormatsConfiguration.getFormat("default");
@@ -327,7 +327,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user == null) return getErrorMessage("wrong top position?");
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
         return user.getLastSeen().format(formatter);
     }
 
@@ -336,7 +336,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user == null) return getErrorMessage("wrong nickname?");
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
         return user.getLastSeen().format(formatter);
     }
 
@@ -355,7 +355,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (firstJoin == null) return getErrorMessage("first join data missing");
 
         try {
-            formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+            formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
             return firstJoin.format(formatter);
         } catch (Exception e) {
             return getErrorMessage("date formatting error");
@@ -366,7 +366,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         try {
 
             int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(nickname));
-            return position != -1 ? String.valueOf(position + 1) : plugin.getConfiguration().getNotInLeaderboardMessage();
+            return position != -1 ? String.valueOf(position + 1) : plugin.getConfiguration().getString("placeholders.not-in-leaderboard-message");
 
         } catch (Exception e) {
             return e.getMessage();
@@ -374,7 +374,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     }
 
     private String getErrorMessage(String error) {
-        return plugin.getConfiguration().isPlaceholdersEnableErrors() ? "Error: " + error :  plugin.getConfiguration().getPlaceholdersDefaultMessage();
+        return plugin.getConfiguration().getBoolean("placeholders.enable-errors") ? "Error: " + error :  plugin.getConfiguration().getString("placeholders.default-message");
     }
 
     private boolean isStringInt(String s) {

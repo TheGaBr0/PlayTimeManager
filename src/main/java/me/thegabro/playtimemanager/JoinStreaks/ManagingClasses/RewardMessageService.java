@@ -34,22 +34,22 @@ public class RewardMessageService {
 
     public void sendScheduleActivationMessage(CommandSender sender, boolean activated) {
         if (activated) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                     " The join streak check schedule has been activated"));
         } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                     " The join streak check schedule has been deactivated"));
         }
     }
 
     public void sendNextResetMessage(CommandSender sender, Map<String, Object> scheduleInfo) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
 
         if (scheduleInfo.get("nextReset") != null) {
             Date nextReset = (Date) scheduleInfo.get("nextReset");
             String timeRemaining = (String) scheduleInfo.get("timeRemaining");
 
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                     " Next join streak interval reset scheduled for: &e" + formatter.format(
                     nextReset.toInstant()
                             .atZone(ZoneId.systemDefault())

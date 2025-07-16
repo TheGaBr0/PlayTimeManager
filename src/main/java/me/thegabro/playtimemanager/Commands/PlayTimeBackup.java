@@ -25,15 +25,15 @@ public class PlayTimeBackup implements CommandExecutor {
             DatabaseBackupUtility backupUtility = new DatabaseBackupUtility(plugin);
             File success = backupUtility.createBackup("play_time", generateReadmeContent());
             if (success != null) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                         " &7Database backup created successfully!"));
             } else {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                         " &7Failed to create database backup. Check console for details."));
             }
             return true;
         } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have the permission to execute this command"));
         }
         return false;
     }

@@ -5,12 +5,6 @@ import com.jeff_media.updatechecker.UpdateChecker;
 import com.jeff_media.updatechecker.UserAgentBuilder;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-
-import java.io.File;
-import java.util.Arrays;
-import java.util.logging.Level;
 
 public class UpdateManager {
     private static UpdateManager instance;
@@ -28,7 +22,7 @@ public class UpdateManager {
     }
 
     public void initialize() {
-        if (plugin.getConfiguration().getUpdatesCheckActivation()) {
+        if (plugin.getConfiguration().getBoolean("check-for-updates")) {
             setupUpdateChecker();
         } else {
             plugin.getLogger().info("Update checking is disabled in configuration.");
@@ -61,7 +55,7 @@ public class UpdateManager {
                 new Version332to34Updater(plugin).performUpgrade();
                 new Version34to341Updater(plugin).performUpgrade();
                 new Version341to342Updater(plugin).performUpgrade();
-                new Version342to343Updater(plugin).performUpgrade();
+                new Version342to35Updater(plugin).performUpgrade();
                 break;
             case "3.2":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.2 config version detected, updating it to the latest one...");
@@ -70,7 +64,7 @@ public class UpdateManager {
                 new Version332to34Updater(plugin).performUpgrade();
                 new Version34to341Updater(plugin).performUpgrade();
                 new Version341to342Updater(plugin).performUpgrade();
-                new Version342to343Updater(plugin).performUpgrade();
+                new Version342to35Updater(plugin).performUpgrade();
                 break;
             case "3.3":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.3 config version detected, updating it to the latest one...");
@@ -78,29 +72,29 @@ public class UpdateManager {
                 new Version332to34Updater(plugin).performUpgrade();
                 new Version34to341Updater(plugin).performUpgrade();
                 new Version341to342Updater(plugin).performUpgrade();
-                new Version342to343Updater(plugin).performUpgrade();
+                new Version342to35Updater(plugin).performUpgrade();
                 break;
             case "3.4":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.4 config version detected, updating it to the latest one...");
                 new Version332to34Updater(plugin).performUpgrade();
                 new Version34to341Updater(plugin).performUpgrade();
                 new Version341to342Updater(plugin).performUpgrade();
-                new Version342to343Updater(plugin).performUpgrade();
+                new Version342to35Updater(plugin).performUpgrade();
                 break;
             case "3.5":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.5 config version detected, updating it to the latest one...");
                 new Version34to341Updater(plugin).performUpgrade();
                 new Version341to342Updater(plugin).performUpgrade();
-                new Version342to343Updater(plugin).performUpgrade();
+                new Version342to35Updater(plugin).performUpgrade();
                 break;
             case "3.6":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.6 config version detected, updating it to the latest one...");
                 new Version341to342Updater(plugin).performUpgrade();
-                new Version342to343Updater(plugin).performUpgrade();
+                new Version342to35Updater(plugin).performUpgrade();
                 break;
             case "3.7":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.7 config version detected, updating it to the latest one...");
-                new Version342to343Updater(plugin).performUpgrade();
+                new Version342to35Updater(plugin).performUpgrade();
                 break;
             default:
                 plugin.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown config version detected! Something may break!");

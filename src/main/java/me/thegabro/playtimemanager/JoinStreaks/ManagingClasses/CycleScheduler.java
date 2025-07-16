@@ -46,11 +46,11 @@ public class CycleScheduler {
     private void validateConfiguration() {
         try {
             // Validate cron expression (using Quartz cron expression)
-            String cronString = plugin.getConfiguration().getStreakResetSchedule();
+            String cronString = plugin.getConfiguration().getString("streak-reset-schedule");
             this.cronExpression = new CronExpression(cronString);
 
             // Set the timezone
-            String timezoneConfig = plugin.getConfiguration().getStreakTimeZone();
+            String timezoneConfig = plugin.getConfiguration().getString("reset-schedule-timezone");
             if ("utc".equalsIgnoreCase(timezoneConfig)) {
                 this.timezone = TimeZone.getTimeZone("UTC");
             } else {
@@ -58,7 +58,7 @@ public class CycleScheduler {
             }
             this.cronExpression.setTimeZone(timezone);
 
-            if (plugin.getConfiguration().getStreakCheckVerbose()) {
+            if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
                 plugin.getLogger().info("Join streak configuration validated successfully");
                 plugin.getLogger().info("Using cron schedule: " + cronString);
                 plugin.getLogger().info("Using timezone: " + timezone.getID());
@@ -90,7 +90,7 @@ public class CycleScheduler {
     private void scheduleNextReset() {
         cancelIntervalTask();
 
-        if (JoinStreaksManager.getInstance().getRewardRegistry().isEmpty() && plugin.getConfiguration().getStreakCheckVerbose()) {
+        if (JoinStreaksManager.getInstance().getRewardRegistry().isEmpty() && plugin.getConfiguration().getBoolean("streak-check-verbose")) {
             plugin.getLogger().info("No active rewards found, but scheduler will continue running to track absolute join streaks.");
         }
 
@@ -104,7 +104,7 @@ public class CycleScheduler {
         long delayInMillis = nextIntervalReset.getTime() - now.getTime();
         long delayInTicks = Math.max(20, delayInMillis / 50); // Min 1 second (20 ticks)
 
-        if (plugin.getConfiguration().getStreakCheckVerbose()) {
+        if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
             plugin.getLogger().info("Next join streak interval reset scheduled for: " + nextIntervalReset +
                     " (in " + Utils.ticksToFormattedPlaytime(delayInTicks) + ")");
         }
@@ -149,7 +149,7 @@ public class CycleScheduler {
         }
 
         long secondsBetween = Duration.between(user.getLastSeen(), LocalDateTime.now()).getSeconds();
-        return secondsBetween <= exactIntervalSeconds * plugin.getConfiguration().getJoinStreakResetMissesAllowed();
+        return secondsBetween <= exactIntervalSeconds * plugin.getConfiguration().getInt("reset-joinstreak.missed-joins");
     }
 
     public boolean isCurrentCycle() {
@@ -166,7 +166,7 @@ public class CycleScheduler {
 
         Map<String, Object> scheduleInfo = new HashMap<>();
 
-        if (plugin.getConfiguration().getRewardsCheckScheduleActivation()) {
+        if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
             scheduleInfo.put("nextReset", nextIntervalReset);
             Date now = new Date();
             long delayInMillis = nextIntervalReset.getTime() - now.getTime();
@@ -192,7 +192,7 @@ public class CycleScheduler {
         }
 
         // If schedule is active, add players to the joined list whose last seen is within the current cycle
-        if (plugin.getConfiguration().getRewardsCheckScheduleActivation()) {
+        if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
             try {
                 Set<String> playersWithStreaks = plugin.getDatabase().getPlayersWithActiveStreaks();
                 Date cycleStartDate = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);

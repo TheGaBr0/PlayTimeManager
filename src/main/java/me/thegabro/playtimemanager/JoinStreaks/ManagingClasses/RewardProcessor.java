@@ -40,7 +40,7 @@ public class RewardProcessor {
             JoinStreakReward mainInstance = rewardRegistry.getMainInstance(rewardKey);
 
             if (onlineUser.getRewardsToBeClaimed().contains(rewardKey + ".R")) {
-                messageService.sendRewardRelatedMessage(player, rewardKey, plugin.getConfiguration().getJoinCantClaimMessage(), 0);
+                messageService.sendRewardRelatedMessage(player, rewardKey, plugin.getConfiguration().getString("join-unclaimed-previous-message"), 0);
                 continue;
             }
 
@@ -62,7 +62,7 @@ public class RewardProcessor {
             // Auto claim the reward with the specific key (not just the integer ID)
             onlineUser.addReceivedReward(rewardKey);
 
-            messageService.sendRewardRelatedMessage(player, rewardKey, plugin.getConfiguration().getJoinAutoClaimMessage(), 1);
+            messageService.sendRewardRelatedMessage(player, rewardKey, plugin.getConfiguration().getString("join-warn-autoclaim-message"), 1);
 
             rewardExecutor.processCompletedReward(player, reward, rewardKey);
         } else {
@@ -72,7 +72,7 @@ public class RewardProcessor {
                 onlineUser.addRewardToBeClaimed(rewardKey);
             }
 
-            messageService.sendRewardRelatedMessage(player, rewardKey, plugin.getConfiguration().getJoinClaimMessage(), 1);
+            messageService.sendRewardRelatedMessage(player, rewardKey, plugin.getConfiguration().getString("join-warn-claim-message"), 1);
         }
     }
 }

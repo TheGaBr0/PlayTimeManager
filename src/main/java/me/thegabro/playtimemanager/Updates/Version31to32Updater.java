@@ -217,32 +217,7 @@ public class Version31to32Updater {
     }
 
     private void recreateConfigFile() {
-
-        File configFile = new File(plugin.getDataFolder(), "config.yml");
-        FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-
-        String playtimeSelfMessage = config.getString("playtime-self-message");
-        String playtimeOthersMessage = config.getString("playtime-others-message");
-
-        long goalsCheckRate = config.getLong("goal-check-rate");
-        boolean goalsCheckVerbose = config.getBoolean("goal-check-verbose");
-
-        configFile.delete();
-
-        Configuration newConfig = new Configuration(
-                plugin.getDataFolder(),
-                "config",
-                true,
-                true
-        );
-
-        newConfig.setPlaytimeSelfMessage(playtimeSelfMessage);
-        newConfig.setPlaytimeOthersMessage(playtimeOthersMessage);
-        newConfig.setGoalsCheckRate(goalsCheckRate);
-        newConfig.setGoalsCheckVerbose(goalsCheckVerbose);
-        newConfig.reload();
-
-        plugin.setConfiguration(newConfig);
+        Configuration.getInstance().updateConfig(true);
     }
 
     private String generateReadmeContent() {

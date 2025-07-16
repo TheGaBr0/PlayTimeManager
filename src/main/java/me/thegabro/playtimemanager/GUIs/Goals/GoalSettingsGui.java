@@ -371,7 +371,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 sound = (Sound) Sound.class.getField(soundName).get(null);
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 // Log the actual error for debugging if verbose is enabled
-                if (plugin.getConfiguration().getGoalsCheckVerbose()) {
+                if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
                     plugin.getLogger().info("Could not find sound directly, attempting fallback: " + e.getMessage());
                 }
             }

@@ -1,5 +1,8 @@
 package me.thegabro.playtimemanager.Users;
 
+import me.thegabro.playtimemanager.Configuration;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
@@ -16,6 +19,9 @@ public class DBUsersManager {
     private final List<DBUser> topPlayers;
     private final Map<String, DBUser> userCache;
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+    private final CommandsConfiguration commandsConfiguration = CommandsConfiguration.getInstance();
+    private final Configuration configuration = Configuration.getInstance();
+    private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
     private static final int TOP_PLAYERS_LIMIT = 100;
 
     private DBUsersManager() {
@@ -41,7 +47,7 @@ public class DBUsersManager {
     private void startCacheMaintenanceTask() {
         long clearInterval = 6 * 60 * 60 * 20; //Clear every 6 hours (in ticks)
         plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, () -> {
-            clearCache();
+            clearCaches();
             updateTopPlayersFromDB();
         }, clearInterval, clearInterval);
     }
@@ -169,7 +175,10 @@ public class DBUsersManager {
         userCache.remove(uuid);
     }
 
-    public void clearCache() {
+    public void clearCaches() {
         userCache.clear();
+        commandsConfiguration.clearCache();
+        configuration.clearCache();
+        guIsConfiguration.clearCache();
     }
 }

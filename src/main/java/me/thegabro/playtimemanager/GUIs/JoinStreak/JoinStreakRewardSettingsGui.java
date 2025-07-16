@@ -572,11 +572,8 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
 
             try {
                 sound = (Sound) Sound.class.getField(soundName).get(null);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                // Log the actual error for debugging if verbose is enabled
-                if (plugin.getConfiguration().getGoalsCheckVerbose()) {
-                    plugin.getLogger().info("Could not find sound directly, attempting fallback: " + e.getMessage());
-                }
+            } catch (NoSuchFieldException | IllegalAccessException ignored) {
+
             }
 
             if (sound != null) {
@@ -600,13 +597,13 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         ConfirmationGui confirmationGui = new ConfirmationGui(rewardItem, (confirmed) -> {
             if (confirmed) {
                 // Run deletion async
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Deleting reward &e" + reward.getId() + "&7..."));
+                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &7Deleting reward &e" + reward.getId() + "&7..."));
                 Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
                     reward.kill();
 
                     // Switch back to main thread for UI updates
                     Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
-                        player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7deleted reward &e" + reward.getId()));
+                        player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &aSuccessfully &7deleted reward &e" + reward.getId()));
                         if (parentGui != null) {
                             parentGui.openInventory(player);
                         }

@@ -77,7 +77,7 @@ public class RewardRegistry {
         rewards.remove(reward);
 
         if (rewards.isEmpty()) {
-            plugin.getConfiguration().setRewardsCheckScheduleActivation(false);
+            plugin.getConfiguration().set("rewards-check-schedule-activation", false);
         }
 
         joinRewardsMap.remove(reward.getId());

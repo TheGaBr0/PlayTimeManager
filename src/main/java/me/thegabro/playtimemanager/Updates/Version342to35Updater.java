@@ -144,7 +144,7 @@ public class Version342to35Updater {
         readme.append("============================\n\n");
         readme.append("!!! IMPORTANT VERSION UPGRADE NOTICE !!!\n");
         readme.append("=====================================\n");
-        readme.append("This backup was automatically created during the upgrade from version 3.4.2 to 3.4.3\n");
+        readme.append("This backup was automatically created during the upgrade from version 3.4.2 to 3.5\n");
         readme.append("This is a critical backup as the upgrade adds hide leaderboard field.\n\n");
 
         readme.append("Backup Information:\n");

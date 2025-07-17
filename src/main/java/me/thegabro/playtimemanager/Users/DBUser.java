@@ -99,34 +99,6 @@ public class DBUser {
         this.hideFromLeaderboard = db.getHideFromLeaderboard(uuid);
     }
 
-    public void reset() {
-        this.DBplaytime = 0;
-        this.artificialPlaytime = 0;
-        this.fromServerOnJoinPlayTime = 0;
-        this.lastSeen = null;
-        this.firstJoin = null;
-        this.relativeJoinStreak = 0;
-        this.absoluteJoinStreak = 0;
-        this.hideFromLeaderboard = false;
-
-        // Reset completed goals
-        this.completedGoals.clear();
-        this.receivedRewards.clear();
-        this.rewardsToBeClaimed.clear();
-
-        // Update all values in database - optimize with a single transaction if possible
-        db.updatePlaytime(uuid, 0);
-        db.updateArtificialPlaytime(uuid, 0);
-        db.updateCompletedGoals(uuid, completedGoals);
-        db.updateLastSeen(uuid, null);
-        db.updateFirstJoin(uuid, null);
-        db.setRelativeJoinStreak(uuid, 0);
-        db.setAbsoluteJoinStreak(uuid, 0);
-        db.updateReceivedRewards(uuid, receivedRewards);
-        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
-        db.setHideFromLeaderboard(uuid, hideFromLeaderboard);
-    }
-
     public LocalDateTime getFirstJoin(){ return firstJoin; }
 
     public LocalDateTime getLastSeen() { return lastSeen; }
@@ -296,5 +268,66 @@ public class DBUser {
             // Case 3: New user - neither UUID nor nickname exists
             db.addNewPlayer(uuid, nickname, fromServerOnJoinPlayTime);
         }
+    }
+
+    //Data reset methods
+    public void reset() {
+        this.DBplaytime = 0;
+        this.artificialPlaytime = 0;
+        this.fromServerOnJoinPlayTime = 0;
+        this.lastSeen = null;
+        this.firstJoin = null;
+        this.relativeJoinStreak = 0;
+        this.absoluteJoinStreak = 0;
+        this.hideFromLeaderboard = false;
+
+        // Reset completed goals
+        this.completedGoals.clear();
+        this.receivedRewards.clear();
+        this.rewardsToBeClaimed.clear();
+
+        // Update all values in database - optimize with a single transaction if possible
+        db.updatePlaytime(uuid, 0);
+        db.updateArtificialPlaytime(uuid, 0);
+        db.updateCompletedGoals(uuid, completedGoals);
+        db.updateLastSeen(uuid, null);
+        db.updateFirstJoin(uuid, null);
+        db.setRelativeJoinStreak(uuid, 0);
+        db.setAbsoluteJoinStreak(uuid, 0);
+        db.updateReceivedRewards(uuid, receivedRewards);
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+        db.setHideFromLeaderboard(uuid, hideFromLeaderboard);
+    }
+
+    public void resetPlaytime() {
+        this.DBplaytime = 0;
+        this.artificialPlaytime = 0;
+        this.fromServerOnJoinPlayTime = 0;
+
+        db.updatePlaytime(uuid, 0);
+        db.updateArtificialPlaytime(uuid, 0);
+    }
+
+    public void resetLastSeen() {
+        this.lastSeen = null;
+        db.updateLastSeen(uuid, null);
+    }
+
+    public void resetFirstJoin() {
+        this.firstJoin = null;
+        db.updateFirstJoin(uuid, null);
+    }
+
+    public void resetJoinStreakRewards() {
+        this.receivedRewards.clear();
+        this.rewardsToBeClaimed.clear();
+
+        db.updateReceivedRewards(uuid, receivedRewards);
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    }
+
+    public void resetGoals() {
+        this.completedGoals.clear();
+        db.updateCompletedGoals(uuid, completedGoals);
     }
 }

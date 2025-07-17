@@ -28,10 +28,14 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
         subCommands.add("reset");
         subCommands.add("stats");
 
-        resetOptions.add("db");
-        resetOptions.add("stats");
-        resetOptions.add("all");
+        resetOptions.add("playtime");
+        resetOptions.add("server_playtime");
+        resetOptions.add("last_seen");
+        resetOptions.add("first_join");
         resetOptions.add("joinstreak");
+        resetOptions.add("joinstreak_rewards");
+        resetOptions.add("goals");
+        resetOptions.add("everything");
     }
 
     @Override

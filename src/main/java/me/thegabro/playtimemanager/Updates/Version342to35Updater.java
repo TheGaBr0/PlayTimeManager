@@ -14,9 +14,7 @@ import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.SimpleDateFormat;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.stream.Stream;
 
 public class Version342to35Updater {
@@ -30,8 +28,6 @@ public class Version342to35Updater {
     }
 
     public void performUpgrade() {
-        DatabaseBackupUtility backupUtility = new DatabaseBackupUtility(plugin);
-        backupUtility.createBackup("play_time", generateReadmeContent());
         addHideLeaderboardAttribute();
         renameCustomizationsFolder();
         recreateConfigFile();
@@ -135,37 +131,4 @@ public class Version342to35Updater {
         commandsConfiguration.reload();
     }
 
-    private String generateReadmeContent() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-        String timestamp = dateFormat.format(new Date());
-
-        StringBuilder readme = new StringBuilder();
-        readme.append("PlayTimeManager Database Backup\n");
-        readme.append("============================\n\n");
-        readme.append("!!! IMPORTANT VERSION UPGRADE NOTICE !!!\n");
-        readme.append("=====================================\n");
-        readme.append("This backup was automatically created during the upgrade from version 3.4.2 to 3.5\n");
-        readme.append("This is a critical backup as the upgrade adds hide leaderboard field.\n\n");
-
-        readme.append("Backup Information:\n");
-        readme.append("------------------\n");
-        readme.append("Backup created: ").append(timestamp).append("\n");
-
-        readme.append("Restore Instructions:\n");
-        readme.append("-------------------\n");
-        readme.append("!!! CRITICAL: The restored database file MUST be named 'play_time.db' !!!\n");
-        readme.append("If the file is not named exactly 'play_time.db', the plugin will not load it.\n\n");
-        readme.append("Steps to restore:\n");
-        readme.append("1. Stop your server\n");
-        readme.append("2. Delete the current 'play_time.db'\n");
-        readme.append("3. Extract the database.db file from this backup zip\n");
-        readme.append("4. Rename the extracted file to 'play_time.db'\n");
-        readme.append("5. Place it in your plugin's data folder\n");
-        readme.append("6. Start your server\n\n");
-
-        readme.append("Warning: This backup contains data from before the data integrity changes.\n");
-        readme.append("Restoring this backup will revert your data to the 3.4.2 format.\n");
-
-        return readme.toString();
-    }
 }

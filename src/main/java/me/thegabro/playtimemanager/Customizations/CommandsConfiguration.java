@@ -127,13 +127,10 @@ public class CommandsConfiguration {
         return value;
     }
 
-
-
     /**
      * Sets a value in both config and cache
      */
     public void set(String path, Object value) {
-
         config.set(path, value);
 
         // Update cache
@@ -172,6 +169,7 @@ public class CommandsConfiguration {
 
     /**
      * Restores values from a backup, preserving user customizations
+     * Only restores leaf values (not entire sections) to preserve new keys
      * @param backup Map containing the backed up values
      */
     public void restoreFromBackup(Map<String, Object> backup) {
@@ -182,17 +180,37 @@ public class CommandsConfiguration {
 
         for (Map.Entry<String, Object> entry : backup.entrySet()) {
             String key = entry.getKey();
-            Object value = entry.getValue();
+            Object backupValue = entry.getValue();
 
             // Check if the key exists in the new config structure
             if (!config.contains(key)) {
                 continue;
             }
 
-            // Set the value in both config and cache
-            config.set(key, value);
-            if (cacheLoaded) {
-                configCache.put(key, value);
+            // CRITICAL: Skip MemorySection objects (nested sections)
+            // These contain multiple keys and restoring them would overwrite entire sections
+            if (backupValue instanceof org.bukkit.configuration.MemorySection) {
+                continue;
+            }
+
+            // Get the current value from the new config (this is the default from the new file)
+            Object currentValue = config.get(key);
+
+            // Only restore leaf values (strings, numbers, booleans, lists, etc.)
+            // Only restore if:
+            // 1. The backup has a non-null value
+            // 2. The backup value is different from the current default
+            // 3. The backup value is not empty for strings
+            if (backupValue != null && !backupValue.equals(currentValue)) {
+                // Additional check for strings - don't restore empty strings
+                if (backupValue instanceof String && ((String) backupValue).trim().isEmpty()) {
+                    continue;
+                }
+
+                config.set(key, backupValue);
+                if (cacheLoaded) {
+                    configCache.put(key, backupValue);
+                }
             }
         }
     }
@@ -213,15 +231,20 @@ public class CommandsConfiguration {
                 file.delete();
             }
 
-            // Step 3: Reload the new config
+            // Step 3: Save the new resource file
+            plugin.saveResource(CONFIG_PATH + CONFIG_FILENAME, true);
+
+            // Step 4: Clear cache and reload the new config
+            configCache.clear();
+            reloadFile();
             reloadConfig();
 
-            // Step 4: Restore user values (only if we have a backup)
+            // Step 5: Restore user values (only if we have a backup)
             if (!backup.isEmpty()) {
                 restoreFromBackup(backup);
             }
 
-            // Step 5: Save the updated config and refresh cache
+            // Step 6: Save the updated config and refresh cache
             save();
             loadCache();
 
@@ -231,7 +254,6 @@ public class CommandsConfiguration {
         }
     }
 
-
     /**
      * Gets a String value from cache
      */
@@ -239,7 +261,6 @@ public class CommandsConfiguration {
         Object value = get(path);
         return value != null ? value.toString() : null;
     }
-
 
     /**
      * Gets an Integer value from cache
@@ -252,7 +273,6 @@ public class CommandsConfiguration {
         return null;
     }
 
-
     /**
      * Gets a Boolean value from cache
      */
@@ -264,7 +284,6 @@ public class CommandsConfiguration {
         return null;
     }
 
-
     /**
      * Gets a Double value from cache
      */
@@ -275,7 +294,6 @@ public class CommandsConfiguration {
         }
         return null;
     }
-
 
     /**
      * Checks if a key exists in cache
@@ -294,6 +312,4 @@ public class CommandsConfiguration {
         configCache.clear();
         cacheLoaded = false;
     }
-
-
 }

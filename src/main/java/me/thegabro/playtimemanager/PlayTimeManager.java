@@ -23,15 +23,12 @@ import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 
-import java.io.File;
 import java.util.Objects;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -44,13 +41,13 @@ public class PlayTimeManager extends JavaPlugin{
     private PlaytimeFormatsConfiguration playtimeFormatsConfiguration;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-    public final String CURRENTCONFIGVERSION = "3.8";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private JoinStreaksManager joinStreaksManager;
-    private final String serverVersion = Bukkit.getBukkitVersion().split("-")[0];
     private SessionManager sessionManager;
 
+    public final String CURRENT_CONFIG_VERSION = "3.8";
+    public final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
     @Override
     public void onEnable() {
 
@@ -73,8 +70,8 @@ public class PlayTimeManager extends JavaPlugin{
         config = Configuration.getInstance(this.getDataFolder(), "config", true, true);
 
         // Check config version and perform updates if needed
-        if (!config.getString("config-version").equals(CURRENTCONFIGVERSION)) {
-            updateManager.performVersionUpdate(config.getString("config-version"), CURRENTCONFIGVERSION);
+        if (!config.getString("config-version").equals(CURRENT_CONFIG_VERSION)) {
+            updateManager.performVersionUpdate(config.getString("config-version"), CURRENT_CONFIG_VERSION);
         }
 
         updateManager.initialize();

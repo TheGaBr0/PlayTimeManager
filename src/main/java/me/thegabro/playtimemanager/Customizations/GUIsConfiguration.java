@@ -188,6 +188,7 @@ public class GUIsConfiguration {
 
     /**
      * Restores values from a backup, preserving user customizations
+     * Only restores leaf values (not entire sections) to preserve new keys
      * @param backup Map containing the backed up values
      */
     public void restoreFromBackup(Map<String, Object> backup) {
@@ -198,17 +199,37 @@ public class GUIsConfiguration {
 
         for (Map.Entry<String, Object> entry : backup.entrySet()) {
             String key = entry.getKey();
-            Object value = entry.getValue();
+            Object backupValue = entry.getValue();
 
             // Check if the key exists in the new config structure
             if (!config.contains(key)) {
                 continue;
             }
 
-            // Set the value in both config and cache
-            config.set(key, value);
-            if (cacheLoaded) {
-                configCache.put(key, value);
+            // CRITICAL: Skip MemorySection objects (nested sections)
+            // These contain multiple keys and restoring them would overwrite entire sections
+            if (backupValue instanceof org.bukkit.configuration.MemorySection) {
+                continue;
+            }
+
+            // Get the current value from the new config (this is the default from the new file)
+            Object currentValue = config.get(key);
+
+            // Only restore leaf values (strings, numbers, booleans, lists, etc.)
+            // Only restore if:
+            // 1. The backup has a non-null value
+            // 2. The backup value is different from the current default
+            // 3. The backup value is not empty for strings
+            if (backupValue != null && !backupValue.equals(currentValue)) {
+                // Additional check for strings - don't restore empty strings
+                if (backupValue instanceof String && ((String) backupValue).trim().isEmpty()) {
+                    continue;
+                }
+
+                config.set(key, backupValue);
+                if (cacheLoaded) {
+                    configCache.put(key, backupValue);
+                }
             }
         }
     }

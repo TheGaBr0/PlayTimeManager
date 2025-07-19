@@ -16,7 +16,7 @@ public class Utils {
     private static final long TICKS_PER_HOUR = TICKS_PER_MINUTE * 60;
     private static final long TICKS_PER_DAY = TICKS_PER_HOUR * 24;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
-    
+
     public static Component parseColors(String input) {
         if (input == null || input.isEmpty()) {
             return Component.empty();
@@ -270,12 +270,18 @@ public class Utils {
             result = result.replaceAll("%m%\\{minutes\\}(?:,\\s*)?", "");
         }
 
-        if (seconds > 0 || result.trim().isEmpty()) {
+        // Always show seconds if it's > 0, OR if everything else is 0 (including when ticks was originally 0)
+        if (seconds > 0 || (years == 0 && days == 0 && hours == 0 && minutes == 0)) {
             result = result.replace("%s%", String.valueOf(seconds));
             result = result.replace("{seconds}", format.getSecondsLabel((int) seconds));
         } else {
             // Remove seconds section if zero and other units exist
             result = result.replaceAll("%s%\\{seconds\\}(?:,\\s*)?", "");
+        }
+
+        // Special case: if everything is 0, ensure we show "0{seconds}" with plural form
+        if (years == 0 && days == 0 && hours == 0 && minutes == 0 && seconds == 0) {
+            result = "0" + format.getSecondsLabel(0); // Use plural form for 0
         }
 
         // Clean up any remaining placeholders and extra commas/spaces

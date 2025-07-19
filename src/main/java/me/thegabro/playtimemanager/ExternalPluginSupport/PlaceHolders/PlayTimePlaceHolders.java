@@ -265,6 +265,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
     private String handleLastSeenElapsed(String nickname, String unit) {
         DBUser user = dbUsersManager.getUserFromNickname(nickname);
+
         if (user == null) return getErrorMessage("wrong nickname?");
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
@@ -278,6 +279,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
         Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
+
         return Utils.ticksToFormattedPlaytime(duration.getSeconds() * 20);
     }
 

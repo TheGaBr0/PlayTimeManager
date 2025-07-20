@@ -26,6 +26,48 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private final PlaytimeFormatsConfiguration playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
     private LuckPermsManager luckPermsManager = null;
     private DateTimeFormatter formatter;
+    private PlaytimeFormat playtimeFormat;
+
+    private String processParams(String params) {
+        // Find the last occurrence of "_"
+        int lastUnderscoreIndex = params.lastIndexOf("_");
+        if (lastUnderscoreIndex == -1) {
+            // Check if there's a colon directly in the params (for cases like "PlayTime:test")
+            int colonIndex = params.indexOf(":");
+            if (colonIndex != -1) {
+                // Extract the format name after the colon
+                String formatName = params.substring(colonIndex + 1);
+                playtimeFormat = playtimeFormatsConfiguration.getFormat(formatName);
+                if (playtimeFormat == null) {
+                    playtimeFormat = playtimeFormatsConfiguration.getFormat("default");
+                }
+                // Return params without the format part
+                return params.substring(0, colonIndex);
+            }
+
+            playtimeFormat = playtimeFormatsConfiguration.getFormat("default");
+            return params; // No underscore found, return original
+        }
+
+        // Look for ":" after the last underscore
+        int colonIndex = params.indexOf(":", lastUnderscoreIndex);
+        if (colonIndex == -1) {
+            playtimeFormat = playtimeFormatsConfiguration.getFormat("default");
+            return params; // No colon found after last underscore
+        }
+
+        // Extract the format name after the colon (everything after ":")
+        String formatName = params.substring(colonIndex + 1);
+        playtimeFormat = playtimeFormatsConfiguration.getFormat(formatName);
+
+        // If format is not found, use default
+        if (playtimeFormat == null) {
+            playtimeFormat = playtimeFormatsConfiguration.getFormat("default");
+        }
+
+        // Remove the format part (from ":" to the end)
+        return params.substring(0, colonIndex);
+    }
 
     public PlayTimePlaceHolders() {
 
@@ -61,6 +103,8 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     @Override
     public String onRequest(OfflinePlayer player, String params) {
         if (params == null) return null;
+
+        params = processParams(params);
 
         // Handle rank placeholder
         if (params.equalsIgnoreCase("rank")) {
@@ -107,7 +151,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
             try {
                 return Utils.ticksToFormattedPlaytime(
                         onlineUsersManager.getOnlineUser(player.getName()).getPlaytime(),
-                        getPlaytimeFormat()
+                        playtimeFormat
                 );
             } catch (Exception e) {
                 return getErrorMessage("couldn't get playtime");
@@ -215,15 +259,6 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         return null;
     }
 
-    private PlaytimeFormat getPlaytimeFormat() {
-        String customFormatName = plugin.getConfiguration().getString("placeholder.playtime-format");
-        PlaytimeFormat format = playtimeFormatsConfiguration.getFormat(customFormatName);
-        if (format == null) {
-            format = playtimeFormatsConfiguration.getFormat("default");
-        }
-        return format;
-    }
-
     private String handleLPPrefixTop(String posStr) {
         if (!isStringInt(posStr)) return getErrorMessage("wrong top position?");
 
@@ -304,7 +339,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
         DBUser user = dbUsersManager.getTopPlayerAtPosition(Integer.parseInt(posStr));
         return user != null ?
-                Utils.ticksToFormattedPlaytime(user.getPlaytime(), getPlaytimeFormat()) :
+                Utils.ticksToFormattedPlaytime(user.getPlaytime(), playtimeFormat) :
                 getErrorMessage("wrong top position?");
     }
 
@@ -318,7 +353,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private String handlePlayTime(String nickname) {
         DBUser user = dbUsersManager.getUserFromNickname(nickname);
         return user != null ?
-                Utils.ticksToFormattedPlaytime(user.getPlaytime(), getPlaytimeFormat()) :
+                Utils.ticksToFormattedPlaytime(user.getPlaytime(), playtimeFormat) :
                 getErrorMessage("wrong nickname?");
     }
 

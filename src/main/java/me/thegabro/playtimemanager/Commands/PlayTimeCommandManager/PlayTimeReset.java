@@ -80,9 +80,11 @@ public class PlayTimeReset {
         switch (resetType) {
             case "server_playtime":
                 resetPlayerServerPlaytime(sender, playerName);
+                dbUsersManager.updateTopPlayersFromDB();
                 break;
             case "playtime":
                 resetPlayerPlaytime(sender, playerName);
+                dbUsersManager.updateTopPlayersFromDB();
                 break;
             case "last_seen":
                 resetPlayerLastSeen(sender, playerName);
@@ -101,6 +103,7 @@ public class PlayTimeReset {
                 break;
             case "everything":
                 resetPlayerEverything(sender, playerName);
+                dbUsersManager.updateTopPlayersFromDB();
                 break;
             default:
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
@@ -159,7 +162,6 @@ public class PlayTimeReset {
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             user.resetPlaytime();
-            dbUsersManager.updateTopPlayersFromDB();
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
@@ -273,7 +275,6 @@ public class PlayTimeReset {
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             user.reset();
-            dbUsersManager.updateTopPlayersFromDB();
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
@@ -360,9 +361,11 @@ public class PlayTimeReset {
                     case "playtime":
                         totalDataReset.addAndGet(user.getPlaytime());
                         user.resetPlaytime();
+                        dbUsersManager.updateTopPlayersFromDB();
                         break;
                     case "last_seen":
                         user.resetLastSeen();
+                        dbUsersManager.updateTopPlayersFromDB();
                         break;
                     case "first_join":
                         user.resetFirstJoin();
@@ -383,13 +386,11 @@ public class PlayTimeReset {
                     case "everything":
                         totalDataReset.addAndGet(user.getPlaytime());
                         user.reset();
+                        dbUsersManager.updateTopPlayersFromDB();
                         break;
                 }
                 totalPlayersReset.getAndIncrement();
             }
-
-            dbUsersManager.clearCaches();
-            dbUsersManager.updateTopPlayersFromDB();
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 String message = " All players' " + displayName + " has been reset! Total: &e" + totalPlayersReset + "&7 players";

@@ -17,7 +17,6 @@ public class LuckPermsManager {
     private final PlayTimeManager plugin;
     private static LuckPerms luckPermsApi;
     private static LuckPermsManager instance;
-    private PermissionChangeListener permissionListener;
 
     private LuckPermsManager(PlayTimeManager plugin) {
         this.plugin = plugin;
@@ -28,7 +27,6 @@ public class LuckPermsManager {
             try {
                 luckPermsApi = LuckPermsProvider.get();
                 instance = new LuckPermsManager(plugin);
-                instance.initializePermissionListener();
             } catch (Exception e) {
                 plugin.getLogger().severe("Failed to initialize LuckPerms integration: " + e.getMessage());
                 throw e;
@@ -39,28 +37,6 @@ public class LuckPermsManager {
 
     public LuckPerms getLuckPermsApi() {
         return luckPermsApi;
-    }
-
-    private void initializePermissionListener() {
-        try {
-            permissionListener = new PermissionChangeListener(plugin, luckPermsApi);
-            permissionListener.register();
-            plugin.getLogger().info("LuckPerms permission listener registered successfully");
-        } catch (Exception e) {
-            plugin.getLogger().severe("Failed to initialize permission listener: " + e.getMessage());
-            throw e;
-        }
-    }
-
-    public void cleanup() {
-        if (permissionListener != null) {
-            try {
-                permissionListener.unregister();
-                plugin.getLogger().info("LuckPerms permission listener unregistered");
-            } catch (Exception e) {
-                plugin.getLogger().warning("Failed to unregister permission listener: " + e.getMessage());
-            }
-        }
     }
 
     public CompletableFuture<String> getPrefixAsync(String uuid) {

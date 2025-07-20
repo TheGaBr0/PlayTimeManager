@@ -133,7 +133,8 @@ public class PlayTimeManager extends JavaPlugin{
         });
         Objects.requireNonNull(getCommand("claimrewards")).setExecutor(new ClaimRewards() {
         });
-
+        Objects.requireNonNull(getCommand("playtimeattribute")).setExecutor(new PlayTimeAttributeCommand() {
+        });
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();
 
@@ -147,15 +148,6 @@ public class PlayTimeManager extends JavaPlugin{
         onlineUsersManager.stopSchedules();
         for(Player p : Bukkit.getOnlinePlayers()){
             onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
-        }
-
-        // Clean up LuckPerms listener
-        if (permissionsManagerConfigured) {
-            try {
-                LuckPermsManager.getInstance(this).cleanup();
-            } catch (Exception e) {
-                getLogger().warning("Failed to cleanup LuckPerms integration: " + e.getMessage());
-            }
         }
 
         db.close();

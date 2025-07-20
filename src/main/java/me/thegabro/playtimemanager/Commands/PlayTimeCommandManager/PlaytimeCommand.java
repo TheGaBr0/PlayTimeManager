@@ -72,18 +72,14 @@ public class PlaytimeCommand {
                         String message = createMessage(config.getString("playtime-self-message"),
                                 player.getName(),
                                 String.valueOf(onlineUser.getPlaytime()),
-                                prefix,
-                                sender.hasPermission("playtime.others.modify"),
-                                onlineUser.getArtificialPlaytime());
+                                prefix);
                         sender.sendMessage(Utils.parseColors(message));
                     });
         } else {
             String message = createMessage(config.getString("playtime-self-message"),
                     player.getName(),
                     String.valueOf(onlineUser.getPlaytime()),
-                    "",
-                    sender.hasPermission("playtime.others.modify"),
-                    onlineUser.getArtificialPlaytime());
+                    "");
             sender.sendMessage(Utils.parseColors(message));
         }
 
@@ -100,25 +96,21 @@ public class PlaytimeCommand {
                         String message = createMessage(config.getString("playtime-others-message"),
                                 playerName,
                                 String.valueOf(user.getPlaytime()),
-                                prefix,
-                                sender.hasPermission("playtime.others.modify"),
-                                user.getArtificialPlaytime());
+                                prefix);
                         sender.sendMessage(Utils.parseColors(message));
                     });
         } else {
             String message = createMessage(config.getString("playtime-others-message"),
                     playerName,
                     String.valueOf(user.getPlaytime()),
-                    "",
-                    sender.hasPermission("playtime.others.modify"),
-                    user.getArtificialPlaytime());
+                    "");
             sender.sendMessage(Utils.parseColors(message));
         }
 
         return true;
     }
 
-    private String createMessage(String template, String playerName, String playtime, String prefix, boolean showArtificial, long artificialPlaytime) {
+    private String createMessage(String template, String playerName, String playtime, String prefix) {
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("%PLAYER_NAME%", playerName);
         placeholders.put("%PLAYTIME%", playtime);
@@ -129,12 +121,6 @@ public class PlaytimeCommand {
             placeholders.put("%PREFIX%", "");
         }
 
-        String message = Utils.placeholdersReplacer(template, placeholders);
-
-        if (showArtificial) {
-            message = message + " (" + Utils.ticksToFormattedPlaytime(artificialPlaytime) + ")";
-        }
-
-        return message;
+        return Utils.placeholdersReplacer(template, placeholders);
     }
 }

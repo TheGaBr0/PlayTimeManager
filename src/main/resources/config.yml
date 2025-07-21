@@ -131,6 +131,17 @@ placeholders:
   default-message: "No data"
   #The message displayed when %PTM_rank% is called but the target player isn't in the leaderboard.
   not-in-leaderboard-message: "-"
+  # List of players who should be excluded from appearing in the playtime leaderboard
+  # This is useful for hiding staff members, test accounts, or other players you don't want displayed
+  # Players can also be dynamically added or removed from the leaderboard using the command:
+  # /playtimeattribute <player> hidefromleaderboard
+  # To manually add entries, remove "[]" and list your names as the example below.
+  # Example:
+  # - "TestAccount"
+  # - "StaffMember"
+  playtime-leaderboard-blacklist: []
+
+
 
 
 

@@ -119,7 +119,7 @@ public class PlayTimeAttributeCommand implements CommandExecutor, TabCompleter {
     private boolean getCurrentAttributeValue(DBUser user, String attribute) {
         switch (attribute) {
             case "hidefromleaderboard":
-                return user.isHiddenFromLeaderboard();
+                return DBUsersManager.getInstance().getPlayersHiddenFromLeaderBoard().contains(user.getNickname());
             default:
                 return false;
         }
@@ -139,18 +139,23 @@ public class PlayTimeAttributeCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    private void handleHiddenFromLeaderboardAttribute(CommandSender sender, DBUser user, boolean value, String playerName) {
+    private void handleHiddenFromLeaderboardAttribute(CommandSender sender, DBUser user, boolean hide, String playerName) {
         // Run async to avoid blocking the main thread
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
-                user.setHiddenFromLeaderboard(value);
+
+                if(hide){
+                    DBUsersManager.getInstance().hidePlayerFromLeaderBoard(user.getNickname());
+                }else{
+                    DBUsersManager.getInstance().unhidePlayerFromLeaderBoard(user.getNickname());
+                }
 
                 // Wait for the database update to complete, then update leaderboard
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     try {
                         DBUsersManager.getInstance().updateTopPlayersFromDB();
                         sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                                " Successfully set hidefromleaderboard to " + value + " for player " + playerName));
+                                " Successfully set hidefromleaderboard to " + hide + " for player " + playerName));
                     } catch (Exception e) {
                         plugin.getLogger().severe("Failed to update leaderboard after setting attribute: " + e.getMessage());
                         e.printStackTrace();

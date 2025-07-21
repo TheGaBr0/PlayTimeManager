@@ -20,8 +20,6 @@ public class GUIsConfiguration {
     // Cache to store all configuration values in memory
     private final Map<String, Object> configCache = new ConcurrentHashMap<>();
 
-    // Flag to track if cache has been loaded
-    private boolean cacheLoaded = false;
 
     private static final String CONFIG_FILENAME = "GUIs-config.yml";
     private static final String CONFIG_PATH = "Customizations/GUIs/";
@@ -95,7 +93,6 @@ public class GUIsConfiguration {
             configCache.put(key, value);
         }
 
-        cacheLoaded = true;
     }
 
     public void reload() {
@@ -112,7 +109,7 @@ public class GUIsConfiguration {
      * Gets a value from cache if available, otherwise from config
      */
     public Object get(String path) {
-        if (cacheLoaded && configCache.containsKey(path)) {
+        if (configCache.containsKey(path)) {
             return configCache.get(path);
         }
 
@@ -120,7 +117,7 @@ public class GUIsConfiguration {
         Object value = config.get(path);
 
         // Cache the value for future use
-        if (cacheLoaded && value != null) {
+        if (value != null) {
             configCache.put(path, value);
         }
 
@@ -131,7 +128,7 @@ public class GUIsConfiguration {
      * Gets a value from cache if available, otherwise from config with default
      */
     public Object get(String path, Object def) {
-        if (cacheLoaded && configCache.containsKey(path)) {
+        if (configCache.containsKey(path)) {
             return configCache.get(path);
         }
 
@@ -139,7 +136,7 @@ public class GUIsConfiguration {
         Object value = config.get(path, def);
 
         // Cache the value for future use
-        if (cacheLoaded && value != null) {
+        if (value != null) {
             configCache.put(path, value);
         }
 
@@ -152,10 +149,7 @@ public class GUIsConfiguration {
     public void set(String path, Object value) {
         config.set(path, value);
 
-        // Update cache
-        if (cacheLoaded) {
-            configCache.put(path, value);
-        }
+        configCache.put(path, value);
 
         save();
     }
@@ -170,7 +164,7 @@ public class GUIsConfiguration {
         Map<String, Object> backup = new HashMap<>();
 
         // Use cache if available, otherwise read from config
-        if (cacheLoaded && !configCache.isEmpty()) {
+        if (!configCache.isEmpty()) {
             backup.putAll(configCache);
         } else {
             // Read all keys from current config
@@ -227,9 +221,8 @@ public class GUIsConfiguration {
                 }
 
                 config.set(key, backupValue);
-                if (cacheLoaded) {
-                    configCache.put(key, backupValue);
-                }
+                configCache.put(key, backupValue);
+
             }
         }
     }
@@ -322,22 +315,12 @@ public class GUIsConfiguration {
         return null;
     }
 
-    /**
-     * Checks if a key exists in cache
-     */
-    public boolean contains(String path) {
-        if (cacheLoaded) {
-            return configCache.containsKey(path);
-        }
-        return config.contains(path);
-    }
 
     /**
      * Clears the cache
      */
     public void clearCache() {
         configCache.clear();
-        cacheLoaded = false;
     }
 
 }

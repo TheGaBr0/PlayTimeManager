@@ -23,7 +23,7 @@ public class DBUsersManager {
     private final Configuration configuration = Configuration.getInstance();
     private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
     private static final int TOP_PLAYERS_LIMIT = 100;
-
+    private List<String> playersHiddenFromLeaderBoard;
     private DBUsersManager() {
         this.plugin = PlayTimeManager.getInstance();
         this.db = plugin.getDatabase();
@@ -87,16 +87,16 @@ public class DBUsersManager {
             try {
                 onlineUsersManager.updateAllOnlineUsersPlaytime().get();
 
-                int playersWithHidePermission = db.countHiddenPlayersFromLeaderboard();
+                playersHiddenFromLeaderBoard = plugin.getConfiguration().getStringList("placeholders.playtime-leaderboard-blacklist");
 
                 // Fetch more players from DB to account for those that will be filtered out
-                Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersWithHidePermission);
+                Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersHiddenFromLeaderBoard.size());
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     List<DBUser> validTopPlayers = dbTopPlayers.keySet().stream()
                             .map(this::getUserFromUUID)
                             .filter(Objects::nonNull)
-                            .filter(user -> !user.isHiddenFromLeaderboard())
+                            .filter(user -> !playersHiddenFromLeaderBoard.contains(user.getNickname()))
                             .limit(TOP_PLAYERS_LIMIT)
                             .toList();
 
@@ -169,6 +169,20 @@ public class DBUsersManager {
         return db.getAllNicknames().stream()
                 .map(this::getUserFromNickname)
                 .collect(Collectors.toList());
+    }
+
+    public List<String> getPlayersHiddenFromLeaderBoard(){
+        return new ArrayList<>(playersHiddenFromLeaderBoard);
+    }
+
+    public void hidePlayerFromLeaderBoard(String nickname){
+        playersHiddenFromLeaderBoard.add(nickname);
+        plugin.getConfiguration().set("placeholders.playtime-leaderboard-blacklist", playersHiddenFromLeaderBoard);
+    }
+
+    public void unhidePlayerFromLeaderBoard(String nickname){
+        playersHiddenFromLeaderBoard.remove(nickname);
+        plugin.getConfiguration().set("placeholders.playtime-leaderboard-blacklist", playersHiddenFromLeaderBoard);
     }
 
     public void removeUserFromCache(String uuid) {

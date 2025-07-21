@@ -20,8 +20,6 @@ public class CommandsConfiguration {
     // Cache to store all configuration values in memory
     private final Map<String, Object> configCache = new ConcurrentHashMap<>();
 
-    // Flag to track if cache has been loaded
-    private boolean cacheLoaded = false;
 
     private static final String CONFIG_FILENAME = "commands-config.yml";
     private static final String CONFIG_PATH = "Customizations/Commands/";
@@ -95,7 +93,6 @@ public class CommandsConfiguration {
             configCache.put(key, value);
         }
 
-        cacheLoaded = true;
     }
 
     public void reload() {
@@ -112,7 +109,7 @@ public class CommandsConfiguration {
      * Gets a value from cache if available, otherwise from config
      */
     public Object get(String path) {
-        if (cacheLoaded && configCache.containsKey(path)) {
+        if (configCache.containsKey(path)) {
             return configCache.get(path);
         }
 
@@ -120,7 +117,7 @@ public class CommandsConfiguration {
         Object value = config.get(path);
 
         // Cache the value for future use
-        if (cacheLoaded && value != null) {
+        if (value != null) {
             configCache.put(path, value);
         }
 
@@ -133,10 +130,7 @@ public class CommandsConfiguration {
     public void set(String path, Object value) {
         config.set(path, value);
 
-        // Update cache
-        if (cacheLoaded) {
-            configCache.put(path, value);
-        }
+        configCache.put(path, value);
 
         save();
     }
@@ -151,7 +145,7 @@ public class CommandsConfiguration {
         Map<String, Object> backup = new HashMap<>();
 
         // Use cache if available, otherwise read from config
-        if (cacheLoaded && !configCache.isEmpty()) {
+        if (!configCache.isEmpty()) {
             backup.putAll(configCache);
         } else {
             // Read all keys from current config
@@ -208,9 +202,8 @@ public class CommandsConfiguration {
                 }
 
                 config.set(key, backupValue);
-                if (cacheLoaded) {
-                    configCache.put(key, backupValue);
-                }
+                configCache.put(key, backupValue);
+
             }
         }
     }
@@ -295,21 +288,11 @@ public class CommandsConfiguration {
         return null;
     }
 
-    /**
-     * Checks if a key exists in cache
-     */
-    public boolean contains(String path) {
-        if (cacheLoaded) {
-            return configCache.containsKey(path);
-        }
-        return config.contains(path);
-    }
 
     /**
      * Clears the cache
      */
     public void clearCache() {
         configCache.clear();
-        cacheLoaded = false;
     }
 }

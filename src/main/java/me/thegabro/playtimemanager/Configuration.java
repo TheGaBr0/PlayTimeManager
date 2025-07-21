@@ -4,10 +4,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -26,8 +23,7 @@ public class Configuration {
     // Cache to store all configuration values in memory
     private final Map<String, Object> configCache = new ConcurrentHashMap<>();
 
-    // Flag to track if cache has been loaded
-    private boolean cacheLoaded = false;
+
 
     /**
      * Private constructor to prevent direct instantiation
@@ -137,7 +133,6 @@ public class Configuration {
             configCache.put(key, value);
         }
 
-        cacheLoaded = true;
     }
 
     public void reload() {
@@ -154,7 +149,7 @@ public class Configuration {
      * Gets a value from cache if available, otherwise from config
      */
     public Object get(String path) {
-        if (cacheLoaded && configCache.containsKey(path)) {
+        if (configCache.containsKey(path)) {
             return configCache.get(path);
         }
 
@@ -162,7 +157,7 @@ public class Configuration {
         Object value = config.get(path);
 
         // Cache the value for future use
-        if (cacheLoaded && value != null) {
+        if (value != null) {
             configCache.put(path, value);
         }
 
@@ -183,12 +178,23 @@ public class Configuration {
     public void set(String path, Object value) {
         config.set(path, value);
 
-        // Update cache
-        if (cacheLoaded) {
-            configCache.put(path, value);
-        }
+        configCache.put(path, value);
 
         save();
+    }
+
+    /**
+     * Gets a String List value from cache
+     */
+    public List<String> getStringList(String path) {
+        Object value = get(path);
+        if (value instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<String> list = (List<String>) value;
+
+            return list;
+        }
+        return new ArrayList<>();
     }
 
     /**
@@ -246,23 +252,11 @@ public class Configuration {
     }
 
 
-
-    /**
-     * Checks if a key exists in cache
-     */
-    public boolean contains(String path) {
-        if (cacheLoaded) {
-            return configCache.containsKey(path);
-        }
-        return config.contains(path);
-    }
-
     /**
      * Clears the cache
      */
     public void clearCache() {
         configCache.clear();
-        cacheLoaded = false;
     }
 
     // ==================== CONFIG UPDATE SYSTEM ====================
@@ -275,7 +269,7 @@ public class Configuration {
         Map<String, Object> backup = new HashMap<>();
 
         // Use cache if available, otherwise read from config
-        if (cacheLoaded && !configCache.isEmpty()) {
+        if (!configCache.isEmpty()) {
             backup.putAll(configCache);
         } else {
             // Read all keys from current config
@@ -345,7 +339,11 @@ public class Configuration {
      */
     public void updateConfig(boolean restoreRemovedKeys) {
         try {
+            //Step 0: fix null lists (without []) otherwise they will be skipped during update.
+            fixNullLists();
+
             // Step 1: Create backup of current values
+
             Map<String, Object> backup = createConfigBackup();
 
             // Step 2: Replace the config file
@@ -361,8 +359,12 @@ public class Configuration {
             reloadConfig();
             configCache.clear();
 
+            plugin.getLogger().info(String.valueOf(config.contains("placeholders.playtime-leaderboard-blacklist")));
+
             // Step 4: Restore user values (only keys that exist in new config)
             restoreFromBackup(backup);
+
+            plugin.getLogger().info(String.valueOf(config.contains("placeholders.playtime-leaderboard-blacklist")));
 
             // Step 5: Handle removed keys if requested
             if (restoreRemovedKeys) {
@@ -400,12 +402,8 @@ public class Configuration {
                 if (key.equals("config-version")) {
                     continue;
                 }
-
-                // Add the removed key back to the config
                 config.set(key, value);
-                if (cacheLoaded) {
-                    configCache.put(key, value);
-                }
+                configCache.put(key, value);
             }
         }
     }
@@ -417,4 +415,19 @@ public class Configuration {
     public FileConfiguration getConfig() {
         return config;
     }
+
+    //-------------------------------------------------------------------------
+    // Data fixers
+    //-------------------------------------------------------------------------
+
+    public void fixNullLists(){
+        fixEmptyPlayersHiddenFromLeaderBoard();
+    }
+
+    private void fixEmptyPlayersHiddenFromLeaderBoard(){
+        if(getStringList("placeholders.playtime-leaderboard-blacklist") == null){
+            set("placeholders.playtime-leaderboard-blacklist", new ArrayList<String>());
+        }
+    }
+
 }

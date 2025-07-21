@@ -28,13 +28,12 @@ public class DBUser {
     protected int absoluteJoinStreak;
     protected LinkedHashSet<String> receivedRewards = new LinkedHashSet<>();
     protected LinkedHashSet<String> rewardsToBeClaimed = new LinkedHashSet<>();
-    protected boolean hideFromLeaderboard;
 
     // Private constructor
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime,
                    ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int relativeJoinStreak,
-                   int absoluteJoinStreak, LinkedHashSet<String> receivedRewards, LinkedHashSet<String> rewardsToBeClaimed,
-                   boolean hideFromLeaderboard) {
+                   int absoluteJoinStreak, LinkedHashSet<String> receivedRewards, LinkedHashSet<String> rewardsToBeClaimed){
+
         this.uuid = uuid;
         this.nickname = nickname;
         this.DBplaytime = playtime;
@@ -46,7 +45,6 @@ public class DBUser {
         this.absoluteJoinStreak = absoluteJoinStreak;
         this.receivedRewards = receivedRewards;
         this.rewardsToBeClaimed = rewardsToBeClaimed;
-        this.hideFromLeaderboard = hideFromLeaderboard;
     }
 
     public DBUser(Player p) {
@@ -79,10 +77,9 @@ public class DBUser {
         int absoluteJoinStreak = db.getAbsoluteJoinStreak(uuid);
         LinkedHashSet<String> receivedRewards = db.getReceivedRewards(uuid);
         LinkedHashSet<String> rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
-        boolean hideFromLeaderboard = db.getHideFromLeaderboard(uuid);
 
         return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals, lastSeen, firstJoin, relativeJoinStreak,
-                absoluteJoinStreak, receivedRewards, rewardsToBeClaimed, hideFromLeaderboard);
+                absoluteJoinStreak, receivedRewards, rewardsToBeClaimed);
     }
 
     // New method to load user data from database
@@ -96,7 +93,6 @@ public class DBUser {
         this.absoluteJoinStreak = db.getRelativeJoinStreak(uuid);
         this.receivedRewards = db.getReceivedRewards(uuid);
         this.rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
-        this.hideFromLeaderboard = db.getHideFromLeaderboard(uuid);
     }
 
     public LocalDateTime getFirstJoin(){ return firstJoin; }
@@ -241,14 +237,6 @@ public class DBUser {
         return new HashSet<>(rewardsToBeClaimed); // Return a copy to prevent modification
     }
 
-    public boolean isHiddenFromLeaderboard(){
-        return hideFromLeaderboard;
-    }
-
-    public void setHiddenFromLeaderboard(boolean value){
-        hideFromLeaderboard = value;
-        db.setHideFromLeaderboard(uuid, value);
-    }
 
     private void userMapping() {
         boolean uuidExists = db.playerExists(uuid);
@@ -279,7 +267,6 @@ public class DBUser {
         this.firstJoin = null;
         this.relativeJoinStreak = 0;
         this.absoluteJoinStreak = 0;
-        this.hideFromLeaderboard = false;
 
         // Reset completed goals
         this.completedGoals.clear();
@@ -296,7 +283,6 @@ public class DBUser {
         db.setAbsoluteJoinStreak(uuid, 0);
         db.updateReceivedRewards(uuid, receivedRewards);
         db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
-        db.setHideFromLeaderboard(uuid, hideFromLeaderboard);
     }
 
     public void resetPlaytime() {

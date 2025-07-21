@@ -113,15 +113,32 @@ public class DBUsersManager {
         });
     }
 
+    /**
+     * Updates the cached top players list when a player joins the server.
+     * This method maintains a synchronized cache of top players for performance optimization.
+     *
+     * @param onlineUser The online user who just joined the server
+     */
     public void updateCachedTopPlayers(OnlineUser onlineUser) {
+
+        // Skip hidden players!!
+        if(playersHiddenFromLeaderBoard.contains(onlineUser.getNickname()))
+            return;
+
+        // Synchronize access to prevent concurrent modification of the topPlayers list
         synchronized (topPlayers) {
+            // If the cache isn't full and the player isn't already in the list, add them
             if (topPlayers.size() < TOP_PLAYERS_LIMIT &&
                     topPlayers.stream().noneMatch(player -> player.getUuid().equals(onlineUser.getUuid()))) {
+                // Add the player to the cached top players list using fresh database data
                 topPlayers.add(getUserFromUUID(onlineUser.getUuid()));
             }
 
+            // Update existing player data in the cache if they're already present
             for (int i = 0; i < topPlayers.size(); i++) {
                 if (topPlayers.get(i).getUuid().equals(onlineUser.getUuid())) {
+                    // Replace the cached entry with fresh data from database
+                    // This ensures playtime and other stats are up-to-date
                     topPlayers.set(i, getUserFromUUID(onlineUser.getUuid()));
                     break;
                 }

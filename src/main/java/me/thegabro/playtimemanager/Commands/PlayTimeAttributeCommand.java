@@ -35,7 +35,7 @@ public class PlayTimeAttributeCommand implements CommandExecutor, TabCompleter {
 
         if (args.length < 2 || args.length > 3) {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                    " Usage: /playtimeattribute <player> <attribute> [value]"));
+                    " Usage: /playtimeattribute <player> <attribute> [true|false]"));
             return false;
         }
 

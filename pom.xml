@@ -6,7 +6,7 @@
 
     <groupId>me.theGabro</groupId>
     <artifactId>PlayTimeManager</artifactId>
-    <version>3.4.2</version>
+    <version>3.5</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -39,8 +39,8 @@
                         </goals>
                         <configuration>
                             <minimizeJar>true</minimizeJar>
-                            <shadedArtifactAttached>false</shadedArtifactAttached>
-                            <shadedClassifierName/>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <finalName>${project.artifactId}-${project.version}</finalName>
                             <relocations>
                                 <relocation>
                                     <pattern>com.jeff_media.updatechecker</pattern>

@@ -32,7 +32,8 @@ public class DBUser {
     // Private constructor
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime,
                    ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int relativeJoinStreak,
-                   int absoluteJoinStreak, LinkedHashSet<String> receivedRewards, LinkedHashSet<String> rewardsToBeClaimed) {
+                   int absoluteJoinStreak, LinkedHashSet<String> receivedRewards, LinkedHashSet<String> rewardsToBeClaimed){
+
         this.uuid = uuid;
         this.nickname = nickname;
         this.DBplaytime = playtime;
@@ -92,32 +93,6 @@ public class DBUser {
         this.absoluteJoinStreak = db.getRelativeJoinStreak(uuid);
         this.receivedRewards = db.getReceivedRewards(uuid);
         this.rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
-    }
-
-    public void reset() {
-        this.DBplaytime = 0;
-        this.artificialPlaytime = 0;
-        this.fromServerOnJoinPlayTime = 0;
-        this.lastSeen = null;
-        this.firstJoin = null;
-        this.relativeJoinStreak = 0;
-        this.absoluteJoinStreak = 0;
-
-        // Reset completed goals
-        this.completedGoals.clear();
-        this.receivedRewards.clear();
-        this.rewardsToBeClaimed.clear();
-
-        // Update all values in database - optimize with a single transaction if possible
-        db.updatePlaytime(uuid, 0);
-        db.updateArtificialPlaytime(uuid, 0);
-        db.updateCompletedGoals(uuid, completedGoals);
-        db.updateLastSeen(uuid, null);
-        db.updateFirstJoin(uuid, null);
-        db.setRelativeJoinStreak(uuid, 0);
-        db.setAbsoluteJoinStreak(uuid, 0);
-        db.updateReceivedRewards(uuid, receivedRewards);
-        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
     }
 
     public LocalDateTime getFirstJoin(){ return firstJoin; }
@@ -262,6 +237,7 @@ public class DBUser {
         return new HashSet<>(rewardsToBeClaimed); // Return a copy to prevent modification
     }
 
+
     private void userMapping() {
         boolean uuidExists = db.playerExists(uuid);
         String existingNickname = uuidExists ? db.getNickname(uuid) : null;
@@ -280,5 +256,64 @@ public class DBUser {
             // Case 3: New user - neither UUID nor nickname exists
             db.addNewPlayer(uuid, nickname, fromServerOnJoinPlayTime);
         }
+    }
+
+    //Data reset methods
+    public void reset() {
+        this.DBplaytime = 0;
+        this.artificialPlaytime = 0;
+        this.fromServerOnJoinPlayTime = 0;
+        this.lastSeen = null;
+        this.firstJoin = null;
+        this.relativeJoinStreak = 0;
+        this.absoluteJoinStreak = 0;
+
+        // Reset completed goals
+        this.completedGoals.clear();
+        this.receivedRewards.clear();
+        this.rewardsToBeClaimed.clear();
+
+        // Update all values in database - optimize with a single transaction if possible
+        db.updatePlaytime(uuid, 0);
+        db.updateArtificialPlaytime(uuid, 0);
+        db.updateCompletedGoals(uuid, completedGoals);
+        db.updateLastSeen(uuid, null);
+        db.updateFirstJoin(uuid, null);
+        db.setRelativeJoinStreak(uuid, 0);
+        db.setAbsoluteJoinStreak(uuid, 0);
+        db.updateReceivedRewards(uuid, receivedRewards);
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    }
+
+    public void resetPlaytime() {
+        this.DBplaytime = 0;
+        this.artificialPlaytime = 0;
+        this.fromServerOnJoinPlayTime = 0;
+
+        db.updatePlaytime(uuid, 0);
+        db.updateArtificialPlaytime(uuid, 0);
+    }
+
+    public void resetLastSeen() {
+        this.lastSeen = null;
+        db.updateLastSeen(uuid, null);
+    }
+
+    public void resetFirstJoin() {
+        this.firstJoin = null;
+        db.updateFirstJoin(uuid, null);
+    }
+
+    public void resetJoinStreakRewards() {
+        this.receivedRewards.clear();
+        this.rewardsToBeClaimed.clear();
+
+        db.updateReceivedRewards(uuid, receivedRewards);
+        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    }
+
+    public void resetGoals() {
+        this.completedGoals.clear();
+        db.updateCompletedGoals(uuid, completedGoals);
     }
 }

@@ -1,5 +1,8 @@
-package me.thegabro.playtimemanager.ExternalPluginSupport;
+package me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders;
 
+import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormat;
+import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
@@ -20,8 +23,51 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+    private final PlaytimeFormatsConfiguration playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
     private LuckPermsManager luckPermsManager = null;
     private DateTimeFormatter formatter;
+    private PlaytimeFormat playtimeFormat;
+
+    private String processParams(String params) {
+        // Find the last occurrence of "_"
+        int lastUnderscoreIndex = params.lastIndexOf("_");
+        if (lastUnderscoreIndex == -1) {
+            // Check if there's a colon directly in the params (for cases like "PlayTime:test")
+            int colonIndex = params.indexOf(":");
+            if (colonIndex != -1) {
+                // Extract the format name after the colon
+                String formatName = params.substring(colonIndex + 1);
+                playtimeFormat = playtimeFormatsConfiguration.getFormat(formatName);
+                if (playtimeFormat == null) {
+                    playtimeFormat = playtimeFormatsConfiguration.getFormat("default");
+                }
+                // Return params without the format part
+                return params.substring(0, colonIndex);
+            }
+
+            playtimeFormat = playtimeFormatsConfiguration.getFormat("default");
+            return params; // No underscore found, return original
+        }
+
+        // Look for ":" after the last underscore
+        int colonIndex = params.indexOf(":", lastUnderscoreIndex);
+        if (colonIndex == -1) {
+            playtimeFormat = playtimeFormatsConfiguration.getFormat("default");
+            return params; // No colon found after last underscore
+        }
+
+        // Extract the format name after the colon (everything after ":")
+        String formatName = params.substring(colonIndex + 1);
+        playtimeFormat = playtimeFormatsConfiguration.getFormat(formatName);
+
+        // If format is not found, use default
+        if (playtimeFormat == null) {
+            playtimeFormat = playtimeFormatsConfiguration.getFormat("default");
+        }
+
+        // Remove the format part (from ":" to the end)
+        return params.substring(0, colonIndex);
+    }
 
     public PlayTimePlaceHolders() {
 
@@ -58,13 +104,15 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     public String onRequest(OfflinePlayer player, String params) {
         if (params == null) return null;
 
+        params = processParams(params);
+
         // Handle rank placeholder
         if (params.equalsIgnoreCase("rank")) {
             try {
 
                 int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(player.getName()))  + 1;
 
-                return position != -1 ? String.valueOf(position) : plugin.getConfiguration().getNotInLeaderboardMessage();
+                return position != -1 ? String.valueOf(position) : plugin.getConfiguration().getString("placeholders.not-in-leaderboard-message");
             } catch (Exception e) {
                 return e.getMessage();
             }
@@ -79,7 +127,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
                 LocalDateTime firstJoin = user.getFirstJoin();
                 if (firstJoin == null) return getErrorMessage("first join data missing");
 
-                formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+                formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
                 return firstJoin.format(formatter);
             } catch (Exception e) {
                 return getErrorMessage("couldn't get first join date");
@@ -102,7 +150,8 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (params.equalsIgnoreCase("playtime")) {
             try {
                 return Utils.ticksToFormattedPlaytime(
-                        onlineUsersManager.getOnlineUser(player.getName()).getPlaytime()
+                        onlineUsersManager.getOnlineUser(player.getName()).getPlaytime(),
+                        playtimeFormat
                 );
             } catch (Exception e) {
                 return getErrorMessage("couldn't get playtime");
@@ -251,6 +300,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
     private String handleLastSeenElapsed(String nickname, String unit) {
         DBUser user = dbUsersManager.getUserFromNickname(nickname);
+
         if (user == null) return getErrorMessage("wrong nickname?");
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
@@ -264,6 +314,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
         Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
+
         return Utils.ticksToFormattedPlaytime(duration.getSeconds() * 20);
     }
 
@@ -288,7 +339,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
         DBUser user = dbUsersManager.getTopPlayerAtPosition(Integer.parseInt(posStr));
         return user != null ?
-                Utils.ticksToFormattedPlaytime(user.getPlaytime()) :
+                Utils.ticksToFormattedPlaytime(user.getPlaytime(), playtimeFormat) :
                 getErrorMessage("wrong top position?");
     }
 
@@ -302,7 +353,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private String handlePlayTime(String nickname) {
         DBUser user = dbUsersManager.getUserFromNickname(nickname);
         return user != null ?
-                Utils.ticksToFormattedPlaytime(user.getPlaytime()) :
+                Utils.ticksToFormattedPlaytime(user.getPlaytime(), playtimeFormat) :
                 getErrorMessage("wrong nickname?");
     }
 
@@ -313,7 +364,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user == null) return getErrorMessage("wrong top position?");
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
         return user.getLastSeen().format(formatter);
     }
 
@@ -322,7 +373,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user == null) return getErrorMessage("wrong nickname?");
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
         return user.getLastSeen().format(formatter);
     }
 
@@ -341,7 +392,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (firstJoin == null) return getErrorMessage("first join data missing");
 
         try {
-            formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+            formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
             return firstJoin.format(formatter);
         } catch (Exception e) {
             return getErrorMessage("date formatting error");
@@ -351,8 +402,8 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private String handleRank(String nickname){
         try {
 
-            int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(nickname)) + 1;
-            return position != -1 ? String.valueOf(position) : plugin.getConfiguration().getNotInLeaderboardMessage();
+            int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(nickname));
+            return position != -1 ? String.valueOf(position + 1) : plugin.getConfiguration().getString("placeholders.not-in-leaderboard-message");
 
         } catch (Exception e) {
             return e.getMessage();
@@ -360,7 +411,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     }
 
     private String getErrorMessage(String error) {
-        return plugin.getConfiguration().isPlaceholdersEnableErrors() ? "Error: " + error :  plugin.getConfiguration().getPlaceholdersDefaultMessage();
+        return plugin.getConfiguration().getBoolean("placeholders.enable-errors") ? "Error: " + error :  plugin.getConfiguration().getString("placeholders.default-message");
     }
 
     private boolean isStringInt(String s) {

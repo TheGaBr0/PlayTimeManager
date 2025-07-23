@@ -65,7 +65,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
     public void initializeItems() {
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
 
         Map<String, Object> nextSchedule = rewardsManager.getNextSchedule();
         int leftIndex = 9;
@@ -127,7 +127,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         ));
         protectedSlots.add(CREATE_REWARD);
 
-        boolean isActive = plugin.getConfiguration().getRewardsCheckScheduleActivation();
+        boolean isActive = plugin.getConfiguration().getBoolean("rewards-check-schedule-activation");
         boolean hasRewards = !rewardsManager.getRewardRegistry().getRewards().isEmpty();
 
         inv.setItem(TOGGLE_SCHEDULE, createGuiItem(
@@ -254,7 +254,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         if (slot == TOGGLE_SCHEDULE && (clickedItem.getType() == Material.GREEN_CONCRETE || clickedItem.getType() == Material.RED_CONCRETE)) {
             boolean hasRewards = !rewardsManager.getRewardRegistry().getRewards().isEmpty();
             if (!hasRewards) {
-                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cCannot enable rewards: No rewards have been created!"));
+                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &cCannot enable rewards: No rewards have been created!"));
                 return;
             }
 
@@ -300,7 +300,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                     // Check for middle-click to clone
                     if (event.getClick().isCreativeAction()) {
                         whoClicked.closeInventory();
-                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Cloning reward &e" + id + "&7..."));
+                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &7Cloning reward &e" + id + "&7..."));
 
                         // Create a new reward with the next available ID
                         int newId = rewardsManager.getRewardRegistry().getNextRewardId();
@@ -309,20 +309,20 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                         // Add the cloned reward to manager
                         rewardsManager.getRewardRegistry().addReward(clonedReward);
 
-                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7cloned reward &e" + id + " &7to new reward &e" + newId));
+                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &aSuccessfully &7cloned reward &e" + id + " &7to new reward &e" + newId));
                         openInventory(whoClicked);
                         return;
                     }
 
                     // Check for shift-right-click to delete
                     if (event.isShiftClick() && event.isRightClick()) {
-                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &7Deleting reward &e" + id + "&7..."));
+                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &7Deleting reward &e" + id + "&7..."));
                         Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
                             reward.kill();
 
                             // Switch back to main thread for UI updates
                             Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
-                                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &aSuccessfully &7deleted reward &e" + id));
+                                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &aSuccessfully &7deleted reward &e" + id));
                                 openInventory(whoClicked);
                             });
                         });
@@ -381,8 +381,8 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent event) {
         if (event.getInventory().getHolder() instanceof AllJoinStreakRewardsGui && event.getPlayer() instanceof Player player) {
-            if(!plugin.getConfiguration().getRewardsCheckScheduleActivation()){
-                event.getPlayer().sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &c&l⚠ WARNING &c&l⚠"));
+            if(!plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")){
+                event.getPlayer().sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &c&l⚠ WARNING &c&l⚠"));
                 event.getPlayer().sendMessage(Utils.parseColors("&7The join streak rewards schedule is currently &4&lDISABLED&6!"));
                 event.getPlayer().sendMessage(Utils.parseColors("&7Player join streaks will still be tracked, but &c&nno reward will be granted&r&7."));
             }

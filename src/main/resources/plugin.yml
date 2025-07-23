@@ -46,6 +46,11 @@ commands:
     permission: playtime.joinstreak
     permission-message: You don't have the permission to execute this command!
     aliases: [ptjsk]
+  playtimeattribute:
+    description: Command to manage internal players attributes
+    permission: playtime.others.attributes
+    permission-message: You don't have the permission to execute this command!
+    aliases: [ptattr]
   claimrewards:
     description: Command to claim join streak rewards
     permission: playtime.joinstreak.claim
@@ -58,6 +63,7 @@ permissions:
       playtime: true
       playtime.others: true
       playtime.others.modify: true
+      playtime.others.attributes: true
       playtime.others.modify.all: true
       playtime.others.stats: true
       playtime.average: true
@@ -77,6 +83,8 @@ permissions:
   playtime.others.modify:
     default: false
   playtime.others.modify.all:
+    default: false
+  playtime.others.attributes:
     default: false
   playtime.others.stats:
     default: false

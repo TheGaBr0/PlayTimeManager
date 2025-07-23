@@ -1,8 +1,9 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
 import me.thegabro.playtimemanager.Goals.Goal;
-import me.thegabro.playtimemanager.PlaceholderConditionEvaluator;
+import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlaceholderConditionEvaluator;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
@@ -89,7 +90,7 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
                 String group = item.substring(6);
                 boolean exists = PlayTimeManager.getInstance().isPermissionsManagerConfigured()
                         && PlayTimeManager.getInstance().getLuckPermsApi() != null
-                        && me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager
+                        && LuckPermsManager
                         .getInstance(PlayTimeManager.getInstance()).groupExists(group);
                 if (!exists) lore.addAll(List.of(Utils.parseColors(""), Utils.parseColors("&c⚠ Group '" + group + "' does not exist!"), Utils.parseColors("&cCheck LuckPerms or remove this.")));
             }

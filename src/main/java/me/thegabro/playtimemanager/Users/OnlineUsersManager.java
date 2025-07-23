@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.Users;
 
-import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -96,11 +96,11 @@ public class OnlineUsersManager {
             public void run() {
                 checkGoalsForAllUsers(goals);
             }
-        }.runTaskTimer(plugin, 0, plugin.getConfiguration().getGoalsCheckRate() * 20);
+        }.runTaskTimer(plugin, 0, plugin.getConfiguration().getInt("goal-check-rate") * 20);
     }
 
     private void checkGoalsForAllUsers(Set<Goal> goals) {
-        if (plugin.getConfiguration().getGoalsCheckVerbose()) {
+        if (plugin.getConfiguration().getBoolean("goal-check-verbose")) {
             logVerboseInfo();
         }
 
@@ -130,7 +130,7 @@ public class OnlineUsersManager {
         executeCommands(goal, player);
         sendGoalMessage(player, goal);
 
-        if(plugin.getConfiguration().getGoalsCheckVerbose()){
+        if(plugin.getConfiguration().getBoolean("goal-check-verbose")){
             plugin.getLogger().info(String.format("User %s has reached the goal %s which requires %s!",
                     onlineUser.getNickname(), goal.getName(),Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime())));
         }
@@ -193,7 +193,7 @@ public class OnlineUsersManager {
             commands.forEach(command -> {
                 try {
                     String formattedCommand = formatCommand(command, player);
-                    if (plugin.getConfiguration().getGoalsCheckVerbose()) {
+                    if (plugin.getConfiguration().getBoolean("goal-check-verbose")) {
                         plugin.getLogger().info("Executing command: " + formattedCommand);
                     }
                     Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), formattedCommand);
@@ -220,7 +220,7 @@ public class OnlineUsersManager {
                 sound = (Sound) Sound.class.getField(soundName).get(null);
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 // Log the actual error for debugging if verbose is enabled
-                if (plugin.getConfiguration().getGoalsCheckVerbose()) {
+                if (plugin.getConfiguration().getBoolean("goal-check-verbose")) {
                     plugin.getLogger().info("Could not find sound directly, attempting fallback: " + e.getMessage());
                 }
             }
@@ -256,7 +256,7 @@ public class OnlineUsersManager {
     }
 
     private void logVerboseInfo() {
-        plugin.getLogger().info(String.format("Goal check schedule started, refresh rate is %ss", plugin.getConfiguration().getGoalsCheckRate()));
+        plugin.getLogger().info(String.format("Goal check schedule started, refresh rate is %ss", plugin.getConfiguration().getInt("goal-check-rate")));
     }
 
     public void stopSchedules() {

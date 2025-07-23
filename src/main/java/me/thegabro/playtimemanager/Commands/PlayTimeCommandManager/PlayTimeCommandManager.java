@@ -28,10 +28,14 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
         subCommands.add("reset");
         subCommands.add("stats");
 
-        resetOptions.add("db");
-        resetOptions.add("stats");
-        resetOptions.add("all");
+        resetOptions.add("playtime");
+        resetOptions.add("server_playtime");
+        resetOptions.add("last_seen");
+        resetOptions.add("first_join");
         resetOptions.add("joinstreak");
+        resetOptions.add("joinstreak_rewards");
+        resetOptions.add("goals");
+        resetOptions.add("everything");
     }
 
     @Override
@@ -46,14 +50,14 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
             if (args.length == 1) {
                 // For /playtime <playername>, check if user has the permission to view others
                 if (!sender.hasPermission("playtime.others")) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                             " You don't have permission to execute this command"));
                     return false;
                 }
 
                 // Now check if player exists
                 if (dbUsersManager.getUserFromNickname(args[0]) == null) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                             " The player &e" + args[0] + "&7 has never joined the server!"));
                     return false;
                 }
@@ -75,7 +79,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
                 // Check if the subcommand is valid
                 if (!subCommands.contains(subCommand)) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Unknown subcommand: " + subCommand));
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Unknown subcommand: " + subCommand));
                     return false;
                 }
 
@@ -84,14 +88,14 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
                 // Check for wildcard permission if trying to use wildcard reset
                 if (isWildcardReset && !sender.hasPermission("playtime.others.modify.all")) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                             " You don't have permission to use wildcards with the reset command"));
                     return false;
                 }
 
                 // Check if player exists (only if not a wildcard reset)
                 if (!isWildcardReset && dbUsersManager.getUserFromNickname(targetPlayerName) == null) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                             " The player &e" + targetPlayerName + "&7 has never joined the server!"));
                     return false;
                 }
@@ -100,7 +104,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
                 switch (subCommand) {
                     case "stats":
                         if (!sender.hasPermission("playtime.others.stats")) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
+                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
                             return false;
                         }
                         new PlayTimeStats(sender, args);
@@ -108,7 +112,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
                     case "add":
                         if (!sender.hasPermission("playtime.others.modify")) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
+                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
                             return false;
                         }
                         new PlayTimeAddTime(sender, args);
@@ -116,7 +120,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
                     case "remove":
                         if (!sender.hasPermission("playtime.others.modify")) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
+                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
                             return false;
                         }
                         new PlayTimeRemoveTime(sender, args);
@@ -124,19 +128,19 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
                     case "reset":
                         if (!sender.hasPermission("playtime.others.modify")) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
+                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
                             return false;
                         }
                         new PlayTimeReset(sender, args);
                         return true;
 
                     default:
-                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Unknown subcommand: " + subCommand));
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Unknown subcommand: " + subCommand));
                         return false;
                 }
             }
         } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
             return false;
         }
 

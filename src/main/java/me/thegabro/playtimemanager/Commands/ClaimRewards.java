@@ -25,7 +25,7 @@ public class ClaimRewards implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         // Ensure only players can use this command
         if (!sender.hasPermission("playtime.joinstreak.claim")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have the permission to execute this command"));
             return false;
         }
 
@@ -40,7 +40,7 @@ public class ClaimRewards implements CommandExecutor {
         if (lastGuiOpenTime.containsKey(playerId)) {
             long lastTime = lastGuiOpenTime.get(playerId);
             if (currentTime - lastTime < GUI_OPEN_COOLDOWN) {
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " &cPlease wait before using this command again."));
+                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &cPlease wait before using this command again."));
                 return true;
             }
         }

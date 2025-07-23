@@ -1,5 +1,8 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
+import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
@@ -28,8 +31,12 @@ public class PlaytimeReload implements CommandExecutor {
         if (sender.hasPermission("playtime.reload")) {
             // Reload configurations
             plugin.getConfiguration().reload();
-            plugin.getGUIsConfig().reload();
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " The configuration files have been reloaded"));
+
+            PlaytimeFormatsConfiguration.getInstance().reload();
+            GUIsConfiguration.getInstance().reload();
+            CommandsConfiguration.getInstance().reload();
+
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " The configuration files have been reloaded"));
 
             // Reload goals
             goalsManager.clearGoals();
@@ -50,7 +57,7 @@ public class PlaytimeReload implements CommandExecutor {
 
             // Restart LuckPerms schedule if applicable
             onlineUsersManager.startGoalCheckSchedule();
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Goal check schedule has been restarted"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Goal check schedule has been restarted"));
 
             dbUsersManager.updateTopPlayersFromDB();
 
@@ -60,14 +67,14 @@ public class PlaytimeReload implements CommandExecutor {
             joinStreaksManager.getCycleScheduler().initialize();
 
             // Only start the task if it's enabled in config
-            if (plugin.getConfiguration().getRewardsCheckScheduleActivation()) {
+            if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
                 joinStreaksManager.getCycleScheduler().startIntervalTask();
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Join streak check schedule has been restarted"));
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Join streak check schedule has been restarted"));
             }
 
             return true;
         } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " You don't have the permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have the permission to execute this command"));
         }
         return false;
     }

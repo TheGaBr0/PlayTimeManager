@@ -19,11 +19,11 @@ public class PlayTimeStats {
         DBUser user = dbUsersManager.getUserFromNickname(args[0]);
 
         if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Player not found!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Player not found!"));
             return;
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getDateTimeFormat());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
 
         // Get all necessary data
         LocalDateTime lastSeen = user.getLastSeen();

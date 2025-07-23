@@ -1,13 +1,13 @@
 package me.thegabro.playtimemanager.Users;
 
-import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
+import me.thegabro.playtimemanager.Configuration;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -19,8 +19,11 @@ public class DBUsersManager {
     private final List<DBUser> topPlayers;
     private final Map<String, DBUser> userCache;
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+    private final CommandsConfiguration commandsConfiguration = CommandsConfiguration.getInstance();
+    private final Configuration configuration = Configuration.getInstance();
+    private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
     private static final int TOP_PLAYERS_LIMIT = 100;
-
+    private List<String> playersHiddenFromLeaderBoard;
     private DBUsersManager() {
         this.plugin = PlayTimeManager.getInstance();
         this.db = plugin.getDatabase();
@@ -44,7 +47,7 @@ public class DBUsersManager {
     private void startCacheMaintenanceTask() {
         long clearInterval = 6 * 60 * 60 * 20; //Clear every 6 hours (in ticks)
         plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, () -> {
-            clearCache();
+            clearCaches();
             updateTopPlayersFromDB();
         }, clearInterval, clearInterval);
     }
@@ -77,55 +80,32 @@ public class DBUsersManager {
         return userCache.computeIfAbsent(uuid, k -> DBUser.fromUUID(uuid));
     }
 
-    private boolean hasHidePermission(DBUser user) {
-        return LuckPermsManager.getInstance(plugin).hasPermission(user.getUuid(), "playtime.hidefromleaderboard");
-    }
+
 
     public void updateTopPlayersFromDB() {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
                 onlineUsersManager.updateAllOnlineUsersPlaytime().get();
 
-                if (plugin.getServer().getPluginManager().getPlugin("LuckPerms") != null) {
-                    // Get count of players with hide permission asynchronously
-                    CompletableFuture<Integer> permissionCountFuture = CompletableFuture.supplyAsync(() ->
-                            LuckPermsManager.getInstance(plugin).getPlayersWithPermissionCount("playtime.hidefromleaderboard"));
+                playersHiddenFromLeaderBoard = plugin.getConfiguration().getStringList("placeholders.playtime-leaderboard-blacklist");
 
-                    int playersWithHidePermission = permissionCountFuture.get();
+                // Fetch more players from DB to account for those that will be filtered out
+                Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersHiddenFromLeaderBoard.size());
 
-                    // Fetch more players from DB to account for those that will be filtered out
-                    Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersWithHidePermission);
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    List<DBUser> validTopPlayers = dbTopPlayers.keySet().stream()
+                            .map(this::getUserFromUUID)
+                            .filter(Objects::nonNull)
+                            .filter(user -> !playersHiddenFromLeaderBoard.contains(user.getNickname()))
+                            .limit(TOP_PLAYERS_LIMIT)
+                            .toList();
 
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        List<DBUser> validTopPlayers = dbTopPlayers.keySet().stream()
-                                .map(this::getUserFromUUID)
-                                .filter(Objects::nonNull)
-                                .filter(user -> !hasHidePermission(user))
-                                .limit(TOP_PLAYERS_LIMIT)
-                                .toList();
+                    synchronized (topPlayers) {
+                        topPlayers.clear();
+                        topPlayers.addAll(validTopPlayers);
+                    }
+                });
 
-                        synchronized (topPlayers) {
-                            topPlayers.clear();
-                            topPlayers.addAll(validTopPlayers);
-                        }
-                    });
-                } else {
-                    // No LuckPerms, just get the top players without permission filtering
-                    Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT);
-
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        List<DBUser> validTopPlayers = dbTopPlayers.keySet().stream()
-                                .map(this::getUserFromUUID)
-                                .filter(Objects::nonNull)
-                                .limit(TOP_PLAYERS_LIMIT)
-                                .toList();
-
-                        synchronized (topPlayers) {
-                            topPlayers.clear();
-                            topPlayers.addAll(validTopPlayers);
-                        }
-                    });
-                }
 
             } catch (InterruptedException | ExecutionException e) {
                 plugin.getLogger().severe("Error updating top players: " + e.getMessage());
@@ -133,15 +113,32 @@ public class DBUsersManager {
         });
     }
 
+    /**
+     * Updates the cached top players list when a player joins the server.
+     * This method maintains a synchronized cache of top players for performance optimization.
+     *
+     * @param onlineUser The online user who just joined the server
+     */
     public void updateCachedTopPlayers(OnlineUser onlineUser) {
+
+        // Skip hidden players!!
+        if(playersHiddenFromLeaderBoard.contains(onlineUser.getNickname()))
+            return;
+
+        // Synchronize access to prevent concurrent modification of the topPlayers list
         synchronized (topPlayers) {
+            // If the cache isn't full and the player isn't already in the list, add them
             if (topPlayers.size() < TOP_PLAYERS_LIMIT &&
                     topPlayers.stream().noneMatch(player -> player.getUuid().equals(onlineUser.getUuid()))) {
+                // Add the player to the cached top players list using fresh database data
                 topPlayers.add(getUserFromUUID(onlineUser.getUuid()));
             }
 
+            // Update existing player data in the cache if they're already present
             for (int i = 0; i < topPlayers.size(); i++) {
                 if (topPlayers.get(i).getUuid().equals(onlineUser.getUuid())) {
+                    // Replace the cached entry with fresh data from database
+                    // This ensures playtime and other stats are up-to-date
                     topPlayers.set(i, getUserFromUUID(onlineUser.getUuid()));
                     break;
                 }
@@ -191,11 +188,28 @@ public class DBUsersManager {
                 .collect(Collectors.toList());
     }
 
+    public List<String> getPlayersHiddenFromLeaderBoard(){
+        return new ArrayList<>(playersHiddenFromLeaderBoard);
+    }
+
+    public void hidePlayerFromLeaderBoard(String nickname){
+        playersHiddenFromLeaderBoard.add(nickname);
+        plugin.getConfiguration().set("placeholders.playtime-leaderboard-blacklist", playersHiddenFromLeaderBoard);
+    }
+
+    public void unhidePlayerFromLeaderBoard(String nickname){
+        playersHiddenFromLeaderBoard.remove(nickname);
+        plugin.getConfiguration().set("placeholders.playtime-leaderboard-blacklist", playersHiddenFromLeaderBoard);
+    }
+
     public void removeUserFromCache(String uuid) {
         userCache.remove(uuid);
     }
 
-    public void clearCache() {
+    public void clearCaches() {
         userCache.clear();
+        commandsConfiguration.clearCache();
+        configuration.clearCache();
+        guIsConfiguration.clearCache();
     }
 }

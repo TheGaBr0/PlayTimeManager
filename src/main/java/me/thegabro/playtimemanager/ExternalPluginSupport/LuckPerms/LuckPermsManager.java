@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.ExternalPluginSupport;
+package me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms;
 
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
@@ -10,7 +10,6 @@ import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
 import net.luckperms.api.node.types.InheritanceNode;
 
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -25,8 +24,13 @@ public class LuckPermsManager {
 
     public static LuckPermsManager getInstance(PlayTimeManager plugin) {
         if (instance == null) {
-            luckPermsApi = LuckPermsProvider.get();
-            instance = new LuckPermsManager(plugin);
+            try {
+                luckPermsApi = LuckPermsProvider.get();
+                instance = new LuckPermsManager(plugin);
+            } catch (Exception e) {
+                plugin.getLogger().severe("Failed to initialize LuckPerms integration: " + e.getMessage());
+                throw e;
+            }
         }
         return instance;
     }
@@ -41,8 +45,12 @@ public class LuckPermsManager {
                     .thenApplyAsync(user -> {
                         String prefix = user.getCachedData().getMetaData().getPrefix();
                         return prefix != null ? prefix : "";
-                    }).exceptionally(throwable -> "");
+                    }).exceptionally(throwable -> {
+                        plugin.getLogger().warning("Failed to get prefix for UUID " + uuid + ": " + throwable.getMessage());
+                        return "";
+                    });
         } catch (Exception e) {
+            plugin.getLogger().warning("Failed to get prefix for UUID " + uuid + ": " + e.getMessage());
             return CompletableFuture.completedFuture("");
         }
     }
@@ -51,6 +59,7 @@ public class LuckPermsManager {
         try {
             User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));
             if (user == null) {
+                plugin.getLogger().warning("User not found for UUID: " + uuid);
                 return;
             }
 
@@ -66,22 +75,33 @@ public class LuckPermsManager {
     }
 
     private void assignGroup(User user, String groupName) {
-        Group group = luckPermsApi.getGroupManager().getGroup(groupName);
-        if (group == null) {
-            return;
-        }
+        try {
+            Group group = luckPermsApi.getGroupManager().getGroup(groupName);
+            if (group == null) {
+                plugin.getLogger().warning("Group not found: " + groupName);
+                return;
+            }
 
-        InheritanceNode node = InheritanceNode.builder(group).value(true).build();
-        user.data().add(node);
-        luckPermsApi.getUserManager().saveUser(user);
+            InheritanceNode node = InheritanceNode.builder(group).value(true).build();
+            user.data().add(node);
+            luckPermsApi.getUserManager().saveUser(user);
+            plugin.getLogger().info("Assigned group " + groupName + " to user " + user.getUsername());
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to assign group " + groupName + " to user " + user.getUsername() + ": " + e.getMessage());
+        }
     }
 
     private void assignDirectPermission(User user, String permission) {
-        Node permissionNode = Node.builder(permission)
-                .value(true)
-                .build();
-        user.data().add(permissionNode);
-        luckPermsApi.getUserManager().saveUser(user);
+        try {
+            Node permissionNode = Node.builder(permission)
+                    .value(true)
+                    .build();
+            user.data().add(permissionNode);
+            luckPermsApi.getUserManager().saveUser(user);
+            plugin.getLogger().info("Assigned permission " + permission + " to user " + user.getUsername());
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to assign permission " + permission + " to user " + user.getUsername() + ": " + e.getMessage());
+        }
     }
 
     public void assignGoalPermissions(String uuid, Goal goal) {
@@ -105,51 +125,37 @@ public class LuckPermsManager {
     }
 
     public boolean hasPermission(String uuid, String permission) {
-        User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));
-        if (user == null) {
+        try {
+            User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));
+            if (user == null) {
+                return false;
+            }
+            return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to check permission " + permission + " for UUID " + uuid + ": " + e.getMessage());
             return false;
         }
-        return user.getCachedData().getPermissionData().checkPermission(permission).asBoolean();
     }
 
     public boolean isInGroup(String uuid, String groupName) {
-        User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));
-        if (user == null) {
+        try {
+            User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));
+            if (user == null) {
+                return false;
+            }
+            return user.getCachedData().getPermissionData().checkPermission("group." + groupName).asBoolean();
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to check group " + groupName + " for UUID " + uuid + ": " + e.getMessage());
             return false;
         }
-        return user.getCachedData().getPermissionData().checkPermission("group." + groupName).asBoolean();
     }
 
     public boolean groupExists(String groupName) {
         try {
             return luckPermsApi.getGroupManager().getGroup(groupName) != null;
         } catch (Exception e) {
+            plugin.getLogger().warning("Failed to check if group exists " + groupName + ": " + e.getMessage());
             return false;
         }
-    }
-
-    public int getPlayersWithPermissionCount(String permission) {
-        int count = 0;
-
-        try {
-            // Get all loaded users from LuckPerms
-            Set<User> loadedUsers = luckPermsApi.getUserManager().getLoadedUsers();
-
-            for (User user  : loadedUsers) {
-                if (user != null) {
-                    // Check if the user has the specified permission
-                    boolean hasPermission = user.getCachedData().getPermissionData()
-                            .checkPermission(permission).asBoolean();
-
-                    if (hasPermission) {
-                        count++;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            plugin.getLogger().severe("Failed to count players with permission " + permission + ": " + e.getMessage());
-        }
-
-        return count;
     }
 }

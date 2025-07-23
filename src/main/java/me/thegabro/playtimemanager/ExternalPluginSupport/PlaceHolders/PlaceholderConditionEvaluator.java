@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager;
+package me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders;
 
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.entity.Player;

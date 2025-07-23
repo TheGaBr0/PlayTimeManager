@@ -1,9 +1,13 @@
 package me.thegabro.playtimemanager;
 
+import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormat;
+import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+
+import java.util.Map;
 
 public class Utils {
     // Constants for tick conversions
@@ -12,7 +16,7 @@ public class Utils {
     private static final long TICKS_PER_HOUR = TICKS_PER_MINUTE * 60;
     private static final long TICKS_PER_DAY = TICKS_PER_HOUR * 24;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
-    
+
     public static Component parseColors(String input) {
         if (input == null || input.isEmpty()) {
             return Component.empty();
@@ -199,7 +203,13 @@ public class Utils {
         return timeToTicks;
     }
 
-    public static String ticksToFormattedPlaytime(long ticks) {
+
+
+    public static String ticksToFormattedPlaytime(long ticks){
+        return ticksToFormattedPlaytime(ticks, PlaytimeFormatsConfiguration.getInstance().getFormat("default"));
+    }
+
+    public static String ticksToFormattedPlaytime(long ticks, PlaytimeFormat format) {
 
         boolean isNegative = ticks < 0;
         ticks = Math.abs(ticks);
@@ -224,29 +234,64 @@ public class Utils {
         long minutes = seconds / SECONDS_PER_MINUTE;
         seconds %= SECONDS_PER_MINUTE;
 
-        StringBuilder result = new StringBuilder();
+        // Use the format's formatting string as template
+        String result = format.getFormatting();
 
+        // Replace time value placeholders and labels
         if (years > 0) {
-            result.append(years).append("y");
-        }
-        if (days > 0) {
-            if (!result.isEmpty()) result.append(", ");
-            result.append(days).append("d");
-        }
-        if (hours > 0) {
-            if (!result.isEmpty()) result.append(", ");
-            result.append(hours).append("h");
-        }
-        if (minutes > 0) {
-            if (!result.isEmpty()) result.append(", ");
-            result.append(minutes).append("m");
-        }
-        if (seconds > 0 || result.isEmpty()) {
-            if (!result.isEmpty()) result.append(", ");
-            result.append(seconds).append("s");
+            result = result.replace("%y%", String.valueOf(years));
+            result = result.replace("{years}", format.getYearsLabel((int) years));
+        } else {
+            // Remove years section if zero - match pattern like "%y%{years}, " or "%y%{years}"
+            result = result.replaceAll("%y%\\{years\\}(?:,\\s*)?", "");
         }
 
-        return isNegative ? "-" + result.toString() : result.toString();
+        if (days > 0) {
+            result = result.replace("%d%", String.valueOf(days));
+            result = result.replace("{days}", format.getDaysLabel((int) days));
+        } else {
+            // Remove days section if zero
+            result = result.replaceAll("%d%\\{days\\}(?:,\\s*)?", "");
+        }
+
+        if (hours > 0) {
+            result = result.replace("%h%", String.valueOf(hours));
+            result = result.replace("{hours}", format.getHoursLabel((int) hours));
+        } else {
+            // Remove hours section if zero
+            result = result.replaceAll("%h%\\{hours\\}(?:,\\s*)?", "");
+        }
+
+        if (minutes > 0) {
+            result = result.replace("%m%", String.valueOf(minutes));
+            result = result.replace("{minutes}", format.getMinutesLabel((int) minutes));
+        } else {
+            // Remove minutes section if zero
+            result = result.replaceAll("%m%\\{minutes\\}(?:,\\s*)?", "");
+        }
+
+        // Always show seconds if it's > 0, OR if everything else is 0 (including when ticks was originally 0)
+        if (seconds > 0 || (years == 0 && days == 0 && hours == 0 && minutes == 0)) {
+            result = result.replace("%s%", String.valueOf(seconds));
+            result = result.replace("{seconds}", format.getSecondsLabel((int) seconds));
+        } else {
+            // Remove seconds section if zero and other units exist
+            result = result.replaceAll("%s%\\{seconds\\}(?:,\\s*)?", "");
+        }
+
+        // Special case: if everything is 0, ensure we show "0{seconds}" with plural form
+        if (years == 0 && days == 0 && hours == 0 && minutes == 0 && seconds == 0) {
+            result = "0" + format.getSecondsLabel(0); // Use plural form for 0
+        }
+
+        // Clean up any remaining placeholders and extra commas/spaces
+        result = result.replaceAll("%[ydhms]%", "");
+        result = result.replaceAll("\\{\\w+\\}", "");
+        result = result.replaceAll(",\\s*,", ",");
+        result = result.replaceAll("^,\\s*|,\\s*$", "");
+        result = result.trim();
+
+        return isNegative ? "-" + result : result;
     }
 
     public static long ticksToTimeUnit(long ticks, String unit) {
@@ -264,5 +309,52 @@ public class Utils {
             case "s" -> seconds;
             default -> 0;
         };
+    }
+
+
+    public static String placeholdersReplacer(String message, Map<String, String> combinations){
+
+        //Apply %PLAYTIME% special placeholder with custom format
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("%PLAYTIME(?::(\\w+))?%");
+        java.util.regex.Matcher matcher = pattern.matcher(message);
+        StringBuffer result = new StringBuffer();
+
+        while (matcher.find()) {
+            String formatName = matcher.group(1);
+            // Get the PlaytimeFormat for this placeholder, or default if not found
+            PlaytimeFormatsConfiguration config = PlaytimeFormatsConfiguration.getInstance();
+            String actualFormatName = (formatName == null) ? "default" : formatName;
+            PlaytimeFormat format = config.getFormat(actualFormatName);
+
+            format = (format == null) ? config.getFormat("default") : format;
+
+            // Check if we have a playtime value in the combinations map
+            String playtimeValue = null;
+            if (combinations.containsKey("%PLAYTIME%")) {
+                // If we have ticks, convert them using the format
+                try {
+                    long ticks = Long.parseLong(combinations.get("%PLAYTIME%"));
+                    playtimeValue = ticksToFormattedPlaytime(ticks, format);
+                } catch (NumberFormatException e) {
+                    playtimeValue = "0s"; // Default fallback
+                }
+            }
+
+            // Replace the placeholder with the formatted playtime
+            matcher.appendReplacement(result, java.util.regex.Matcher.quoteReplacement(playtimeValue));
+        }
+
+        matcher.appendTail(result);
+        message = result.toString();
+
+        // Apply passed placeholders
+        for (Map.Entry<String, String> entry : combinations.entrySet()) {
+            message = message.replace(entry.getKey(), entry.getValue());
+        }
+
+        // Normalize multiple spaces to single space
+        message = message.replaceAll("\\s+", " ");
+
+        return message;
     }
 }

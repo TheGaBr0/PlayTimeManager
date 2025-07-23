@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
-import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
@@ -96,7 +96,7 @@ public class RewardExecutor {
             try {
                 sound = (Sound) Sound.class.getField(soundName).get(null);
             } catch (NoSuchFieldException | IllegalAccessException e) {
-                if (plugin.getConfiguration().getGoalsCheckVerbose()) {
+                if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
                     plugin.getLogger().info("Could not find sound directly, attempting fallback: " + e.getMessage());
                 }
             }

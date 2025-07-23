@@ -1,10 +1,11 @@
 package me.thegabro.playtimemanager;
 
+import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.GUIs.Goals.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
-import me.thegabro.playtimemanager.Translations.CommandsConfiguration;
-import me.thegabro.playtimemanager.Translations.GUIsConfiguration;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Updates.UpdateManager;
 import me.thegabro.playtimemanager.Commands.*;
 import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeCommandManager;
@@ -16,26 +17,19 @@ import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.SQLiteDB.LogFilter;
 import me.thegabro.playtimemanager.SQLiteDB.SQLite;
 import me.thegabro.playtimemanager.Events.QuitEventManager;
-import me.thegabro.playtimemanager.ExternalPluginSupport.PlayTimePlaceHolders;
+import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlayTimePlaceHolders;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPermsManager;
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 
-import java.io.File;
 import java.util.Objects;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class PlayTimeManager extends JavaPlugin{
@@ -44,15 +38,16 @@ public class PlayTimeManager extends JavaPlugin{
     private Configuration config;
     private CommandsConfiguration commandsConfig;
     private GUIsConfiguration guiConfig;
+    private PlaytimeFormatsConfiguration playtimeFormatsConfiguration;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
-    private final String CURRENTCONFIGVERSION = "3.7";
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private JoinStreaksManager joinStreaksManager;
-    private final String serverVersion = Bukkit.getBukkitVersion().split("-")[0];
     private SessionManager sessionManager;
 
+    public final String CURRENT_CONFIG_VERSION = "3.8";
+    public final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
     @Override
     public void onEnable() {
 
@@ -72,24 +67,30 @@ public class PlayTimeManager extends JavaPlugin{
 
         UpdateManager updateManager = UpdateManager.getInstance(this);
 
-        // Check config version and perform updates if needed
-        File configFile = new File(getDataFolder(), "config.yml");
-        if (configFile.exists()) {
-            FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-            if (!config.getString("config-version").equals(CURRENTCONFIGVERSION)) {
-                updateManager.performVersionUpdate(config.getString("config-version"), CURRENTCONFIGVERSION);
-            }
-        }
+        config = Configuration.getInstance(this.getDataFolder(), "config", true, true);
 
-        config = new Configuration(this.getDataFolder(), "config", true, true);
+        // Check config version and perform updates if needed
+        if (!config.getString("config-version").equals(CURRENT_CONFIG_VERSION)) {
+            updateManager.performVersionUpdate(config.getString("config-version"), CURRENT_CONFIG_VERSION);
+        }
 
         updateManager.initialize();
 
-        guiConfig = new GUIsConfiguration(this);
-        commandsConfig = new CommandsConfiguration(this);
+        // Initialize singleton configurations
+
+        playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
+        playtimeFormatsConfiguration.initialize(this);
+
+        guiConfig = GUIsConfiguration.getInstance();
+        guiConfig.initialize(this);
+
+        commandsConfig = CommandsConfiguration.getInstance();
+        commandsConfig.initialize(this);
 
         GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(this);
+
+        permissionsManagerConfigured = checkPermissionsPlugin();
 
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
@@ -97,8 +98,6 @@ public class PlayTimeManager extends JavaPlugin{
         joinStreaksManager = JoinStreaksManager.getInstance();
         joinStreaksManager.initialize(this);
         joinStreaksManager.onServerReload();
-
-        permissionsManagerConfigured = checkPermissionsPlugin();
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlayTimePlaceHolders().register();
@@ -134,16 +133,14 @@ public class PlayTimeManager extends JavaPlugin{
         });
         Objects.requireNonNull(getCommand("claimrewards")).setExecutor(new ClaimRewards() {
         });
-
+        Objects.requireNonNull(getCommand("playtimeattribute")).setExecutor(new PlayTimeAttributeCommand() {
+        });
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();
 
         sessionManager = new SessionManager();
 
-
         getLogger().info("has been enabled!");
-
-
     }
 
     @Override
@@ -152,13 +149,14 @@ public class PlayTimeManager extends JavaPlugin{
         for(Player p : Bukkit.getOnlinePlayers()){
             onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
         }
+
         db.close();
         HandlerList.unregisterAll(this);
-        dbUsersManager.clearCache();
+        dbUsersManager.clearCaches();
         joinStreaksManager.cleanUp();
+
         getLogger().info("has been disabled!");
     }
-
 
     public static PlayTimeManager getInstance() {
         return instance;
@@ -182,23 +180,9 @@ public class PlayTimeManager extends JavaPlugin{
 
     public SessionManager getSessionManager() { return sessionManager; }
 
-    public GUIsConfiguration getGUIsConfig() {
-        return guiConfig;
-    }
-
-    public CommandsConfiguration getCommandsConfig() {
-        return commandsConfig;
-    }
-
-    public void setGlobalLogLevel(Level level) {
-        LogManager.getLogManager().getLogger("").setLevel(level);
-        for (Handler h : Logger.getLogger("").getHandlers()) {
-            h.setLevel(level);
-        }
-    }
 
     private boolean checkPermissionsPlugin() {
-        String configuredPlugin = config.getPermissionsManagerPlugin().toLowerCase();
+        String configuredPlugin = config.getString("permissions-manager-plugin").toLowerCase();
 
         if ("luckperms".equals(configuredPlugin)) {
             Plugin luckPerms = Bukkit.getPluginManager().getPlugin("LuckPerms");
@@ -221,5 +205,4 @@ public class PlayTimeManager extends JavaPlugin{
         }
         return false;
     }
-
 }

@@ -10,6 +10,19 @@
 # where they're defined. All available placeholders are shown in this configuration file.
 
 #=================================================================
+#                         PLAYTIME
+#=================================================================
+
+#This messaged is showed each time /playtime is executed
+#Available placeholders: %PLAYTIME%, %PLAYER_NAME%, %PREFIX%
+playtime-self-message: "[&6PlayTime&eManager&f]&7 Your playtime is &6%PLAYTIME%"
+
+#This messaged is showed each time /playtime <username> is executed
+#Available placeholders: %PLAYTIME%, %PLAYER_NAME%, %PREFIX%
+playtime-others-message: "[&6PlayTime&eManager&f]&7 The playtime of &e%PLAYER_NAME%&7 is &6%PLAYTIME%"
+
+
+#=================================================================
 #                         PLAYTIMETOP
 #=================================================================
 

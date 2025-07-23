@@ -57,7 +57,7 @@ public class JoinStreaksManager {
 
         cycleScheduler.initialize();
 
-        if (plugin.getConfiguration().getRewardsCheckScheduleActivation()) {
+        if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
             cycleScheduler.startIntervalTask();
         }
     }
@@ -71,7 +71,7 @@ public class JoinStreaksManager {
             cycleScheduler.markPlayerJoinedInCurrentCycle(user.getUuid());
 
             // Only increment relative streak and check rewards if schedule is active AND rewards exist
-            if (plugin.getConfiguration().getRewardsCheckScheduleActivation() && !rewardRegistry.isEmpty()) {
+            if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation") && !rewardRegistry.isEmpty()) {
                 streakTracker.incrementRelativeStreak(user);
                 rewardProcessor.processEligibleRewards(user, player);
             }
@@ -79,15 +79,15 @@ public class JoinStreaksManager {
     }
 
     public void resetMissingPlayerStreaks() {
-        if (plugin.getConfiguration().getJoinStreakResetActivation()) {
+        if (plugin.getConfiguration().getBoolean("reset-joinstreak.enabled")) {
             Set<String> playersWithStreaks = db.getPlayersWithActiveStreaks();
             int playersReset = streakTracker.resetInactivePlayerStreaks(
                     playersWithStreaks,
                     cycleScheduler.getIntervalSeconds(),
-                    plugin.getConfiguration().getJoinStreakResetMissesAllowed()
+                    plugin.getConfiguration().getInt("reset-joinstreak.missed-joins")
             );
 
-            if (plugin.getConfiguration().getStreakCheckVerbose()) {
+            if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
                 plugin.getLogger().info(String.format("Streak reset for %d players", playersReset));
             }
         }
@@ -102,7 +102,7 @@ public class JoinStreaksManager {
         cycleScheduler.markPlayerJoinedInCurrentCycle(onlineUser.getUuid());
 
         // Only increment relative streak and check rewards if schedule is active AND rewards exist
-        if (plugin.getConfiguration().getRewardsCheckScheduleActivation() && !rewardRegistry.isEmpty()) {
+        if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation") && !rewardRegistry.isEmpty()) {
             streakTracker.incrementRelativeStreak(onlineUser);
             Player player = onlineUser.getPlayer();
             if (player != null) {
@@ -112,14 +112,14 @@ public class JoinStreaksManager {
     }
 
     public boolean toggleJoinStreakCheckSchedule(CommandSender sender) {
-        boolean currentState = plugin.getConfiguration().getRewardsCheckScheduleActivation();
-        plugin.getConfiguration().setRewardsCheckScheduleActivation(!currentState);
+        boolean currentState = plugin.getConfiguration().getBoolean("rewards-check-schedule-activation");
+        plugin.getConfiguration().set("rewards-check-schedule-activation", !currentState);
 
-        if (plugin.getConfiguration().getRewardsCheckScheduleActivation()) {
+        if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
             if (rewardRegistry.isEmpty()) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() +
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                         " No active rewards found. Join streak check schedule not started."));
-                plugin.getConfiguration().setRewardsCheckScheduleActivation(false);
+                plugin.getConfiguration().set("rewards-check-schedule-activation", false);
                 return false;
             }
 

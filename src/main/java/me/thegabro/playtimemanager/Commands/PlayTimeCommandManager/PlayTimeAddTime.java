@@ -17,13 +17,13 @@ public class PlayTimeAddTime {
     public void execute(CommandSender sender, String[] args) {
 
         if (args.length < 3) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Too few arguments!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Too few arguments!"));
             return;
         }
 
         long timeToTicks = Utils.formattedPlaytimeToTicks(args[2]);
         if (timeToTicks == -1L) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Invalid time format: " + args[2]));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Invalid time format: " + args[2]));
             return;
         }
 
@@ -32,7 +32,7 @@ public class PlayTimeAddTime {
 
         long newArtificialPlaytime = user.getArtificialPlaytime() + timeToTicks;
         if (newArtificialPlaytime < 0) { // Overflow check
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " Error: Time value too large!"));
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Error: Time value too large!"));
             return;
         }
 
@@ -40,7 +40,7 @@ public class PlayTimeAddTime {
         user.setArtificialPlaytime(newArtificialPlaytime);
         String formattedNewPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime + timeToTicks);
 
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getPluginPrefix() + " PlayTime of &e" + args[0] +
+        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " PlayTime of &e" + args[0] +
                 "&7 has been updated from &6" + formattedOldPlaytime + "&7 to &6" + formattedNewPlaytime + "!"));
 
         dbUsersManager.updateTopPlayersFromDB();

@@ -359,12 +359,8 @@ public class Configuration {
             reloadConfig();
             configCache.clear();
 
-            plugin.getLogger().info(String.valueOf(config.contains("placeholders.playtime-leaderboard-blacklist")));
-
             // Step 4: Restore user values (only keys that exist in new config)
             restoreFromBackup(backup);
-
-            plugin.getLogger().info(String.valueOf(config.contains("placeholders.playtime-leaderboard-blacklist")));
 
             // Step 5: Handle removed keys if requested
             if (restoreRemovedKeys) {

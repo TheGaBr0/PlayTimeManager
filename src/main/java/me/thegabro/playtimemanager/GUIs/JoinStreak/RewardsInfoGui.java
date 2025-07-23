@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.GUIs.JoinStreak;
 
+import me.thegabro.playtimemanager.GUIs.InventoryListener;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -58,7 +59,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     }
     private FilterType currentFilter = FilterType.AVAILABLE;
     protected static boolean isListenerRegistered = false;
-    protected static final Map<UUID, RewardsInfoGui> activeGuis = new HashMap<>();
+    public static final Map<UUID, RewardsInfoGui> activeGuis = new HashMap<>();
     private final String sessionToken;
 
     public RewardsInfoGui(Player sender, DBUser subject, String sessionToken) {

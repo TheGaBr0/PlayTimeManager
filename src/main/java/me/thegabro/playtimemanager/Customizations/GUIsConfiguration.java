@@ -163,19 +163,16 @@ public class GUIsConfiguration {
     public Map<String, Object> createConfigBackup() {
         Map<String, Object> backup = new HashMap<>();
 
-        // Use cache if available, otherwise read from config
-        if (!configCache.isEmpty()) {
-            backup.putAll(configCache);
-        } else {
-            // Read all keys from current config
-            Set<String> keys = config.getKeys(true);
-            for (String key : keys) {
-                Object value = config.get(key);
-                if (value != null) {
-                    backup.put(key, value);
-                }
+        // Read all keys from current config
+        Set<String> keys = config.getKeys(true);
+        for (String key : keys) {
+            Object value = config.get(key);
+            if (value != null) {
+                backup.put(key, value);
             }
         }
+
+        plugin.getLogger().info(String.valueOf(backup));
 
         return backup;
     }
@@ -243,7 +240,12 @@ public class GUIsConfiguration {
                 file.delete();
             }
 
-            // Step 3: Reload the new config
+            // Step 3: Save the new resource file
+            plugin.saveResource(CONFIG_PATH + CONFIG_FILENAME, true);
+
+            // Step 4: Clear cache and reload the new config
+            configCache.clear();
+            reloadFile();
             reloadConfig();
 
             // Step 4: Restore user values (only if we have a backup)

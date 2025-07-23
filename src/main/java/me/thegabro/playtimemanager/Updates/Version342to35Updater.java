@@ -89,7 +89,7 @@ public class Version342to35Updater {
 
         String playtimeSelfMessage = Configuration.getInstance().getConfig().getString("playtime-self-message");
         String playtimeOthersMessage = Configuration.getInstance().getConfig().getString("playtime-others-message");
-        Configuration.getInstance().updateConfig(false);
+        Configuration.getInstance().updateConfig(true);
         recreateCommandsConfigurationFile(playtimeSelfMessage, playtimeOthersMessage);
     }
 

@@ -4,15 +4,23 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
+import me.thegabro.playtimemanager.GUIs.Stats.PlayerStatsGui;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Player;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class PlayTimeStats {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
+    private static final Map<UUID, Long> lastGuiOpenTime = new HashMap<>();
+    private static final long GUI_OPEN_COOLDOWN = 1000;
 
     public PlayTimeStats(CommandSender sender, String[] args) {
 
@@ -23,6 +31,21 @@ public class PlayTimeStats {
             return;
         }
 
+        // Check if sender is console or player
+        if (sender instanceof ConsoleCommandSender) {
+            // Send text-based stats to console
+            sendTextStats(sender, user);
+        } else if (sender instanceof Player) {
+            // Open GUI for player
+            Player player = (Player) sender;
+            openStatsGui(player, user);
+        } else {
+            // Fallback to text stats for other command sender types
+            sendTextStats(sender, user);
+        }
+    }
+
+    private void sendTextStats(CommandSender sender, DBUser user) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
 
         // Get all necessary data
@@ -78,5 +101,27 @@ public class PlayTimeStats {
 
         // Footer
         sender.sendMessage(Utils.parseColors("&8&l============================================"));
+    }
+
+    private void openStatsGui(Player player, DBUser user) {
+        // Check for rapid GUI opening (potential exploit)
+        UUID playerId = player.getUniqueId();
+        long currentTime = System.currentTimeMillis();
+        if (lastGuiOpenTime.containsKey(playerId)) {
+            long lastTime = lastGuiOpenTime.get(playerId);
+            if (currentTime - lastTime < GUI_OPEN_COOLDOWN) {
+                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &cPlease wait before using this command again."));
+                return;
+            }
+        }
+        lastGuiOpenTime.put(playerId, currentTime);
+
+        // Create a session token for this GUI interaction
+        String sessionToken = java.util.UUID.randomUUID().toString();
+        plugin.getSessionManager().createSession(player.getUniqueId(), sessionToken);
+
+        // Create and open the GUI with session validation
+        PlayerStatsGui gui = new PlayerStatsGui(player, user, sessionToken);
+        gui.openInventory();
     }
 }

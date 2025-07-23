@@ -84,3 +84,65 @@ rewards-gui:
     reward-not-found: "&cCouldn't find the reward details!"
     error-processing: "&cAn error occurred while processing your reward."
     claimed-rewards: "&aClaimed {count} rewards!"
+
+#=================================================================
+#                      PLAYER STATS GUI
+#=================================================================
+
+player-stats-gui:
+  gui:
+    title: "&6&lPlayer Statistics"
+    border-item-name: " "
+
+  playtime-info:
+    name: "&e&lPlaytime Information"
+    lore:
+      total-playtime: "&7Total Playtime: &e{total_playtime}"
+      real-playtime: "&7- Real Playtime: &e{real_playtime}"
+      artificial-playtime: "&7- Artificial Playtime: &e{artificial_playtime}"
+
+  first-join-info:
+    name: "&a&lFirst Join"
+    lore:
+      date: "&7Date: &e{date}"
+      account-age: "&7Account Age: &e{age}"
+      no-data: "&7No first join data available"
+
+  last-seen-info:
+    name: "&c&lLast Seen"
+    lore:
+      date: "&7Date: &e{date}"
+      time-elapsed: "&7Time Elapsed: &e{elapsed}"
+      currently-online: "&7Currently online"
+
+  join-streak-info:
+    name: "&6&lJoin Streak"
+    lore:
+      relative-streak: "&7Current Cycle: &e{relative_streak}"
+      absolute-streak: "&7Total Streak: &e{absolute_streak}"
+
+  goals-info:
+    name: "&d&lCompleted Goals"
+    lore:
+      no-goals: "&7No goals completed yet"
+      goals-count: "&7Total Goals: &e{count}"
+      separator: "&8&m------------------"
+      goal-item: "&7- &e{goal}"
+      more-goals: "&7... and &e{remaining} &7more"
+
+  account-overview:
+    name: "&b&lAccount Overview"
+    lore:
+      player-name: "&7Player: &e{player}"
+      uuid: "&7UUID: &f{uuid}"
+      status: "&7Status: {status}"
+      online: "&a&lONLINE"
+      offline: "&c&lOFFLINE"
+
+  refresh-button:
+    name: "&a&lRefresh Stats"
+    lore: "&7Click to refresh player statistics"
+
+  messages:
+    player-not-found: "&cPlayer data could not be found!"
+    stats-refreshed: "&aPlayer statistics have been refreshed!"

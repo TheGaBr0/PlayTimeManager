@@ -1,5 +1,6 @@
-package me.thegabro.playtimemanager.GUIs.JoinStreak;
+package me.thegabro.playtimemanager.GUIs;
 
+import me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;

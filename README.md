@@ -91,7 +91,7 @@ Ready to get started? The comprehensive [PlayTimeManager Wiki](https://github.co
 
 
 ## To do
-- Anti-afk system?
 - Add possibility to give custom items upon goal completion
 - Convert stats command into a customizable GUI
-- Add customizable format for playtime display 
+  
+<br>...and your suggestions [here](https://github.com/TheGaBr0/PlayTimeManager/issues) :)

@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.GUIs;
+package me.thegabro.playtimemanager.GUIs.Misc;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;

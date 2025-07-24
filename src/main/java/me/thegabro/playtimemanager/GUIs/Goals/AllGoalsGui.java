@@ -1,16 +1,11 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
 import me.thegabro.playtimemanager.Events.ChatEventManager;
-import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
-import me.thegabro.playtimemanager.GUIs.JoinStreak.JoinStreakRewardSettingsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;

@@ -4,7 +4,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
-import me.thegabro.playtimemanager.GUIs.Stats.PlayerStatsGui;
+import me.thegabro.playtimemanager.GUIs.Player.PlayerStatsGui;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;

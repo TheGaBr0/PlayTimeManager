@@ -1,5 +1,6 @@
-package me.thegabro.playtimemanager.GUIs.JoinStreak;
+package me.thegabro.playtimemanager.GUIs.Player;
 
+import me.thegabro.playtimemanager.GUIs.BaseCustomGUI;
 import me.thegabro.playtimemanager.GUIs.InventoryListener;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUser;
@@ -15,11 +16,9 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -29,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class RewardsInfoGui implements InventoryHolder, Listener {
+public class RewardsInfoGui extends BaseCustomGUI {
 
     private Inventory inv;
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
@@ -37,7 +36,6 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final GUIsConfiguration config;
-    private Player sender;
     private boolean isOwner;
     private DBUser subject;
     private int currentPage = 0;
@@ -58,13 +56,9 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         LOCKED
     }
     private FilterType currentFilter = FilterType.AVAILABLE;
-    protected static boolean isListenerRegistered = false;
-    public static final Map<UUID, RewardsInfoGui> activeGuis = new HashMap<>();
-    private final String sessionToken;
 
     public RewardsInfoGui(Player sender, DBUser subject, String sessionToken) {
-        this.sender = sender;
-        this.sessionToken = sessionToken;
+        super(sender, sessionToken);
         this.config = GUIsConfiguration.getInstance();
         this.subject = subject;
         this.isOwner = sender.getName().equalsIgnoreCase(subject.getNickname());
@@ -74,11 +68,6 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         else
             inv = Bukkit.createInventory(this, 54, Utils.parseColors(subject.getNickname()+"'s rewards"));
 
-        // Register listeners only once
-        if (!isListenerRegistered) {
-            Bukkit.getPluginManager().registerEvents(new InventoryListener(), PlayTimeManager.getInstance());
-            isListenerRegistered = true;
-        }
     }
 
     public void openInventory() {
@@ -88,7 +77,7 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
         initializeItems();
 
         // Track active GUIs
-        activeGuis.put(sender.getUniqueId(), this);
+        InventoryListener.getInstance().registerGUI(sender.getUniqueId(), this);
 
         sender.openInventory(inv);
     }
@@ -665,9 +654,8 @@ public class RewardsInfoGui implements InventoryHolder, Listener {
     }
 
     private void claimReward(String instance) {
-        if (!plugin.getSessionManager().validateSession(sender.getUniqueId(), sessionToken)) {
-            plugin.getLogger().warning("Player " + sender.getName() + " attempted GUI action with invalid session token!");
-            sender.closeInventory();
+        if (!validateSession()) {
+            handleInvalidSession();
             return;
         }
 

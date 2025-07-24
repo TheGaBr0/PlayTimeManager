@@ -1,7 +1,7 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
-import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
+import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlaceholderConditionEvaluator;
 import me.thegabro.playtimemanager.PlayTimeManager;

@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
-import me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui;
+import me.thegabro.playtimemanager.GUIs.Player.RewardsInfoGui;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;

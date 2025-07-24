@@ -1,5 +1,6 @@
-package me.thegabro.playtimemanager.GUIs.Stats;
+package me.thegabro.playtimemanager.GUIs.Player;
 
+import me.thegabro.playtimemanager.GUIs.BaseCustomGUI;
 import me.thegabro.playtimemanager.GUIs.InventoryListener;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -12,11 +13,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
@@ -27,17 +26,15 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-public class PlayerStatsGui implements InventoryHolder, Listener {
+public class PlayerStatsGui extends BaseCustomGUI {
 
     private Inventory inv;
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final GUIsConfiguration config;
-    private Player sender;
     private boolean isOwner;
     private DBUser subject;
-    private final String sessionToken;
 
     // GUI Layout Constants
     private final int PLAYTIME_INFO_SLOT = 11;
@@ -48,12 +45,9 @@ public class PlayerStatsGui implements InventoryHolder, Listener {
     private final int ACCOUNT_OVERVIEW_SLOT = 33;
     private final int REFRESH_BUTTON_SLOT = 49;
 
-    protected static boolean isListenerRegistered = false;
-    protected static final Map<UUID, PlayerStatsGui> activeGuis = new HashMap<>();
 
     public PlayerStatsGui(Player sender, DBUser subject, String sessionToken) {
-        this.sender = sender;
-        this.sessionToken = sessionToken;
+        super(sender, sessionToken);
         this.config = GUIsConfiguration.getInstance();
         this.subject = subject;
         this.isOwner = sender.getName().equalsIgnoreCase(subject.getNickname());
@@ -63,18 +57,13 @@ public class PlayerStatsGui implements InventoryHolder, Listener {
         else
             inv = Bukkit.createInventory(this, 54, Utils.parseColors(subject.getNickname()+"'s Stats"));
 
-        // Register listeners only once
-        if (!isListenerRegistered) {
-            Bukkit.getPluginManager().registerEvents(new InventoryListener(), PlayTimeManager.getInstance());
-            isListenerRegistered = true;
-        }
     }
 
     public void openInventory() {
         initializeItems();
 
         // Track active GUIs
-        activeGuis.put(sender.getUniqueId(), this);
+        InventoryListener.getInstance().registerGUI(sender.getUniqueId(), this);
 
         sender.openInventory(inv);
     }
@@ -336,9 +325,8 @@ public class PlayerStatsGui implements InventoryHolder, Listener {
     }
 
     private void refreshStats() {
-        if (!plugin.getSessionManager().validateSession(sender.getUniqueId(), sessionToken)) {
-            plugin.getLogger().warning("Player " + sender.getName() + " attempted GUI action with invalid session token!");
-            sender.closeInventory();
+        if (!validateSession()) {
+            handleInvalidSession();
             return;
         }
 
@@ -361,8 +349,4 @@ public class PlayerStatsGui implements InventoryHolder, Listener {
         sender.playSound(sender.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
     }
 
-    // Static method to clean up when GUI is closed
-    public static void cleanup(UUID playerUuid) {
-        activeGuis.remove(playerUuid);
-    }
 }

@@ -22,6 +22,9 @@ public class QuitEventManager implements Listener {
                     ". Please report this issue to the plugin developer.");
             return;
         }
+        onlineUser.updatePlayTime();
+        onlineUser.updateLastSeen();
+
         onlineUsersManager.removeOnlineUser(onlineUser);
 
         // Remove the user from the cache to ensure fresh data on next access

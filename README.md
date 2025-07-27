@@ -41,7 +41,7 @@ Additionally, **player data is not strictly tied to the server’s statistics**,
 
 PlayTimeManager aims to provide a highly customizable experience, allowing you to tailor its features to match your server’s unique style. It supports **hex colors alongside legacy formatting and styles**, ensuring vibrant and personalized text displays. 
 
-Player-facing messages can be fully customized, with plans to expand customization options even further—your suggestions are always welcome! The plugin also includes **specific placeholders** for displaying formatted playtime, converting it into different time units, or simplifying it for easier readability. 
+Player-facing messages can be fully customized, with plans to expand customization options even further—your suggestions are always welcome! The plugin also includes **specific placeholders** for displaying formatted playtime, converting it into different time units, or simplifying it for easier readability. Playtime formatting can be **fully customized** allowing you to create personalized time display formats with **complete control** over how playtime appears throughout your server.
 
 Additionally, you can create a **customizable playtime leaderboard**, both in chat and through placeholders, with support for **LuckPerms prefixes**, making rankings even more dynamic and visually appealing.
 
@@ -91,7 +91,7 @@ Ready to get started? The comprehensive [PlayTimeManager Wiki](https://github.co
 
 
 ## To do
-- Anti-afk system?
 - Add possibility to give custom items upon goal completion
 - Convert stats command into a customizable GUI
-- Add customizable format for playtime display 
+  
+<br>...and your suggestions [here](https://github.com/TheGaBr0/PlayTimeManager/issues) :)

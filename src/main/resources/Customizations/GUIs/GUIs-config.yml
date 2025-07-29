@@ -18,7 +18,7 @@ rewards-gui:
     border-item-name: "&f[&6P.T.M.&f]&7"
 
   pagination:
-    page-indicator: "&e&lPage {current_page} of {total_pages}"
+    page-indicator: "&e&lPage %CURRENT_PAGE% of %TOTAL_PAGES%"
     next-page:
       name: "&a&lNext Page →"
       lore: "&7Click to view the next page"
@@ -68,22 +68,22 @@ rewards-gui:
         - "&cYou haven't reached this join streak yet"
 
     info-lore:
-      required-joins: "&7Required Joins: &e{required_joins}"
-      join-streak: "&7Your current join streak: {color}{current_streak}"
+      required-joins: "&7Required Joins: &e%REQUIRED_JOINS%"
+      join-streak: "&7Your current join streak: %JOIN_STREAK_COLOR%%CURRENT_STREAK%"
       join-streak-color:
         sufficient: "&a"
         insufficient: "&c"
       description-separator: ""
-      description: "&7{description}"
+      description: "&7%DESCRIPTION%"
       reward-description-separator: ""
-      reward-description: "&7{reward_description}"
+      reward-description: "&7%REWARD_DESCRIPTION%"
 
   messages:
     no-permission: "&cYou don't have permission to claim rewards!"
     not-available: "&cThis reward is not available to claim!"
     reward-not-found: "&cCouldn't find the reward details!"
     error-processing: "&cAn error occurred while processing your reward."
-    claimed-rewards: "&aClaimed {count} rewards!"
+    claimed-rewards: "&aClaimed %COUNT% rewards!"
 
 #=================================================================
 #                      PLAYER STATS GUI

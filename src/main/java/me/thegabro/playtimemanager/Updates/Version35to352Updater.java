@@ -2,11 +2,33 @@ package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import org.bukkit.configuration.ConfigurationSection;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Version35to352Updater {
 
     private PlayTimeManager plugin;
     private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
+
+    // Placeholder mapping from old format to new format
+    private static final Map<String, String> PLACEHOLDER_MAPPINGS = new HashMap<>();
+
+    static {
+        // Basic placeholder updates (curly braces to percent signs, uppercase)
+        PLACEHOLDER_MAPPINGS.put("{current_page}", "%CURRENT_PAGE%");
+        PLACEHOLDER_MAPPINGS.put("{total_pages}", "%TOTAL_PAGES%");
+        PLACEHOLDER_MAPPINGS.put("{required_joins}", "%REQUIRED_JOINS%");
+        PLACEHOLDER_MAPPINGS.put("{current_streak}", "%CURRENT_STREAK%");
+        PLACEHOLDER_MAPPINGS.put("{count}", "%COUNT%");
+        PLACEHOLDER_MAPPINGS.put("{reward_description}", "%REWARD_DESCRIPTION%");
+        PLACEHOLDER_MAPPINGS.put("{description}", "%DESCRIPTION%");
+
+        // Special case for color placeholder
+        PLACEHOLDER_MAPPINGS.put("{color}", "%JOIN_STREAK_COLOR%");
+    }
 
     public Version35to352Updater(PlayTimeManager plugin){
         this.plugin = plugin;
@@ -14,12 +36,93 @@ public class Version35to352Updater {
 
     public void performUpgrade() {
         recreateConfigFile();
+        updatePlaceholders();
     }
 
     public void recreateConfigFile(){
         guIsConfiguration.initialize(plugin);
         guIsConfiguration.updateConfig();
         plugin.getConfiguration().updateConfig(false);
+    }
+
+    /**
+     * Updates all placeholders in the configuration from old format to new format
+     */
+    private void updatePlaceholders() {
+        try {
+            // Create a backup before making changes
+            Map<String, Object> backup = guIsConfiguration.createConfigBackup();
+
+            // Process all configuration keys
+            for (String key : backup.keySet()) {
+                Object value = backup.get(key);
+
+                if (value instanceof String) {
+                    String stringValue = (String) value;
+                    String updatedValue = updatePlaceholdersInString(stringValue);
+
+                    // Only update if the value actually changed
+                    if (!stringValue.equals(updatedValue)) {
+                        guIsConfiguration.set(key, updatedValue);
+                    }
+
+                } else if (value instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<Object> listValue = (List<Object>) value;
+                    List<Object> updatedList = updatePlaceholdersInList(listValue);
+
+                    // Only update if the list actually changed
+                    if (!listValue.equals(updatedList)) {
+                        guIsConfiguration.set(key, updatedList);
+                    }
+                }
+            }
+
+            plugin.getLogger().info("Successfully updated placeholders to new format");
+
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to update placeholders: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Updates placeholders in a single string
+     */
+    private String updatePlaceholdersInString(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+
+        String result = input;
+
+        // Replace all mapped placeholders
+        for (Map.Entry<String, String> mapping : PLACEHOLDER_MAPPINGS.entrySet()) {
+            result = result.replace(mapping.getKey(), mapping.getValue());
+        }
+
+        return result;
+    }
+
+    /**
+     * Updates placeholders in a list (handles string lists)
+     */
+    private List<Object> updatePlaceholdersInList(List<Object> list) {
+        if (list == null || list.isEmpty()) {
+            return list;
+        }
+
+        List<Object> updatedList = new java.util.ArrayList<>();
+
+        for (Object item : list) {
+            if (item instanceof String) {
+                updatedList.add(updatePlaceholdersInString((String) item));
+            } else {
+                updatedList.add(item);
+            }
+        }
+
+        return updatedList;
     }
 
 

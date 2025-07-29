@@ -6,6 +6,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -154,6 +155,87 @@ public class GUIsConfiguration {
         save();
     }
 
+    // ==================== GET OR DEFAULT OVERWRITE METHODS ====================
+
+    /**
+     * Gets a value from config/cache, or sets and returns the default if not present
+     * @param path The configuration path
+     * @param defaultValue The default value to set if path doesn't exist
+     * @return The existing value or the default value that was set
+     */
+    public Object getOrDefault(String path, Object defaultValue) {
+        // Check if value exists in cache first
+        if (configCache.containsKey(path)) {
+            return configCache.get(path);
+        }
+
+        // Check if value exists in config
+        if (config.contains(path)) {
+            Object value = config.get(path);
+            if (value != null) {
+                configCache.put(path, value);
+                return value;
+            }
+        }
+
+        // Value doesn't exist, set the default and return it
+        set(path, defaultValue);
+        return defaultValue;
+    }
+
+    /**
+     * Gets a String value or sets and returns the default if not present
+     */
+    public String getOrDefaultString(String path, String defaultValue) {
+        Object value = getOrDefault(path, defaultValue);
+        return value != null ? value.toString() : defaultValue;
+    }
+
+    /**
+     * Gets an Integer value or sets and returns the default if not present
+     */
+    public Integer getOrDefaultInt(String path, Integer defaultValue) {
+        Object value = getOrDefault(path, defaultValue);
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Gets a Boolean value or sets and returns the default if not present
+     */
+    public Boolean getOrDefaultBoolean(String path, Boolean defaultValue) {
+        Object value = getOrDefault(path, defaultValue);
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Gets a Double value or sets and returns the default if not present
+     */
+    public Double getOrDefaultDouble(String path, Double defaultValue) {
+        Object value = getOrDefault(path, defaultValue);
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Gets a String List value or sets and returns the default if not present
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> getOrDefaultStringList(String path, List<String> defaultValue) {
+        Object value = getOrDefault(path, defaultValue);
+        if (value instanceof List) {
+            return (List<String>) value;
+        }
+        return defaultValue;
+    }
+
     // ==================== CONFIG UPDATE SYSTEM ====================
 
     /**
@@ -171,8 +253,6 @@ public class GUIsConfiguration {
                 backup.put(key, value);
             }
         }
-
-        plugin.getLogger().info(String.valueOf(backup));
 
         return backup;
     }
@@ -261,6 +341,18 @@ public class GUIsConfiguration {
             plugin.getLogger().severe("Failed to update config: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Gets a configuration section from the config
+     * @param path The path to the configuration section
+     * @return ConfigurationSection or null if not found
+     */
+    public org.bukkit.configuration.ConfigurationSection getConfigurationSection(String path) {
+        if (config == null) {
+            return null;
+        }
+        return config.getConfigurationSection(path);
     }
 
     /**

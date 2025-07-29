@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerStatsGui extends BaseCustomGUI {
 
@@ -33,30 +34,23 @@ public class PlayerStatsGui extends BaseCustomGUI {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final GUIsConfiguration config;
-    private boolean isOwner;
     private DBUser subject;
 
-    // GUI Layout Constants
-    private final int PLAYTIME_INFO_SLOT = 11;
-    private final int FIRST_JOIN_INFO_SLOT = 13;
-    private final int LAST_SEEN_INFO_SLOT = 15;
-    private final int JOIN_STREAK_INFO_SLOT = 29;
-    private final int GOALS_INFO_SLOT = 31;
-    private final int ACCOUNT_OVERVIEW_SLOT = 33;
-    private final int REFRESH_BUTTON_SLOT = 49;
+    // Static map to track refresh cooldowns across all instances
+    private static final Map<UUID, Long> refreshCooldowns = new ConcurrentHashMap<>();
 
+    // Map to store item types by slot for click handling
+    private final Map<Integer, String> slotItemTypes = new HashMap<>();
 
     public PlayerStatsGui(Player sender, DBUser subject, String sessionToken) {
         super(sender, sessionToken);
         this.config = GUIsConfiguration.getInstance();
         this.subject = subject;
-        this.isOwner = sender.getName().equalsIgnoreCase(subject.getNickname());
 
-        if(isOwner)
-            inv = Bukkit.createInventory(this, 54, Utils.parseColors(config.getString("player-stats-gui.gui.title")));
-        else
-            inv = Bukkit.createInventory(this, 54, Utils.parseColors(subject.getNickname()+"'s Stats"));
-
+        // Process title with placeholders
+        String rawTitle = config.getString("player-stats-gui.gui.title");
+        String processedTitle = processPlaceholders(rawTitle, "title");
+        inv = Bukkit.createInventory(this, 54, Utils.parseColors(processedTitle));
     }
 
     public void openInventory() {
@@ -70,31 +64,30 @@ public class PlayerStatsGui extends BaseCustomGUI {
 
     public void initializeItems() {
         protectedSlots.clear();
+        slotItemTypes.clear();
         inv.clear();
 
         // Create GUI borders
         createBorders();
 
-        // Create stat display items
-        createPlaytimeInfoItem();
-        createFirstJoinInfoItem();
-        createLastSeenInfoItem();
-        createJoinStreakInfoItem();
-        createGoalsInfoItem();
-        createAccountOverviewItem();
-
-        // Add refresh button
-        createRefreshButton();
+        // Create all configured items
+        createConfigurableItems();
     }
 
     private void createBorders() {
+        String sectionPath = "player-stats-gui.gui.border";
+
+        // Get border configuration with placeholder processing
+        Material borderMaterial = Material.valueOf(config.getOrDefaultString(sectionPath + ".material", "BLACK_STAINED_GLASS_PANE"));
+        String rawBorderName = config.getOrDefaultString(sectionPath + ".name", " ");
+        String borderName = processPlaceholders(rawBorderName, "border");
+
         int leftIndex = 9;
         int rightIndex = 17;
 
         for (int i = 0; i < 54; i++) {
             if (i <= 9 || i >= 45 || i == leftIndex || i == rightIndex) {
-                inv.setItem(i, createGuiItem(Material.BLACK_STAINED_GLASS_PANE,
-                        Utils.parseColors(config.getString("player-stats-gui.gui.border-item-name"))));
+                inv.setItem(i, createGuiItem(borderMaterial, Utils.parseColors(borderName)));
                 protectedSlots.add(i);
                 if (i == leftIndex) leftIndex += 9;
                 if (i == rightIndex) rightIndex += 9;
@@ -102,184 +95,196 @@ public class PlayerStatsGui extends BaseCustomGUI {
         }
     }
 
-    private void createPlaytimeInfoItem() {
+    private void createConfigurableItems() {
+        // Get all configured items
+        Map<String, Object> items = config.getConfigurationSection("player-stats-gui.items").getValues(false);
+
+        for (String itemKey : items.keySet()) {
+            String itemPath = "player-stats-gui.items." + itemKey;
+
+            // Skip if item is disabled
+            if (!config.getOrDefaultBoolean(itemPath + ".enabled", true)) {
+                continue;
+            }
+
+            int slot = config.getInt(itemPath + ".slot");
+
+            // Handle out-of-bounds slot ID
+            if (slot < 0 || slot >= inv.getSize()) {
+                plugin.getLogger().warning("Invalid slot " + slot + " for item " + itemKey + " in player-stats-gui. Skipping item.");
+                continue;
+            }
+
+            String materialName = config.getString(itemPath + ".material");
+            Material material;
+
+            // Handle invalid material names
+            try {
+                material = Material.valueOf(materialName);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Invalid material '" + materialName + "' for item " + itemKey + " in player-stats-gui. Skipping item.");
+                continue;
+            }
+
+            String rawName = config.getOrDefaultString(itemPath + ".name", "");
+            List<String> loreConfig = config.getStringList(itemPath + ".lore");
+            String permission = config.getOrDefaultString(itemPath + ".permission", "");
+
+            // Create the item
+            createStatItem(slot, material, rawName, loreConfig, permission, itemKey);
+
+            // Store item type for click handling
+            slotItemTypes.put(slot, itemKey);
+        }
+    }
+
+    private void createStatItem(int slot, Material material, String rawName, List<String> loreConfig, String permission, String itemType) {
+        List<Component> lore = new ArrayList<>();
+
+        // Check permission if specified
+        boolean hasPermission = permission.isEmpty() || sender.hasPermission(permission);
+
+        if (!hasPermission) {
+            // Show no permission message with placeholder processing
+            String rawNoPermMsg = config.getOrDefaultString("player-stats-gui.messages.no-permission", "&cYou don't have permission to view this information.");
+            String processedNoPermMsg = processPlaceholders(rawNoPermMsg, itemType);
+            lore.add(Utils.parseColors(processedNoPermMsg));
+        } else {
+            // Process lore with placeholders
+            for (String loreLine : loreConfig) {
+                String processedLine = processPlaceholders(loreLine, itemType);
+                lore.add(Utils.parseColors(processedLine));
+            }
+        }
+
+        // Process name with placeholders
+        String processedName = processPlaceholders(rawName, itemType);
+
+        inv.setItem(slot, createGuiItem(material, Utils.parseColors(processedName), lore.toArray(new Component[0])));
+        protectedSlots.add(slot);
+    }
+
+    private String processPlaceholders(String text, String itemType) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+
+        // Create placeholder combinations map
+        Map<String, String> combinations = new HashMap<>();
+
+        // Add all common placeholders regardless of item type
+        addCommonPlaceholders(combinations);
+
+        // Add type-specific placeholders
+        addTypeSpecificPlaceholders(combinations, itemType);
+
+        return Utils.placeholdersReplacer(text, combinations);
+    }
+
+    private void addCommonPlaceholders(Map<String, String> combinations) {
+        // Player information
+        combinations.put("%PLAYER_NAME%", subject.getNickname());
+        combinations.put("%UUID%", subject.getUuid().toString());
+
+        // Playtime information
         long totalPlaytime = subject.getPlaytime();
         long artificialPlaytime = subject.getArtificialPlaytime();
         long realPlaytime = totalPlaytime - artificialPlaytime;
 
-        List<Component> lore = new ArrayList<>();
+        combinations.put("%PLAYTIME%", String.valueOf(totalPlaytime));
+        combinations.put("%ACTUAL_PLAYTIME%", String.valueOf(realPlaytime));
+        combinations.put("%ARTIFICIAL_PLAYTIME%", String.valueOf(artificialPlaytime));
+        combinations.put("%PLAYTIME_FORMATTED%", Utils.ticksToFormattedPlaytime(totalPlaytime));
+        combinations.put("%ACTUAL_PLAYTIME_FORMATTED%", Utils.ticksToFormattedPlaytime(realPlaytime));
+        combinations.put("%ARTIFICIAL_PLAYTIME_FORMATTED%", Utils.ticksToFormattedPlaytime(artificialPlaytime));
 
-        String totalPlaytimeStr = config.getString("player-stats-gui.playtime-info.lore.total-playtime")
-                .replace("{total_playtime}", Utils.ticksToFormattedPlaytime(totalPlaytime));
-        lore.add(Utils.parseColors(totalPlaytimeStr));
-
-        if (artificialPlaytime > 0) {
-            String realPlaytimeStr = config.getString("player-stats-gui.playtime-info.lore.real-playtime")
-                    .replace("{real_playtime}", Utils.ticksToFormattedPlaytime(realPlaytime));
-            lore.add(Utils.parseColors(realPlaytimeStr));
-
-            String artificialPlaytimeStr = config.getString("player-stats-gui.playtime-info.lore.artificial-playtime")
-                    .replace("{artificial_playtime}", Utils.ticksToFormattedPlaytime(artificialPlaytime));
-            lore.add(Utils.parseColors(artificialPlaytimeStr));
-        }
-
-        inv.setItem(PLAYTIME_INFO_SLOT, createGuiItem(
-                Material.CLOCK,
-                Utils.parseColors(config.getString("player-stats-gui.playtime-info.name")),
-                lore.toArray(new Component[0])
-        ));
-        protectedSlots.add(PLAYTIME_INFO_SLOT);
-    }
-
-    private void createFirstJoinInfoItem() {
+        // First join information
         LocalDateTime firstJoin = subject.getFirstJoin();
-        List<Component> lore = new ArrayList<>();
-
         if (firstJoin != null) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
-
-            String dateStr = config.getString("player-stats-gui.first-join-info.lore.date")
-                    .replace("{date}", firstJoin.format(formatter));
-            lore.add(Utils.parseColors(dateStr));
+            combinations.put("%FIRST_JOIN_DATE%", firstJoin.format(formatter));
 
             Duration accountAge = Duration.between(firstJoin, LocalDateTime.now());
-            String ageStr = config.getString("player-stats-gui.first-join-info.lore.account-age")
-                    .replace("{age}", Utils.ticksToFormattedPlaytime(accountAge.getSeconds() * 20));
-            lore.add(Utils.parseColors(ageStr));
+            combinations.put("%ACCOUNT_AGE%", Utils.ticksToFormattedPlaytime(accountAge.getSeconds() * 20));
         } else {
-            lore.add(Utils.parseColors(config.getString("player-stats-gui.first-join-info.lore.no-data")));
+            combinations.put("%FIRST_JOIN_DATE%", "Unknown");
+            combinations.put("%ACCOUNT_AGE%", "Unknown");
         }
 
-        inv.setItem(FIRST_JOIN_INFO_SLOT, createGuiItem(
-                Material.SPAWNER,
-                Utils.parseColors(config.getString("player-stats-gui.first-join-info.name")),
-                lore.toArray(new Component[0])
-        ));
-        protectedSlots.add(FIRST_JOIN_INFO_SLOT);
-    }
-
-    private void createLastSeenInfoItem() {
+        // Last seen information
         LocalDateTime lastSeen = subject.getLastSeen();
-        List<Component> lore = new ArrayList<>();
+        boolean isOnline = Bukkit.getPlayer(subject.getUuid()) != null;
 
-        if (lastSeen != null && !lastSeen.equals(LocalDateTime.of(1970, 1, 1, 0, 0, 0, 0))) {
+        if (isOnline) {
+            combinations.put("%LAST_SEEN_DATE%", "Currently Online");
+            combinations.put("%TIME_SINCE_LAST_SEEN%", "0");
+            combinations.put("%ONLINE_STATUS%", "Online");
+        } else if (lastSeen != null && !lastSeen.equals(LocalDateTime.of(1970, 1, 1, 0, 0, 0, 0))) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
-
-            String dateStr = config.getString("player-stats-gui.last-seen-info.lore.date")
-                    .replace("{date}", lastSeen.format(formatter));
-            lore.add(Utils.parseColors(dateStr));
+            combinations.put("%LAST_SEEN_DATE%", lastSeen.format(formatter));
 
             Duration timeSinceLastSeen = Duration.between(lastSeen, LocalDateTime.now());
-            String elapsedStr = config.getString("player-stats-gui.last-seen-info.lore.time-elapsed")
-                    .replace("{elapsed}", Utils.ticksToFormattedPlaytime(timeSinceLastSeen.getSeconds() * 20));
-            lore.add(Utils.parseColors(elapsedStr));
+            combinations.put("%TIME_SINCE_LAST_SEEN%", Utils.ticksToFormattedPlaytime(timeSinceLastSeen.getSeconds() * 20));
+            combinations.put("%ONLINE_STATUS%", "Offline");
         } else {
-            lore.add(Utils.parseColors(config.getString("player-stats-gui.last-seen-info.lore.currently-online")));
+            combinations.put("%LAST_SEEN_DATE%", "Unknown");
+            combinations.put("%TIME_SINCE_LAST_SEEN%", "Unknown");
+            combinations.put("%ONLINE_STATUS%", "Unknown");
         }
 
-        inv.setItem(LAST_SEEN_INFO_SLOT, createGuiItem(
-                Material.COMPASS,
-                Utils.parseColors(config.getString("player-stats-gui.last-seen-info.name")),
-                lore.toArray(new Component[0])
-        ));
-        protectedSlots.add(LAST_SEEN_INFO_SLOT);
-    }
+        // Join streak information
+        combinations.put("%RELATIVE_STREAK%", String.valueOf(subject.getRelativeJoinStreak()));
+        combinations.put("%ABSOLUTE_STREAK%", String.valueOf(subject.getAbsoluteJoinStreak()));
 
-    private void createJoinStreakInfoItem() {
-        int relativeJoinStreak = subject.getRelativeJoinStreak();
-        int absoluteJoinStreak = subject.getAbsoluteJoinStreak();
-
-        List<Component> lore = new ArrayList<>();
-
-        String relativeStr = config.getString("player-stats-gui.join-streak-info.lore.relative-streak")
-                .replace("{relative_streak}", String.valueOf(relativeJoinStreak));
-        lore.add(Utils.parseColors(relativeStr));
-
-        String absoluteStr = config.getString("player-stats-gui.join-streak-info.lore.absolute-streak")
-                .replace("{absolute_streak}", String.valueOf(absoluteJoinStreak));
-        lore.add(Utils.parseColors(absoluteStr));
-
-        inv.setItem(JOIN_STREAK_INFO_SLOT, createGuiItem(
-                Material.FIRE_CHARGE,
-                Utils.parseColors(config.getString("player-stats-gui.join-streak-info.name")),
-                lore.toArray(new Component[0])
-        ));
-        protectedSlots.add(JOIN_STREAK_INFO_SLOT);
-    }
-
-    private void createGoalsInfoItem() {
+        // Goals information
         ArrayList<String> completedGoals = subject.getCompletedGoals();
-        List<Component> lore = new ArrayList<>();
+        combinations.put("%GOALS_COUNT%", String.valueOf(completedGoals.size()));
 
-        if (completedGoals.isEmpty()) {
-            lore.add(Utils.parseColors(config.getString("player-stats-gui.goals-info.lore.no-goals")));
-        } else {
-            String countStr = config.getString("player-stats-gui.goals-info.lore.goals-count")
-                    .replace("{count}", String.valueOf(completedGoals.size()));
-            lore.add(Utils.parseColors(countStr));
+        // Current time/date
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
+        combinations.put("%CURRENT_DATE%", now.format(formatter));
+        combinations.put("%CURRENT_TIME%", now.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+    }
 
-            lore.add(Utils.parseColors(config.getString("player-stats-gui.goals-info.lore.separator")));
+    private void addTypeSpecificPlaceholders(Map<String, String> combinations, String itemType) {
+        switch (itemType.toLowerCase()) {
+            case "goals":
+                // Handle goal list placeholders
+                ArrayList<String> completedGoals = subject.getCompletedGoals();
+                StringBuilder goalsList = new StringBuilder();
+                int maxGoals = config.getOrDefaultInt("player-stats-gui.goals.max-display", 5);
+                int count = 0;
 
-            // Show first few goals, or all if there are few
-            int maxDisplayGoals = Math.min(completedGoals.size(), 5);
-            int count = 0;
-            for (String goal : completedGoals) {
-                if (count >= maxDisplayGoals) break;
-                String goalStr = config.getString("player-stats-gui.goals-info.lore.goal-item")
-                        .replace("{goal}", goal);
-                lore.add(Utils.parseColors(goalStr));
-                count++;
-            }
+                for (String goal : completedGoals) {
+                    if (count >= maxGoals) break;
+                    if (count > 0) goalsList.append("\n");
+                    String goalFormat = config.getOrDefaultString("player-stats-gui.goals.list-format", "&7- &e%GOAL%");
+                    goalsList.append(goalFormat.replace("%GOAL%", goal));
+                    count++;
+                }
 
-            if (completedGoals.size() > maxDisplayGoals) {
-                String moreStr = config.getString("player-stats-gui.goals-info.lore.more-goals")
-                        .replace("{remaining}", String.valueOf(completedGoals.size() - maxDisplayGoals));
-                lore.add(Utils.parseColors(moreStr));
-            }
+                if (completedGoals.size() > maxGoals) {
+                    String moreFormat = config.getOrDefaultString("player-stats-gui.goals.more-format", "&7... and &e%REMAINING% &7more");
+                    goalsList.append("\n").append(moreFormat.replace("%REMAINING%", String.valueOf(completedGoals.size() - maxGoals)));
+                }
+
+                combinations.put("%GOALS_LIST%", goalsList.toString());
+                break;
+
+            case "refresh":
+                int delay = config.getOrDefaultInt("player-stats-gui.items.refresh.delay", 3);
+                combinations.put("%DELAY%", String.valueOf(delay));
+                break;
+
+            case "title":
+                // Add any title-specific placeholders here if needed
+                break;
+
+            case "border":
+                // Add any border-specific placeholders here if needed
+                break;
         }
-
-        inv.setItem(GOALS_INFO_SLOT, createGuiItem(
-                Material.NETHER_STAR,
-                Utils.parseColors(config.getString("player-stats-gui.goals-info.name")),
-                lore.toArray(new Component[0])
-        ));
-        protectedSlots.add(GOALS_INFO_SLOT);
-    }
-
-    private void createAccountOverviewItem() {
-        List<Component> lore = new ArrayList<>();
-
-        String playerStr = config.getString("player-stats-gui.account-overview.lore.player-name")
-                .replace("{player}", subject.getNickname());
-        lore.add(Utils.parseColors(playerStr));
-
-        String uuidStr = config.getString("player-stats-gui.account-overview.lore.uuid")
-                .replace("{uuid}", subject.getUuid().toString());
-        lore.add(Utils.parseColors(uuidStr));
-
-        // Add status (online/offline)
-        boolean isOnline = Bukkit.getPlayer(subject.getUuid()) != null;
-        String statusStr = config.getString("player-stats-gui.account-overview.lore.status")
-                .replace("{status}", isOnline ?
-                        config.getString("player-stats-gui.account-overview.lore.online") :
-                        config.getString("player-stats-gui.account-overview.lore.offline"));
-        lore.add(Utils.parseColors(statusStr));
-
-        inv.setItem(ACCOUNT_OVERVIEW_SLOT, createGuiItem(
-                Material.PLAYER_HEAD,
-                Utils.parseColors(config.getString("player-stats-gui.account-overview.name")),
-                lore.toArray(new Component[0])
-        ));
-        protectedSlots.add(ACCOUNT_OVERVIEW_SLOT);
-    }
-
-    private void createRefreshButton() {
-        inv.setItem(REFRESH_BUTTON_SLOT, createGuiItem(
-                Material.LIME_DYE,
-                Utils.parseColors(config.getString("player-stats-gui.refresh-button.name")),
-                Utils.parseColors(config.getString("player-stats-gui.refresh-button.lore"))
-        ));
-        protectedSlots.add(REFRESH_BUTTON_SLOT);
     }
 
     private ItemStack createGuiItem(Material material, @Nullable Component name, @Nullable Component... lore) {
@@ -308,20 +313,67 @@ public class PlayerStatsGui extends BaseCustomGUI {
     }
 
     public void onGUIClick(Player whoClicked, int slot, ItemStack clickedItem, @NotNull InventoryAction action, @NotNull InventoryClickEvent event) {
+        if (clickedItem == null || clickedItem.getType().equals(Material.AIR)) {
+            return;
+        }
 
-        if (clickedItem == null || clickedItem.getType().equals(Material.AIR)
-                || clickedItem.getType().equals(Material.BLACK_STAINED_GLASS_PANE)) {
+        // Check if this slot has an item type associated with it
+        String itemType = slotItemTypes.get(slot);
+        if (itemType == null) {
             return;
         }
 
         // Handle refresh button
-        if (slot == REFRESH_BUTTON_SLOT) {
-            refreshStats();
+        if ("refresh".equals(itemType)) {
+            handleRefreshClick(whoClicked);
             return;
         }
 
         // All other slots are informational only
-        whoClicked.playSound(whoClicked.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1f);
+    }
+
+    private void handleRefreshClick(Player player) {
+        String itemPath = "player-stats-gui.items.refresh";
+
+        // Check permission
+        String permission = config.getOrDefaultString(itemPath + ".permission", "playtime.stats.refresh");
+        if (!permission.isEmpty() && !player.hasPermission(permission)) {
+            return;
+        }
+
+        // Check cooldown
+        UUID playerUUID = player.getUniqueId();
+        long currentTime = System.currentTimeMillis();
+        int delaySeconds = config.getOrDefaultInt(itemPath + ".delay", 3);
+        long delayMillis = delaySeconds * 1000L;
+
+        if (refreshCooldowns.containsKey(playerUUID)) {
+            long lastRefresh = refreshCooldowns.get(playerUUID);
+            long timeSinceLastRefresh = currentTime - lastRefresh;
+
+            if (timeSinceLastRefresh < delayMillis) {
+                return;
+            }
+        }
+
+        // Update cooldown
+        refreshCooldowns.put(playerUUID, currentTime);
+
+        // Play refresh sound
+        String soundName = config.getOrDefaultString(itemPath + ".sound", "UI_BUTTON_CLICK");
+        double volume = config.getOrDefaultDouble(itemPath + ".sound-volume", 1.0);
+        double pitch = config.getOrDefaultDouble(itemPath + ".sound-pitch", 1.0);
+
+        try {
+            Sound sound = (Sound) Sound.class.getField(soundName).get(null);
+
+            if (sound != null) {
+                player.playSound(player.getLocation(), sound, (float) volume, (float) pitch);
+            }
+        } catch (Exception ignored) {}
+
+        // Perform refresh
+        refreshStats();
     }
 
     private void refreshStats() {
@@ -334,19 +386,23 @@ public class PlayerStatsGui extends BaseCustomGUI {
         subject = dbUsersManager.getUserFromUUID(subject.getUuid());
 
         if (subject == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
-                    config.getString("player-stats-gui.messages.player-not-found")));
             sender.closeInventory();
             return;
         }
 
+        // Update the inventory title with fresh placeholders
+        String rawTitle = config.getString("player-stats-gui.gui.title");
+        String processedTitle = processPlaceholders(rawTitle, "title");
+
+        // Create new inventory with updated title
+        Inventory newInv = Bukkit.createInventory(this, 54, Utils.parseColors(processedTitle));
+        this.inv = newInv;
+
         // Rebuild the GUI with fresh data
         initializeItems();
-        sender.updateInventory();
 
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
-                config.getString("player-stats-gui.messages.stats-refreshed")));
-        sender.playSound(sender.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
+        // Close current inventory and open the new one
+        sender.closeInventory();
+        sender.openInventory(inv);
     }
-
 }

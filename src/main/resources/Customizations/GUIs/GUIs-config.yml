@@ -91,58 +91,109 @@ rewards-gui:
 
 player-stats-gui:
   gui:
-    title: "&6&lPlayer Statistics"
-    border-item-name: " "
+    title: "&6&l%PLAYER_NAME%'s stats"
+    border:
+      material: "BLACK_STAINED_GLASS_PANE"
+      name: " "
 
-  playtime-info:
-    name: "&e&lPlaytime Information"
-    lore:
-      total-playtime: "&7Total Playtime: &e{total_playtime}"
-      real-playtime: "&7- Real Playtime: &e{real_playtime}"
-      artificial-playtime: "&7- Artificial Playtime: &e{artificial_playtime}"
+  # Configurable GUI items
+  items:
+    playtime:
+      enabled: true
+      slot: 20
+      material: "CLOCK"
+      name: "&e&lPlaytime Information"
+      permission: "playtime.stats.view.playtime"
+      lore:
+        - "&7Total Playtime: &e%PLAYTIME%"
+        - "&7Actual Playtime: &e%ACTUAL_PLAYTIME%"
+        - "&7Artificial Playtime: &e%ARTIFICIAL_PLAYTIME%"
 
-  first-join-info:
-    name: "&a&lFirst Join"
-    lore:
-      date: "&7Date: &e{date}"
-      account-age: "&7Account Age: &e{age}"
-      no-data: "&7No first join data available"
+    firstjoin:
+      enabled: true
+      slot: 22
+      material: "CAKE"
+      name: "&a&lFirst Join"
+      permission: "playtime.stats.view.firstjoin"
+      lore:
+        - "&7First Join: &e%FIRST_JOIN_DATE%"
+        - "&7Account Age: &e%ACCOUNT_AGE%"
 
-  last-seen-info:
-    name: "&c&lLast Seen"
-    lore:
-      date: "&7Date: &e{date}"
-      time-elapsed: "&7Time Elapsed: &e{elapsed}"
-      currently-online: "&7Currently online"
+    lastseen:
+      enabled: true
+      slot: 24
+      material: "COMPASS"
+      name: "&c&lLast Seen"
+      permission: "playtime.stats.view.lastseen"
+      lore:
+        - "&7Last Seen: &e%LAST_SEEN_DATE%"
+        - "&7Time Elapsed: &e%TIME_SINCE_LAST_SEEN%"
 
-  join-streak-info:
-    name: "&6&lJoin Streak"
-    lore:
-      relative-streak: "&7Current Cycle: &e{relative_streak}"
-      absolute-streak: "&7Total Streak: &e{absolute_streak}"
+    joinstreak:
+      enabled: true
+      slot: 30
+      material: "FIRE_CHARGE"
+      name: "&6&lJoin Streak"
+      permission: "playtime.stats.view.joinstreak"
+      lore:
+        - "&7Current Streak: &e%RELATIVE_STREAK%"
+        - "&7Total Streak: &e%ABSOLUTE_STREAK%"
 
-  goals-info:
-    name: "&d&lCompleted Goals"
-    lore:
-      no-goals: "&7No goals completed yet"
-      goals-count: "&7Total Goals: &e{count}"
-      separator: "&8&m------------------"
-      goal-item: "&7- &e{goal}"
-      more-goals: "&7... and &e{remaining} &7more"
+    goals:
+      enabled: true
+      slot: 32
+      material: "NETHER_STAR"
+      name: "&d&lCompleted Goals"
+      permission: "playtime.stats.view.goals"
+      lore:
+        - "&7Total Goals: &e%GOALS_COUNT%"
+        - "&8&m------------------"
+        - "%GOALS_LIST%"
 
-  account-overview:
-    name: "&b&lAccount Overview"
-    lore:
-      player-name: "&7Player: &e{player}"
-      uuid: "&7UUID: &f{uuid}"
-      status: "&7Status: {status}"
-      online: "&a&lONLINE"
-      offline: "&c&lOFFLINE"
+    account:
+      enabled: true
+      slot: 4
+      material: "PLAYER_HEAD"
+      name: "&b&lAccount Overview"
+      permission: "playtime.stats.view.account"
+      lore:
+        - "&7Player: &e%PLAYER_NAME%"
+        - "&7UUID: &f%UUID%"
 
-  refresh-button:
-    name: "&a&lRefresh Stats"
-    lore: "&7Click to refresh player statistics"
+    # Refresh button - now treated as a regular configurable item
+    refresh:
+      enabled: true
+      slot: 49
+      material: "LIME_DYE"
+      name: "&a&lRefresh Stats"
+      permission: "playtime.stats.refresh"
+      delay: 3
+      sound: "UI_BUTTON_CLICK"
+      sound-volume: 1.0
+      sound-pitch: 1.0
+      lore:
+        - "&7Click to refresh player statistics"
+        - "&8Cooldown: &c%DELAY% seconds"
 
+    # Example of a custom item
+    custom_stat:
+      enabled: false
+      slot: 35
+      material: "DIAMOND"
+      name: "&b&lCustom Stat"
+      permission: "playtime.stats.view.custom"
+      lore:
+        - "&7This is a custom stat item"
+        - "&7Player: &e%PLAYER_NAME%"
+        - "&7Add your own placeholders here"
+
+  # Goal display settings
+  goals:
+    max-display: 5
+    list-format: "&7- &e%GOAL%"
+    more-format: "&7... and &e%REMAINING% &7more"
+
+  # Messages
   messages:
     player-not-found: "&cPlayer data could not be found!"
-    stats-refreshed: "&aPlayer statistics have been refreshed!"
+    no-permission: "&cYou don't have permission to view this information."

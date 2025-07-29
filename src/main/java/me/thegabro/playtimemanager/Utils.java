@@ -314,13 +314,15 @@ public class Utils {
 
     public static String placeholdersReplacer(String message, Map<String, String> combinations){
 
-        //Apply %PLAYTIME% special placeholder with custom format
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("%PLAYTIME(?::(\\w+))?%");
+        //Apply %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME% special placeholder with custom format
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("%((?:ACTUAL_|ARTIFICIAL_)?PLAYTIME)(?::(\\w+))?%");
         java.util.regex.Matcher matcher = pattern.matcher(message);
         StringBuffer result = new StringBuffer();
 
         while (matcher.find()) {
-            String formatName = matcher.group(1);
+            String playtimeType = matcher.group(1);  // PLAYTIME, ACTUAL_PLAYTIME, or ARTIFICIAL_PLAYTIME
+            String formatName = matcher.group(2);    // Optional format name after colon
+
             // Get the PlaytimeFormat for this placeholder, or default if not found
             PlaytimeFormatsConfiguration config = PlaytimeFormatsConfiguration.getInstance();
             String actualFormatName = (formatName == null) ? "default" : formatName;
@@ -328,16 +330,20 @@ public class Utils {
 
             format = (format == null) ? config.getFormat("default") : format;
 
-            // Check if we have a playtime value in the combinations map
+            // Check if we have a playtime value in the combinations map for this specific type
             String playtimeValue = null;
-            if (combinations.containsKey("%PLAYTIME%")) {
+            String placeholderKey = "%" + playtimeType + "%";
+
+            if (combinations.containsKey(placeholderKey)) {
                 // If we have ticks, convert them using the format
                 try {
-                    long ticks = Long.parseLong(combinations.get("%PLAYTIME%"));
+                    long ticks = Long.parseLong(combinations.get(placeholderKey));
                     playtimeValue = ticksToFormattedPlaytime(ticks, format);
                 } catch (NumberFormatException e) {
                     playtimeValue = "0s"; // Default fallback
                 }
+            } else {
+                playtimeValue = "0s"; // Default fallback if placeholder not found
             }
 
             // Replace the placeholder with the formatted playtime

@@ -126,6 +126,25 @@ public class GUIsConfiguration {
     }
 
     /**
+     * Checks if a configuration path exists in either cache or config
+     * @param path The configuration path to check
+     * @return true if the path exists, false otherwise
+     */
+    public boolean contains(String path) {
+        // First check cache for faster lookup
+        if (configCache.containsKey(path)) {
+            return true;
+        }
+
+        // Fallback to config if not in cache
+        if (config != null && config.contains(path)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Gets a value from cache if available, otherwise from config with default
      */
     public Object get(String path, Object def) {

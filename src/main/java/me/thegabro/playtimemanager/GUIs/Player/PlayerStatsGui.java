@@ -3,7 +3,6 @@ package me.thegabro.playtimemanager.GUIs.Player;
 import me.thegabro.playtimemanager.GUIs.BaseCustomGUI;
 import me.thegabro.playtimemanager.GUIs.InventoryListener;
 import me.thegabro.playtimemanager.Users.DBUser;
-import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
@@ -11,7 +10,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -25,22 +23,27 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerStatsGui extends BaseCustomGUI {
 
     private Inventory inv;
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final GUIsConfiguration config;
     private DBUser subject;
 
-    // Static map to track refresh cooldowns across all instances
-    private static final Map<UUID, Long> refreshCooldowns = new ConcurrentHashMap<>();
-
     // Map to store item types by slot for click handling
     private final Map<Integer, String> slotItemTypes = new HashMap<>();
+
+    // View types
+    public enum ViewType {
+        OWNER,    // Player viewing their own stats
+        PLAYER,   // Player viewing another player's stats
+        STAFF     // Staff member viewing stats
+    }
+
+    // Staff permission only
+    private static final String PERMISSION_STAFF_VIEW = "playtime.stats.staff";
 
     public PlayerStatsGui(Player sender, DBUser subject, String sessionToken) {
         super(sender, sessionToken);
@@ -70,8 +73,26 @@ public class PlayerStatsGui extends BaseCustomGUI {
         // Create GUI borders
         createBorders();
 
-        // Create all configured items
+        // Create all configured items based on view type
         createConfigurableItems();
+    }
+
+    /**
+     * Determine the view type based on permissions and context
+     */
+    private ViewType getViewType() {
+        // Owner view has highest priority - if looking at own stats
+        if (sender.getUniqueId().equals(subject.getUuid())) {
+            return ViewType.OWNER;
+        }
+
+        // Staff view if has staff permission and looking at another player
+        if (sender.hasPermission(PERMISSION_STAFF_VIEW)) {
+            return ViewType.STAFF;
+        }
+
+        // Default to player view
+        return ViewType.PLAYER;
     }
 
     private void createBorders() {
@@ -96,65 +117,133 @@ public class PlayerStatsGui extends BaseCustomGUI {
     }
 
     private void createConfigurableItems() {
+        ViewType currentView = getViewType();
+
         // Get all configured items
         Map<String, Object> items = config.getConfigurationSection("player-stats-gui.items").getValues(false);
 
         for (String itemKey : items.keySet()) {
             String itemPath = "player-stats-gui.items." + itemKey;
 
-            // Skip if item is disabled
-            if (!config.getOrDefaultBoolean(itemPath + ".enabled", true)) {
+            // Check if item should be visible for this view
+            if (!isItemVisibleForView(itemPath, currentView)) {
                 continue;
             }
 
-            int slot = config.getInt(itemPath + ".slot");
+            // Get slot for the current view
+            int slot = getSlotForView(itemPath, currentView);
 
             // Handle out-of-bounds slot ID
             if (slot < 0 || slot >= inv.getSize()) {
-                plugin.getLogger().warning("Invalid slot " + slot + " for item " + itemKey + " in player-stats-gui. Skipping item.");
+                plugin.getLogger().warning("Invalid slot " + slot + " for item " + itemKey + " in view " + currentView + ". Skipping item.");
                 continue;
             }
 
-            String materialName = config.getString(itemPath + ".material");
-            Material material;
-
-            // Handle invalid material names
-            try {
-                material = Material.valueOf(materialName);
-            } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid material '" + materialName + "' for item " + itemKey + " in player-stats-gui. Skipping item.");
+            // Get material for the current view
+            Material material = getMaterialForView(itemPath, currentView);
+            if (material == null) {
+                plugin.getLogger().warning("Invalid material for item " + itemKey + " in view " + currentView + ". Skipping item.");
                 continue;
             }
 
-            String rawName = config.getOrDefaultString(itemPath + ".name", "");
-            List<String> loreConfig = config.getStringList(itemPath + ".lore");
-            String permission = config.getOrDefaultString(itemPath + ".permission", "");
+            // Get name and lore for the current view
+            String rawName = getNameForView(itemPath, currentView);
+            List<String> loreConfig = getLoreForView(itemPath, currentView);
 
             // Create the item
-            createStatItem(slot, material, rawName, loreConfig, permission, itemKey);
+            createStatItem(slot, material, rawName, loreConfig, itemKey);
 
             // Store item type for click handling
             slotItemTypes.put(slot, itemKey);
         }
     }
 
-    private void createStatItem(int slot, Material material, String rawName, List<String> loreConfig, String permission, String itemType) {
+    /**
+     * Check if an item should be visible for the current view type
+     * Item is visible only if a view configuration exists for the current view type
+     */
+    private boolean isItemVisibleForView(String itemPath, ViewType viewType) {
+        String viewKey = viewType.name().toLowerCase();
+        String viewPath = itemPath + ".views." + viewKey;
+
+        // Item is visible only if the view configuration exists
+        return config.contains(viewPath);
+    }
+
+    /**
+     * Get the slot for an item in the current view
+     */
+    private int getSlotForView(String itemPath, ViewType viewType) {
+        String viewKey = viewType.name().toLowerCase();
+        String viewSlotPath = itemPath + ".views." + viewKey + ".slot";
+
+        // View-specific slot is required since we only show items with view configs
+        return config.getInt(viewSlotPath);
+    }
+
+    /**
+     * Get the material for an item in the current view
+     */
+    private Material getMaterialForView(String itemPath, ViewType viewType) {
+        String viewKey = viewType.name().toLowerCase();
+        String viewMaterialPath = itemPath + ".views." + viewKey + ".material";
+
+        String materialName;
+
+        // Check for view-specific material first
+        if (config.contains(viewMaterialPath)) {
+            materialName = config.getString(viewMaterialPath);
+        } else {
+            // Fall back to default material if view-specific doesn't exist
+            materialName = config.getString(itemPath + ".material");
+        }
+
+        try {
+            return Material.valueOf(materialName);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get the name for an item in the current view
+     */
+    private String getNameForView(String itemPath, ViewType viewType) {
+        String viewKey = viewType.name().toLowerCase();
+        String viewNamePath = itemPath + ".views." + viewKey + ".name";
+
+        // Check for view-specific name first
+        if (config.contains(viewNamePath)) {
+            return config.getString(viewNamePath);
+        }
+
+        // Fall back to default name
+        return config.getOrDefaultString(itemPath + ".name", "");
+    }
+
+    /**
+     * Get the lore for an item in the current view
+     */
+    private List<String> getLoreForView(String itemPath, ViewType viewType) {
+        String viewKey = viewType.name().toLowerCase();
+        String viewLorePath = itemPath + ".views." + viewKey + ".lore";
+
+        // Check for view-specific lore first
+        if (config.contains(viewLorePath)) {
+            return config.getStringList(viewLorePath);
+        }
+
+        // Fall back to default lore
+        return config.getStringList(itemPath + ".lore");
+    }
+
+    private void createStatItem(int slot, Material material, String rawName, List<String> loreConfig, String itemType) {
         List<Component> lore = new ArrayList<>();
 
-        // Check permission if specified
-        boolean hasPermission = permission.isEmpty() || sender.hasPermission(permission);
-
-        if (!hasPermission) {
-            // Show no permission message with placeholder processing
-            String rawNoPermMsg = config.getOrDefaultString("player-stats-gui.messages.no-permission", "&cYou don't have permission to view this information.");
-            String processedNoPermMsg = processPlaceholders(rawNoPermMsg, itemType);
-            lore.add(Utils.parseColors(processedNoPermMsg));
-        } else {
-            // Process lore with placeholders
-            for (String loreLine : loreConfig) {
-                String processedLine = processPlaceholders(loreLine, itemType);
-                lore.add(Utils.parseColors(processedLine));
-            }
+        // Process lore with placeholders
+        for (String loreLine : loreConfig) {
+            String processedLine = processPlaceholders(loreLine, itemType);
+            lore.add(Utils.parseColors(processedLine));
         }
 
         // Process name with placeholders
@@ -178,7 +267,21 @@ public class PlayerStatsGui extends BaseCustomGUI {
         // Add type-specific placeholders
         addTypeSpecificPlaceholders(combinations, itemType);
 
+        // Add view-specific placeholders
+        addViewSpecificPlaceholders(combinations);
+
         return Utils.placeholdersReplacer(text, combinations);
+    }
+
+    /**
+     * Add view-specific placeholders
+     */
+    private void addViewSpecificPlaceholders(Map<String, String> combinations) {
+        ViewType currentView = getViewType();
+        combinations.put("%VIEW_TYPE%", currentView.name());
+        combinations.put("%IS_OWNER%", String.valueOf(currentView == ViewType.OWNER));
+        combinations.put("%IS_STAFF%", String.valueOf(currentView == ViewType.STAFF));
+        combinations.put("%IS_PLAYER%", String.valueOf(currentView == ViewType.PLAYER));
     }
 
     private void addCommonPlaceholders(Map<String, String> combinations) {
@@ -194,9 +297,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
         combinations.put("%PLAYTIME%", String.valueOf(totalPlaytime));
         combinations.put("%ACTUAL_PLAYTIME%", String.valueOf(realPlaytime));
         combinations.put("%ARTIFICIAL_PLAYTIME%", String.valueOf(artificialPlaytime));
-        combinations.put("%PLAYTIME_FORMATTED%", Utils.ticksToFormattedPlaytime(totalPlaytime));
-        combinations.put("%ACTUAL_PLAYTIME_FORMATTED%", Utils.ticksToFormattedPlaytime(realPlaytime));
-        combinations.put("%ARTIFICIAL_PLAYTIME_FORMATTED%", Utils.ticksToFormattedPlaytime(artificialPlaytime));
 
         // First join information
         LocalDateTime firstJoin = subject.getFirstJoin();
@@ -250,31 +350,22 @@ public class PlayerStatsGui extends BaseCustomGUI {
     private void addTypeSpecificPlaceholders(Map<String, String> combinations, String itemType) {
         switch (itemType.toLowerCase()) {
             case "goals":
-                // Handle goal list placeholders
+                // Handle goal list placeholders - display in rows of 3
                 ArrayList<String> completedGoals = subject.getCompletedGoals();
                 StringBuilder goalsList = new StringBuilder();
-                int maxGoals = config.getOrDefaultInt("player-stats-gui.goals.max-display", 5);
-                int count = 0;
 
-                for (String goal : completedGoals) {
-                    if (count >= maxGoals) break;
-                    if (count > 0) goalsList.append("\n");
+                for (int i = 0; i < completedGoals.size(); i++) {
+                    if (i > 0 && i % 3 == 0) {
+                        goalsList.append("\n"); // New line every 3 goals
+                    } else if (i > 0) {
+                        goalsList.append(" "); // Space between goals on same line
+                    }
+
                     String goalFormat = config.getOrDefaultString("player-stats-gui.goals.list-format", "&7- &e%GOAL%");
-                    goalsList.append(goalFormat.replace("%GOAL%", goal));
-                    count++;
-                }
-
-                if (completedGoals.size() > maxGoals) {
-                    String moreFormat = config.getOrDefaultString("player-stats-gui.goals.more-format", "&7... and &e%REMAINING% &7more");
-                    goalsList.append("\n").append(moreFormat.replace("%REMAINING%", String.valueOf(completedGoals.size() - maxGoals)));
+                    goalsList.append(goalFormat.replace("%GOAL%", completedGoals.get(i)));
                 }
 
                 combinations.put("%GOALS_LIST%", goalsList.toString());
-                break;
-
-            case "refresh":
-                int delay = config.getOrDefaultInt("player-stats-gui.items.refresh.delay", 3);
-                combinations.put("%DELAY%", String.valueOf(delay));
                 break;
 
             case "title":
@@ -322,87 +413,5 @@ public class PlayerStatsGui extends BaseCustomGUI {
         if (itemType == null) {
             return;
         }
-
-        // Handle refresh button
-        if ("refresh".equals(itemType)) {
-            handleRefreshClick(whoClicked);
-            return;
-        }
-
-        // All other slots are informational only
-    }
-
-    private void handleRefreshClick(Player player) {
-        String itemPath = "player-stats-gui.items.refresh";
-
-        // Check permission
-        String permission = config.getOrDefaultString(itemPath + ".permission", "playtime.stats.refresh");
-        if (!permission.isEmpty() && !player.hasPermission(permission)) {
-            return;
-        }
-
-        // Check cooldown
-        UUID playerUUID = player.getUniqueId();
-        long currentTime = System.currentTimeMillis();
-        int delaySeconds = config.getOrDefaultInt(itemPath + ".delay", 3);
-        long delayMillis = delaySeconds * 1000L;
-
-        if (refreshCooldowns.containsKey(playerUUID)) {
-            long lastRefresh = refreshCooldowns.get(playerUUID);
-            long timeSinceLastRefresh = currentTime - lastRefresh;
-
-            if (timeSinceLastRefresh < delayMillis) {
-                return;
-            }
-        }
-
-        // Update cooldown
-        refreshCooldowns.put(playerUUID, currentTime);
-
-        // Play refresh sound
-        String soundName = config.getOrDefaultString(itemPath + ".sound", "UI_BUTTON_CLICK");
-        double volume = config.getOrDefaultDouble(itemPath + ".sound-volume", 1.0);
-        double pitch = config.getOrDefaultDouble(itemPath + ".sound-pitch", 1.0);
-
-        try {
-            Sound sound = (Sound) Sound.class.getField(soundName).get(null);
-
-            if (sound != null) {
-                player.playSound(player.getLocation(), sound, (float) volume, (float) pitch);
-            }
-        } catch (Exception ignored) {}
-
-        // Perform refresh
-        refreshStats();
-    }
-
-    private void refreshStats() {
-        if (!validateSession()) {
-            handleInvalidSession();
-            return;
-        }
-
-        // Refresh the subject data from database
-        subject = dbUsersManager.getUserFromUUID(subject.getUuid());
-
-        if (subject == null) {
-            sender.closeInventory();
-            return;
-        }
-
-        // Update the inventory title with fresh placeholders
-        String rawTitle = config.getString("player-stats-gui.gui.title");
-        String processedTitle = processPlaceholders(rawTitle, "title");
-
-        // Create new inventory with updated title
-        Inventory newInv = Bukkit.createInventory(this, 54, Utils.parseColors(processedTitle));
-        this.inv = newInv;
-
-        // Rebuild the GUI with fresh data
-        initializeItems();
-
-        // Close current inventory and open the new one
-        sender.closeInventory();
-        sender.openInventory(inv);
     }
 }

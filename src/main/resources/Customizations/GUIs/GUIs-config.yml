@@ -85,115 +85,119 @@ rewards-gui:
     error-processing: "&cAn error occurred while processing your reward."
     claimed-rewards: "&aClaimed %COUNT% rewards!"
 
+
 #=================================================================
 #                      PLAYER STATS GUI
 #=================================================================
 
 player-stats-gui:
   gui:
-    title: "&6&l%PLAYER_NAME%'s stats"
+    title: "&6%PLAYER_NAME%'s Statistics"
     border:
       material: "BLACK_STAINED_GLASS_PANE"
       name: " "
 
-  # Configurable GUI items
   items:
     playtime:
-      enabled: true
-      slot: 20
-      material: "CLOCK"
-      name: "&e&lPlaytime Information"
-      permission: "playtime.stats.view.playtime"
-      lore:
-        - "&7Total Playtime: &e%PLAYTIME%"
-        - "&7Actual Playtime: &e%ACTUAL_PLAYTIME%"
-        - "&7Artificial Playtime: &e%ARTIFICIAL_PLAYTIME%"
+      views:
+        owner:
+          material: "CLOCK"
+          slot: 22
+          name: "&e&lPlaytime Information"
+          lore:
+            - "&7Playtime: &e%PLAYTIME%"
+        player:
+          material: "CLOCK"
+          slot: 20
+          name: "&e&lPlaytime Information"
+          lore:
+            - "&7Playtime: &e%PLAYTIME%"
+        staff:
+          material: "CLOCK"
+          slot: 20
+          name: "&e&lPlaytime Information"
+          lore:
+            - "&7Total Playtime: &e%PLAYTIME%"
+            - "&7Actual Playtime: &e%ACTUAL_PLAYTIME%"
+            - ""
+            - "&7Artificial Playtime: &e%ARTIFICIAL_PLAYTIME%"
 
     firstjoin:
-      enabled: true
-      slot: 22
-      material: "CAKE"
-      name: "&a&lFirst Join"
-      permission: "playtime.stats.view.firstjoin"
-      lore:
-        - "&7First Join: &e%FIRST_JOIN_DATE%"
-        - "&7Account Age: &e%ACCOUNT_AGE%"
+      views:
+        owner:
+          material: "CAKE"
+          slot: 20
+          name: "&a&lFirst Join"
+          lore:
+            - "&7You joined on: &e%FIRST_JOIN_DATE%"
+            - "&7Account Age: &a%ACCOUNT_AGE%"
+        staff:
+          material: "CAKE"
+          slot: 21
+          name: "&a&lFirst Join"
+          lore:
+            - "&7Joined: &e%FIRST_JOIN_DATE%"
+            - "&7Account Age: &a%ACCOUNT_AGE%"
 
     lastseen:
-      enabled: true
-      slot: 24
-      material: "COMPASS"
-      name: "&c&lLast Seen"
-      permission: "playtime.stats.view.lastseen"
-      lore:
-        - "&7Last Seen: &e%LAST_SEEN_DATE%"
-        - "&7Time Elapsed: &e%TIME_SINCE_LAST_SEEN%"
+      views:
+        player:
+          material: "COMPASS"
+          slot: 30
+          name: "&c&lLast Seen"
+          lore:
+            - "&7Last Seen: &e%LAST_SEEN_DATE%"
+            - "&7Time Elapsed: &e%TIME_SINCE_LAST_SEEN%"
+        staff:
+          material: "COMPASS"
+          slot: 30
+          name: "&c&lLast Seen"
+          lore:
+            - "&7Last Seen: &e%LAST_SEEN_DATE%"
+            - "&7Time Elapsed: &e%TIME_SINCE_LAST_SEEN%"
 
     joinstreak:
-      enabled: true
-      slot: 30
-      material: "FIRE_CHARGE"
-      name: "&6&lJoin Streak"
-      permission: "playtime.stats.view.joinstreak"
-      lore:
-        - "&7Current Streak: &e%RELATIVE_STREAK%"
-        - "&7Total Streak: &e%ABSOLUTE_STREAK%"
+      views:
+        owner:
+          material: "FIRE_CHARGE"
+          slot: 30
+          name: "&6&lJoin Streak"
+          lore:
+            - "&7Total Streak: &e%ABSOLUTE_STREAK%"
+        staff:
+          material: "FIRE_CHARGE"
+          slot: 30
+          name: "&6&lJoin Streak"
+          lore:
+            - "&7Current Streak: &e%RELATIVE_STREAK%"
+            - "&7Total Streak: &e%ABSOLUTE_STREAK%"
 
     goals:
-      enabled: true
-      slot: 32
-      material: "NETHER_STAR"
-      name: "&d&lCompleted Goals"
-      permission: "playtime.stats.view.goals"
-      lore:
-        - "&7Total Goals: &e%GOALS_COUNT%"
-        - "&8&m------------------"
-        - "%GOALS_LIST%"
+      views:
+        owner:
+          material: "NETHER_STAR"
+          slot: 32
+          name: "&d&lCompleted Goals"
+          lore:
+            - "&7Total Goals: &e%GOALS_COUNT%"
+            - "&8&m------------------"
+            - "%GOALS_LIST%"
+        player:
+          material: "NETHER_STAR"
+          slot: 32
+          name: "&d&lCompleted Goals"
+          lore:
+            - "&7Total Goals: &e%GOALS_COUNT%"
+            - "&8&m------------------"
+            - "%GOALS_LIST%"
+        staff:
+          material: "NETHER_STAR"
+          slot: 32
+          name: "&d&lCompleted Goals"
+          lore:
+            - "&7Total Goals: &e%GOALS_COUNT%"
+            - "&8&m------------------"
+            - "%GOALS_LIST%"
 
-    account:
-      enabled: true
-      slot: 4
-      material: "PLAYER_HEAD"
-      name: "&b&lAccount Overview"
-      permission: "playtime.stats.view.account"
-      lore:
-        - "&7Player: &e%PLAYER_NAME%"
-        - "&7UUID: &f%UUID%"
-
-    # Refresh button - now treated as a regular configurable item
-    refresh:
-      enabled: true
-      slot: 49
-      material: "LIME_DYE"
-      name: "&a&lRefresh Stats"
-      permission: "playtime.stats.refresh"
-      delay: 3
-      sound: "UI_BUTTON_CLICK"
-      sound-volume: 1.0
-      sound-pitch: 1.0
-      lore:
-        - "&7Click to refresh player statistics"
-        - "&8Cooldown: &c%DELAY% seconds"
-
-    # Example of a custom item
-    custom_stat:
-      enabled: false
-      slot: 35
-      material: "DIAMOND"
-      name: "&b&lCustom Stat"
-      permission: "playtime.stats.view.custom"
-      lore:
-        - "&7This is a custom stat item"
-        - "&7Player: &e%PLAYER_NAME%"
-        - "&7Add your own placeholders here"
-
-  # Goal display settings
   goals:
-    max-display: 5
     list-format: "&7- &e%GOAL%"
-    more-format: "&7... and &e%REMAINING% &7more"
-
-  # Messages
-  messages:
-    player-not-found: "&cPlayer data could not be found!"
-    no-permission: "&cYou don't have permission to view this information."

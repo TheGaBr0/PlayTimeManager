@@ -35,18 +35,15 @@ public class PlayerStatsGui extends BaseCustomGUI {
     private DBUser subject;
     private int guiSize;
 
-    // Map to store item types by slot for click handling
     private final Map<Integer, String> slotItemTypes = new HashMap<>();
 
-    // View types
     public enum ViewType {
         OWNER,    // Player viewing their own stats
         PLAYER,   // Player viewing another player's stats
         STAFF     // Staff member viewing stats
     }
 
-    // Staff permission only
-    private static final String PERMISSION_STAFF_VIEW = "playtime.stats.staff";
+    private static final String PERMISSION_STAFF_VIEW = "playtime.others.stats.staff";
 
     public PlayerStatsGui(Player sender, DBUser subject, String sessionToken) {
         super(sender, sessionToken);
@@ -398,31 +395,14 @@ public class PlayerStatsGui extends BaseCustomGUI {
             return text;
         }
 
-        // Create placeholder combinations map
         Map<String, String> combinations = new HashMap<>();
 
-        // Add all common placeholders regardless of item type
         addCommonPlaceholders(combinations);
 
-        // Add type-specific placeholders
-        addTypeSpecificPlaceholders(combinations, itemType);
+        addTypeSpecialPlaceholders(combinations, itemType);
 
-        // Add view-specific placeholders
-        addViewSpecificPlaceholders(combinations);
 
         return Utils.placeholdersReplacer(text, combinations);
-    }
-
-    /**
-     * Add view-specific placeholders
-     */
-    private void addViewSpecificPlaceholders(Map<String, String> combinations) {
-        ViewType currentView = getViewType();
-        combinations.put("%VIEW_TYPE%", currentView.name());
-        combinations.put("%IS_OWNER%", String.valueOf(currentView == ViewType.OWNER));
-        combinations.put("%IS_STAFF%", String.valueOf(currentView == ViewType.STAFF));
-        combinations.put("%IS_PLAYER%", String.valueOf(currentView == ViewType.PLAYER));
-        combinations.put("%GUI_SIZE%", String.valueOf(guiSize));
     }
 
     private void addCommonPlaceholders(Map<String, String> combinations) {
@@ -493,7 +473,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
 
     }
 
-    private void addTypeSpecificPlaceholders(Map<String, String> combinations, String itemType) {
+    private void addTypeSpecialPlaceholders(Map<String, String> combinations, String itemType) {
         switch (itemType.toLowerCase()) {
             case "goals":
                 // Handle goal list placeholders - display in rows of 3
@@ -512,14 +492,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
                 }
 
                 combinations.put("%GOALS_LIST%", goalsList.toString());
-                break;
-
-            case "title":
-                // Add any title-specific placeholders here if needed
-                break;
-
-            case "border":
-                // Add any border-specific placeholders here if needed
                 break;
         }
     }
@@ -554,7 +526,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
             return;
         }
 
-        // Check if this slot has an item type associated with it
         String itemType = slotItemTypes.get(slot);
         if (itemType == null) {
             return;

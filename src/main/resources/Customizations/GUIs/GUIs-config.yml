@@ -5,12 +5,15 @@
 # hexadecimal values between 00 and ff (same as decimal 0-255)
 # Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
 #
-# Placeholders enclosed in {} are FIELD-DEPENDENT. They can only be used within the specific field
+Update# Internal placeholders used in this file are GUI-DEPENDENT. They can only be used within the specific gui section
 # where they're defined. All available placeholders are shown in this configuration file.
 
 #=================================================================
 #                   JOIN STREAKS REWARDS GUI
 #=================================================================
+
+# Available placeholders for this gui: %CURRENT_PAGE%, %TOTAL_PAGES%, %REQUIRED_JOINS%, %JOIN_STREAK_COLOR%,
+# %CURRENT_STREAK%, %DESCRIPTION%, %REWARD_DESCRIPTION%, %COUNT%
 
 rewards-gui:
   gui:
@@ -89,6 +92,26 @@ rewards-gui:
 #=================================================================
 #                      PLAYER STATS GUI
 #=================================================================
+
+# Available placeholders: %PLAYER_NAME%, %UUID%, %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME%,
+# %FIRST_JOIN_DATE%, %ACCOUNT_AGE%, %LAST_SEEN_DATE%, %TIME_SINCE_LAST_SEEN%, %RELATIVE_STREAK%,
+# %ABSOLUTE_STREAK%, %GOALS_COUNT%, %GOALS_LIST%, %POSITION%, %VIEW_TYPE%, %IS_OWNER%, %IS_STAFF%,
+# %IS_PLAYER%, %GUI_SIZE%, %CURRENT_DATE%, %CURRENT_TIME%
+
+# Instructions:
+# - 'views' section defines different GUI configurations based on who is viewing:
+#   * owner: Player viewing their own stats
+#   * player: Player viewing another player's stats
+#   * staff: Staff member viewing stats (requires playtime.stats.staff permission)
+# - Each view can have different title, size (9,18,27,36,45,54), and border settings
+# - Items can be enabled/disabled per view using 'enabled: true/false' (defaults to true)
+# - Each item can have different materials, slots, names, and lore per view
+# - Slot numbers must be within the GUI size range (0 to size-1)
+# - Items under 'items' section are completely customizable - you can add new ones or remove existing ones-
+# - Some items have special settings with unique placeholders: goals-settings.list-format and leaderboard-settings.not-in-leaderboard-position
+#
+# For detailed placeholder descriptions and a complete tutorial on editing this GUI,
+# please visit the wiki: https://github.com/TheGaBr0/PlayTimeManager/wiki
 
 player-stats-gui:
 
@@ -299,4 +322,3 @@ player-stats-gui:
           name: "&c&lPlaytime Leaderboard"
           lore:
             - "&7Position in the playtime leaderboard: &e%POSITION%"
-

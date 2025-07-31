@@ -4,6 +4,8 @@ import me.thegabro.playtimemanager.GUIs.BaseCustomGUI;
 import me.thegabro.playtimemanager.GUIs.InventoryListener;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import net.kyori.adventure.text.Component;
@@ -31,6 +33,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final GUIsConfiguration config;
     private DBUser subject;
+    private int guiSize;
 
     // Map to store item types by slot for click handling
     private final Map<Integer, String> slotItemTypes = new HashMap<>();
@@ -50,10 +53,16 @@ public class PlayerStatsGui extends BaseCustomGUI {
         this.config = GUIsConfiguration.getInstance();
         this.subject = subject;
 
+        // Determine view type first to get the correct size
+        ViewType viewType = getViewType();
+
+        // Get GUI size for this view (validate and round to nearest valid size)
+        this.guiSize = getGuiSizeForView(viewType);
+
         // Process title with placeholders
-        String rawTitle = config.getString("player-stats-gui.gui.title");
+        String rawTitle = getTitleForView(viewType);
         String processedTitle = processPlaceholders(rawTitle, "title");
-        inv = Bukkit.createInventory(this, 54, Utils.parseColors(processedTitle));
+        inv = Bukkit.createInventory(this, guiSize, Utils.parseColors(processedTitle));
     }
 
     public void openInventory() {
@@ -70,7 +79,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
         slotItemTypes.clear();
         inv.clear();
 
-        // Create GUI borders
+        // Create GUI borders if enabled for current view
         createBorders();
 
         // Create all configured items based on view type
@@ -81,39 +90,163 @@ public class PlayerStatsGui extends BaseCustomGUI {
      * Determine the view type based on permissions and context
      */
     private ViewType getViewType() {
-        // Owner view has highest priority - if looking at own stats
-        if (sender.getUniqueId().equals(subject.getUuid())) {
-            return ViewType.OWNER;
-        }
+        boolean isOwnStats = sender.getUniqueId().toString().equals(subject.getUuid());
+        boolean hasStaffPermission = sender.hasPermission(PERMISSION_STAFF_VIEW);
 
-        // Staff view if has staff permission and looking at another player
-        if (sender.hasPermission(PERMISSION_STAFF_VIEW)) {
+        if (hasStaffPermission) {
             return ViewType.STAFF;
         }
 
-        // Default to player view
+        if (isOwnStats) {
+            return ViewType.OWNER;
+        }
+
         return ViewType.PLAYER;
     }
 
-    private void createBorders() {
-        String sectionPath = "player-stats-gui.gui.border";
+    /**
+     * Get the GUI size for the current view type
+     */
+    private int getGuiSizeForView(ViewType viewType) {
+        String viewKey = viewType.name().toLowerCase();
+        String sizePath = "player-stats-gui.views." + viewKey + ".size";
 
-        // Get border configuration with placeholder processing
-        Material borderMaterial = Material.valueOf(config.getOrDefaultString(sectionPath + ".material", "BLACK_STAINED_GLASS_PANE"));
-        String rawBorderName = config.getOrDefaultString(sectionPath + ".name", " ");
+        // Get configured size or default to 54
+        int configuredSize = config.getOrDefaultInt(sizePath, 54);
+
+        // Validate and round to nearest valid inventory size (9, 18, 27, 36, 45, 54)
+        return validateInventorySize(configuredSize);
+    }
+
+    /**
+     * Validate and round inventory size to nearest valid size
+     */
+    private int validateInventorySize(int size) {
+        if (size <= 9) return 9;
+        if (size <= 18) return 18;
+        if (size <= 27) return 27;
+        if (size <= 36) return 36;
+        if (size <= 45) return 45;
+        return 54; // Maximum size
+    }
+
+    /**
+     * Get the title for the current view type
+     */
+    private String getTitleForView(ViewType viewType) {
+        String viewKey = viewType.name().toLowerCase();
+        String titlePath = "player-stats-gui.views." + viewKey + ".title";
+
+        // Check for view-specific title first
+        if (config.contains(titlePath)) {
+            return config.getString(titlePath);
+        }
+
+        // Fall back to default title
+        return config.getOrDefaultString("player-stats-gui.gui.title", "&6%PLAYER_NAME%'s Statistics");
+    }
+
+    /**
+     * Check if borders are enabled for the current view
+     */
+    private boolean areBordersEnabledForView(ViewType viewType) {
+        String viewKey = viewType.name().toLowerCase();
+        String borderEnabledPath = "player-stats-gui.views." + viewKey + ".border.enabled";
+
+        // Check view-specific border setting first
+        if (config.contains(borderEnabledPath)) {
+            return config.getBoolean(borderEnabledPath);
+        }
+
+        // Fall back to global border setting
+        return config.getOrDefaultBoolean("player-stats-gui.gui.border.enabled", true);
+    }
+
+    /**
+     * Get border material for the current view
+     */
+    private Material getBorderMaterialForView(ViewType viewType) {
+        String viewKey = viewType.name().toLowerCase();
+        String borderMaterialPath = "player-stats-gui.views." + viewKey + ".border.material";
+
+        String materialName;
+
+        // Check view-specific border material first
+        if (config.contains(borderMaterialPath)) {
+            materialName = config.getString(borderMaterialPath);
+        } else {
+            // Fall back to global border material
+            materialName = config.getOrDefaultString("player-stats-gui.gui.border.material", "BLACK_STAINED_GLASS_PANE");
+        }
+
+        try {
+            return Material.valueOf(materialName);
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Invalid border material '" + materialName + "' for view " + viewType + ". Using BLACK_STAINED_GLASS_PANE.");
+            return Material.BLACK_STAINED_GLASS_PANE;
+        }
+    }
+
+    /**
+     * Get border name for the current view
+     */
+    private String getBorderNameForView(ViewType viewType) {
+        String viewKey = viewType.name().toLowerCase();
+        String borderNamePath = "player-stats-gui.views." + viewKey + ".border.name";
+
+        // Check view-specific border name first
+        if (config.contains(borderNamePath)) {
+            return config.getString(borderNamePath);
+        }
+
+        // Fall back to global border name
+        return config.getOrDefaultString("player-stats-gui.gui.border.name", " ");
+    }
+
+    private void createBorders() {
+        ViewType currentView = getViewType();
+
+        // Check if borders are enabled for this view
+        if (!areBordersEnabledForView(currentView)) {
+            return;
+        }
+
+        // Get border configuration for current view
+        Material borderMaterial = getBorderMaterialForView(currentView);
+        String rawBorderName = getBorderNameForView(currentView);
         String borderName = processPlaceholders(rawBorderName, "border");
 
-        int leftIndex = 9;
-        int rightIndex = 17;
+        // Calculate border slots based on GUI size
+        Set<Integer> borderSlots = calculateBorderSlots(guiSize);
 
-        for (int i = 0; i < 54; i++) {
-            if (i <= 9 || i >= 45 || i == leftIndex || i == rightIndex) {
-                inv.setItem(i, createGuiItem(borderMaterial, Utils.parseColors(borderName)));
-                protectedSlots.add(i);
-                if (i == leftIndex) leftIndex += 9;
-                if (i == rightIndex) rightIndex += 9;
+        for (int slot : borderSlots) {
+            inv.setItem(slot, createGuiItem(borderMaterial, Utils.parseColors(borderName)));
+            protectedSlots.add(slot);
+        }
+    }
+
+    /**
+     * Calculate which slots should be borders based on GUI size
+     */
+    private Set<Integer> calculateBorderSlots(int size) {
+        Set<Integer> borderSlots = new HashSet<>();
+        int rows = size / 9;
+
+        for (int i = 0; i < size; i++) {
+            int row = i / 9;
+            int col = i % 9;
+
+            // Top and bottom rows
+            if (row == 0 || row == rows - 1) {
+                borderSlots.add(i);
+            }
+            // Left and right columns (excluding corners already added)
+            else if (col == 0 || col == 8) {
+                borderSlots.add(i);
             }
         }
+
+        return borderSlots;
     }
 
     private void createConfigurableItems() {
@@ -135,7 +268,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
 
             // Handle out-of-bounds slot ID
             if (slot < 0 || slot >= inv.getSize()) {
-                plugin.getLogger().warning("Invalid slot " + slot + " for item " + itemKey + " in view " + currentView + ". Skipping item.");
+                plugin.getLogger().warning("Invalid slot " + slot + " for item " + itemKey + " in view " + currentView + ". GUI size is " + inv.getSize() + ". Skipping item.");
                 continue;
             }
 
@@ -282,6 +415,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
         combinations.put("%IS_OWNER%", String.valueOf(currentView == ViewType.OWNER));
         combinations.put("%IS_STAFF%", String.valueOf(currentView == ViewType.STAFF));
         combinations.put("%IS_PLAYER%", String.valueOf(currentView == ViewType.PLAYER));
+        combinations.put("%GUI_SIZE%", String.valueOf(guiSize));
     }
 
     private void addCommonPlaceholders(Map<String, String> combinations) {
@@ -318,18 +452,15 @@ public class PlayerStatsGui extends BaseCustomGUI {
         if (isOnline) {
             combinations.put("%LAST_SEEN_DATE%", "Currently Online");
             combinations.put("%TIME_SINCE_LAST_SEEN%", "0");
-            combinations.put("%ONLINE_STATUS%", "Online");
         } else if (lastSeen != null && !lastSeen.equals(LocalDateTime.of(1970, 1, 1, 0, 0, 0, 0))) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
             combinations.put("%LAST_SEEN_DATE%", lastSeen.format(formatter));
 
             Duration timeSinceLastSeen = Duration.between(lastSeen, LocalDateTime.now());
             combinations.put("%TIME_SINCE_LAST_SEEN%", Utils.ticksToFormattedPlaytime(timeSinceLastSeen.getSeconds() * 20));
-            combinations.put("%ONLINE_STATUS%", "Offline");
         } else {
             combinations.put("%LAST_SEEN_DATE%", "Unknown");
             combinations.put("%TIME_SINCE_LAST_SEEN%", "Unknown");
-            combinations.put("%ONLINE_STATUS%", "Unknown");
         }
 
         // Join streak information
@@ -345,6 +476,14 @@ public class PlayerStatsGui extends BaseCustomGUI {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
         combinations.put("%CURRENT_DATE%", now.format(formatter));
         combinations.put("%CURRENT_TIME%", now.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+
+        //Playtime Leaderboard
+        int position = DBUsersManager.getInstance().getTopPlayers().indexOf(OnlineUsersManager.getInstance().getOnlineUser(subject.getNickname()));
+        if(position != -1)
+            combinations.put("%POSITION%", String.valueOf(position + 1));
+        else
+            combinations.put("%POSITION%", config.getOrDefaultString("player-stats-gui.leaderboard-settings.not-in-leaderboard-position", "-"));
+
     }
 
     private void addTypeSpecificPlaceholders(Map<String, String> combinations, String itemType) {
@@ -361,7 +500,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
                         goalsList.append(" "); // Space between goals on same line
                     }
 
-                    String goalFormat = config.getOrDefaultString("player-stats-gui.goals.list-format", "&7- &e%GOAL%");
+                    String goalFormat = config.getOrDefaultString("player-stats-gui.goals-settings.list-format", "&7- &e%GOAL%");
                     goalsList.append(goalFormat.replace("%GOAL%", completedGoals.get(i)));
                 }
 

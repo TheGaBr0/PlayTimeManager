@@ -1,13 +1,16 @@
-package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
+package me.thegabro.playtimemanager.Commands;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import me.thegabro.playtimemanager.GUIs.Player.PlayerStatsGui;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -16,19 +19,40 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class PlayTimeStats {
+public class PlayTimeStats implements CommandExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private static final Map<UUID, Long> lastGuiOpenTime = new HashMap<>();
     private static final long GUI_OPEN_COOLDOWN = 1000;
 
-    public PlayTimeStats(CommandSender sender, String[] args) {
+    @Override
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        // Check permission
+        if (!sender.hasPermission("playtime.stats")) {
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to use this command!"));
+            return true;
+        }
 
-        DBUser user = dbUsersManager.getUserFromNickname(args[0]);
+        String targetPlayerName;
+
+        // If no argument is provided, use the sender's name (if sender is a player)
+        if (args.length == 0) {
+            if (sender instanceof Player) {
+                targetPlayerName = sender.getName();
+            } else {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You must specify a player name!"));
+                return true;
+            }
+        } else {
+            targetPlayerName = args[0];
+        }
+
+        // Get user from database
+        DBUser user = dbUsersManager.getUserFromNickname(targetPlayerName);
 
         if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Player not found!"));
-            return;
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &cPlayer not found!"));
+            return true;
         }
 
         // Check if sender is console or player
@@ -43,6 +67,8 @@ public class PlayTimeStats {
             // Fallback to text stats for other command sender types
             sendTextStats(sender, user);
         }
+
+        return true;
     }
 
     private void sendTextStats(CommandSender sender, DBUser user) {

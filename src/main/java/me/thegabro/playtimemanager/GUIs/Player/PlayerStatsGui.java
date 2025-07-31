@@ -294,13 +294,20 @@ public class PlayerStatsGui extends BaseCustomGUI {
     /**
      * Check if an item should be visible for the current view type
      * Item is visible only if a view configuration exists for the current view type
+     * and the enabled field is true (defaults to true if not specified)
      */
     private boolean isItemVisibleForView(String itemPath, ViewType viewType) {
         String viewKey = viewType.name().toLowerCase();
         String viewPath = itemPath + ".views." + viewKey;
 
         // Item is visible only if the view configuration exists
-        return config.contains(viewPath);
+        if (!config.contains(viewPath)) {
+            return false;
+        }
+
+        // Check if the view is enabled (defaults to true if not specified)
+        String enabledPath = viewPath + ".enabled";
+        return config.getOrDefaultBoolean(enabledPath, true);
     }
 
     /**

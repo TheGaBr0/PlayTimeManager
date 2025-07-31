@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager;
 
+import me.thegabro.playtimemanager.Commands.PlayTimeStats;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.GUIs.Goals.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
@@ -134,6 +135,8 @@ public class PlayTimeManager extends JavaPlugin{
         Objects.requireNonNull(getCommand("claimrewards")).setExecutor(new ClaimRewards() {
         });
         Objects.requireNonNull(getCommand("playtimeattribute")).setExecutor(new PlayTimeAttributeCommand() {
+        });
+        Objects.requireNonNull(getCommand("playtimestats")).setExecutor(new PlayTimeStats() {
         });
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();

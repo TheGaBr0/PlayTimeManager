@@ -135,6 +135,7 @@ player-stats-gui:
     playtime:
       views:
         owner:
+          enabled: true
           material: "CLOCK"
           slot: 22
           name: "&e&lMy Playtime"
@@ -143,12 +144,14 @@ player-stats-gui:
             - ""
             - "&8View: %VIEW_TYPE%"
         player:
+          enabled: true
           material: "CLOCK"
           slot: 13  # Centered in smaller GUI
           name: "&e&l%PLAYER_NAME%'s Playtime"
           lore:
             - "&7Playtime: &e%PLAYTIME%"
         staff:
+          enabled: true
           material: "CLOCK"
           slot: 20
           name: "&e&lPlaytime Information"
@@ -162,6 +165,7 @@ player-stats-gui:
     firstjoin:
       views:
         owner:
+          enabled: true
           material: "CAKE"
           slot: 20
           name: "&a&lFirst join"
@@ -169,8 +173,16 @@ player-stats-gui:
             - "&7You joined on: &e%FIRST_JOIN_DATE%"
             - "&7Account Age: &a%ACCOUNT_AGE%"
             - ""
-            - "&7Status: &a%ONLINE_STATUS%"
+        player:
+          enabled: true
+          material: "CAKE"
+          slot: 11
+          name: "&a&l%PLAYER_NAME%'s First Join"
+          lore:
+            - "&7Joined on: &e%FIRST_JOIN_DATE%"
+            - "&7Account Age: &a%ACCOUNT_AGE%"
         staff:
+          enabled: true
           material: "CAKE"
           slot: 22
           name: "&a&lFirst Join"
@@ -180,7 +192,16 @@ player-stats-gui:
 
     lastseen:
       views:
+        owner:
+          enabled: false  # Owner doesn't need to see their own "last seen"
+          material: "COMPASS"
+          slot: 21
+          name: "&c&lMy Last Activity"
+          lore:
+            - "&7Last Seen: &e%LAST_SEEN_DATE%"
+            - "&7Time Offline: &e%TIME_SINCE_LAST_SEEN%"
         player:
+          enabled: true
           material: "COMPASS"
           slot: 15  # Adjusted for smaller GUI
           name: "&c&lLast Activity"
@@ -188,6 +209,7 @@ player-stats-gui:
             - "&7Last Seen: &e%LAST_SEEN_DATE%"
             - "&7Time Offline: &e%TIME_SINCE_LAST_SEEN%"
         staff:
+          enabled: true
           material: "COMPASS"
           slot: 24
           name: "&c&lLast Activity"
@@ -198,22 +220,34 @@ player-stats-gui:
     joinstreak:
       views:
         owner:
+          enabled: true
           material: "FIRE_CHARGE"
           slot: 30
           name: "&6&lMy Join Streak"
           lore:
             - "&7My streak for the current cycle: &e%RELATIVE_STREAK% days"
             - "&7My total Streak: &6%ABSOLUTE_STREAK% days"
+        player:
+          enabled: true
+          material: "FIRE_CHARGE"
+          slot: 12
+          name: "&6&l%PLAYER_NAME%'s Join Streak"
+          lore:
+            - "&7Streak for the current cycle: &e%RELATIVE_STREAK% days"
+            - "&7Total Streak: &6%ABSOLUTE_STREAK% days"
         staff:
+          enabled: true
           material: "FIRE_CHARGE"
           slot: 39
           name: "&6&lJoin Streak"
           lore:
             - "&7Streak for the current cycle: &e%RELATIVE_STREAK% days"
             - "&7Total Streak: &6%ABSOLUTE_STREAK% days"
+
     goals:
       views:
         owner:
+          enabled: true
           material: "NETHER_STAR"
           slot: 32
           name: "&d&lMy Achievement Goals"
@@ -224,6 +258,7 @@ player-stats-gui:
             - "&8&m────────────────────"
             - "&7Keep up the great work!"
         player:
+          enabled: true
           material: "NETHER_STAR"
           slot: 11  # Adjusted for smaller GUI
           name: "&d&l%PLAYER_NAME%'s Goals"
@@ -232,6 +267,7 @@ player-stats-gui:
             - "&8&m──────────────"
             - "%GOALS_LIST%"
         staff:
+          enabled: true
           material: "NETHER_STAR"
           slot: 40
           name: "&d&lCompleted Goals"
@@ -239,15 +275,25 @@ player-stats-gui:
             - "&7Completed Goals: &e%GOALS_COUNT%"
             - "&8&m──────────────"
             - "%GOALS_LIST%"
+
     leaderboard:
       views:
         owner:
+          enabled: true
           material: "GOLD_BLOCK"
           slot: 24
-          name: "&c&Playtime Leaderboard"
+          name: "&c&lPlaytime Leaderboard"
           lore:
             - "&7My position in the playtime leaderboard: &e%POSITION%"
+        player:
+          enabled: true
+          material: "GOLD_BLOCK"
+          slot: 14
+          name: "&c&l%PLAYER_NAME%'s Leaderboard Position"
+          lore:
+            - "&7Position in the playtime leaderboard: &e%POSITION%"
         staff:
+          enabled: true
           material: "GOLD_BLOCK"
           slot: 41
           name: "&c&lPlaytime Leaderboard"

@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
+package me.thegabro.playtimemanager.Commands;
 
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUser;

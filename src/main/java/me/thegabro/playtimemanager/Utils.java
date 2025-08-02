@@ -1,13 +1,21 @@
 package me.thegabro.playtimemanager;
 
+import com.destroystokyo.paper.profile.PlayerProfile;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormat;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
 
+import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.UUID;
 
 public class Utils {
     // Constants for tick conversions
@@ -17,6 +25,13 @@ public class Utils {
     private static final long TICKS_PER_DAY = TICKS_PER_HOUR * 24;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
 
+    /**
+     * Parses color codes and formatting from a string and converts it to a Component
+     * Supports both legacy color codes (&0-f, &k-o, &r) and hex colors (&#RRGGBB)
+     *
+     * @param input The input string containing color codes and text
+     * @return Component with proper formatting and colors applied
+     */
     public static Component parseColors(String input) {
         if (input == null || input.isEmpty()) {
             return Component.empty();
@@ -79,6 +94,12 @@ public class Utils {
         return message;
     }
 
+    /**
+     * Gets the TextColor for a legacy color code (0-9, a-f)
+     *
+     * @param code The single character color code
+     * @return TextColor object for the code, or null if invalid
+     */
     private static TextColor getLegacyColor(String code) {
         return switch (code.toLowerCase()) {
             case "0" -> TextColor.color(0, 0, 0);         // Black
@@ -101,6 +122,12 @@ public class Utils {
         };
     }
 
+    /**
+     * Gets the TextDecoration for a legacy formatting code (k, l, m, n, o)
+     *
+     * @param code The single character formatting code
+     * @return TextDecoration object for the code, or null if invalid
+     */
     private static TextDecoration getLegacyFormatting(String code) {
         return switch (code.toLowerCase()) {
             case "k" -> TextDecoration.OBFUSCATED;    // Obfuscated
@@ -112,17 +139,36 @@ public class Utils {
         };
     }
 
+    /**
+     * Removes all color codes from a text string
+     *
+     * @param text The text containing § color codes
+     * @return The text with all color codes removed
+     */
     public static String stripColor(String text) {
         return text.replaceAll("§[0-9a-fk-or]", "");
     }
 
-
+    /**
+     * Safely adds two long values, checking for overflow
+     *
+     * @param a First value
+     * @param b Second value
+     * @return Sum of a and b, or -1L if overflow occurs
+     */
     private static long safeAdd(long a, long b) {
         long result = a + b;
         if (((a ^ result) & (b ^ result)) < 0) return -1L; // Overflow or underflow
         return result;
     }
 
+    /**
+     * Safely multiplies two long values, checking for overflow
+     *
+     * @param a First value
+     * @param b Second value
+     * @return Product of a and b, or -1L if overflow occurs
+     */
     private static long safeMultiply(long a, long b) {
         if (a == 0 || b == 0) return 0;
         long result = a * b;
@@ -130,6 +176,14 @@ public class Utils {
         return result;
     }
 
+    /**
+     * Converts a formatted playtime string to ticks
+     * Accepts formats like "1y,2d,3h,4m,5s" or combinations thereof
+     * Each time unit can only appear once in the input
+     *
+     * @param input The formatted playtime string (e.g., "1y,2d,3h")
+     * @return The equivalent time in ticks, or -1L if input is invalid
+     */
     public static long formattedPlaytimeToTicks(String input) {
         if (input == null || input.trim().isEmpty()) {
             return -1L;
@@ -204,11 +258,24 @@ public class Utils {
     }
 
 
-
+    /**
+     * Converts ticks to a formatted playtime string using the default format
+     *
+     * @param ticks The time in ticks to convert
+     * @return Formatted playtime string using default format configuration
+     */
     public static String ticksToFormattedPlaytime(long ticks){
         return ticksToFormattedPlaytime(ticks, PlaytimeFormatsConfiguration.getInstance().getFormat("default"));
     }
 
+    /**
+     * Converts ticks to a formatted playtime string using a specific format
+     * Handles negative values and formats time units according to the provided format configuration
+     *
+     * @param ticks The time in ticks to convert
+     * @param format The PlaytimeFormat to use for formatting
+     * @return Formatted playtime string (e.g., "1 year, 2 days, 3 hours")
+     */
     public static String ticksToFormattedPlaytime(long ticks, PlaytimeFormat format) {
 
         boolean isNegative = ticks < 0;
@@ -294,6 +361,13 @@ public class Utils {
         return isNegative ? "-" + result : result;
     }
 
+    /**
+     * Converts ticks to a specific time unit
+     *
+     * @param ticks The time in ticks to convert
+     * @param unit The target time unit ("y", "d", "h", "m", "s")
+     * @return The equivalent time in the specified unit, or 0 if invalid
+     */
     public static long ticksToTimeUnit(long ticks, String unit) {
         if (ticks < 0) {
             return 0;
@@ -311,7 +385,18 @@ public class Utils {
         };
     }
 
-
+    /**
+     * Replaces internal placeholders in a message string with their corresponding values
+     * Handles special playtime placeholders with optional custom formatting:
+     * - %PLAYTIME% / %PLAYTIME:format%
+     * - %ACTUAL_PLAYTIME% / %ACTUAL_PLAYTIME:format%
+     * - %ARTIFICIAL_PLAYTIME% / %ARTIFICIAL_PLAYTIME:format%
+     * Also replaces any other placeholders provided in the combinations map
+     *
+     * @param message The message containing placeholders to replace
+     * @param combinations Map of placeholder-value pairs for replacement
+     * @return The message with all placeholders replaced and normalized spacing
+     */
     public static String placeholdersReplacer(String message, Map<String, String> combinations){
 
         //Apply %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME% special placeholder with custom format
@@ -363,4 +448,83 @@ public class Utils {
 
         return message;
     }
+
+
+    /**
+     * Creates a player head ItemStack from input format "PLAYER_HEAD:playername"
+     * If no player name is specified or the format is invalid, defaults to Steve's head
+     *
+     * @param input The input string in format "PLAYER_HEAD:playername" or just "PLAYER_HEAD"
+     * @return ItemStack of a player head with the specified player's skin, or Steve by default
+     */
+    public static ItemStack createPlayerHead(String input) {
+
+        ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
+
+        if (input == null || input.trim().isEmpty()) {
+            return skull;
+        }
+
+        String[] parts = input.split(":", 2);
+
+
+        // Check if it's a player head request
+        if (!parts[0].equalsIgnoreCase("PLAYER_HEAD")) {
+            return skull;
+        }
+
+        SkullMeta skullMeta = (SkullMeta) skull.getItemMeta();
+
+        if (skullMeta != null) {
+            try {
+            String playerName = (parts.length > 1 && !parts[1].trim().isEmpty()) ? parts[1].trim() : "Steve";
+            PlayerProfile profile = Bukkit.createProfile(playerName);
+            skullMeta.setPlayerProfile(profile);
+            skull.setItemMeta(skullMeta);
+            } catch (Exception ignored) {}
+        }
+
+        return skull;
+    }
+
+    /**
+     * Creates a player head ItemStack from input format "PLAYER_HEAD:playername" with context player fallback
+     * Uses Paper's Profile API to properly fetch skin data for players who may not have joined the server
+     * If no player name is specified, uses the context player's name instead of defaulting to Steve
+     * If the format is invalid, still defaults to Steve's head
+     *
+     * @param input The input string in format "PLAYER_HEAD:playername" or just "PLAYER_HEAD"
+     * @param contextPlayerName The player name to use when no specific player is specified
+     * @return ItemStack of a player head with the specified or context player's skin, or Steve by default
+     */
+    public static ItemStack createPlayerHeadWithContext(String input, String contextPlayerName) {
+        ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
+
+        if (input == null || input.trim().isEmpty()) return skull;
+
+        String[] parts = input.split(":", 2);
+        if (!parts[0].equalsIgnoreCase("PLAYER_HEAD")) return skull;
+
+        String playerName;
+        if (parts.length > 1 && !parts[1].trim().isEmpty()) {
+            playerName = parts[1].trim();
+        } else if (contextPlayerName != null && !contextPlayerName.trim().isEmpty()) {
+            playerName = contextPlayerName.trim();
+        } else {
+            return skull;
+        }
+
+        SkullMeta meta = (SkullMeta) skull.getItemMeta();
+        if (meta != null) {
+            try {
+                PlayerProfile profile = Bukkit.createProfile(playerName);
+                meta.setPlayerProfile(profile);
+                skull.setItemMeta(meta);
+            } catch (Exception ignored) {}
+        }
+
+        return skull;
+    }
+
+
 }

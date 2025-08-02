@@ -5,7 +5,7 @@
 # hexadecimal values between 00 and ff (same as decimal 0-255)
 # Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
 #
-Update# Internal placeholders used in this file are GUI-DEPENDENT. They can only be used within the specific gui section
+# Internal placeholders used in this file are GUI-DEPENDENT. They can only be used within the specific gui section
 # where they're defined. All available placeholders are shown in this configuration file.
 
 #=================================================================
@@ -95,14 +95,17 @@ rewards-gui:
 
 # Available placeholders: %PLAYER_NAME%, %UUID%, %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME%,
 # %FIRST_JOIN_DATE%, %ACCOUNT_AGE%, %LAST_SEEN_DATE%, %TIME_SINCE_LAST_SEEN%, %RELATIVE_STREAK%,
-# %ABSOLUTE_STREAK%, %GOALS_COUNT%, %GOALS_LIST%, %POSITION%, %VIEW_TYPE%, %IS_OWNER%, %IS_STAFF%,
-# %IS_PLAYER%, %GUI_SIZE%, %CURRENT_DATE%, %CURRENT_TIME%
+# %ABSOLUTE_STREAK%, %GOALS_COUNT%, %GOALS_LIST%, %POSITION%,
+
+# You can use a special item: PLAYER_HEAD. By default, it displays the skin of the stats owner.
+# To show a specific player's skin, use the format PLAYER_HEAD:playername.
+# NOTE: This method is not guaranteed to be 100% reliable, as Mojang's API may occasionally be outdated or unavailable.
 
 # Instructions:
 # - 'views' section defines different GUI configurations based on who is viewing:
 #   * owner: Player viewing their own stats
 #   * player: Player viewing another player's stats
-#   * staff: Staff member viewing stats (requires playtime.stats.staff permission)
+#   * staff: Staff member viewing stats (requires playtime.others.stats.staff permission)
 # - Each view can have different title, size (9,18,27,36,45,54), and border settings
 # - Items can be enabled/disabled per view using 'enabled: true/false' (defaults to true)
 # - Each item can have different materials, slots, names, and lore per view
@@ -116,23 +119,18 @@ rewards-gui:
 player-stats-gui:
 
   goals-settings:
+    # This setting controls how goals are formatted when using the %GOALS_LIST% placeholder
     list-format: "&7• &e%GOAL%"
 
   leaderboard-settings:
+    # Fallback message shown when %POSITION% placeholder is used for unranked players
     not-in-leaderboard-position: "-"
-
-  gui:
-    title: "&6%PLAYER_NAME%'s Statistics"
-    border:
-      enabled: true
-      material: "BLACK_STAINED_GLASS_PANE"
-      name: " "
 
   # View-specific configurations
   views:
     owner:
       title: "&6&lMy stats"
-      size: 54  # Can be 9, 18, 27, 36, 45, or 54
+      size: 54
       border:
         enabled: true
         material: "BLUE_STAINED_GLASS_PANE"
@@ -140,7 +138,7 @@ player-stats-gui:
 
     player:
       title: "&e%PLAYER_NAME%'s stats"
-      size: 27  # Smaller GUI for viewing other players
+      size: 27
       border:
         enabled: true
         material: "GRAY_STAINED_GLASS_PANE"
@@ -148,7 +146,7 @@ player-stats-gui:
 
     staff:
       title: "&c&l&6%PLAYER_NAME%'s stats"
-      size: 54  # Full size for staff with all information
+      size: 54
       border:
         enabled: true
         material: "RED_STAINED_GLASS_PANE"
@@ -169,7 +167,7 @@ player-stats-gui:
         player:
           enabled: true
           material: "CLOCK"
-          slot: 13  # Centered in smaller GUI
+          slot: 13
           name: "&e&l%PLAYER_NAME%'s Playtime"
           lore:
             - "&7Playtime: &e%PLAYTIME%"
@@ -182,8 +180,6 @@ player-stats-gui:
             - "&7Total Playtime: &e%PLAYTIME%"
             - "&7Actual Playtime: &a%ACTUAL_PLAYTIME%"
             - "&7Artificial Playtime: &c%ARTIFICIAL_PLAYTIME%"
-            - ""
-            - "&8GUI Size: %GUI_SIZE% slots"
 
     firstjoin:
       views:
@@ -283,7 +279,7 @@ player-stats-gui:
         player:
           enabled: true
           material: "NETHER_STAR"
-          slot: 11  # Adjusted for smaller GUI
+          slot: 11
           name: "&d&l%PLAYER_NAME%'s Goals"
           lore:
             - "&7Completed Goals: &e%GOALS_COUNT%"
@@ -322,3 +318,12 @@ player-stats-gui:
           name: "&c&lPlaytime Leaderboard"
           lore:
             - "&7Position in the playtime leaderboard: &e%POSITION%"
+    account-overview:
+      views:
+        staff:
+          enabled: true
+          material: "PLAYER_HEAD" #Displays the stats owner's skin. See above for instructions on displaying a specific player's skin.
+          slot: 4
+          name: "&b&lAccount Overview"
+          lore:
+            - "&7UUID: &e%UUID%"

@@ -140,7 +140,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
         }
 
         // Fall back to default title
-        return config.getOrDefaultString("player-stats-gui.gui.title", "&6%PLAYER_NAME%'s Statistics");
+        return "&6%PLAYER_NAME%'s Statistics";
     }
 
     /**
@@ -156,7 +156,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
         }
 
         // Fall back to global border setting
-        return config.getOrDefaultBoolean("player-stats-gui.gui.border.enabled", true);
+        return true;
     }
 
     /**
@@ -173,7 +173,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
             materialName = config.getString(borderMaterialPath);
         } else {
             // Fall back to global border material
-            materialName = config.getOrDefaultString("player-stats-gui.gui.border.material", "BLACK_STAINED_GLASS_PANE");
+            materialName = "BLACK_STAINED_GLASS_PANE";
         }
 
         try {
@@ -197,7 +197,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
         }
 
         // Fall back to global border name
-        return config.getOrDefaultString("player-stats-gui.gui.border.name", " ");
+        return " ";
     }
 
     private void createBorders() {
@@ -270,9 +270,9 @@ public class PlayerStatsGui extends BaseCustomGUI {
             }
 
             // Get material for the current view
-            Material material = getMaterialForView(itemPath, currentView);
-            if (material == null) {
-                plugin.getLogger().warning("Invalid material for item " + itemKey + " in view " + currentView + ". Skipping item.");
+            String materialString = getMaterialStringForView(itemPath, currentView);
+            if (materialString == null) {
+                plugin.getLogger().warning("No material configured for item " + itemKey + " in view " + currentView + ". Skipping item.");
                 continue;
             }
 
@@ -281,7 +281,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
             List<String> loreConfig = getLoreForView(itemPath, currentView);
 
             // Create the item
-            createStatItem(slot, material, rawName, loreConfig, itemKey);
+            createStatItem(slot, materialString, rawName, loreConfig, itemKey);
 
             // Store item type for click handling
             slotItemTypes.put(slot, itemKey);
@@ -319,24 +319,35 @@ public class PlayerStatsGui extends BaseCustomGUI {
     }
 
     /**
-     * Get the material for an item in the current view
+     * Get the material string for an item in the current view
+     * Returns the raw material string to allow for player head detection
      */
-    private Material getMaterialForView(String itemPath, ViewType viewType) {
+    private String getMaterialStringForView(String itemPath, ViewType viewType) {
         String viewKey = viewType.name().toLowerCase();
         String viewMaterialPath = itemPath + ".views." + viewKey + ".material";
 
-        String materialName;
-
         // Check for view-specific material first
         if (config.contains(viewMaterialPath)) {
-            materialName = config.getString(viewMaterialPath);
-        } else {
-            // Fall back to default material if view-specific doesn't exist
-            materialName = config.getString(itemPath + ".material");
+            return config.getString(viewMaterialPath);
+        }
+
+        // Fall back to default material if view-specific doesn't exist
+        return config.getString(itemPath + ".material");
+    }
+
+    /**
+     * Get the material for an item in the current view
+     * @deprecated Use getMaterialStringForView and createStatItem for player head support
+     */
+    @Deprecated
+    private Material getMaterialForView(String itemPath, ViewType viewType) {
+        String materialString = getMaterialStringForView(itemPath, viewType);
+        if (materialString == null) {
+            return null;
         }
 
         try {
-            return Material.valueOf(materialName);
+            return Material.valueOf(materialString);
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -374,7 +385,12 @@ public class PlayerStatsGui extends BaseCustomGUI {
         return config.getStringList(itemPath + ".lore");
     }
 
-    private void createStatItem(int slot, Material material, String rawName, List<String> loreConfig, String itemType) {
+    /**
+     * Creates a stat item with support for player heads
+     * Automatically detects and handles PLAYER_HEAD:playername format
+     * Uses context player when no specific nickname is provided
+     */
+    private void createStatItem(int slot, String materialString, String rawName, List<String> loreConfig, String itemType) {
         List<Component> lore = new ArrayList<>();
 
         // Process lore with placeholders
@@ -386,8 +402,59 @@ public class PlayerStatsGui extends BaseCustomGUI {
         // Process name with placeholders
         String processedName = processPlaceholders(rawName, itemType);
 
-        inv.setItem(slot, createGuiItem(material, Utils.parseColors(processedName), lore.toArray(new Component[0])));
+        // Create the item - check if it's a player head first
+        ItemStack item;
+        if (isPlayerHead(materialString)) {
+            // Process placeholders in the material string for player head
+            String processedMaterialString = processPlaceholders(materialString, itemType);
+
+            // Check if a specific nickname is provided after the colon
+            String[] parts = processedMaterialString.split(":", 2);
+            if (parts.length > 1 && !parts[1].trim().isEmpty()) {
+                // Specific nickname provided - use createPlayerHead
+                item = Utils.createPlayerHead(processedMaterialString);
+            } else {
+                // No specific nickname - use createPlayerHeadWithContext with subject
+                item = Utils.createPlayerHeadWithContext(processedMaterialString, subject.getNickname());
+            }
+
+            // Apply name and lore to the player head
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                if (processedName != null && !processedName.isEmpty()) {
+                    meta.displayName(Utils.parseColors(processedName).decoration(TextDecoration.ITALIC, false));
+                }
+
+                List<Component> metaLore = new ArrayList<>();
+                for (Component loreLine : lore) {
+                    metaLore.add(loreLine.decoration(TextDecoration.ITALIC, false));
+                }
+                meta.lore(metaLore);
+                item.setItemMeta(meta);
+            }
+        } else {
+            // Regular material - try to parse as Material enum
+            try {
+                Material material = Material.valueOf(materialString);
+                item = createGuiItem(material, Utils.parseColors(processedName), lore.toArray(new Component[0]));
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Invalid material '" + materialString + "' for item " + itemType + ". Using STONE as fallback.");
+                item = createGuiItem(Material.STONE, Utils.parseColors(processedName), lore.toArray(new Component[0]));
+            }
+        }
+
+        inv.setItem(slot, item);
         protectedSlots.add(slot);
+    }
+
+    /**
+     * Checks if a material string represents a player head
+     *
+     * @param materialString The material string to check
+     * @return true if it's in PLAYER_HEAD format, false otherwise
+     */
+    private boolean isPlayerHead(String materialString) {
+        return materialString != null && materialString.toUpperCase().startsWith("PLAYER_HEAD");
     }
 
     private String processPlaceholders(String text, String itemType) {
@@ -457,12 +524,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
         // Goals information
         ArrayList<String> completedGoals = subject.getCompletedGoals();
         combinations.put("%GOALS_COUNT%", String.valueOf(completedGoals.size()));
-
-        // Current time/date
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
-        combinations.put("%CURRENT_DATE%", now.format(formatter));
-        combinations.put("%CURRENT_TIME%", now.format(DateTimeFormatter.ofPattern("HH:mm:ss")));
 
         //Playtime Leaderboard
         int position = DBUsersManager.getInstance().getTopPlayers().indexOf(OnlineUsersManager.getInstance().getOnlineUser(subject.getNickname()));

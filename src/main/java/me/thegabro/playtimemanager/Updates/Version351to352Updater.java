@@ -2,16 +2,20 @@ package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import org.bukkit.configuration.ConfigurationSection;
+import me.thegabro.playtimemanager.SQLiteDB.SQLite;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Version35to352Updater {
+public class Version351to352Updater {
 
     private PlayTimeManager plugin;
     private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
+    private final SQLite database;
 
     // Placeholder mapping from old format to new format
     private static final Map<String, String> PLACEHOLDER_MAPPINGS = new HashMap<>();
@@ -30,13 +34,34 @@ public class Version35to352Updater {
         PLACEHOLDER_MAPPINGS.put("{color}", "%JOIN_STREAK_COLOR%");
     }
 
-    public Version35to352Updater(PlayTimeManager plugin){
+    public Version351to352Updater(PlayTimeManager plugin){
         this.plugin = plugin;
+        this.database = (SQLite) plugin.getDatabase();
     }
 
     public void performUpgrade() {
+        addAFKPlaytimeColumn();
         recreateConfigFile();
         updatePlaceholders();
+    }
+
+    public void addAFKPlaytimeColumn(){
+        try (Connection connection = database.getSQLConnection()) {
+            connection.setAutoCommit(false);
+
+            try (Statement s = connection.createStatement()) {
+                s.executeUpdate("ALTER TABLE play_time ADD COLUMN afk_playtime BIGINT NOT NULL;");
+
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to alter table: " + e.getMessage());
+        }
     }
 
     public void recreateConfigFile(){

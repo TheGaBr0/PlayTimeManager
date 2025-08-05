@@ -17,6 +17,7 @@ public class DBUser {
     protected String nickname;
     protected long DBplaytime;
     protected long artificialPlaytime;
+    protected long DBAFKplaytime;
     protected static final PlayTimeManager plugin = PlayTimeManager.getInstance();
     protected long fromServerOnJoinPlayTime;
     protected ArrayList<String> completedGoals;
@@ -30,7 +31,7 @@ public class DBUser {
     protected LinkedHashSet<String> rewardsToBeClaimed = new LinkedHashSet<>();
 
     // Private constructor
-    private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime,
+    private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, long DBAFKplaytime,
                    ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int relativeJoinStreak,
                    int absoluteJoinStreak, LinkedHashSet<String> receivedRewards, LinkedHashSet<String> rewardsToBeClaimed){
 
@@ -38,6 +39,7 @@ public class DBUser {
         this.nickname = nickname;
         this.DBplaytime = playtime;
         this.artificialPlaytime = artificialPlaytime;
+        this.DBAFKplaytime = DBAFKplaytime;
         this.completedGoals = completedGoals;
         this.lastSeen = lastSeen;
         this.firstJoin = firstJoin;
@@ -54,11 +56,11 @@ public class DBUser {
         userMapping();
         loadUserData();
 
+        //LEAVE THIS HERE: since first_join field was added some releases later...some servers may have null
+        // first_join values for older players into their db. If such players join and this check isn't here: KABOOM.
         if(firstJoin == null){
             firstJoin = LocalDateTime.now();
             db.updateFirstJoin(uuid, firstJoin);
-            db.setAbsoluteJoinStreak(uuid, 1);
-            db.setRelativeJoinStreak(uuid, 1);
         }
     }
 
@@ -70,6 +72,7 @@ public class DBUser {
         String nickname = db.getNickname(uuid);
         long playtime = db.getPlaytime(uuid);
         long artificialPlaytime = db.getArtificialPlaytime(uuid);
+        long afkplaytime = db.getAFKPlaytime(uuid);
         ArrayList<String> completedGoals = db.getCompletedGoals(uuid);
         LocalDateTime lastSeen = db.getLastSeen(uuid);
         LocalDateTime firstJoin = db.getFirstJoin(uuid);
@@ -78,13 +81,14 @@ public class DBUser {
         LinkedHashSet<String> receivedRewards = db.getReceivedRewards(uuid);
         LinkedHashSet<String> rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
 
-        return new DBUser(uuid, nickname, playtime, artificialPlaytime, completedGoals, lastSeen, firstJoin, relativeJoinStreak,
+        return new DBUser(uuid, nickname, playtime, artificialPlaytime, afkplaytime, completedGoals, lastSeen, firstJoin, relativeJoinStreak,
                 absoluteJoinStreak, receivedRewards, rewardsToBeClaimed);
     }
 
     // New method to load user data from database
     private void loadUserData() {
         this.DBplaytime = db.getPlaytime(uuid);
+        this.DBAFKplaytime = db.getAFKPlaytime(uuid);
         this.artificialPlaytime = db.getArtificialPlaytime(uuid);
         this.completedGoals = db.getCompletedGoals(uuid);
         this.lastSeen = db.getLastSeen(uuid);
@@ -261,6 +265,7 @@ public class DBUser {
     //Data reset methods
     public void reset() {
         this.DBplaytime = 0;
+        this.DBAFKplaytime = 0;
         this.artificialPlaytime = 0;
         this.fromServerOnJoinPlayTime = 0;
         this.lastSeen = null;
@@ -275,6 +280,7 @@ public class DBUser {
 
         // Update all values in database - optimize with a single transaction if possible
         db.updatePlaytime(uuid, 0);
+        db.updateAFKPlaytime(uuid, 0);
         db.updateArtificialPlaytime(uuid, 0);
         db.updateCompletedGoals(uuid, completedGoals);
         db.updateLastSeen(uuid, null);
@@ -287,11 +293,13 @@ public class DBUser {
 
     public void resetPlaytime() {
         this.DBplaytime = 0;
+        this.DBAFKplaytime = 0;
         this.artificialPlaytime = 0;
         this.fromServerOnJoinPlayTime = 0;
 
         db.updatePlaytime(uuid, 0);
         db.updateArtificialPlaytime(uuid, 0);
+        db.updateAFKPlaytime(uuid, 0);
     }
 
     public void resetLastSeen() {

@@ -146,6 +146,39 @@ public abstract class PlayTimeDatabase {
         return null;
     }
 
+    public Long getAFKPlaytime(String uuid) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = getSQLConnection();
+
+            ps = conn.prepareStatement("SELECT afk_playtime FROM play_time WHERE uuid = ?;");
+
+            ps.setString(1, uuid);
+
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getLong("afk_playtime");
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+        return null;
+    }
+
     public String getUUIDFromNickname(String nickname) {
         Connection conn = null;
         PreparedStatement ps = null;
@@ -264,6 +297,33 @@ public abstract class PlayTimeDatabase {
         }
     }
 
+    public void updateAFKPlaytime(String uuid, long newPlaytime) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = getSQLConnection();
+
+
+            ps = conn.prepareStatement("UPDATE play_time SET afk_playtime = ? WHERE uuid = ?;");
+
+            ps.setLong(1, newPlaytime);
+            ps.setString(2, uuid);
+
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
     public void updateNickname(String uuid, String newNickname) {
         Connection conn = null;
         PreparedStatement ps = null;
@@ -357,13 +417,17 @@ public abstract class PlayTimeDatabase {
         try {
             conn = getSQLConnection();
 
-            ps = conn.prepareStatement("INSERT INTO play_time (uuid, nickname, playtime, artificial_playtime) VALUES (?, ?, ?, ?);");
+            ps = conn.prepareStatement("INSERT INTO play_time " +
+                    "(uuid, nickname, playtime, artificial_playtime, afk_playtime, first_join) " +
+                    "VALUES (?, ?, ?, ?, ?, ?);");
 
             ps.setString(1, uuid);
             ps.setString(2, nickname);
             ps.setLong(3, playtime);
             ps.setLong(4, 0);
-
+            ps.setLong(5, 0);
+            LocalDateTime truncated = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+            ps.setTimestamp(6, Timestamp.valueOf(truncated));
             ps.executeUpdate();
         } catch (SQLException ex) {
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);

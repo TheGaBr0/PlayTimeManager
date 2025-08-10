@@ -50,7 +50,7 @@ public class Version351to352Updater {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {
-                s.executeUpdate("ALTER TABLE play_time ADD COLUMN afk_playtime BIGINT NOT NULL;");
+                s.executeUpdate("ALTER TABLE play_time ADD COLUMN afk_playtime BIGINT NOT NULL DEFAULT 0;");
 
                 connection.commit();
             } catch (SQLException e) {

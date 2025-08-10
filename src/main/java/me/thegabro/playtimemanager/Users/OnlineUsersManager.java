@@ -160,6 +160,7 @@ public class OnlineUsersManager {
                 onlineUsersByName.values().forEach(user -> {
                     try {
                         user.updatePlayTime();
+                        user.updateAFKPlayTime();
                         user.updateLastSeen();
                     } catch (Exception e) {
                         plugin.getLogger().severe(String.format("Failed to update playtime for user %s: %s",

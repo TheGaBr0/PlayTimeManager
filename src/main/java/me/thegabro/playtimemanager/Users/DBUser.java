@@ -29,7 +29,7 @@ public class DBUser {
     protected int absoluteJoinStreak;
     protected LinkedHashSet<String> receivedRewards = new LinkedHashSet<>();
     protected LinkedHashSet<String> rewardsToBeClaimed = new LinkedHashSet<>();
-
+    protected boolean afk;
     // Private constructor
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, long DBAFKplaytime,
                    ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int relativeJoinStreak,
@@ -47,6 +47,7 @@ public class DBUser {
         this.absoluteJoinStreak = absoluteJoinStreak;
         this.receivedRewards = receivedRewards;
         this.rewardsToBeClaimed = rewardsToBeClaimed;
+        afk = false;
     }
 
     public DBUser(Player p) {
@@ -97,6 +98,7 @@ public class DBUser {
         this.absoluteJoinStreak = db.getRelativeJoinStreak(uuid);
         this.receivedRewards = db.getReceivedRewards(uuid);
         this.rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
+        afk = false;
     }
 
     public LocalDateTime getFirstJoin(){ return firstJoin; }
@@ -260,6 +262,18 @@ public class DBUser {
             // Case 3: New user - neither UUID nor nickname exists
             db.addNewPlayer(uuid, nickname, fromServerOnJoinPlayTime);
         }
+    }
+
+    public long getAFKPlaytime() {
+        return DBAFKplaytime;
+    }
+
+    public boolean isAFK() {
+        return afk;
+    }
+
+    public void setAFK(boolean afk) {
+        this.afk = afk;
     }
 
     //Data reset methods

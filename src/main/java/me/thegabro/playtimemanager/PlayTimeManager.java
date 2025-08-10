@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager;
 
 import me.thegabro.playtimemanager.Commands.PlayTimeStats;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
+import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsAFKHook;
 import me.thegabro.playtimemanager.GUIs.Goals.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
 import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
@@ -92,6 +93,10 @@ public class PlayTimeManager extends JavaPlugin{
         goalsManager.initialize(this);
 
         permissionsManagerConfigured = checkPermissionsPlugin();
+
+        EssentialsAFKHook afkHook = EssentialsAFKHook.getInstance();
+        afkHook.initialize(this);
+        getServer().getPluginManager().registerEvents(afkHook, this);
 
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();

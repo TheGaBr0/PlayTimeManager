@@ -37,11 +37,27 @@ permissions-manager-plugin: "luckperms"
 datetime-format: "MMM dd, yyyy HH:mm:ss"
 
 # Check for plugin updates on server startup
-# This is recommended and is especially useful for versions of PlayTimeManager
+# Leaving this to true is recommended, keeping the plugin updated ensures you have
+# the latest bug fixes and performance improvements.
+# It is especially useful for old releases of PlayTimeManager
 # that can't be upgraded anymore due to drop of support for older Minecraft versions.
-# Keeping the plugin updated ensures you have the latest bug fixes and performance improvements.
-# You need to restart the server for the changes to take effect.
+#
+# You need to restart the server for this action to take effect.
 check-for-updates: true
+
+#=================================================================
+#                          AFK DETECTION
+#=================================================================
+
+#Choose your afk detection plugin
+#Available options: "essentials"
+#Using a different afk detection plugin? Let me know on my GitHub issues page!
+afk-detection-plugin: "essentials"
+
+# When enabled, AFK time is excluded from total playtime calculations used throughout
+# the plugin (goals requirements, displays, etc.). AFK time tracking continues
+# regardless of this setting when afk-detection-plugin is loaded and correctly working.
+ignore-afk-time: false
 
 #=================================================================
 #                             COMMANDS
@@ -64,7 +80,7 @@ goal-check-rate: 900
 goal-check-verbose: false
 
 #=================================================================
-#                           JOIN STREAK
+#                           JOIN STREAKS
 #=================================================================
 
 #Define when the interval resets (in cron format)

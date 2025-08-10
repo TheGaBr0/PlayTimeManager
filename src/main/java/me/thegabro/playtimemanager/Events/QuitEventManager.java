@@ -23,6 +23,8 @@ public class QuitEventManager implements Listener {
             return;
         }
         onlineUser.updatePlayTime();
+        onlineUser.setAFK(false);
+        onlineUser.updateAFKPlayTime();
         onlineUser.updateLastSeen();
 
         onlineUsersManager.removeOnlineUser(onlineUser);

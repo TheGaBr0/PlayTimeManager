@@ -4,16 +4,19 @@ import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashSet;
-import java.util.Set;
+
 
 public class OnlineUser extends DBUser {
     protected final Player p;
+    private long afkStartTime; // Timestamp when AFK started (in ticks or milliseconds)
+    private long currentSessionAFKTime; // AFK time accumulated in current session
 
     public OnlineUser(Player p) {
         super(p);
         this.p = p;
         this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
+        this.afkStartTime = 0;
+        this.currentSessionAFKTime = 0;
     }
 
     private long getCachedPlayTime() {
@@ -22,6 +25,11 @@ public class OnlineUser extends DBUser {
 
     public void updatePlayTime() {
         db.updatePlaytime(uuid, getCachedPlayTime());
+    }
+
+    public void updateAFKPlayTime() {
+        long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
+        db.updateAFKPlaytime(uuid, totalAFKTime);
     }
 
     public void updateLastSeen() {
@@ -39,6 +47,11 @@ public class OnlineUser extends DBUser {
     }
 
     @Override
+    public long getAFKPlaytime() {
+        return DBAFKplaytime + currentSessionAFKTime;
+    }
+
+    @Override
     public LocalDateTime getLastSeen() {
         return LocalDateTime.now();
     }
@@ -47,32 +60,48 @@ public class OnlineUser extends DBUser {
         this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
     }
 
-    @Override
-    public void reset() {
-        this.DBplaytime = 0;
-        this.artificialPlaytime = 0;
-        this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
-        this.lastSeen = null;
-        this.firstJoin = null;
-        this.relativeJoinStreak = 0;
-        this.absoluteJoinStreak = 0;
-
-        // Reset completed goals
-        this.completedGoals.clear();
-
-        // Reset rewards
-        this.receivedRewards.clear();
-        this.rewardsToBeClaimed.clear();
-
-        // Update all values in database
-        db.updatePlaytime(uuid, 0);
-        db.updateArtificialPlaytime(uuid, 0);
-        db.updateCompletedGoals(uuid, completedGoals);
-        db.updateLastSeen(uuid, this.lastSeen);
-        db.updateFirstJoin(uuid, this.firstJoin);
-        db.setRelativeJoinStreak(uuid, 0);
-        db.setAbsoluteJoinStreak(uuid, 0);
-        db.updateReceivedRewards(uuid, receivedRewards);
-        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    // AFK management methods
+    public void setAFK(boolean isAFK) {
+        if (isAFK && !this.afk) {
+            // Player is going AFK
+            this.afk = true;
+            this.afkStartTime = System.currentTimeMillis();
+        } else if (!isAFK && this.afk) {
+            // Player is no longer AFK
+            this.afk = false;
+            if (this.afkStartTime > 0) {
+                // Calculate AFK time and add to current session total
+                long afkDuration = System.currentTimeMillis() - this.afkStartTime;
+                this.currentSessionAFKTime += afkDuration;
+                this.afkStartTime = 0;
+            }
+        }
     }
+
+    // Get current AFK time (including ongoing AFK session)
+    public long getCurrentAFKTime() {
+        long totalAFK = DBAFKplaytime + currentSessionAFKTime;
+
+        // If currently AFK, add the time since AFK started
+        if (afk && afkStartTime > 0) {
+            long ongoingAFKTime = System.currentTimeMillis() - afkStartTime;
+            totalAFK += ongoingAFKTime;
+        }
+
+        return totalAFK;
+    }
+
+    // Call this when player leaves to finalize AFK time
+    public void finalizeAFKTime() {
+        if (afk && afkStartTime > 0) {
+            // If player is still AFK when leaving, calculate final AFK time
+            long afkDuration = System.currentTimeMillis() - afkStartTime;
+            currentSessionAFKTime += afkDuration;
+            afk = false;
+            afkStartTime = 0;
+        }
+        // Update database with final AFK time
+        updateAFKPlayTime();
+    }
+
 }

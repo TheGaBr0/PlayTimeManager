@@ -13,6 +13,7 @@ import org.bukkit.event.Listener;
 public class EssentialsAFKHook implements Listener {
 
     private static EssentialsAFKHook instance;
+    private final AFKSyncManager afkSyncManager = AFKSyncManager.getInstance();
 
     private EssentialsAFKHook() {
         // Private constructor for singleton
@@ -38,30 +39,15 @@ public class EssentialsAFKHook implements Listener {
         if (player == null || !player.isOnline()) return;
 
         boolean isNowAFK = event.getValue();
+        String playerUUID = player.getUniqueId().toString();
+        OnlineUser onlineUser = OnlineUsersManager.getInstance().getOnlineUserByUUID(playerUUID);
 
         if (isNowAFK) {
             // Player is now AFK
-            onPlayerGoAFK(player);
+            afkSyncManager.handleAFKGo(onlineUser);
         } else {
-            // Player is no longer AFK
-            onPlayerReturnFromAFK(player);
+            // Player is no longer AFK - this needs synchronization
+            afkSyncManager.handleAFKReturn(onlineUser);
         }
-    }
-
-    /**
-     * Called when a player goes AFK
-     */
-    protected void onPlayerGoAFK(Player player) {
-        OnlineUser user = OnlineUsersManager.getInstance().getOnlineUserByUUID(player.getUniqueId().toString());
-        user.setAFK(true);
-    }
-
-    /**
-     * Called when a player returns from AFK
-     */
-    protected void onPlayerReturnFromAFK(Player player) {
-        OnlineUser user = OnlineUsersManager.getInstance().getOnlineUserByUUID(player.getUniqueId().toString());
-        user.setAFK(false);
-        user.updateAFKPlayTime();
     }
 }

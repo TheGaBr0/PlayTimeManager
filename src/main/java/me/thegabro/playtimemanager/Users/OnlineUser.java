@@ -82,7 +82,6 @@ public class OnlineUser extends DBUser {
 
     // AFK management methods
     public void setAFK(boolean isAFK) {
-        PlayTimeManager.getInstance().getLogger().info("Player " + p.getName() + " AFK status changed to: " + isAFK);
         if (isAFK && !this.afk) {
             // Player is going AFK
             this.afk = true;
@@ -95,7 +94,6 @@ public class OnlineUser extends DBUser {
                 long afkDuration = getCurrentServerTicks() - this.afkStartTime;
                 this.currentSessionAFKTime += afkDuration;
                 this.afkStartTime = 0;
-                PlayTimeManager.getInstance().getLogger().info("Current session AFK time: " + currentSessionAFKTime);
             }
         }
     }

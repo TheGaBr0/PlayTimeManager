@@ -184,6 +184,8 @@ public class PlayTimeManager extends JavaPlugin{
 
     public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
 
+    public boolean isAfkDetectionConfigured(){ return afkDetectionConfigured; }
+
     public SessionManager getSessionManager() { return sessionManager; }
 
     private boolean checkAFKPlugin(){

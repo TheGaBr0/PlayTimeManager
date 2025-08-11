@@ -9,13 +9,10 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
-import java.lang.reflect.Field;
 import java.util.Map;
-import java.util.UUID;
 
 public class Utils {
     // Constants for tick conversions
@@ -399,8 +396,8 @@ public class Utils {
      */
     public static String placeholdersReplacer(String message, Map<String, String> combinations){
 
-        //Apply %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME% special placeholder with custom format
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("%((?:ACTUAL_|ARTIFICIAL_)?PLAYTIME)(?::(\\w+))?%");
+        //Apply %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME%, %AFK_PLAYTIME% special placeholder with custom format
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("%((?:AFK_|ACTUAL_|ARTIFICIAL_)?PLAYTIME)(?::(\\w+))?%");
         java.util.regex.Matcher matcher = pattern.matcher(message);
         StringBuffer result = new StringBuffer();
 
@@ -416,7 +413,7 @@ public class Utils {
             format = (format == null) ? config.getFormat("default") : format;
 
             // Check if we have a playtime value in the combinations map for this specific type
-            String playtimeValue = null;
+            String playtimeValue;
             String placeholderKey = "%" + playtimeType + "%";
 
             if (combinations.containsKey(placeholderKey)) {

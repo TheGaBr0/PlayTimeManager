@@ -23,9 +23,9 @@ public class QuitEventManager implements Listener {
             return;
         }
         onlineUser.updatePlayTime();
-        onlineUser.setAFK(false);
-        onlineUser.updateAFKPlayTime();
         onlineUser.updateLastSeen();
+
+        plugin.getLogger().info(String.valueOf(onlineUser.isAFK()));
 
         onlineUsersManager.removeOnlineUser(onlineUser);
 

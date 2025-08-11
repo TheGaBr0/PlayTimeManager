@@ -94,7 +94,7 @@ rewards-gui:
 #=================================================================
 
 # Available placeholders: %PLAYER_NAME%, %UUID%, %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME%,
-# %FIRST_JOIN_DATE%, %ACCOUNT_AGE%, %LAST_SEEN_DATE%, %TIME_SINCE_LAST_SEEN%, %RELATIVE_STREAK%,
+# %AFK_PLAYTIME%, %FIRST_JOIN_DATE%, %ACCOUNT_AGE%, %LAST_SEEN_DATE%, %TIME_SINCE_LAST_SEEN%, %RELATIVE_STREAK%,
 # %ABSOLUTE_STREAK%, %GOALS_COUNT%, %GOALS_LIST%, %POSITION%,
 
 # You can use a special item: PLAYER_HEAD. By default, it displays the skin of the stats owner.
@@ -180,6 +180,7 @@ player-stats-gui:
             - "&7Total Playtime: &e%PLAYTIME%"
             - "&7Actual Playtime: &a%ACTUAL_PLAYTIME%"
             - "&7Artificial Playtime: &c%ARTIFICIAL_PLAYTIME%"
+            - "&7AFK Playtime: &5%AFK_PLAYTIME%"
 
     firstjoin:
       views:

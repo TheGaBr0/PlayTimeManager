@@ -43,6 +43,7 @@ public class PlayTimeManager extends JavaPlugin{
     private PlaytimeFormatsConfiguration playtimeFormatsConfiguration;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
+    private boolean afkDetectionConfigured;
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private JoinStreaksManager joinStreaksManager;
@@ -93,10 +94,7 @@ public class PlayTimeManager extends JavaPlugin{
         goalsManager.initialize(this);
 
         permissionsManagerConfigured = checkPermissionsPlugin();
-
-        EssentialsAFKHook afkHook = EssentialsAFKHook.getInstance();
-        afkHook.initialize(this);
-        getServer().getPluginManager().registerEvents(afkHook, this);
+        afkDetectionConfigured = checkAFKPlugin();
 
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
@@ -188,6 +186,30 @@ public class PlayTimeManager extends JavaPlugin{
 
     public SessionManager getSessionManager() { return sessionManager; }
 
+    private boolean checkAFKPlugin(){
+        String configuredPlugin = config.getString("afk-detection-plugin").toLowerCase();
+        if ("essentials".equals(configuredPlugin)) {
+            Plugin essentials = Bukkit.getPluginManager().getPlugin("Essentials");
+            if(essentials != null && essentials.isEnabled()){
+                try{
+                    EssentialsAFKHook afkHook = EssentialsAFKHook.getInstance();
+                    getServer().getPluginManager().registerEvents(afkHook, this);
+                    getLogger().info("Essentials detected! Launching related functions");
+                    return true;
+                } catch (Exception e) {
+                    getLogger().severe("ERROR: Failed to initialize Essentials API: " + e.getMessage());
+                    return false;
+                }
+            }else{
+                getLogger().warning(
+                        "Failed to initialize afk detection: Essentials plugin configured but not found! " +
+                                "\nUntil this is resolved, PlayTimeManager will not be able to detect afk playtime"
+                );
+                return false;
+            }
+        }
+        return false;
+    }
 
     private boolean checkPermissionsPlugin() {
         String configuredPlugin = config.getString("permissions-manager-plugin").toLowerCase();

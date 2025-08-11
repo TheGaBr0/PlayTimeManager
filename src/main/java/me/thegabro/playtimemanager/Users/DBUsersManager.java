@@ -127,7 +127,7 @@ public class DBUsersManager {
 
         // Synchronize access to prevent concurrent modification of the topPlayers list
         synchronized (topPlayers) {
-            // If the cache isn't full and the player isn't already in the list, add them
+            // If the leaderboard isn't full and the player isn't already in the list, add them
             if (topPlayers.size() < TOP_PLAYERS_LIMIT &&
                     topPlayers.stream().noneMatch(player -> player.getUuid().equals(onlineUser.getUuid()))) {
                 // Add the player to the cached top players list using fresh database data

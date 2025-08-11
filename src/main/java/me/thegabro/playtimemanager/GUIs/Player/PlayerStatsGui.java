@@ -480,11 +480,19 @@ public class PlayerStatsGui extends BaseCustomGUI {
         // Playtime information
         long totalPlaytime = subject.getPlaytime();
         long artificialPlaytime = subject.getArtificialPlaytime();
-        long realPlaytime = totalPlaytime - artificialPlaytime;
+        long afkPlaytime = subject.getAFKPlaytime();
+        long realPlaytime;
+        if(plugin.getConfiguration().getBoolean("ignore-afk-time"))
+            realPlaytime = totalPlaytime - artificialPlaytime + afkPlaytime;
+        else
+            realPlaytime = totalPlaytime - artificialPlaytime;
+
+
 
         combinations.put("%PLAYTIME%", String.valueOf(totalPlaytime));
         combinations.put("%ACTUAL_PLAYTIME%", String.valueOf(realPlaytime));
         combinations.put("%ARTIFICIAL_PLAYTIME%", String.valueOf(artificialPlaytime));
+        combinations.put("%AFK_PLAYTIME%", String.valueOf(afkPlaytime));
 
         // First join information
         LocalDateTime firstJoin = subject.getFirstJoin();

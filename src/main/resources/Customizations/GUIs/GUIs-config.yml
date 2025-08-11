@@ -109,7 +109,8 @@ rewards-gui:
 # - Each view can have different title, size (9,18,27,36,45,54), and border settings
 # - Items can be enabled/disabled per view using 'enabled: true/false' (defaults to true)
 # - Each item can have different materials, slots, names, and lore per view
-# - Slot numbers must be within the GUI size range (0 to size-1)
+# - Slots can be single value (slot: 1) or multiple values (slot: [1, 2, 3]).
+# - The allowed range for slot values goes from 0 to size-1.
 # - Items under 'items' section are completely customizable - you can add new ones or remove existing ones-
 # - Some items have special settings with unique placeholders: goals-settings.list-format and leaderboard-settings.not-in-leaderboard-position
 #

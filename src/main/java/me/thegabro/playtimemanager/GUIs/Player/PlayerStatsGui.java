@@ -260,12 +260,11 @@ public class PlayerStatsGui extends BaseCustomGUI {
                 continue;
             }
 
-            // Get slot for the current view
-            int slot = getSlotForView(itemPath, currentView);
+            // Get slots for the current view (now supports multiple slots)
+            List<Integer> slots = getSlotsForView(itemPath, currentView);
 
-            // Handle out-of-bounds slot ID
-            if (slot < 0 || slot >= inv.getSize()) {
-                plugin.getLogger().warning("Invalid slot " + slot + " for item " + itemKey + " in view " + currentView + ". GUI size is " + inv.getSize() + ". Skipping item.");
+            if (slots.isEmpty()) {
+                plugin.getLogger().warning("No valid slots configured for item " + itemKey + " in view " + currentView + ". Skipping item.");
                 continue;
             }
 
@@ -280,11 +279,20 @@ public class PlayerStatsGui extends BaseCustomGUI {
             String rawName = getNameForView(itemPath, currentView);
             List<String> loreConfig = getLoreForView(itemPath, currentView);
 
-            // Create the item
-            createStatItem(slot, materialString, rawName, loreConfig, itemKey);
+            // Create the item for each slot
+            for (int slot : slots) {
+                // Handle out-of-bounds slot ID
+                if (slot < 0 || slot >= inv.getSize()) {
+                    plugin.getLogger().warning("Invalid slot " + slot + " for item " + itemKey + " in view " + currentView + ". GUI size is " + inv.getSize() + ". Skipping slot.");
+                    continue;
+                }
 
-            // Store item type for click handling
-            slotItemTypes.put(slot, itemKey);
+                // Create the item
+                createStatItem(slot, materialString, rawName, loreConfig, itemKey);
+
+                // Store item type for click handling
+                slotItemTypes.put(slot, itemKey);
+            }
         }
     }
 
@@ -307,15 +315,48 @@ public class PlayerStatsGui extends BaseCustomGUI {
         return config.getOrDefaultBoolean(enabledPath, true);
     }
 
+
     /**
-     * Get the slot for an item in the current view
+     * Get the slots for an item in the current view
      */
-    private int getSlotForView(String itemPath, ViewType viewType) {
+    private List<Integer> getSlotsForView(String itemPath, ViewType viewType) {
         String viewKey = viewType.name().toLowerCase();
         String viewSlotPath = itemPath + ".views." + viewKey + ".slot";
 
-        // View-specific slot is required since we only show items with view configs
-        return config.getInt(viewSlotPath);
+        List<Integer> slots = new ArrayList<>();
+
+        // Check if slot is configured as a list
+        Object slotValue = config.get(viewSlotPath);
+        if (slotValue instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<Object> slotList = (List<Object>) slotValue;
+            for (Object slotObj : slotList) {
+                try {
+                    int slot;
+                    if (slotObj instanceof Integer) {
+                        slot = (Integer) slotObj;
+                    } else if (slotObj instanceof String) {
+                        slot = Integer.parseInt(((String) slotObj).trim());
+                    } else {
+                        // Skip non-integer, non-string values silently
+                        continue;
+                    }
+                    slots.add(slot);
+                } catch (NumberFormatException e) {
+                    // Silently ignore invalid slot strings
+                }
+            }
+        } else {
+            // Fallback to single slot (existing behavior)
+            try {
+                int slot = config.getInt(viewSlotPath);
+                slots.add(slot);
+            } catch (Exception e) {
+                // Silently ignore if single slot can't be parsed
+            }
+        }
+
+        return slots;
     }
 
     /**
@@ -486,8 +527,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
             realPlaytime = totalPlaytime - artificialPlaytime + afkPlaytime;
         else
             realPlaytime = totalPlaytime - artificialPlaytime;
-
-
 
         combinations.put("%PLAYTIME%", String.valueOf(totalPlaytime));
         combinations.put("%ACTUAL_PLAYTIME%", String.valueOf(realPlaytime));

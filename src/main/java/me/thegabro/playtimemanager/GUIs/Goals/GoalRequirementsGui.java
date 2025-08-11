@@ -31,7 +31,7 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
     private GoalSettingsGui parentGui;
     private int currentPage;
     private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
-    private PlaceholderConditionEvaluator placeholderConditionEvaluator = PlaceholderConditionEvaluator.getInstance();
+    private final PlaceholderConditionEvaluator placeholderConditionEvaluator = PlaceholderConditionEvaluator.getInstance();
 
 
     private static final class Slots {
@@ -120,8 +120,20 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.ADD_PERMISSION, parentGui.createGuiItem(Material.NAME_TAG, Utils.parseColors("&e&lAdd Permission"),
                 Utils.parseColors("&7Click to add a new permission/group requirement")));
 
-        inventory.setItem(Slots.ADD_PLACEHOLDER, parentGui.createGuiItem(Material.ARMOR_STAND, Utils.parseColors("&b&lAdd Placeholder condition"),
-                Utils.parseColors("&7Click to add a new placeholder condition")));
+        if (PlayTimeManager.getInstance().isPlaceholdersAPIConfigured()) {
+            inventory.setItem(Slots.ADD_PLACEHOLDER, parentGui.createGuiItem(Material.ARMOR_STAND, Utils.parseColors("&b&lAdd Placeholder condition"),
+                    Utils.parseColors("&7Click to add a new placeholder condition")));
+        } else {
+            // Locked placeholder button with warning lore
+            inventory.setItem(Slots.ADD_PLACEHOLDER, parentGui.createGuiItem(
+                    Material.ARMOR_STAND,
+                    Utils.parseColors("&c&lAdd Placeholder condition"),
+                    Utils.parseColors("&7Click to add a new placeholder condition"),
+                    Component.text(""),
+                    Utils.parseColors("&c⚠ PlaceholderAPI is not loaded!"),
+                    Utils.parseColors("&cThis feature requires PlaceholderAPI to work.")
+            ));
+        }
 
         inventory.setItem(Slots.BACK, parentGui.createGuiItem(Material.MAGENTA_GLAZED_TERRACOTTA, Utils.parseColors("&6&lBack")));
         inventory.setItem(Slots.DELETE_ALL, parentGui.createGuiItem(Material.BARRIER, Utils.parseColors("&c&lDelete All"), Utils.parseColors("&7Removes all requirements")));
@@ -138,7 +150,13 @@ public class GoalRequirementsGui implements InventoryHolder, Listener {
             }
             case Slots.TIME_SETTING -> openTimeEditor(whoClicked);
             case Slots.ADD_PERMISSION -> openAddPermissionDialog(whoClicked);
-            case Slots.ADD_PLACEHOLDER -> openAddPlaceholderDialog(whoClicked);
+            case Slots.ADD_PLACEHOLDER -> {
+                if (PlayTimeManager.getInstance().isPlaceholdersAPIConfigured()) {
+                    openAddPlaceholderDialog(whoClicked);
+                } else {
+                    whoClicked.sendMessage(Utils.parseColors("&cPlaceholderAPI is not loaded! This feature requires PlaceholderAPI to work."));
+                }
+            }
             case Slots.BACK -> { whoClicked.closeInventory(); parentGui.openInventory(whoClicked); }
             case Slots.DELETE_ALL -> handleDeleteAll(whoClicked);
             default -> {

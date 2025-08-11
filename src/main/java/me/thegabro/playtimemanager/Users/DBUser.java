@@ -3,6 +3,8 @@ package me.thegabro.playtimemanager.Users;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
@@ -30,6 +32,7 @@ public class DBUser {
     protected LinkedHashSet<String> receivedRewards = new LinkedHashSet<>();
     protected LinkedHashSet<String> rewardsToBeClaimed = new LinkedHashSet<>();
     protected boolean afk;
+    protected OfflinePlayer playerInstance;
     // Private constructor
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, long DBAFKplaytime,
                    ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int relativeJoinStreak,
@@ -48,6 +51,7 @@ public class DBUser {
         this.receivedRewards = receivedRewards;
         this.rewardsToBeClaimed = rewardsToBeClaimed;
         afk = false;
+        playerInstance = Bukkit.getOfflinePlayer(uuid);
     }
 
     public DBUser(Player p) {
@@ -100,6 +104,8 @@ public class DBUser {
         this.rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
         afk = false;
     }
+
+    public OfflinePlayer getPlayerInstance(){ return playerInstance; }
 
     public LocalDateTime getFirstJoin(){ return firstJoin; }
 

@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.GUIs.Player;
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import me.thegabro.playtimemanager.GUIs.BaseCustomGUI;
 import me.thegabro.playtimemanager.GUIs.InventoryListener;
 import me.thegabro.playtimemanager.Users.DBUser;
@@ -29,11 +30,10 @@ import java.util.*;
 public class PlayerStatsGui extends BaseCustomGUI {
 
     private Inventory inv;
-    private final ArrayList<Integer> protectedSlots = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final GUIsConfiguration config;
-    private DBUser subject;
-    private int guiSize;
+    private final DBUser subject;
+    private final int guiSize;
 
     private final Map<Integer, String> slotItemTypes = new HashMap<>();
 
@@ -72,7 +72,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
     }
 
     public void initializeItems() {
-        protectedSlots.clear();
         slotItemTypes.clear();
         inv.clear();
 
@@ -218,7 +217,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
 
         for (int slot : borderSlots) {
             inv.setItem(slot, createGuiItem(borderMaterial, Utils.parseColors(borderName)));
-            protectedSlots.add(slot);
         }
     }
 
@@ -485,7 +483,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
         }
 
         inv.setItem(slot, item);
-        protectedSlots.add(slot);
     }
 
     /**
@@ -509,8 +506,12 @@ public class PlayerStatsGui extends BaseCustomGUI {
 
         addTypeSpecialPlaceholders(combinations, itemType);
 
+        String internalPlaceholdersParsed = Utils.placeholdersReplacer(text, combinations);
 
-        return Utils.placeholdersReplacer(text, combinations);
+        if(plugin.isPlaceholdersAPIConfigured())
+            return PlaceholderAPI.setPlaceholders(subject.getPlayerInstance(), internalPlaceholdersParsed);
+        else
+            return internalPlaceholdersParsed;
     }
 
     private void addCommonPlaceholders(Map<String, String> combinations) {

@@ -12,9 +12,9 @@
 #                   JOIN STREAKS REWARDS GUI
 #=================================================================
 
-# Available placeholders for this gui: %CURRENT_PAGE%, %TOTAL_PAGES%, %REQUIRED_JOINS%, %JOIN_STREAK_COLOR%,
+# Available internal placeholders for this gui: %CURRENT_PAGE%, %TOTAL_PAGES%, %REQUIRED_JOINS%, %JOIN_STREAK_COLOR%,
 # %CURRENT_STREAK%, %DESCRIPTION%, %REWARD_DESCRIPTION%, %COUNT%
-
+# PlaceholdersAPI support: no
 rewards-gui:
   gui:
     title: "Claim Your Rewards"
@@ -93,9 +93,10 @@ rewards-gui:
 #                      PLAYER STATS GUI
 #=================================================================
 
-# Available placeholders: %PLAYER_NAME%, %UUID%, %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME%,
+# Available internal placeholders: %PLAYER_NAME%, %UUID%, %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME%,
 # %AFK_PLAYTIME%, %FIRST_JOIN_DATE%, %ACCOUNT_AGE%, %LAST_SEEN_DATE%, %TIME_SINCE_LAST_SEEN%, %RELATIVE_STREAK%,
-# %ABSOLUTE_STREAK%, %GOALS_COUNT%, %GOALS_LIST%, %POSITION%,
+# %ABSOLUTE_STREAK%, %GOALS_COUNT%, %GOALS_LIST%, %POSITION%
+# PlaceholdersAPI support: yes - You can use whatever PAPI placeholder in this GUI!
 
 # You can use a special item: PLAYER_HEAD. By default, it displays the skin of the stats owner.
 # To show a specific player's skin, use the format PLAYER_HEAD:playername.

@@ -38,12 +38,10 @@ public class PlayTimeManager extends JavaPlugin{
 
     private static PlayTimeManager instance;
     private Configuration config;
-    private CommandsConfiguration commandsConfig;
-    private GUIsConfiguration guiConfig;
-    private PlaytimeFormatsConfiguration playtimeFormatsConfiguration;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
     private boolean afkDetectionConfigured;
+    private boolean placeholdersapiConfigured;
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private JoinStreaksManager joinStreaksManager;
@@ -81,13 +79,13 @@ public class PlayTimeManager extends JavaPlugin{
 
         // Initialize singleton configurations
 
-        playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
+        PlaytimeFormatsConfiguration playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
         playtimeFormatsConfiguration.initialize(this);
 
-        guiConfig = GUIsConfiguration.getInstance();
+        GUIsConfiguration guiConfig = GUIsConfiguration.getInstance();
         guiConfig.initialize(this);
 
-        commandsConfig = CommandsConfiguration.getInstance();
+        CommandsConfiguration commandsConfig = CommandsConfiguration.getInstance();
         commandsConfig.initialize(this);
 
         GoalsManager goalsManager = GoalsManager.getInstance();
@@ -105,6 +103,9 @@ public class PlayTimeManager extends JavaPlugin{
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlayTimePlaceHolders().register();
+            placeholdersapiConfigured = true;
+        }else{
+            placeholdersapiConfigured = false;
         }
 
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
@@ -185,6 +186,8 @@ public class PlayTimeManager extends JavaPlugin{
     public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
 
     public boolean isAfkDetectionConfigured(){ return afkDetectionConfigured; }
+
+    public boolean isPlaceholdersAPIConfigured(){ return placeholdersapiConfigured; }
 
     public SessionManager getSessionManager() { return sessionManager; }
 

@@ -1,26 +1,25 @@
 package me.thegabro.playtimemanager.Users;
 
-import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
 import java.time.LocalDateTime;
 
 public class OnlineUser extends DBUser {
-    protected final Player p;
+    protected final Player playerInstance;
     private long afkStartTime; // Timestamp when AFK started (in ticks)
     private long currentSessionAFKTime; // AFK time accumulated in current session (in ticks)
 
     public OnlineUser(Player p) {
         super(p);
-        this.p = p;
+        this.playerInstance = p;
         this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
         this.afkStartTime = 0;
         this.currentSessionAFKTime = 0;
     }
 
     private long getCachedPlayTime() {
-        return DBplaytime + (p.getStatistic(Statistic.PLAY_ONE_MINUTE) - fromServerOnJoinPlayTime);
+        return DBplaytime + (playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE) - fromServerOnJoinPlayTime);
     }
 
     public void updatePlayTime() {
@@ -37,8 +36,8 @@ public class OnlineUser extends DBUser {
         db.updateLastSeen(uuid, this.lastSeen);
     }
 
-    public Player getPlayer(){
-        return p;
+    public Player getPlayerInstance(){
+        return playerInstance;
     }
 
     @Override
@@ -71,7 +70,7 @@ public class OnlineUser extends DBUser {
     }
 
     public void refreshFromServerOnJoinPlayTime(){
-        this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
+        this.fromServerOnJoinPlayTime = playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE);
     }
 
     // Helper method to get current server time in ticks

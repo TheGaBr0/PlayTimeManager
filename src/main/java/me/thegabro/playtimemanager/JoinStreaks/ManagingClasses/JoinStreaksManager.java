@@ -104,7 +104,7 @@ public class JoinStreaksManager {
         // Only increment relative streak and check rewards if schedule is active AND rewards exist
         if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation") && !rewardRegistry.isEmpty()) {
             streakTracker.incrementRelativeStreak(onlineUser);
-            Player player = onlineUser.getPlayer();
+            Player player = onlineUser.getPlayerInstance();
             if (player != null) {
                 rewardProcessor.processEligibleRewards(onlineUser, player);
             }

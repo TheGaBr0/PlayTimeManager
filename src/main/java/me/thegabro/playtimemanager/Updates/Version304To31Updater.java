@@ -15,7 +15,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 public class Version304To31Updater {
     private final PlayTimeManager plugin;
     private final SQLite database;
-    private GoalsManager goalsManager;
+    private final GoalsManager goalsManager;
 
     public Version304To31Updater(PlayTimeManager plugin) {
         this.plugin = plugin;

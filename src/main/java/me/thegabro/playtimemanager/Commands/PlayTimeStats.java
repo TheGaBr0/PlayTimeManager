@@ -59,9 +59,8 @@ public class PlayTimeStats implements CommandExecutor {
         if (sender instanceof ConsoleCommandSender) {
             // Send text-based stats to console
             sendTextStats(sender, user);
-        } else if (sender instanceof Player) {
+        } else if (sender instanceof Player player) {
             // Open GUI for player
-            Player player = (Player) sender;
             openStatsGui(player, user);
         } else {
             // Fallback to text stats for other command sender types

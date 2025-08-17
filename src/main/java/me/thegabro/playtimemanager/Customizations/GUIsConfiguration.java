@@ -137,11 +137,7 @@ public class GUIsConfiguration {
         }
 
         // Fallback to config if not in cache
-        if (config != null && config.contains(path)) {
-            return true;
-        }
-
-        return false;
+        return config != null && config.contains(path);
     }
 
     /**

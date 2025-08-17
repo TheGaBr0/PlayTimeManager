@@ -57,12 +57,11 @@ public class PlaytimeCommand {
     }
 
     private boolean handleSelf(CommandSender sender) {
-        if (!(sender instanceof Player)) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You must be a player to execute this command"));
             return false;
         }
 
-        Player player = (Player) sender;
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
 
         // Check if prefix placeholder is used and LuckPerms is configured

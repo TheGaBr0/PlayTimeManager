@@ -9,7 +9,7 @@ public class GoalRewardRequirement {
     private List<String> permissions;
     private List<String> placeholderConditions;
     private long time;
-    private PlaceholderConditionEvaluator placeholderConditionEvaluator = PlaceholderConditionEvaluator.getInstance();
+    private final PlaceholderConditionEvaluator placeholderConditionEvaluator = PlaceholderConditionEvaluator.getInstance();
 
 
     public GoalRewardRequirement() {

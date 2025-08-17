@@ -7,15 +7,17 @@ import java.time.LocalDateTime;
 
 public class OnlineUser extends DBUser {
     protected final Player playerInstance;
-    private long afkStartTime; // Timestamp when AFK started (in ticks)
+    private long afkStartPlaytime; // Player's PLAY_ONE_MINUTE when AFK started
     private long currentSessionAFKTime; // AFK time accumulated in current session (in ticks)
+    private boolean afkTimeFinalized; // Flag to prevent double finalization
 
     public OnlineUser(Player p) {
         super(p);
         this.playerInstance = p;
         this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
-        this.afkStartTime = 0;
+        this.afkStartPlaytime = 0;
         this.currentSessionAFKTime = 0;
+        this.afkTimeFinalized = false;
     }
 
     private long getCachedPlayTime() {
@@ -23,11 +25,17 @@ public class OnlineUser extends DBUser {
     }
 
     public void updatePlayTime() {
-        db.updatePlaytime(uuid, getCachedPlayTime());
+        long currentPlaytime = getCachedPlayTime();
+        db.updatePlaytime(uuid, currentPlaytime);
     }
 
     public void updateAFKPlayTime() {
-        long totalAFKTime = getAFKPlaytime();
+        // Only finalize if not already done
+        if (!afkTimeFinalized) {
+            finalizeCurrentAFKSession();
+        }
+
+        long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
         db.updateAFKPlaytime(uuid, totalAFKTime);
     }
 
@@ -48,20 +56,21 @@ public class OnlineUser extends DBUser {
             totalPlaytime -= getAFKPlaytime();
         }
 
-        return totalPlaytime;
+        return Math.max(0, totalPlaytime);
     }
 
     @Override
     public long getAFKPlaytime() {
         long totalAFK = DBAFKplaytime + currentSessionAFKTime;
 
-        // If currently AFK, add the time since AFK started
-        if (afk && afkStartTime > 0) {
-            long ongoingAFKTime = getCurrentServerTicks() - afkStartTime;
+        // If currently AFK and not finalized, add ongoing AFK time
+        if (afk && afkStartPlaytime > 0 && !afkTimeFinalized) {
+            long currentPlaytime = playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE);
+            long ongoingAFKTime = currentPlaytime - afkStartPlaytime;
             totalAFK += ongoingAFKTime;
         }
 
-        return totalAFK;
+        return Math.max(0, totalAFK);
     }
 
     @Override
@@ -73,27 +82,39 @@ public class OnlineUser extends DBUser {
         this.fromServerOnJoinPlayTime = playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE);
     }
 
-    // Helper method to get current server time in ticks
-    private long getCurrentServerTicks() {
-        // Convert milliseconds to ticks (20 ticks = 1 second = 1000ms)
-        return System.currentTimeMillis() / 50; // 1000ms / 20 ticks = 50ms per tick
-    }
-
     // AFK management methods
     public void setAFK(boolean isAFK) {
         if (isAFK && !this.afk) {
-            // Player is going AFK
+            // Player is going AFK - record current playtime
             this.afk = true;
-            this.afkStartTime = getCurrentServerTicks();
+            this.afkStartPlaytime = playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE);
+            this.afkTimeFinalized = false;
         } else if (!isAFK && this.afk) {
-            // Player is no longer AFK
-            this.afk = false;
-            if (this.afkStartTime > 0) {
-                // Calculate AFK time and add to current session total
-                long afkDuration = getCurrentServerTicks() - this.afkStartTime;
+            // Player is no longer AFK - calculate AFK duration
+            if (this.afkStartPlaytime > 0 && !afkTimeFinalized) {
+                long currentPlaytime = playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE);
+                long afkDuration = currentPlaytime - this.afkStartPlaytime;
                 this.currentSessionAFKTime += afkDuration;
-                this.afkStartTime = 0;
             }
+            this.afk = false;
+            this.afkStartPlaytime = 0;
+            this.afkTimeFinalized = false;
         }
     }
+
+    /**
+     * Finalizes AFK time for the current session
+     * Should be called when player quits while AFK or when updating AFK playtime
+     */
+    public void finalizeCurrentAFKSession() {
+        if (afk && afkStartPlaytime > 0 && !afkTimeFinalized) {
+            long currentPlaytime = playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE);
+            long afkDuration = currentPlaytime - afkStartPlaytime;
+            currentSessionAFKTime += afkDuration;
+            afkTimeFinalized = true;
+        }
+    }
+
+
+
 }

@@ -1,6 +1,5 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX;
 
-import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import net.ess3.api.IUser;
@@ -36,17 +35,29 @@ public class EssentialsAFKHook implements Listener {
         IUser user = event.getAffected();
         Player player = user.getBase();
 
-        if (player == null || !player.isOnline()) return;
+        // Extra safety checks
+        if (player == null) {
+            return;
+        }
+
+        if (!player.isOnline()) {
+            return;
+        }
 
         boolean isNowAFK = event.getValue();
         String playerUUID = player.getUniqueId().toString();
         OnlineUser onlineUser = OnlineUsersManager.getInstance().getOnlineUserByUUID(playerUUID);
 
+        // player left while afk, we can just drop this with a return
+        if (onlineUser == null) {
+            return;
+        }
+
         if (isNowAFK) {
             // Player is now AFK
             afkSyncManager.handleAFKGo(onlineUser);
         } else {
-            // Player is no longer AFK - this needs synchronization
+            // Player is no longer AFK
             afkSyncManager.handleAFKReturn(onlineUser);
         }
     }

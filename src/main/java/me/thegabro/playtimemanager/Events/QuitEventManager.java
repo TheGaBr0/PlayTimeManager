@@ -20,26 +20,51 @@ public class QuitEventManager implements Listener {
     public void onQuit(PlayerQuitEvent event){
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(event.getPlayer().getName());
         if (onlineUser == null) {
-            plugin.getLogger().severe("OnlineUser is null for player: " + event.getPlayer().getName() +
-                    ". Please report this issue to the plugin developer.");
+            plugin.getLogger().severe("OnlineUser is null for player: " + event.getPlayer().getName());
             return;
         }
 
-        onlineUser.updatePlayTime();
-        onlineUser.updateLastSeen();
+        try {
+            // Finalize AFK time first if player was AFK
+            if (onlineUser.isAFK()) {
+                onlineUser.finalizeCurrentAFKSession();
+            }
 
-        // Use sync manager to handle quit with potential AFK coordination
+            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    // Update database asynchronously
+                    onlineUser.updatePlayTime();
+                    onlineUser.updateAFKPlayTime();
+                    onlineUser.updateLastSeen();
+
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Error updating database for " + onlineUser.getNickname() + ": " + e.getMessage());
+                }
+            });
+
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error during quit preparation for " + onlineUser.getNickname() + ": " + e.getMessage());
+        }
+
         afkSyncManager.handlePlayerQuit(onlineUser, () -> executeCleanup(onlineUser));
     }
 
     private void executeCleanup(OnlineUser onlineUser) {
-        onlineUsersManager.removeOnlineUser(onlineUser);
+        try {
+            // These operations should be fast (memory operations only)
+            onlineUsersManager.removeOnlineUser(onlineUser);
+            dbUsersManager.removeUserFromCache(onlineUser.getUuid());
 
-        // Remove the user from the cache to ensure fresh data on next access
-        // This prevents using stale cached data when the user rejoins
-        dbUsersManager.removeUserFromCache(onlineUser.getUuid());
-
-        dbUsersManager.updateCachedTopPlayers(onlineUser);
+            // This might be slow if it involves DB operations, so do it async
+            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    dbUsersManager.updateCachedTopPlayers(onlineUser);
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Error updating top players cache: " + e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error during quit cleanup for player " + onlineUser.getNickname() + ": " + e.getMessage());
+        }
     }
-
 }

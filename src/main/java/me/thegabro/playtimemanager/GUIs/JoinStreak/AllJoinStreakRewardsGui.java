@@ -333,7 +333,6 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                     }
 
                 } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                    return;
                 }
             }
 

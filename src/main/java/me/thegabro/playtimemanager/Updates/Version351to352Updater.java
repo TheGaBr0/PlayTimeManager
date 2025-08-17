@@ -13,7 +13,7 @@ import java.util.Map;
 
 public class Version351to352Updater {
 
-    private PlayTimeManager plugin;
+    private final PlayTimeManager plugin;
     private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
     private final SQLite database;
 
@@ -82,8 +82,7 @@ public class Version351to352Updater {
             for (String key : backup.keySet()) {
                 Object value = backup.get(key);
 
-                if (value instanceof String) {
-                    String stringValue = (String) value;
+                if (value instanceof String stringValue) {
                     String updatedValue = updatePlaceholdersInString(stringValue);
 
                     // Only update if the value actually changed

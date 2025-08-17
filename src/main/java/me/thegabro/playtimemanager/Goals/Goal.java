@@ -21,7 +21,7 @@ public class Goal {
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private String name;
     private final File goalFile;
-    private GoalRewardRequirement requirements;
+    private final GoalRewardRequirement requirements;
     private ArrayList<String> rewardPermissions = new ArrayList<>();
     private ArrayList<String> rewardCommands = new ArrayList<>();
     private String goalMessage;

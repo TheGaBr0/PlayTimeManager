@@ -29,7 +29,7 @@ import java.util.*;
 
 public class PlayerStatsGui extends BaseCustomGUI {
 
-    private Inventory inv;
+    private final Inventory inv;
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final GUIsConfiguration config;
     private final DBUser subject;
@@ -517,7 +517,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
     private void addCommonPlaceholders(Map<String, String> combinations) {
         // Player information
         combinations.put("%PLAYER_NAME%", subject.getNickname());
-        combinations.put("%UUID%", subject.getUuid().toString());
+        combinations.put("%UUID%", subject.getUuid());
 
         // Playtime information
         long totalPlaytime = subject.getPlaytime();
@@ -637,7 +637,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
 
         String itemType = slotItemTypes.get(slot);
         if (itemType == null) {
-            return;
         }
     }
 }

@@ -6,6 +6,7 @@ import me.thegabro.playtimemanager.GUIs.InventoryListener;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
@@ -13,6 +14,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -56,30 +58,69 @@ public class PlayerStatsGui extends BaseCustomGUI {
         // Get GUI size for this view (validate and round to nearest valid size)
         this.guiSize = getGuiSizeForView(viewType);
 
-        // Process title with placeholders
+        // Process title with placeholders - we'll handle async loading of PlaceholderAPI placeholders separately
         String rawTitle = getTitleForView(viewType);
-        String processedTitle = processPlaceholders(rawTitle, "title");
+        String processedTitle = processInternalPlaceholders(rawTitle, "title");
         inv = Bukkit.createInventory(this, guiSize, Utils.parseColors(processedTitle));
     }
 
     public void openInventory() {
-        initializeItems();
+        // Check if subject is online for immediate processing
+        if (subject.isOnline()) {
+            // For online players, we can initialize synchronously
+            initializeItems();
 
-        // Track active GUIs
-        InventoryListener.getInstance().registerGUI(sender.getUniqueId(), this);
+            // Track active GUIs and open inventory
+            InventoryListener.getInstance().registerGUI(sender.getUniqueId(), this);
+            sender.openInventory(inv);
+        } else {
+            // For offline players, use async initialization
+            initializeItemsAsync(() -> {
+                // Track active GUIs
+                InventoryListener.getInstance().registerGUI(sender.getUniqueId(), this);
 
-        sender.openInventory(inv);
+                // Open inventory on main thread
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (sender.isOnline()) {
+                        sender.openInventory(inv);
+                    }
+                });
+            });
+        }
     }
 
-    public void initializeItems() {
-        slotItemTypes.clear();
-        inv.clear();
+    private void initializeItems() {
+        try {
+            slotItemTypes.clear();
+            inv.clear();
 
-        // Create GUI borders if enabled for current view
-        createBorders();
+            createBorders();
+            createConfigurableItemsSync();
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error initializing PlayerStatsGui items: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
-        // Create all configured items based on view type
-        createConfigurableItems();
+    private void initializeItemsAsync(Runnable callback) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                slotItemTypes.clear();
+                inv.clear();
+
+                createBorders();
+
+                createConfigurableItemsAsync(() -> {
+                    // Run callback on main thread
+                    Bukkit.getScheduler().runTask(plugin, callback);
+                });
+            } catch (Exception e) {
+                plugin.getLogger().severe("Error initializing PlayerStatsGui items: " + e.getMessage());
+                e.printStackTrace();
+                // Still run callback even if there's an error
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
     /**
@@ -210,7 +251,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
         // Get border configuration for current view
         Material borderMaterial = getBorderMaterialForView(currentView);
         String rawBorderName = getBorderNameForView(currentView);
-        String borderName = processPlaceholders(rawBorderName, "border");
+        String borderName = processInternalPlaceholders(rawBorderName, "border");
 
         // Calculate border slots based on GUI size
         Set<Integer> borderSlots = calculateBorderSlots(guiSize);
@@ -244,7 +285,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
         return borderSlots;
     }
 
-    private void createConfigurableItems() {
+    private void createConfigurableItemsSync() {
         ViewType currentView = getViewType();
 
         // Get all configured items
@@ -254,43 +295,86 @@ public class PlayerStatsGui extends BaseCustomGUI {
             String itemPath = "player-stats-gui.items." + itemKey;
 
             // Check if item should be visible for this view
-            if (!isItemVisibleForView(itemPath, currentView)) {
-                continue;
+            if (isItemVisibleForView(itemPath, currentView)) {
+                // For online players, we have immediate access to Player instance
+                OnlineUser onlineSubject = (OnlineUser) subject;
+                Player onlinePlayer = onlineSubject.getPlayerInstance();
+
+                processItemWithPlayerData(itemKey, currentView, onlinePlayer);
             }
+        }
+    }
 
-            // Get slots for the current view (now supports multiple slots)
-            List<Integer> slots = getSlotsForView(itemPath, currentView);
+    private void createConfigurableItemsAsync(Runnable callback) {
+        ViewType currentView = getViewType();
 
-            if (slots.isEmpty()) {
-                plugin.getLogger().warning("No valid slots configured for item " + itemKey + " in view " + currentView + ". Skipping item.");
-                continue;
+        // Get all configured items
+        Map<String, Object> items = config.getConfigurationSection("player-stats-gui.items").getValues(false);
+
+        List<String> itemsToProcess = new ArrayList<>();
+        for (String itemKey : items.keySet()) {
+            String itemPath = "player-stats-gui.items." + itemKey;
+
+            // Check if item should be visible for this view
+            if (isItemVisibleForView(itemPath, currentView)) {
+                itemsToProcess.add(itemKey);
             }
+        }
 
-            // Get material for the current view
-            String materialString = getMaterialStringForView(itemPath, currentView);
-            if (materialString == null) {
-                plugin.getLogger().warning("No material configured for item " + itemKey + " in view " + currentView + ". Skipping item.");
-                continue;
-            }
-
-            // Get name and lore for the current view
-            String rawName = getNameForView(itemPath, currentView);
-            List<String> loreConfig = getLoreForView(itemPath, currentView);
-
-            // Create the item for each slot
-            for (int slot : slots) {
-                // Handle out-of-bounds slot ID
-                if (slot < 0 || slot >= inv.getSize()) {
-                    plugin.getLogger().warning("Invalid slot " + slot + " for item " + itemKey + " in view " + currentView + ". GUI size is " + inv.getSize() + ". Skipping slot.");
-                    continue;
+        // Handle offline players with async PlaceholderAPI processing
+        if (plugin.isPlaceholdersAPIConfigured()) {
+            // Get OfflinePlayer instance asynchronously for DBUser
+            subject.getPlayerInstance(offlinePlayer -> {
+                // Process all items with the OfflinePlayer instance
+                for (String itemKey : itemsToProcess) {
+                    processItemWithPlayerData(itemKey, currentView, offlinePlayer);
                 }
-
-                // Create the item
-                createStatItem(slot, materialString, rawName, loreConfig, itemKey);
-
-                // Store item type for click handling
-                slotItemTypes.put(slot, itemKey);
+                callback.run();
+            });
+        } else {
+            // No PlaceholderAPI, process normally
+            for (String itemKey : itemsToProcess) {
+                processItemWithPlayerData(itemKey, currentView, null);
             }
+            callback.run();
+        }
+    }
+
+    private void processItemWithPlayerData(String itemKey, ViewType currentView, @Nullable OfflinePlayer offlinePlayer) {
+        String itemPath = "player-stats-gui.items." + itemKey;
+
+        // Get slots for the current view (now supports multiple slots)
+        List<Integer> slots = getSlotsForView(itemPath, currentView);
+
+        if (slots.isEmpty()) {
+            plugin.getLogger().warning("No valid slots configured for item " + itemKey + " in view " + currentView + ". Skipping item.");
+            return;
+        }
+
+        // Get material for the current view
+        String materialString = getMaterialStringForView(itemPath, currentView);
+        if (materialString == null) {
+            plugin.getLogger().warning("No material configured for item " + itemKey + " in view " + currentView + ". Skipping item.");
+            return;
+        }
+
+        // Get name and lore for the current view
+        String rawName = getNameForView(itemPath, currentView);
+        List<String> loreConfig = getLoreForView(itemPath, currentView);
+
+        // Create the item for each slot
+        for (int slot : slots) {
+            // Handle out-of-bounds slot ID
+            if (slot < 0 || slot >= inv.getSize()) {
+                plugin.getLogger().warning("Invalid slot " + slot + " for item " + itemKey + " in view " + currentView + ". GUI size is " + inv.getSize() + ". Skipping slot.");
+                continue;
+            }
+
+            // Create the item
+            createStatItem(slot, materialString, rawName, loreConfig, itemKey, offlinePlayer);
+
+            // Store item type for click handling
+            slotItemTypes.put(slot, itemKey);
         }
     }
 
@@ -312,7 +396,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
         String enabledPath = viewPath + ".enabled";
         return config.getOrDefaultBoolean(enabledPath, true);
     }
-
 
     /**
      * Get the slots for an item in the current view
@@ -375,24 +458,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
     }
 
     /**
-     * Get the material for an item in the current view
-     * @deprecated Use getMaterialStringForView and createStatItem for player head support
-     */
-    @Deprecated
-    private Material getMaterialForView(String itemPath, ViewType viewType) {
-        String materialString = getMaterialStringForView(itemPath, viewType);
-        if (materialString == null) {
-            return null;
-        }
-
-        try {
-            return Material.valueOf(materialString);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
-
-    /**
      * Get the name for an item in the current view
      */
     private String getNameForView(String itemPath, ViewType viewType) {
@@ -429,23 +494,23 @@ public class PlayerStatsGui extends BaseCustomGUI {
      * Automatically detects and handles PLAYER_HEAD:playername format
      * Uses context player when no specific nickname is provided
      */
-    private void createStatItem(int slot, String materialString, String rawName, List<String> loreConfig, String itemType) {
+    private void createStatItem(int slot, String materialString, String rawName, List<String> loreConfig, String itemType, @Nullable OfflinePlayer offlinePlayer) {
         List<Component> lore = new ArrayList<>();
 
         // Process lore with placeholders
         for (String loreLine : loreConfig) {
-            String processedLine = processPlaceholders(loreLine, itemType);
+            String processedLine = processPlaceholders(loreLine, itemType, offlinePlayer);
             lore.add(Utils.parseColors(processedLine));
         }
 
         // Process name with placeholders
-        String processedName = processPlaceholders(rawName, itemType);
+        String processedName = processPlaceholders(rawName, itemType, offlinePlayer);
 
         // Create the item - check if it's a player head first
         ItemStack item;
         if (isPlayerHead(materialString)) {
             // Process placeholders in the material string for player head
-            String processedMaterialString = processPlaceholders(materialString, itemType);
+            String processedMaterialString = processPlaceholders(materialString, itemType, offlinePlayer);
 
             // Check if a specific nickname is provided after the colon
             String[] parts = processedMaterialString.split(":", 2);
@@ -495,7 +560,29 @@ public class PlayerStatsGui extends BaseCustomGUI {
         return materialString != null && materialString.toUpperCase().startsWith("PLAYER_HEAD");
     }
 
-    private String processPlaceholders(String text, String itemType) {
+    /**
+     * Process placeholders with optional OfflinePlayer support
+     */
+    private String processPlaceholders(String text, String itemType, @Nullable OfflinePlayer offlinePlayer) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+
+        // Process internal placeholders first
+        String internalPlaceholdersParsed = processInternalPlaceholders(text, itemType);
+
+        // Process PlaceholderAPI placeholders if available and OfflinePlayer is provided
+        if (plugin.isPlaceholdersAPIConfigured() && offlinePlayer != null) {
+            return PlaceholderAPI.setPlaceholders(offlinePlayer, internalPlaceholdersParsed);
+        }
+
+        return internalPlaceholdersParsed;
+    }
+
+    /**
+     * Process only internal placeholders (non-PlaceholderAPI)
+     */
+    private String processInternalPlaceholders(String text, String itemType) {
         if (text == null || text.isEmpty()) {
             return text;
         }
@@ -503,15 +590,9 @@ public class PlayerStatsGui extends BaseCustomGUI {
         Map<String, String> combinations = new HashMap<>();
 
         addCommonPlaceholders(combinations);
-
         addTypeSpecialPlaceholders(combinations, itemType);
 
-        String internalPlaceholdersParsed = Utils.placeholdersReplacer(text, combinations);
-
-        if(plugin.isPlaceholdersAPIConfigured())
-            return PlaceholderAPI.setPlaceholders(subject.getPlayerInstance(), internalPlaceholdersParsed);
-        else
-            return internalPlaceholdersParsed;
+        return Utils.placeholdersReplacer(text, combinations);
     }
 
     private void addCommonPlaceholders(Map<String, String> combinations) {

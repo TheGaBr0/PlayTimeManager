@@ -7,12 +7,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
-
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Consumer;
 
 public class DBUser {
     protected String uuid;
@@ -51,7 +48,7 @@ public class DBUser {
         this.receivedRewards = receivedRewards;
         this.rewardsToBeClaimed = rewardsToBeClaimed;
         afk = false;
-        playerInstance = Bukkit.getOfflinePlayer(uuid);
+        playerInstance = null;
     }
 
     public DBUser(Player p) {
@@ -105,7 +102,36 @@ public class DBUser {
         afk = false;
     }
 
-    public OfflinePlayer getPlayerInstance(){ return playerInstance; }
+    public boolean isOnline() {
+        return this instanceof OnlineUser;
+    }
+
+    /**
+     * Get the OfflinePlayer instance asynchronously to avoid blocking the main thread.
+     */
+    public void getPlayerInstance(Consumer<OfflinePlayer> callback) {
+        if (playerInstance != null) {
+            callback.accept(playerInstance);
+            return;
+        }
+
+        // Run asynchronously to prevent main thread blocking
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                UUID parsedUuid = UUID.fromString(uuid);
+                OfflinePlayer player = Bukkit.getOfflinePlayer(parsedUuid);
+
+                // Update on main thread
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    playerInstance = player;
+                    callback.accept(player);
+                });
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Invalid UUID format for player: " + uuid);
+                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
+            }
+        });
+    }
 
     public LocalDateTime getFirstJoin(){ return firstJoin; }
 

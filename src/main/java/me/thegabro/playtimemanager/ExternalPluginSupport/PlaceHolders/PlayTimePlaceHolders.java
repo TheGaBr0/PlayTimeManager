@@ -146,6 +146,32 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
             }
         }
 
+        // Handle basic AFK playtime placeholders
+        if (params.equalsIgnoreCase("afk_playtime")) {
+            try {
+                return Utils.ticksToFormattedPlaytime(
+                        onlineUsersManager.getOnlineUser(player.getName()).getAFKPlaytime(),
+                        playtimeFormat
+                );
+            } catch (Exception e) {
+                return getErrorMessage("couldn't get AFK playtime");
+            }
+        }
+
+        // Handle unit-specific AFK playtime placeholders
+        for (String unit : TIME_UNITS) {
+            if (params.equalsIgnoreCase("afk_playtime_" + unit)) {
+                try {
+                    return String.valueOf(Utils.ticksToTimeUnit(
+                            onlineUsersManager.getOnlineUser(player.getName()).getAFKPlaytime(),
+                            unit
+                    ));
+                } catch (Exception e) {
+                    return getErrorMessage("couldn't get AFK playtime");
+                }
+            }
+        }
+
         // Handle basic playtime placeholders
         if (params.equalsIgnoreCase("playtime")) {
             try {
@@ -234,6 +260,18 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
         if (paramLower.startsWith("playtime_top_")) {
             return handlePlayTimeTop(params.substring(13));
+        }
+
+        // Handle AFK playtime with units and nickname
+        for (String unit : TIME_UNITS) {
+            String prefix = "afk_playtime_" + unit.toLowerCase() + "_";
+            if (paramLower.startsWith(prefix)) {
+                return handleAFKPlayTime(params.substring(prefix.length()), unit);
+            }
+        }
+
+        if (paramLower.startsWith("afk_playtime_")) {
+            return handleAFKPlayTime(params.substring(13));
         }
 
         // Handle playtime with units and nickname
@@ -341,6 +379,20 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         return user != null ?
                 Utils.ticksToFormattedPlaytime(user.getPlaytime(), playtimeFormat) :
                 getErrorMessage("wrong top position?");
+    }
+
+    private String handleAFKPlayTime(String nickname, String unit) {
+        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        return user != null ?
+                String.valueOf(Utils.ticksToTimeUnit(user.getAFKPlaytime(), unit)) :
+                getErrorMessage("wrong nickname?");
+    }
+
+    private String handleAFKPlayTime(String nickname) {
+        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        return user != null ?
+                Utils.ticksToFormattedPlaytime(user.getAFKPlaytime(), playtimeFormat) :
+                getErrorMessage("wrong nickname?");
     }
 
     private String handlePlayTime(String nickname, String unit) {

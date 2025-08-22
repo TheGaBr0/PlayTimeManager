@@ -112,7 +112,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
                 int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(player.getName()))  + 1;
 
-                return position != -1 ? String.valueOf(position) : plugin.getConfiguration().getString("placeholders.not-in-leaderboard-message");
+                return position != 0 ? String.valueOf(position) : plugin.getConfiguration().getString("placeholders.not-in-leaderboard-message");
             } catch (Exception e) {
                 return e.getMessage();
             }

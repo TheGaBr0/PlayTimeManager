@@ -78,8 +78,16 @@ public class PlayTimeStats implements CommandExecutor {
         LocalDateTime firstJoin = user.getFirstJoin();
         long totalPlaytime = user.getPlaytime();
         long artificialPlaytime = user.getArtificialPlaytime();
+        long afkPlaytime = user.getAFKPlaytime();
         int relativeJoinStreak = user.getRelativeJoinStreak();
         int absoluteJoinStreak = user.getAbsoluteJoinStreak();
+
+        // Calculate real playtime
+        long realPlaytime;
+        if (plugin.getConfiguration().getBoolean("ignore-afk-time"))
+            realPlaytime = totalPlaytime - artificialPlaytime - afkPlaytime;
+        else
+            realPlaytime = totalPlaytime - artificialPlaytime;
 
         // Header
         sender.sendMessage(Utils.parseColors("&8&l===============[ &6&lPlayer Stats &8&l]==============="));
@@ -88,10 +96,10 @@ public class PlayTimeStats implements CommandExecutor {
         // Playtime Information
         sender.sendMessage(Utils.parseColors("\n&6&lPlaytime Information:"));
         sender.sendMessage(Utils.parseColors("&7Total Playtime: &e" + Utils.ticksToFormattedPlaytime(totalPlaytime)));
-        if (artificialPlaytime > 0) {
-            sender.sendMessage(Utils.parseColors("&7- Playtime: &e" + Utils.ticksToFormattedPlaytime(totalPlaytime - artificialPlaytime)));
-            sender.sendMessage(Utils.parseColors("&7- Artificial Playtime: &e" + Utils.ticksToFormattedPlaytime(artificialPlaytime)));
-        }
+        sender.sendMessage(Utils.parseColors("&7- Real Playtime: &e" + Utils.ticksToFormattedPlaytime(realPlaytime)));
+        sender.sendMessage(Utils.parseColors("&7- Artificial Playtime: &e" + Utils.ticksToFormattedPlaytime(artificialPlaytime)));
+        sender.sendMessage(Utils.parseColors("&7- AFK Playtime: &e" + Utils.ticksToFormattedPlaytime(afkPlaytime)));
+
 
         // First Join Information
         if (firstJoin != null) {

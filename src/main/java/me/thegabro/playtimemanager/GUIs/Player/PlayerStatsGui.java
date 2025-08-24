@@ -571,13 +571,16 @@ public class PlayerStatsGui extends BaseCustomGUI {
         // Process internal placeholders first
         String internalPlaceholdersParsed = processInternalPlaceholders(text, itemType);
 
-        try {
-            return PlaceholderAPI.setPlaceholders(offlinePlayer, internalPlaceholdersParsed);
-        } catch (Exception e) {
-            // If PlaceholderAPI fails, silently remove any PAPI placeholders and return the text
-            // This removes placeholders in the format %plugin_placeholder% or %placeholder%
-            return internalPlaceholdersParsed.replaceAll("%[^%]+%", "");
+        if(plugin.isPlaceholdersAPIConfigured()){
+            try {
+                return PlaceholderAPI.setPlaceholders(offlinePlayer, internalPlaceholdersParsed);
+            } catch (Exception e) {
+                // If PlaceholderAPI fails, silently remove any PAPI placeholders and return the text
+                // This removes placeholders in the format %plugin_placeholder% or %placeholder%
+                return internalPlaceholdersParsed.replaceAll("%[^%]+%", "");
+            }
         }
+        return internalPlaceholdersParsed;
     }
 
     /**

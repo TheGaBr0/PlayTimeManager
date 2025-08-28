@@ -247,7 +247,6 @@ public class RewardsInfoGui extends BaseCustomGUI {
         protectedSlots.clear();
         inv.clear();
 
-        // Update dynamic placeholders for pagination
         updateDynamicPlaceholders();
 
         // Create borders
@@ -269,10 +268,8 @@ public class RewardsInfoGui extends BaseCustomGUI {
             protectedSlots.add(CLAIM_ALL_BUTTON_SLOT);
         }
 
-        // Pagination with dynamic translation
         int totalPages = (int) Math.ceil((double) filteredDisplayItems.size() / REWARDS_PER_PAGE);
         if (totalPages > 1) {
-            // Use the efficient translateDynamic method
             inv.setItem(PAGE_INDICATOR_SLOT, createGuiItem(Material.PAPER,
                     Utils.parseColors(translateDynamic(config.getString("rewards-gui.pagination.page-indicator")))));
             protectedSlots.add(PAGE_INDICATOR_SLOT);
@@ -336,13 +333,11 @@ public class RewardsInfoGui extends BaseCustomGUI {
                         break;
                 }
 
-                // Add required joins info with individual placeholder replacement
                 String requiredJoinsText = translateDynamic(config.getString("rewards-gui.reward-items.info-lore.required-joins"));
                 requiredJoinsText = quickTranslate(requiredJoinsText, "%REQUIRED_JOINS%", specificJoins == -1 ? "-" : String.valueOf(specificJoins));
                 lore.add(requiredJoinsText);
 
                 if (!(displayItem.getStatus() == RewardStatus.AVAILABLE_OLD) && !(displayItem.getStatus() == RewardStatus.AVAILABLE)) {
-                    // Handle join streak color dynamically
                     String streakColor = currentStreak < specificJoins ?
                             config.getString("rewards-gui.reward-items.info-lore.join-streak-color.insufficient") :
                             config.getString("rewards-gui.reward-items.info-lore.join-streak-color.sufficient");
@@ -353,7 +348,6 @@ public class RewardsInfoGui extends BaseCustomGUI {
                     lore.add(joinStreakText);
                 }
 
-                // Handle description with line-by-line translation
                 if (!reward.getDescription().isEmpty()) {
                     lore.add(translateDynamic(config.getString("rewards-gui.reward-items.info-lore.description-separator")));
                     String descTemplate = config.getString("rewards-gui.reward-items.info-lore.description");
@@ -364,7 +358,6 @@ public class RewardsInfoGui extends BaseCustomGUI {
                     }
                 }
 
-                // Handle reward description with line-by-line translation
                 if (!reward.getRewardDescription().isEmpty()) {
                     lore.add(translateDynamic(config.getString("rewards-gui.reward-items.info-lore.reward-description-separator")));
                     String rewardDescTemplate = config.getString("rewards-gui.reward-items.info-lore.reward-description");
@@ -404,7 +397,6 @@ public class RewardsInfoGui extends BaseCustomGUI {
 
     // Create the filter toggle buttons
     private void createFilterButtons() {
-        // Show Claimed Button
         Material claimedMaterial = currentFilter == FilterType.CLAIMED ? Material.LIME_DYE : Material.GRAY_DYE;
         String claimedName = currentFilter == FilterType.CLAIMED ?
                 config.getString("rewards-gui.filters.claimed.enabled-name") :
@@ -420,7 +412,6 @@ public class RewardsInfoGui extends BaseCustomGUI {
         ));
         protectedSlots.add(SHOW_CLAIMED_BUTTON_SLOT);
 
-        // Show Available Button
         Material availableMaterial = currentFilter == FilterType.AVAILABLE ? Material.LIME_DYE : Material.GRAY_DYE;
         String availableName = currentFilter == FilterType.AVAILABLE ?
                 config.getString("rewards-gui.filters.available.enabled-name") :
@@ -436,7 +427,6 @@ public class RewardsInfoGui extends BaseCustomGUI {
         ));
         protectedSlots.add(SHOW_AVAILABLE_BUTTON_SLOT);
 
-        // Show Locked Button
         Material lockedMaterial = currentFilter == FilterType.LOCKED ? Material.LIME_DYE : Material.GRAY_DYE;
         String lockedName = currentFilter == FilterType.LOCKED ?
                 config.getString("rewards-gui.filters.locked.enabled-name") :
@@ -528,30 +518,6 @@ public class RewardsInfoGui extends BaseCustomGUI {
         return item;
     }
 
-    private ItemStack createRewardItem(Material material, String name, List<Component> lore, PersistentDataContainer originalContainer) {
-        ItemStack item = new ItemStack(material, 1);
-        ItemMeta meta = item.getItemMeta();
-
-        meta.displayName(Utils.parseColors(name).decoration(TextDecoration.ITALIC, false));
-
-        ArrayList<Component> metalore = new ArrayList<>();
-        for (Component loreLine : lore) {
-            metalore.add(loreLine.decoration(TextDecoration.ITALIC, false));
-        }
-
-        if (originalContainer != null) {
-            for (NamespacedKey key : originalContainer.getKeys()) {
-                if (originalContainer.has(key, PersistentDataType.STRING)) {
-                    String value = originalContainer.get(key, PersistentDataType.STRING);
-                    meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, value);
-                }
-            }
-        }
-
-        meta.lore(metalore);
-        item.setItemMeta(meta);
-        return item;
-    }
 
     @Override
     public @NotNull Inventory getInventory() {
@@ -705,8 +671,6 @@ public class RewardsInfoGui extends BaseCustomGUI {
                     config.getString("rewards-gui.messages.claimed-rewards"),
                     "%COUNT%", String.valueOf(claimedCount)
             );
-            // Also support legacy {count} format
-            message = quickTranslate(message, "{count}", String.valueOf(claimedCount));
 
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " + message));
             sender.playSound(sender.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);

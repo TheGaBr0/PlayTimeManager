@@ -104,13 +104,10 @@ public class InventoryListener implements Listener {
             CustomGUI gui = activeGuis.get(playerId);
 
             if (gui != null && gui == holder) {
-                // Let the GUI handle its own cleanup
                 gui.onGUIClose(player);
 
-                // Remove from our registry
                 unregisterGUI(playerId);
 
-                // End session
                 PlayTimeManager.getInstance().getSessionManager().endSession(playerId);
             }
         }

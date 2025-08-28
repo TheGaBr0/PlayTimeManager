@@ -164,8 +164,7 @@ player-stats-gui:
           name: "&e&lMy Playtime"
           lore:
             - "&7Total Time Played: &e%PLAYTIME%"
-            - ""
-            - "&8View: %VIEW_TYPE%"
+
         player:
           enabled: true
           material: "CLOCK"
@@ -194,7 +193,6 @@ player-stats-gui:
           lore:
             - "&7You joined on: &e%FIRST_JOIN_DATE%"
             - "&7Account Age: &a%ACCOUNT_AGE%"
-            - ""
         player:
           enabled: true
           material: "CAKE"

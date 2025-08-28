@@ -27,7 +27,6 @@ public class PlayTimeStats implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-        // Check permission
         if (!sender.hasPermission("playtime.stats")) {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to use this command!"));
             return true;
@@ -35,7 +34,6 @@ public class PlayTimeStats implements CommandExecutor {
 
         String targetPlayerName;
 
-        // If no argument is provided, use the sender's name (if sender is a player)
         if (args.length == 0) {
             if (sender instanceof Player) {
                 targetPlayerName = sender.getName();
@@ -47,7 +45,6 @@ public class PlayTimeStats implements CommandExecutor {
             targetPlayerName = args[0];
         }
 
-        // Get user from database
         DBUser user = dbUsersManager.getUserFromNickname(targetPlayerName);
 
         if (user == null) {
@@ -55,15 +52,12 @@ public class PlayTimeStats implements CommandExecutor {
             return true;
         }
 
-        // Check if sender is console or player
         if (sender instanceof ConsoleCommandSender) {
-            // Send text-based stats to console
             sendTextStats(sender, user);
         } else if (sender instanceof Player player) {
-            // Open GUI for player
             openStatsGui(player, user);
         } else {
-            // Fallback to text stats for other command sender types
+            // Fallback
             sendTextStats(sender, user);
         }
 

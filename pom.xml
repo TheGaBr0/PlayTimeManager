@@ -6,7 +6,7 @@
 
     <groupId>me.theGabro</groupId>
     <artifactId>PlayTimeManager</artifactId>
-    <version>3.5.2-beta</version>
+    <version>3.5.2-beta2</version>
     <packaging>jar</packaging>
 
     <properties>

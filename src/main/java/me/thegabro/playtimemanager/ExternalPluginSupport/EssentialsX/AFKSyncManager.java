@@ -22,7 +22,6 @@ public class AFKSyncManager {
      */
     public void handlePlayerQuit(OnlineUser onlineUser, Runnable quitCleanup) {
         if (onlineUser == null) {
-            plugin.getLogger().warning("OnlineUser is null in handlePlayerQuit");
             return;
         }
 
@@ -53,7 +52,6 @@ public class AFKSyncManager {
     public void handleAFKReturn(OnlineUser user) {
         if (user == null) {
             // This can happen if player disconnects while AFK and EssentialsX fires the return event
-            plugin.getLogger().info("Received AFK return event for offline player - ignoring");
             return;
         }
 
@@ -61,9 +59,6 @@ public class AFKSyncManager {
             if (user.isAFK()) {
                 user.setAFK(false);
                 user.updateAFKPlayTime();
-                plugin.getLogger().info("Player " + user.getNickname() + " returned from AFK, updated AFK time");
-            } else {
-                plugin.getLogger().info("Player " + user.getNickname() + " AFK return event fired but player was not marked as AFK");
             }
         } catch (Exception e) {
             plugin.getLogger().warning("Error updating AFK return for player " + user.getNickname() + ": " + e.getMessage());
@@ -76,7 +71,6 @@ public class AFKSyncManager {
      */
     public void handleAFKGo(OnlineUser user) {
         if (user == null) {
-            plugin.getLogger().warning("OnlineUser is null in handleAFKGo");
             return;
         }
 
@@ -84,9 +78,6 @@ public class AFKSyncManager {
             if (!user.isAFK()) {
                 user.updateAFKPlayTime();
                 user.setAFK(true);
-                plugin.getLogger().info("Player " + user.getNickname() + " is now AFK, AFK time updated immediately");
-            } else {
-                plugin.getLogger().info("Player " + user.getNickname() + " AFK go event fired but player was already marked as AFK");
             }
         } catch (Exception e) {
             plugin.getLogger().warning("Error setting AFK status for player " + user.getNickname() + ": " + e.getMessage());

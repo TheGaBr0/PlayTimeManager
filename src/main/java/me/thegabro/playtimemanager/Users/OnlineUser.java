@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Users;
 
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
@@ -36,6 +37,7 @@ public class OnlineUser extends DBUser {
         }
 
         long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
+
         db.updateAFKPlaytime(uuid, totalAFKTime);
     }
 

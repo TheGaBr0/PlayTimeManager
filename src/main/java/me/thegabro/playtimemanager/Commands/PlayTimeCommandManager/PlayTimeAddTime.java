@@ -27,7 +27,7 @@ public class PlayTimeAddTime {
             return;
         }
 
-        DBUser user = dbUsersManager.getUserFromNickname(args[0]);
+        DBUser user = dbUsersManager.getUserFromNicknameWithContext(args[0], "add playtime command");
         long oldPlaytime = user.getPlaytime();
 
         long newArtificialPlaytime = user.getArtificialPlaytime() + timeToTicks;

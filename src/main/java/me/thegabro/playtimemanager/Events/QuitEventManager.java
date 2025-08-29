@@ -26,7 +26,7 @@ public class QuitEventManager implements Listener {
 
         try {
             // Finalize AFK time first if player was AFK
-            if (onlineUser.isAFK()) {
+            if (plugin.isAfkDetectionConfigured() && onlineUser.isAFK()) {
                 onlineUser.finalizeCurrentAFKSession();
             }
 
@@ -34,9 +34,18 @@ public class QuitEventManager implements Listener {
                 try {
                     // Update database asynchronously
                     onlineUser.updatePlayTime();
-                    onlineUser.updateAFKPlayTime();
+
+                    if (plugin.isAfkDetectionConfigured()) {
+                        onlineUser.updateAFKPlayTime();
+                    }
+
                     onlineUser.updateLastSeen();
 
+                    if (plugin.isAfkDetectionConfigured()) {
+                        afkSyncManager.handlePlayerQuit(onlineUser, () -> executeCleanup(onlineUser));
+                    } else {
+                        executeCleanup(onlineUser);
+                    }
                 } catch (Exception e) {
                     plugin.getLogger().severe("Error updating database for " + onlineUser.getNickname() + ": " + e.getMessage());
                 }
@@ -45,17 +54,12 @@ public class QuitEventManager implements Listener {
         } catch (Exception e) {
             plugin.getLogger().warning("Error during quit preparation for " + onlineUser.getNickname() + ": " + e.getMessage());
         }
-
-        afkSyncManager.handlePlayerQuit(onlineUser, () -> executeCleanup(onlineUser));
     }
-
     private void executeCleanup(OnlineUser onlineUser) {
         try {
-            // These operations should be fast (memory operations only)
             onlineUsersManager.removeOnlineUser(onlineUser);
             dbUsersManager.removeUserFromCache(onlineUser.getUuid());
 
-            // This might be slow if it involves DB operations, so do it async
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
                     dbUsersManager.updateCachedTopPlayers(onlineUser);

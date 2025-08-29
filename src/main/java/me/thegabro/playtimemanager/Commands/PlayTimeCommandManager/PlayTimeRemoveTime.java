@@ -30,7 +30,7 @@ public class PlayTimeRemoveTime {
         // Make the time negative since we're removing
         timeToTicks = -timeToTicks;
 
-        DBUser user = dbUsersManager.getUserFromNickname(args[0]);
+        DBUser user = dbUsersManager.getUserFromNicknameWithContext(args[0], "remove playtime command");
         long oldPlaytime = user.getPlaytime();
 
         long newArtificialPlaytime = user.getArtificialPlaytime() + timeToTicks;

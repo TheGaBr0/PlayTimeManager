@@ -49,6 +49,7 @@ public class PlayTimeManager extends JavaPlugin{
 
     public final String CURRENT_CONFIG_VERSION = "3.9";
     public final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
+    public final boolean CACHE_DEBUG = false;
     @Override
     public void onEnable() {
 
@@ -122,8 +123,11 @@ public class PlayTimeManager extends JavaPlugin{
         Bukkit.getPluginManager().registerEvents(new JoinStreakRewardPrizesGui(), this);
 
         Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeGoal());
+
         Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {
         });
+        Objects.requireNonNull(getCommand("playtime")).setTabCompleter(new PlayTimeCommandManager());
+
         Objects.requireNonNull(getCommand("playtimeaverage")).setExecutor(new PlaytimeAverage() {
         });
         Objects.requireNonNull(getCommand("playtimepercentage")).setExecutor(new PlaytimePercentage() {

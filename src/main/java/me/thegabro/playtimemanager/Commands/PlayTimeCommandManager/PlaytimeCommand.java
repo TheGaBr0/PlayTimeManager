@@ -86,7 +86,7 @@ public class PlaytimeCommand {
     }
 
     private boolean handleOther(CommandSender sender, String playerName) {
-        DBUser user = dbUsersManager.getUserFromNickname(playerName);
+        DBUser user = dbUsersManager.getUserFromNicknameWithContext(playerName, "playtime command");
 
         // Check if prefix placeholder is used and LuckPerms is configured
         if (config.getString("playtime-others-message").contains("%PREFIX%") && plugin.isPermissionsManagerConfigured()) {

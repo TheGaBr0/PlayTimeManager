@@ -45,7 +45,7 @@ public class PlayTimeStats implements CommandExecutor {
             targetPlayerName = args[0];
         }
 
-        DBUser user = dbUsersManager.getUserFromNickname(targetPlayerName);
+        DBUser user = dbUsersManager.getUserFromNicknameWithContext(targetPlayerName, "ptstats command");
 
         if (user == null) {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &cPlayer not found!"));
@@ -79,7 +79,7 @@ public class PlayTimeStats implements CommandExecutor {
         // Calculate real playtime
         long realPlaytime;
         if (plugin.getConfiguration().getBoolean("ignore-afk-time"))
-            realPlaytime = totalPlaytime - artificialPlaytime - afkPlaytime;
+            realPlaytime = totalPlaytime - artificialPlaytime + afkPlaytime;
         else
             realPlaytime = totalPlaytime - artificialPlaytime;
 

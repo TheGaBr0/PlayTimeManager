@@ -330,7 +330,8 @@ public class DBUser {
         this.receivedRewards.clear();
         this.rewardsToBeClaimed.clear();
 
-        // Update all values in database - optimize with a single transaction if possible
+        // Update all values in database
+        // TODO: optimize with a single transaction
         db.updatePlaytime(uuid, 0);
         db.updateAFKPlaytime(uuid, 0);
         db.updateArtificialPlaytime(uuid, 0);

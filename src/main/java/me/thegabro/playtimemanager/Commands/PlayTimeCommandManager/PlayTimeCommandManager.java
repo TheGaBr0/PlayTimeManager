@@ -5,10 +5,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
+import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
+public class PlayTimeCommandManager implements TabExecutor {
     private final List<String> subCommands = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
@@ -146,6 +143,7 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             if (sender.hasPermission("playtime.others")) {
+
                 List<String> playerNames = Bukkit.getOnlinePlayers()
                         .stream()
                         .map(Player::getName)
@@ -160,14 +158,21 @@ public class PlayTimeCommandManager implements CommandExecutor, TabCompleter {
             } else {
                 return new ArrayList<>();
             }
-        } else if (args.length == 2) {
-            if (sender.hasPermission("playtime.others.modify")) {
+        }  else if (args.length == 2) {
+        if (sender.hasPermission("playtime.others.modify")) {
+            if (args[0].equals("*")) {
+                // Wildcard only supports reset
+                availableCommands.add("reset");
+            } else {
+                // Normal players support all subcommands
                 availableCommands.add("add");
                 availableCommands.add("remove");
                 availableCommands.add("reset");
             }
+        }
 
-            StringUtil.copyPartialMatches(args[1], availableCommands, completions);
+        StringUtil.copyPartialMatches(args[1], availableCommands, completions);
+
         } else if (args.length == 3 && args[1].equalsIgnoreCase("reset") && sender.hasPermission("playtime.others.modify")) {
             StringUtil.copyPartialMatches(args[2], resetOptions, completions);
         }

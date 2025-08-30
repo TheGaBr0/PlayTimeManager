@@ -26,14 +26,16 @@ public class QuitEventManager implements Listener {
 
         try {
             // Finalize AFK time first if player was AFK
+            final long quitTimePlaytime = event.getPlayer().getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE);
+
             if (plugin.isAfkDetectionConfigured() && onlineUser.isAFK()) {
-                onlineUser.finalizeCurrentAFKSession();
+                onlineUser.finalizeCurrentAFKSession(quitTimePlaytime);
             }
 
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
                     // Update database asynchronously
-                    onlineUser.updatePlayTime();
+                    onlineUser.updatePlayTimeWithSnapshot(quitTimePlaytime);
 
                     if (plugin.isAfkDetectionConfigured()) {
                         onlineUser.updateAFKPlayTime();

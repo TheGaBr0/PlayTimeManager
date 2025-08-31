@@ -90,7 +90,7 @@ public class DBUsersManager {
 
         if(plugin.CACHE_DEBUG) {
             plugin.getLogger().info("Looking for player: " + db.getNickname(uuid) + " from context: unknown");
-            plugin.getLogger().info("Presence in cache:" + String.valueOf(userCache.containsKey(uuid)));
+            plugin.getLogger().info("Presence in cache:" + userCache.containsKey(uuid));
         }
 
         // Check cache or create new DBUser
@@ -112,7 +112,7 @@ public class DBUsersManager {
 
         if(plugin.CACHE_DEBUG){
             plugin.getLogger().info("Looking for player: "+db.getNickname(uuid)+" from context: "+context);
-            plugin.getLogger().info("Presence in cache:"+ String.valueOf(userCache.containsKey(uuid)));
+            plugin.getLogger().info("Presence in cache:"+ userCache.containsKey(uuid));
         }
 
         // Check cache or create new DBUser

@@ -21,7 +21,6 @@ public class Version351to352Updater {
     private static final Map<String, String> PLACEHOLDER_MAPPINGS = new HashMap<>();
 
     static {
-        // Basic placeholder updates (curly braces to percent signs, uppercase)
         PLACEHOLDER_MAPPINGS.put("{current_page}", "%CURRENT_PAGE%");
         PLACEHOLDER_MAPPINGS.put("{total_pages}", "%TOTAL_PAGES%");
         PLACEHOLDER_MAPPINGS.put("{required_joins}", "%REQUIRED_JOINS%");
@@ -29,8 +28,6 @@ public class Version351to352Updater {
         PLACEHOLDER_MAPPINGS.put("{count}", "%COUNT%");
         PLACEHOLDER_MAPPINGS.put("{reward_description}", "%REWARD_DESCRIPTION%");
         PLACEHOLDER_MAPPINGS.put("{description}", "%DESCRIPTION%");
-
-        // Special case for color placeholder
         PLACEHOLDER_MAPPINGS.put("{color}", "%JOIN_STREAK_COLOR%");
     }
 

@@ -429,7 +429,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         chatEventManager.startChatInput(player, (p, input) -> {
             if (!input.equalsIgnoreCase("cancel")) {
                 String playerName = input.replace(" ", "");
-                DBUser user = dbUsersManager.getUserFromNickname(playerName);
+                DBUser user = dbUsersManager.getUserFromNicknameWithContext(playerName, "uncomplete goal for user");
 
                 if (user == null) {
                     player.sendMessage(Utils.parseColors("&cPlayer not found!"));

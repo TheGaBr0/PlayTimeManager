@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Events;
 
+import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.AFKSyncManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -13,26 +14,63 @@ public class QuitEventManager implements Listener {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+    private final AFKSyncManager afkSyncManager = AFKSyncManager.getInstance();
+
     @EventHandler
     public void onQuit(PlayerQuitEvent event){
-
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(event.getPlayer().getName());
         if (onlineUser == null) {
-            plugin.getLogger().severe("OnlineUser is null for player: " + event.getPlayer().getName() +
-                    ". Please report this issue to the plugin developer.");
+            plugin.getLogger().severe("OnlineUser is null for player: " + event.getPlayer().getName());
             return;
         }
-        onlineUser.updatePlayTime();
-        onlineUser.updateLastSeen();
 
-        onlineUsersManager.removeOnlineUser(onlineUser);
+        try {
+            // Finalize AFK time first if player was AFK
+            final long quitTimePlaytime = event.getPlayer().getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE);
 
-        // Remove the user from the cache to ensure fresh data on next access
-        // This prevents using stale cached data when the user rejoins
-        dbUsersManager.removeUserFromCache(onlineUser.getUuid());
+            if (plugin.isAfkDetectionConfigured() && onlineUser.isAFK()) {
+                onlineUser.finalizeCurrentAFKSession(quitTimePlaytime);
+            }
 
-        dbUsersManager.updateCachedTopPlayers(onlineUser);
+            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    // Update database asynchronously
+                    onlineUser.updatePlayTimeWithSnapshot(quitTimePlaytime);
 
+                    if (plugin.isAfkDetectionConfigured()) {
+                        onlineUser.updateAFKPlayTime();
+                    }
+
+                    onlineUser.updateLastSeen();
+
+                    if (plugin.isAfkDetectionConfigured()) {
+                        afkSyncManager.handlePlayerQuit(onlineUser, () -> executeCleanup(onlineUser));
+                    } else {
+                        executeCleanup(onlineUser);
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Error updating database for " + onlineUser.getNickname() + ": " + e.getMessage());
+                }
+            });
+
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error during quit preparation for " + onlineUser.getNickname() + ": " + e.getMessage());
+        }
     }
+    private void executeCleanup(OnlineUser onlineUser) {
+        try {
+            onlineUsersManager.removeOnlineUser(onlineUser);
+            dbUsersManager.removeUserFromCache(onlineUser.getUuid());
 
+            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    dbUsersManager.updateCachedTopPlayers(onlineUser);
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Error updating top players cache: " + e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error during quit cleanup for player " + onlineUser.getNickname() + ": " + e.getMessage());
+        }
+    }
 }

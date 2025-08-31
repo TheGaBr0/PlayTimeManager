@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.GUIs.JoinStreak;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
-import me.thegabro.playtimemanager.GUIs.ConfirmationGui;
+import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
 import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -433,7 +433,6 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         player.sendMessage(instructions);
 
         chatEventManager.startChatInput(player, (p, message) -> {
-            plugin.getLogger().info(message);
             if (message.equalsIgnoreCase("confirm")) {
                 ItemStack heldItem = player.getInventory().getItemInMainHand();
                 if (heldItem.getType() != Material.AIR) {

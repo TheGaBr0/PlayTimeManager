@@ -1,8 +1,11 @@
 package me.thegabro.playtimemanager;
 
+import me.thegabro.playtimemanager.Commands.PlayTimeStats;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
+import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsAFKHook;
 import me.thegabro.playtimemanager.GUIs.Goals.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
+import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
@@ -11,7 +14,6 @@ import me.thegabro.playtimemanager.Commands.*;
 import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.Events.JoinEventManager;
-import me.thegabro.playtimemanager.GUIs.*;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.SQLiteDB.LogFilter;
@@ -36,18 +38,18 @@ public class PlayTimeManager extends JavaPlugin{
 
     private static PlayTimeManager instance;
     private Configuration config;
-    private CommandsConfiguration commandsConfig;
-    private GUIsConfiguration guiConfig;
-    private PlaytimeFormatsConfiguration playtimeFormatsConfiguration;
     private PlayTimeDatabase db;
     private boolean permissionsManagerConfigured;
+    private boolean afkDetectionConfigured;
+    private boolean placeholdersapiConfigured;
     private OnlineUsersManager onlineUsersManager;
     private DBUsersManager dbUsersManager;
     private JoinStreaksManager joinStreaksManager;
     private SessionManager sessionManager;
 
-    public final String CURRENT_CONFIG_VERSION = "3.8";
+    public final String CURRENT_CONFIG_VERSION = "3.9";
     public final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
+    public final boolean CACHE_DEBUG = false;
     @Override
     public void onEnable() {
 
@@ -78,19 +80,20 @@ public class PlayTimeManager extends JavaPlugin{
 
         // Initialize singleton configurations
 
-        playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
+        PlaytimeFormatsConfiguration playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
         playtimeFormatsConfiguration.initialize(this);
 
-        guiConfig = GUIsConfiguration.getInstance();
+        GUIsConfiguration guiConfig = GUIsConfiguration.getInstance();
         guiConfig.initialize(this);
 
-        commandsConfig = CommandsConfiguration.getInstance();
+        CommandsConfiguration commandsConfig = CommandsConfiguration.getInstance();
         commandsConfig.initialize(this);
 
         GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(this);
 
         permissionsManagerConfigured = checkPermissionsPlugin();
+        afkDetectionConfigured = checkAFKPlugin();
 
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
@@ -101,6 +104,9 @@ public class PlayTimeManager extends JavaPlugin{
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlayTimePlaceHolders().register();
+            placeholdersapiConfigured = true;
+        }else{
+            placeholdersapiConfigured = false;
         }
 
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
@@ -117,8 +123,11 @@ public class PlayTimeManager extends JavaPlugin{
         Bukkit.getPluginManager().registerEvents(new JoinStreakRewardPrizesGui(), this);
 
         Objects.requireNonNull(getCommand("playtimegoal")).setExecutor(new PlaytimeGoal());
+
         Objects.requireNonNull(getCommand("playtime")).setExecutor(new PlayTimeCommandManager() {
         });
+        Objects.requireNonNull(getCommand("playtime")).setTabCompleter(new PlayTimeCommandManager());
+
         Objects.requireNonNull(getCommand("playtimeaverage")).setExecutor(new PlaytimeAverage() {
         });
         Objects.requireNonNull(getCommand("playtimepercentage")).setExecutor(new PlaytimePercentage() {
@@ -134,6 +143,8 @@ public class PlayTimeManager extends JavaPlugin{
         Objects.requireNonNull(getCommand("claimrewards")).setExecutor(new ClaimRewards() {
         });
         Objects.requireNonNull(getCommand("playtimeattribute")).setExecutor(new PlayTimeAttributeCommand() {
+        });
+        Objects.requireNonNull(getCommand("playtimestats")).setExecutor(new PlayTimeStats() {
         });
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();
@@ -178,8 +189,36 @@ public class PlayTimeManager extends JavaPlugin{
 
     public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
 
+    public boolean isAfkDetectionConfigured(){ return afkDetectionConfigured; }
+
+    public boolean isPlaceholdersAPIConfigured(){ return placeholdersapiConfigured; }
+
     public SessionManager getSessionManager() { return sessionManager; }
 
+    private boolean checkAFKPlugin(){
+        String configuredPlugin = config.getString("afk-detection-plugin").toLowerCase();
+        if ("essentials".equals(configuredPlugin)) {
+            Plugin essentials = Bukkit.getPluginManager().getPlugin("Essentials");
+            if(essentials != null && essentials.isEnabled()){
+                try{
+                    EssentialsAFKHook afkHook = EssentialsAFKHook.getInstance();
+                    getServer().getPluginManager().registerEvents(afkHook, this);
+                    getLogger().info("Essentials detected! Launching related functions");
+                    return true;
+                } catch (Exception e) {
+                    getLogger().severe("ERROR: Failed to initialize Essentials API: " + e.getMessage());
+                    return false;
+                }
+            }else{
+                getLogger().warning(
+                        "Failed to initialize afk detection: Essentials plugin configured but not found! " +
+                                "\nUntil this is resolved, PlayTimeManager will not be able to detect afk playtime"
+                );
+                return false;
+            }
+        }
+        return false;
+    }
 
     private boolean checkPermissionsPlugin() {
         String configuredPlugin = config.getString("permissions-manager-plugin").toLowerCase();

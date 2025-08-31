@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
-import me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui;
+import me.thegabro.playtimemanager.GUIs.Player.RewardsInfoGui;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
@@ -50,7 +50,7 @@ public class ClaimRewards implements CommandExecutor {
         String sessionToken = UUID.randomUUID().toString();
         plugin.getSessionManager().createSession(player.getUniqueId(), sessionToken);
         // Open the rewards inventory with session validation
-        RewardsInfoGui rewardsGui = new RewardsInfoGui(player, dbUsersManager.getUserFromNickname(player.getName()), sessionToken);
+        RewardsInfoGui rewardsGui = new RewardsInfoGui(player, dbUsersManager.getUserFromNicknameWithContext(player.getName(), "claimrewards command"), sessionToken);
         rewardsGui.openInventory();
         return true;
     }

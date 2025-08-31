@@ -1,7 +1,7 @@
 package me.thegabro.playtimemanager.Commands;
 
 import me.thegabro.playtimemanager.GUIs.JoinStreak.AllJoinStreakRewardsGui;
-import me.thegabro.playtimemanager.GUIs.JoinStreak.RewardsInfoGui;
+import me.thegabro.playtimemanager.GUIs.Player.RewardsInfoGui;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
@@ -61,7 +61,7 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
             }
 
             String targetPlayerName = args[1];
-            DBUser user = dbUsersManager.getUserFromNickname(targetPlayerName);
+            DBUser user = dbUsersManager.getUserFromNicknameWithContext(targetPlayerName, "join streak seeplayer command");
 
             if (user == null) {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
@@ -122,7 +122,7 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
     }
 
     private void setPlayerJoinStreak(CommandSender sender, String playerName, int newValue) {
-        DBUser user = dbUsersManager.getUserFromNickname(playerName);
+        DBUser user = dbUsersManager.getUserFromNicknameWithContext(playerName, "set join streak command");
 
         if (user == null) {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +

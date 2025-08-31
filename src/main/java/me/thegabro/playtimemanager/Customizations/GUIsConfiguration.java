@@ -6,6 +6,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -125,6 +126,21 @@ public class GUIsConfiguration {
     }
 
     /**
+     * Checks if a configuration path exists in either cache or config
+     * @param path The configuration path to check
+     * @return true if the path exists, false otherwise
+     */
+    public boolean contains(String path) {
+        // First check cache for faster lookup
+        if (configCache.containsKey(path)) {
+            return true;
+        }
+
+        // Fallback to config if not in cache
+        return config != null && config.contains(path);
+    }
+
+    /**
      * Gets a value from cache if available, otherwise from config with default
      */
     public Object get(String path, Object def) {
@@ -154,6 +170,87 @@ public class GUIsConfiguration {
         save();
     }
 
+    // ==================== GET OR DEFAULT OVERWRITE METHODS ====================
+
+    /**
+     * Gets a value from config/cache, or sets and returns the default if not present
+     * @param path The configuration path
+     * @param defaultValue The default value to set if path doesn't exist
+     * @return The existing value or the default value that was set
+     */
+    public Object getOrDefault(String path, Object defaultValue) {
+        // Check if value exists in cache first
+        if (configCache.containsKey(path)) {
+            return configCache.get(path);
+        }
+
+        // Check if value exists in config
+        if (config.contains(path)) {
+            Object value = config.get(path);
+            if (value != null) {
+                configCache.put(path, value);
+                return value;
+            }
+        }
+
+        // Value doesn't exist, set the default and return it
+        set(path, defaultValue);
+        return defaultValue;
+    }
+
+    /**
+     * Gets a String value or sets and returns the default if not present
+     */
+    public String getOrDefaultString(String path, String defaultValue) {
+        Object value = getOrDefault(path, defaultValue);
+        return value != null ? value.toString() : defaultValue;
+    }
+
+    /**
+     * Gets an Integer value or sets and returns the default if not present
+     */
+    public Integer getOrDefaultInt(String path, Integer defaultValue) {
+        Object value = getOrDefault(path, defaultValue);
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Gets a Boolean value or sets and returns the default if not present
+     */
+    public Boolean getOrDefaultBoolean(String path, Boolean defaultValue) {
+        Object value = getOrDefault(path, defaultValue);
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Gets a Double value or sets and returns the default if not present
+     */
+    public Double getOrDefaultDouble(String path, Double defaultValue) {
+        Object value = getOrDefault(path, defaultValue);
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        return defaultValue;
+    }
+
+    /**
+     * Gets a String List value or sets and returns the default if not present
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> getOrDefaultStringList(String path, List<String> defaultValue) {
+        Object value = getOrDefault(path, defaultValue);
+        if (value instanceof List) {
+            return (List<String>) value;
+        }
+        return defaultValue;
+    }
+
     // ==================== CONFIG UPDATE SYSTEM ====================
 
     /**
@@ -163,17 +260,12 @@ public class GUIsConfiguration {
     public Map<String, Object> createConfigBackup() {
         Map<String, Object> backup = new HashMap<>();
 
-        // Use cache if available, otherwise read from config
-        if (!configCache.isEmpty()) {
-            backup.putAll(configCache);
-        } else {
-            // Read all keys from current config
-            Set<String> keys = config.getKeys(true);
-            for (String key : keys) {
-                Object value = config.get(key);
-                if (value != null) {
-                    backup.put(key, value);
-                }
+        // Read all keys from current config
+        Set<String> keys = config.getKeys(true);
+        for (String key : keys) {
+            Object value = config.get(key);
+            if (value != null) {
+                backup.put(key, value);
             }
         }
 
@@ -243,7 +335,12 @@ public class GUIsConfiguration {
                 file.delete();
             }
 
-            // Step 3: Reload the new config
+            // Step 3: Save the new resource file
+            plugin.saveResource(CONFIG_PATH + CONFIG_FILENAME, true);
+
+            // Step 4: Clear cache and reload the new config
+            configCache.clear();
+            reloadFile();
             reloadConfig();
 
             // Step 4: Restore user values (only if we have a backup)
@@ -259,6 +356,18 @@ public class GUIsConfiguration {
             plugin.getLogger().severe("Failed to update config: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Gets a configuration section from the config
+     * @param path The path to the configuration section
+     * @return ConfigurationSection or null if not found
+     */
+    public org.bukkit.configuration.ConfigurationSection getConfigurationSection(String path) {
+        if (config == null) {
+            return null;
+        }
+        return config.getConfigurationSection(path);
     }
 
     /**

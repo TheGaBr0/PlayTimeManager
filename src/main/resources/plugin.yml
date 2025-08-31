@@ -4,7 +4,7 @@ main: me.thegabro.playtimemanager.PlayTimeManager
 api-version: '1.19'
 author: TheGabro
 description: A playtime tracker with customization options and automated rewards for efficient monitoring
-softdepend: [PlaceholderAPI, LuckPerms]
+softdepend: [PlaceholderAPI, LuckPerms, Essentials]
 
 commands:
   playtime:
@@ -51,6 +51,11 @@ commands:
     permission: playtime.others.attributes
     permission-message: You don't have the permission to execute this command!
     aliases: [ptattr]
+  playtimestats:
+    description: Command to manage players stats
+    permission: playtime.stats
+    permission-message: You don't have the permission to execute this command!
+    aliases: [ptstats]
   claimrewards:
     description: Command to claim join streak rewards
     permission: playtime.joinstreak.claim
@@ -66,6 +71,8 @@ permissions:
       playtime.others.attributes: true
       playtime.others.modify.all: true
       playtime.others.stats: true
+      playtime.others.stats.staff: true
+      playtime.stats: true
       playtime.average: true
       playtime.percentage: true
       playtime.top: true
@@ -78,6 +85,8 @@ permissions:
       playtime.joinstreak.seeplayer: true
   playtime:
     default: true
+  playtime.stats:
+    default: true
   playtime.others:
     default: false
   playtime.others.modify:
@@ -87,6 +96,8 @@ permissions:
   playtime.others.attributes:
     default: false
   playtime.others.stats:
+    default: false
+  playtime.others.stats.staff:
     default: false
   playtime.average:
     default: false

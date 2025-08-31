@@ -1,7 +1,7 @@
 package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
 
-import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.command.CommandSender;
@@ -27,7 +27,7 @@ public class PlayTimeAddTime {
             return;
         }
 
-        DBUser user = dbUsersManager.getUserFromNickname(args[0]);
+        DBUser user = dbUsersManager.getUserFromNicknameWithContext(args[0], "add playtime command");
         long oldPlaytime = user.getPlaytime();
 
         long newArtificialPlaytime = user.getArtificialPlaytime() + timeToTicks;

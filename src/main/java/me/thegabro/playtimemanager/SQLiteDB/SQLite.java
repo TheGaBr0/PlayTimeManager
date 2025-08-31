@@ -22,6 +22,7 @@ public class SQLite extends PlayTimeDatabase {
             "nickname VARCHAR(32) NOT NULL UNIQUE," +
             "playtime BIGINT NOT NULL," +
             "artificial_playtime BIGINT NOT NULL," +
+            "afk_playtime BIGINT NOT NULL,"+
             "completed_goals TEXT DEFAULT ''," +
             "last_seen DATETIME DEFAULT NULL,"+
             "first_join DATETIME DEFAULT NULL,"+

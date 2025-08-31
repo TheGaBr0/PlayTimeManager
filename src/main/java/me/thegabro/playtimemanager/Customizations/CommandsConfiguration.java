@@ -144,19 +144,15 @@ public class CommandsConfiguration {
     public Map<String, Object> createConfigBackup() {
         Map<String, Object> backup = new HashMap<>();
 
-        // Use cache if available, otherwise read from config
-        if (!configCache.isEmpty()) {
-            backup.putAll(configCache);
-        } else {
-            // Read all keys from current config
-            Set<String> keys = config.getKeys(true);
-            for (String key : keys) {
-                Object value = config.get(key);
-                if (value != null) {
-                    backup.put(key, value);
-                }
+        // Read all keys from current config
+        Set<String> keys = config.getKeys(true);
+        for (String key : keys) {
+            Object value = config.get(key);
+            if (value != null) {
+                backup.put(key, value);
             }
         }
+
 
         return backup;
     }

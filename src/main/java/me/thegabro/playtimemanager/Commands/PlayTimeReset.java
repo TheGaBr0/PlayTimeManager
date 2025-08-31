@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
+package me.thegabro.playtimemanager.Commands;
 
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUser;
@@ -522,7 +522,7 @@ public class PlayTimeReset {
      * Validate user exists and return user object
      */
     private DBUser getValidatedUser(CommandSender sender, String playerName) {
-        DBUser user = dbUsersManager.getUserFromNickname(playerName);
+        DBUser user = dbUsersManager.getUserFromNicknameWithContext(playerName, "playtime reset command");
         if (user == null) {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                     " The player &e" + playerName + "&7 has never joined the server!"));

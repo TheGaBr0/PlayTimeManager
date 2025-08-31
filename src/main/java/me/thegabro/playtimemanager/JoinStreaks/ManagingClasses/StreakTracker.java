@@ -34,7 +34,7 @@ public class StreakTracker {
         int playersReset = 0;
 
         for (String playerUUID : playersWithStreaks) {
-            DBUser user = dbUsersManager.getUserFromUUID(playerUUID);
+            DBUser user = dbUsersManager.getUserFromUUIDWithContext(playerUUID, "reset inactive player streak");
             if (user != null) {
                 // Check if the player's last seen time is older than the interval
                 LocalDateTime lastSeen = user.getLastSeen();

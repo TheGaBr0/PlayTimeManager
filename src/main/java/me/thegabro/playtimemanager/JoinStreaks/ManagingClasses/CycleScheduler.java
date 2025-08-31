@@ -198,7 +198,7 @@ public class CycleScheduler {
                 Date cycleStartDate = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);
 
                 for (String playerUUID : playersWithStreaks) {
-                    DBUser user = DBUsersManager.getInstance().getUserFromUUID(playerUUID);
+                    DBUser user = DBUsersManager.getInstance().getUserFromUUIDWithContext(playerUUID, "add players to current active cycle time window");
                     if (user != null) {
                         LocalDateTime lastSeen = user.getLastSeen();
 

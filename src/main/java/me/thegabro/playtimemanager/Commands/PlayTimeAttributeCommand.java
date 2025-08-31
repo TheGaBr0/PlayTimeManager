@@ -5,10 +5,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
-import net.luckperms.api.model.user.User;
-import net.luckperms.api.query.QueryOptions;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -49,7 +46,7 @@ public class PlayTimeAttributeCommand implements CommandExecutor, TabCompleter {
             return false;
         }
 
-        DBUser user = DBUsersManager.getInstance().getUserFromNickname(playerName);
+        DBUser user = DBUsersManager.getInstance().getUserFromNicknameWithContext(playerName, "set hidefromleaderboard attribute command");
         if (user == null) {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                     " The player &e" + playerName + "&7 has never joined the server!"));

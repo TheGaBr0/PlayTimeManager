@@ -5,20 +5,23 @@
 # hexadecimal values between 00 and ff (same as decimal 0-255)
 # Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
 #
-# Placeholders enclosed in {} are FIELD-DEPENDENT. They can only be used within the specific field
+# Internal placeholders used in this file are GUI-DEPENDENT. They can only be used within the specific gui section
 # where they're defined. All available placeholders are shown in this configuration file.
 
 #=================================================================
 #                   JOIN STREAKS REWARDS GUI
 #=================================================================
 
+# Available internal placeholders for this gui: %CURRENT_PAGE%, %TOTAL_PAGES%, %REQUIRED_JOINS%, %JOIN_STREAK_COLOR%,
+# %CURRENT_STREAK%, %DESCRIPTION%, %REWARD_DESCRIPTION%, %COUNT%
+# PlaceholdersAPI support: no
 rewards-gui:
   gui:
     title: "Claim Your Rewards"
     border-item-name: "&f[&6P.T.M.&f]&7"
 
   pagination:
-    page-indicator: "&e&lPage {current_page} of {total_pages}"
+    page-indicator: "&e&lPage %CURRENT_PAGE% of %TOTAL_PAGES%"
     next-page:
       name: "&a&lNext Page →"
       lore: "&7Click to view the next page"
@@ -68,19 +71,260 @@ rewards-gui:
         - "&cYou haven't reached this join streak yet"
 
     info-lore:
-      required-joins: "&7Required Joins: &e{required_joins}"
-      join-streak: "&7Your current join streak: {color}{current_streak}"
+      required-joins: "&7Required Joins: &e%REQUIRED_JOINS%"
+      join-streak: "&7Your current join streak: %JOIN_STREAK_COLOR%%CURRENT_STREAK%"
       join-streak-color:
         sufficient: "&a"
         insufficient: "&c"
       description-separator: ""
-      description: "&7{description}"
+      description: "&7%DESCRIPTION%"
       reward-description-separator: ""
-      reward-description: "&7{reward_description}"
+      reward-description: "&7%REWARD_DESCRIPTION%"
 
   messages:
     no-permission: "&cYou don't have permission to claim rewards!"
     not-available: "&cThis reward is not available to claim!"
     reward-not-found: "&cCouldn't find the reward details!"
     error-processing: "&cAn error occurred while processing your reward."
-    claimed-rewards: "&aClaimed {count} rewards!"
+    claimed-rewards: "&aClaimed %COUNT% rewards!"
+
+
+#=================================================================
+#                      PLAYER STATS GUI
+#=================================================================
+
+# Available internal placeholders: %PLAYER_NAME%, %UUID%, %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME%,
+# %AFK_PLAYTIME%, %FIRST_JOIN_DATE%, %ACCOUNT_AGE%, %LAST_SEEN_DATE%, %TIME_SINCE_LAST_SEEN%, %RELATIVE_STREAK%,
+# %ABSOLUTE_STREAK%, %GOALS_COUNT%, %GOALS_LIST%, %POSITION%
+# PlaceholdersAPI support: yes - You can use whatever PAPI placeholder in this GUI!
+
+# You can use a special item: PLAYER_HEAD. By default, it displays the skin of the stats owner.
+# To show a specific player's skin, use the format PLAYER_HEAD:playername.
+# NOTE: This method is not guaranteed to be 100% reliable, as Mojang's API may occasionally be outdated or unavailable.
+
+# Instructions:
+# - 'views' section defines different GUI configurations based on who is viewing:
+#   * owner: Player viewing their own stats
+#   * player: Player viewing another player's stats
+#   * staff: Staff member viewing stats (requires playtime.others.stats.staff permission)
+# - Each view can have different title, size (9,18,27,36,45,54), and border settings
+# - Items can be enabled/disabled per view using 'enabled: true/false' (defaults to true)
+# - Each item can have different materials, slots, names, and lore per view
+# - Slots can be single value (slot: 1) or multiple values (slot: [1, 2, 3]).
+# - The allowed range for slot values goes from 0 to size-1.
+# - Items under 'items' section are completely customizable - you can add new ones or remove existing ones-
+# - Some items have special settings with unique placeholders: goals-settings.list-format and leaderboard-settings.not-in-leaderboard-position
+#
+# For detailed placeholder descriptions and a complete tutorial on editing this GUI,
+# please visit the wiki: https://github.com/TheGaBr0/PlayTimeManager/wiki
+
+player-stats-gui:
+
+  goals-settings:
+    # This setting controls how goals are formatted when using the %GOALS_LIST% placeholder
+    list-format: "&7• &e%GOAL%"
+
+  leaderboard-settings:
+    # Fallback message shown when %POSITION% placeholder is used for unranked players
+    not-in-leaderboard-position: "-"
+
+  # View-specific configurations
+  views:
+    owner:
+      title: "&6&lMy stats"
+      size: 54
+      border:
+        enabled: true
+        material: "BLUE_STAINED_GLASS_PANE"
+        name: " "
+
+    player:
+      title: "&e%PLAYER_NAME%'s stats"
+      size: 27
+      border:
+        enabled: true
+        material: "GRAY_STAINED_GLASS_PANE"
+        name: " "
+
+    staff:
+      title: "&c&l&6%PLAYER_NAME%'s stats"
+      size: 54
+      border:
+        enabled: true
+        material: "RED_STAINED_GLASS_PANE"
+        name: "&c&lP.T.M"
+
+  items:
+    playtime:
+      views:
+        owner:
+          enabled: true
+          material: "CLOCK"
+          slot: 22
+          name: "&e&lMy Playtime"
+          lore:
+            - "&7Total Time Played: &e%PLAYTIME%"
+
+        player:
+          enabled: true
+          material: "CLOCK"
+          slot: 13
+          name: "&e&l%PLAYER_NAME%'s Playtime"
+          lore:
+            - "&7Playtime: &e%PLAYTIME%"
+        staff:
+          enabled: true
+          material: "CLOCK"
+          slot: 20
+          name: "&e&lPlaytime Information"
+          lore:
+            - "&7Total Playtime: &e%PLAYTIME%"
+            - "&7Actual Playtime: &a%ACTUAL_PLAYTIME%"
+            - "&7Artificial Playtime: &c%ARTIFICIAL_PLAYTIME%"
+            - "&7AFK Playtime: &5%AFK_PLAYTIME%"
+
+    firstjoin:
+      views:
+        owner:
+          enabled: true
+          material: "CAKE"
+          slot: 20
+          name: "&a&lFirst join"
+          lore:
+            - "&7You joined on: &e%FIRST_JOIN_DATE%"
+            - "&7Account Age: &a%ACCOUNT_AGE%"
+        player:
+          enabled: true
+          material: "CAKE"
+          slot: 11
+          name: "&a&l%PLAYER_NAME%'s First Join"
+          lore:
+            - "&7Joined on: &e%FIRST_JOIN_DATE%"
+            - "&7Account Age: &a%ACCOUNT_AGE%"
+        staff:
+          enabled: true
+          material: "CAKE"
+          slot: 22
+          name: "&a&lFirst Join"
+          lore:
+            - "&7First join: &e%FIRST_JOIN_DATE%"
+            - "&7Account Age: &a%ACCOUNT_AGE%"
+
+    lastseen:
+      views:
+        owner:
+          enabled: false  # Owner doesn't need to see their own "last seen"
+          material: "COMPASS"
+          slot: 21
+          name: "&c&lMy Last Activity"
+          lore:
+            - "&7Last Seen: &e%LAST_SEEN_DATE%"
+            - "&7Time Offline: &e%TIME_SINCE_LAST_SEEN%"
+        player:
+          enabled: true
+          material: "COMPASS"
+          slot: 15  # Adjusted for smaller GUI
+          name: "&c&lLast Activity"
+          lore:
+            - "&7Last Seen: &e%LAST_SEEN_DATE%"
+            - "&7Time Offline: &e%TIME_SINCE_LAST_SEEN%"
+        staff:
+          enabled: true
+          material: "COMPASS"
+          slot: 24
+          name: "&c&lLast Activity"
+          lore:
+            - "&7Last Seen: &e%LAST_SEEN_DATE%"
+            - "&7Time Offline: &e%TIME_SINCE_LAST_SEEN%"
+
+    joinstreak:
+      views:
+        owner:
+          enabled: true
+          material: "FIRE_CHARGE"
+          slot: 30
+          name: "&6&lMy Join Streak"
+          lore:
+            - "&7My streak for the current cycle: &e%RELATIVE_STREAK% days"
+            - "&7My total Streak: &6%ABSOLUTE_STREAK% days"
+        player:
+          enabled: true
+          material: "FIRE_CHARGE"
+          slot: 12
+          name: "&6&l%PLAYER_NAME%'s Join Streak"
+          lore:
+            - "&7Streak for the current cycle: &e%RELATIVE_STREAK% days"
+            - "&7Total Streak: &6%ABSOLUTE_STREAK% days"
+        staff:
+          enabled: true
+          material: "FIRE_CHARGE"
+          slot: 39
+          name: "&6&lJoin Streak"
+          lore:
+            - "&7Streak for the current cycle: &e%RELATIVE_STREAK% days"
+            - "&7Total Streak: &6%ABSOLUTE_STREAK% days"
+
+    goals:
+      views:
+        owner:
+          enabled: true
+          material: "NETHER_STAR"
+          slot: 32
+          name: "&d&lMy Achievement Goals"
+          lore:
+            - "&7Goals Completed: &e%GOALS_COUNT%"
+            - "&8&m────────────────────"
+            - "%GOALS_LIST%"
+            - "&8&m────────────────────"
+            - "&7Keep up the great work!"
+        player:
+          enabled: true
+          material: "NETHER_STAR"
+          slot: 11
+          name: "&d&l%PLAYER_NAME%'s Goals"
+          lore:
+            - "&7Completed Goals: &e%GOALS_COUNT%"
+            - "&8&m──────────────"
+            - "%GOALS_LIST%"
+        staff:
+          enabled: true
+          material: "NETHER_STAR"
+          slot: 40
+          name: "&d&lCompleted Goals"
+          lore:
+            - "&7Completed Goals: &e%GOALS_COUNT%"
+            - "&8&m──────────────"
+            - "%GOALS_LIST%"
+
+    leaderboard:
+      views:
+        owner:
+          enabled: true
+          material: "GOLD_BLOCK"
+          slot: 24
+          name: "&c&lPlaytime Leaderboard"
+          lore:
+            - "&7My position in the playtime leaderboard: &e%POSITION%"
+        player:
+          enabled: true
+          material: "GOLD_BLOCK"
+          slot: 14
+          name: "&c&l%PLAYER_NAME%'s Leaderboard Position"
+          lore:
+            - "&7Position in the playtime leaderboard: &e%POSITION%"
+        staff:
+          enabled: true
+          material: "GOLD_BLOCK"
+          slot: 41
+          name: "&c&lPlaytime Leaderboard"
+          lore:
+            - "&7Position in the playtime leaderboard: &e%POSITION%"
+    account-overview:
+      views:
+        staff:
+          enabled: true
+          material: "PLAYER_HEAD" #Displays the stats owner's skin. See above for instructions on displaying a specific player's skin.
+          slot: 4
+          name: "&b&lAccount Overview"
+          lore:
+            - "&7UUID: &e%UUID%"

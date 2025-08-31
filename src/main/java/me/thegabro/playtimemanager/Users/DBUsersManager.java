@@ -64,6 +64,18 @@ public class DBUsersManager {
         return null;
     }
 
+    public DBUser getUserFromNicknameWithContext(String nickname, String context) {
+        // First, try to get UUID from database
+        String uuid = db.getUUIDFromNickname(nickname);
+
+        // If UUID exists, use it to retrieve or create the DBUser
+        if (uuid != null) {
+            return getUserFromUUIDWithContext(uuid, context);
+        }
+
+        return null;
+    }
+
     public DBUser getUserFromUUID(String uuid) {
         // Check online users first
         OnlineUser onlineUser = onlineUsersManager.getOnlineUserByUUID(uuid);
@@ -74,6 +86,33 @@ public class DBUsersManager {
         // Check if player exists in database
         if (!db.playerExists(uuid)) {
             return null;
+        }
+
+        if(plugin.CACHE_DEBUG) {
+            plugin.getLogger().info("Looking for player: " + db.getNickname(uuid) + " from context: unknown");
+            plugin.getLogger().info("Presence in cache:" + userCache.containsKey(uuid));
+        }
+
+        // Check cache or create new DBUser
+        return userCache.computeIfAbsent(uuid, k -> DBUser.fromUUID(uuid));
+    }
+
+
+    public DBUser getUserFromUUIDWithContext(String uuid, String context) {
+        // Check online users first
+        OnlineUser onlineUser = onlineUsersManager.getOnlineUserByUUID(uuid);
+        if (onlineUser != null) {
+            return onlineUser;
+        }
+
+        // Check if player exists in database
+        if (!db.playerExists(uuid)) {
+            return null;
+        }
+
+        if(plugin.CACHE_DEBUG){
+            plugin.getLogger().info("Looking for player: "+db.getNickname(uuid)+" from context: "+context);
+            plugin.getLogger().info("Presence in cache:"+ userCache.containsKey(uuid));
         }
 
         // Check cache or create new DBUser
@@ -127,11 +166,11 @@ public class DBUsersManager {
 
         // Synchronize access to prevent concurrent modification of the topPlayers list
         synchronized (topPlayers) {
-            // If the cache isn't full and the player isn't already in the list, add them
+            // If the leaderboard isn't full and the player isn't already in the list, add them
             if (topPlayers.size() < TOP_PLAYERS_LIMIT &&
                     topPlayers.stream().noneMatch(player -> player.getUuid().equals(onlineUser.getUuid()))) {
                 // Add the player to the cached top players list using fresh database data
-                topPlayers.add(getUserFromUUID(onlineUser.getUuid()));
+                topPlayers.add(getUserFromUUIDWithContext(onlineUser.getUuid(), "Add player to not full cached leaderboard"));
             }
 
             // Update existing player data in the cache if they're already present
@@ -139,7 +178,7 @@ public class DBUsersManager {
                 if (topPlayers.get(i).getUuid().equals(onlineUser.getUuid())) {
                     // Replace the cached entry with fresh data from database
                     // This ensures playtime and other stats are up-to-date
-                    topPlayers.set(i, getUserFromUUID(onlineUser.getUuid()));
+                    topPlayers.set(i, getUserFromUUIDWithContext(onlineUser.getUuid(), "replace player data in cached leaderboard"));
                     break;
                 }
             }

@@ -15,6 +15,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -600,14 +601,28 @@ public class PlayerStatsGui extends BaseCustomGUI {
     }
 
     private void addCommonPlaceholders(Map<String, String> combinations) {
+
+        long playtimeSnapshot;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
+
         // Player information
         combinations.put("%PLAYER_NAME%", subject.getNickname());
         combinations.put("%UUID%", subject.getUuid());
 
         // Playtime information
-        long totalPlaytime = subject.getPlaytime();
+
+        if (subject.isOnline()) {
+            OnlineUser onlineUser = (OnlineUser) subject;
+            playtimeSnapshot = onlineUser.getPlayerInstance().getStatistic(Statistic.PLAY_ONE_MINUTE);
+        }else{
+            // For offline users, snapshot is not needed (methods ignore it)
+            // So let's use 0 as placeholder since it's ignored in DBUser base implementation
+            playtimeSnapshot = 0L;
+        }
+
+        long totalPlaytime = subject.getPlaytimeWithSnapshot(playtimeSnapshot);
+        long afkPlaytime = subject.getAFKPlaytimeWithSnapshot(playtimeSnapshot);
         long artificialPlaytime = subject.getArtificialPlaytime();
-        long afkPlaytime = subject.getAFKPlaytime();
         long realPlaytime;
         if(plugin.getConfiguration().getBoolean("ignore-afk-time"))
             realPlaytime = totalPlaytime - artificialPlaytime + afkPlaytime;
@@ -622,7 +637,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
         // First join information
         LocalDateTime firstJoin = subject.getFirstJoin();
         if (firstJoin != null) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
             combinations.put("%FIRST_JOIN_DATE%", firstJoin.format(formatter));
 
             Duration accountAge = Duration.between(firstJoin, LocalDateTime.now());
@@ -640,7 +654,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
             combinations.put("%LAST_SEEN_DATE%", "Currently Online");
             combinations.put("%TIME_SINCE_LAST_SEEN%", "0");
         } else if (lastSeen != null && !lastSeen.equals(LocalDateTime.of(1970, 1, 1, 0, 0, 0, 0))) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
             combinations.put("%LAST_SEEN_DATE%", lastSeen.format(formatter));
 
             Duration timeSinceLastSeen = Duration.between(lastSeen, LocalDateTime.now());

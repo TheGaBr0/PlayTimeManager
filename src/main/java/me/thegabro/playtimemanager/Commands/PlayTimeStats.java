@@ -66,50 +66,22 @@ public class PlayTimeStats implements CommandExecutor {
         return true;
     }
 
-    private void sendTextStats(CommandSender sender, DBUser user) {
-        if (user.isOnline()) {
-            // Online user - process synchronously with snapshot
-            processStatsSync(sender, user);
-        } else {
-            // Offline user - process asynchronously to get OfflinePlayer instance
-            processStatsAsync(sender, user);
-        }
-    }
-
-    /**
-     * Process stats synchronously for online users
-     */
-    private void processStatsSync(CommandSender sender, DBUser user) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
-
-        OnlineUser onlineUser = (OnlineUser) user;
-        long playtimeSnapshot = onlineUser.getPlayerInstance().getStatistic(Statistic.PLAY_ONE_MINUTE);
-
-        displayStats(sender, user, formatter, playtimeSnapshot);
-    }
-
-    /**
-     * Process stats asynchronously for offline users
-     */
-    private void processStatsAsync(CommandSender sender, DBUser user) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
-
-        // Get OfflinePlayer instance asynchronously
-        user.getPlayerInstance(offlinePlayer -> {
-            if (offlinePlayer != null) {
-                // For offline users, snapshot is not needed (methods ignore it)
-                // So let's use 0 as placeholder since it's ignored in DBUser base implementation
-                displayStats(sender, user, formatter, 0L);
-            } else {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &cError retrieving player data!"));
-            }
-        });
-    }
-
     /**
      * Common method to display stats with consistent formatting
      */
-    private void displayStats(CommandSender sender, DBUser user, DateTimeFormatter formatter, long playtimeSnapshot) {
+    private void sendTextStats(CommandSender sender, DBUser user) {
+        long playtimeSnapshot;
+        if (user.isOnline()) {
+            OnlineUser onlineUser = (OnlineUser) user;
+            playtimeSnapshot = onlineUser.getPlayerInstance().getStatistic(Statistic.PLAY_ONE_MINUTE);
+        }else{
+            // For offline users, snapshot is not needed (methods ignore it)
+            // So let's use 0 as placeholder since it's ignored in DBUser base implementation
+            playtimeSnapshot = 0L;
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
+
         LocalDateTime lastSeen = user.getLastSeen();
         LocalDateTime firstJoin = user.getFirstJoin();
         long totalPlaytime = user.getPlaytimeWithSnapshot(playtimeSnapshot);
@@ -123,8 +95,6 @@ public class PlayTimeStats implements CommandExecutor {
             realPlaytime = totalPlaytime - artificialPlaytime + afkPlaytime;
         else
             realPlaytime = totalPlaytime - artificialPlaytime;
-
-        plugin.getLogger().info(String.valueOf(realPlaytime - (totalPlaytime + afkPlaytime)));
 
         sender.sendMessage(Utils.parseColors("&8&l===============[ &6&lPlayer Stats &8&l]==============="));
         sender.sendMessage(Utils.parseColors("&7Player: &e" + user.getNickname()));

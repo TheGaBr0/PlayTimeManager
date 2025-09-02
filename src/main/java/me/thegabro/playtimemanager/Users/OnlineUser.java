@@ -45,16 +45,7 @@ public class OnlineUser extends DBUser {
      */
     public void updatePlayTimeWithSnapshot(long playtimeSnapshot) {
         long currentPlaytime = DBplaytime + (playtimeSnapshot - fromServerOnJoinPlayTime) + artificialPlaytime;
-
-        if (plugin.getConfiguration().getBoolean("ignore-afk-time")) {
-            currentPlaytime -= getAFKPlaytime();
-        }
-
-        currentPlaytime = Math.max(0, currentPlaytime);
         db.updatePlaytime(uuid, currentPlaytime);
-
-        plugin.getLogger().fine("Playtime updated with snapshot for " + getNickname() +
-                ": total=" + currentPlaytime + " ticks");
     }
 
     /**

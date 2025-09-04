@@ -49,10 +49,14 @@ check-for-updates: true
 #                          AFK DETECTION
 #=================================================================
 
-#Choose your afk detection plugin
-#Available options: "essentials"
-#Using a different afk detection plugin? Let me know on my GitHub issues page!
-afk-detection-plugin: "essentials"
+# Choose your afk detection plugin
+# Available options: "none", "essentials", "purpur"
+# If you want to use Purpur base afk detection, you need to:
+# - Set player-idle-timeout field greater than 0 (minutes) in server.properties
+# - Set player.idle-timeout.kick-if-idle field to false in purpur.yml
+#
+#Using a different afk detection system? Let me know on my GitHub issues page!
+afk-detection-plugin: "none"
 
 # When enabled, AFK time is excluded from total playtime calculations used throughout
 # the plugin (goals requirements, displays, etc.). AFK time tracking continues

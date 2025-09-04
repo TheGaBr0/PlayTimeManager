@@ -44,7 +44,7 @@ public class OnlineUser extends DBUser {
      * @param playtimeSnapshot The PLAY_ONE_MINUTE statistic value to use for calculations
      */
     public void updatePlayTimeWithSnapshot(long playtimeSnapshot) {
-        long currentPlaytime = DBplaytime + (playtimeSnapshot - fromServerOnJoinPlayTime) + artificialPlaytime;
+        long currentPlaytime = DBplaytime + (playtimeSnapshot - fromServerOnJoinPlayTime);
         db.updatePlaytime(uuid, currentPlaytime);
     }
 

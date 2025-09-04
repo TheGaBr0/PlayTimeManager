@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.Events;
 
-import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.AFKSyncManager;
+import me.thegabro.playtimemanager.ExternalPluginSupport.AFKSyncManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.PlayTimeManager;

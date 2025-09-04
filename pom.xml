@@ -6,7 +6,7 @@
 
     <groupId>me.theGabro</groupId>
     <artifactId>PlayTimeManager</artifactId>
-    <version>3.5.3</version>
+    <version>3.5.4</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -74,6 +74,11 @@
             <url>https://repo.essentialsx.net/releases/</url>
         </repository>
         <repository>
+            <id>purpur</id>
+            <name>Purpur Maven Repo</name>
+            <url>https://repo.purpurmc.org/snapshots</url>
+        </repository>
+        <repository>
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
@@ -98,6 +103,12 @@
             <groupId>net.essentialsx</groupId>
             <artifactId>EssentialsX</artifactId>
             <version>2.21.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.purpurmc.purpur</groupId>
+            <artifactId>purpur-api</artifactId>
+            <version>1.21.3-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

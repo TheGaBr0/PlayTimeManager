@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX;
+package me.thegabro.playtimemanager.ExternalPluginSupport;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;

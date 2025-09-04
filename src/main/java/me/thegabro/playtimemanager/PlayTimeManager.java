@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager;
 import me.thegabro.playtimemanager.Commands.PlayTimeStats;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsAFKHook;
+import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
 import me.thegabro.playtimemanager.GUIs.Goals.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
 import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
@@ -214,6 +215,25 @@ public class PlayTimeManager extends JavaPlugin{
                         "Failed to initialize afk detection: Essentials plugin configured but not found! " +
                                 "\nUntil this is resolved, PlayTimeManager will not be able to detect afk playtime"
                 );
+                return false;
+            }
+        }
+        else if ("purpur".equals(configuredPlugin)) {
+            // Check if server is running Purpur
+            try {
+                Class.forName("org.purpurmc.purpur.event.PlayerAFKEvent");
+                PurpurAFKHook afkHook = PurpurAFKHook.getInstance();
+                getServer().getPluginManager().registerEvents(afkHook, this);
+                getLogger().info("Purpur AFK detection enabled! Launching related functions");
+                return true;
+            } catch (ClassNotFoundException e) {
+                getLogger().warning(
+                        "Failed to initialize afk detection: Purpur configured but server is not running Purpur! " +
+                                "\nUntil this is resolved, PlayTimeManager will not be able to detect afk playtime"
+                );
+                return false;
+            } catch (Exception e) {
+                getLogger().severe("ERROR: Failed to initialize Purpur AFK detection: " + e.getMessage());
                 return false;
             }
         }

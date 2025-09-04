@@ -1,40 +1,38 @@
-package me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX;
+package me.thegabro.playtimemanager.ExternalPluginSupport.Purpur;
 
 import me.thegabro.playtimemanager.ExternalPluginSupport.AFKSyncManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
-import net.ess3.api.IUser;
-import net.ess3.api.events.AfkStatusChangeEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.purpurmc.purpur.event.PlayerAFKEvent;
 
-public class EssentialsAFKHook implements Listener {
+public class PurpurAFKHook implements Listener {
 
-    private static EssentialsAFKHook instance;
+    private static PurpurAFKHook instance;
     private final AFKSyncManager afkSyncManager = AFKSyncManager.getInstance();
 
-    private EssentialsAFKHook() {
+    private PurpurAFKHook() {
         // Private constructor for singleton
     }
 
-    public static EssentialsAFKHook getInstance() {
+    public static PurpurAFKHook getInstance() {
         if (instance == null) {
-            instance = new EssentialsAFKHook();
+            instance = new PurpurAFKHook();
         }
         return instance;
     }
 
     /**
-     * Listen for AFK status changes from EssentialsX
+     * Listen for AFK status changes from Purpur
      */
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onAfkStatusChange(AfkStatusChangeEvent event) {
+    public void onPlayerAFK(PlayerAFKEvent event) {
         if (event.isCancelled()) return;
 
-        IUser user = event.getAffected();
-        Player player = user.getBase();
+        Player player = event.getPlayer();
 
         // Extra safety checks
         if (player == null) {
@@ -45,7 +43,7 @@ public class EssentialsAFKHook implements Listener {
             return;
         }
 
-        boolean isNowAFK = event.getValue();
+        boolean isNowAFK = event.isGoingAfk();
         String playerUUID = player.getUniqueId().toString();
         OnlineUser onlineUser = OnlineUsersManager.getInstance().getOnlineUserByUUID(playerUUID);
 

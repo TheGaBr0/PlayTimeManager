@@ -38,6 +38,30 @@ I thought this could be useful to other server administrators as well, so I deci
 ## Commands, permissions, placeholders and tutorials
 Ready to get started? The comprehensive [PlayTimeManager Wiki](https://github.com/TheGaBr0/PlayTimeManager/wiki) contains everything you need including detailed command references, permission configurations, placeholder listings, and step-by-step setup tutorials. 
 
+---
 
+<details>
+  <summary>Features and Use cases</summary>
+  
+## Core Functionalities
+- **Support for both offline and online servers** - Works seamlessly regardless of your server's authentication mode
+- **Fast, efficient data access with smart caching** - Optimized performance for lightweight operation
+- **Automatic updates that preserve your settings across versions** - Automated update process without losing configurations
+- **PlaceholderAPI and LuckPerms integrations** - Full compatibility with popular server management plugins
+- **Hex colors and legacy style support** - Complete color customization options for all text elements
+- **Fully customizable formatting, messages, and GUIs** - Tailor every aspect to match your server's theme
+- **Dynamic Leaderboards** - Real-time player ranking system based on playtime
+- **AFK Detection Support** - Accurate playtime tracking that excludes idle time
+- **Multi-language Support** - Player-facing messages can all be localized
 
+## Use Cases
+- **Automatic Staff Promotions** - Promote players to staff ranks after specific playtime
+- **VIP Rewards** - Grant special perks to dedicated players
+- **Server Statistics** - Display engagement metrics
+- **Player Retention** - Encourage longer play sessions with time-based goals
+- **Community Building** - Foster competition through leaderboards
+- **Server Analytics** - Track player engagement and activity patterns
+- **Join Streak Rewards** - Reward players for consecutive daily logins and playtime
+  
+</details>
 

@@ -64,7 +64,7 @@ public class Version351to352Updater {
     public void recreateConfigFile(){
         guIsConfiguration.initialize(plugin);
         guIsConfiguration.updateConfig();
-        plugin.getConfiguration().updateConfig(false);
+        plugin.getConfiguration().updateConfig(true);
     }
 
     /**

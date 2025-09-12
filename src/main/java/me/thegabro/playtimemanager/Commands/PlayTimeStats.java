@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -30,8 +31,9 @@ public class PlayTimeStats implements CommandExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!sender.hasPermission("playtime.stats")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to use this command!"));
-            return true;
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+                    GUIsConfiguration.getInstance().getString("player-stats-gui.messages.no-permission")));
+            return false;
         }
 
         String targetPlayerName;
@@ -40,18 +42,25 @@ public class PlayTimeStats implements CommandExecutor {
             if (sender instanceof Player) {
                 targetPlayerName = sender.getName();
             } else {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You must specify a player name!"));
-                return true;
+                sender.sendMessage("§cOnly players can use this command.");
+                return false;
             }
         } else {
+
+            if (!sender.hasPermission("playtime.others.stats")) {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " "+
+                        GUIsConfiguration.getInstance().getString("player-stats-gui.messages.no-permission-others")));
+                return false;
+            }
             targetPlayerName = args[0];
         }
 
         DBUser user = dbUsersManager.getUserFromNicknameWithContext(targetPlayerName, "ptstats command");
 
         if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &cPlayer not found!"));
-            return true;
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " "+
+                    GUIsConfiguration.getInstance().getString("player-stats-gui.messages.player-not-found")));
+            return false;
         }
 
         if (sender instanceof ConsoleCommandSender) {
@@ -142,7 +151,8 @@ public class PlayTimeStats implements CommandExecutor {
         if (lastGuiOpenTime.containsKey(playerId)) {
             long lastTime = lastGuiOpenTime.get(playerId);
             if (currentTime - lastTime < GUI_OPEN_COOLDOWN) {
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &cPlease wait before using this command again."));
+                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " "+
+                        GUIsConfiguration.getInstance().getString("player-stats-gui.messages.command-spam")));
                 return;
             }
         }

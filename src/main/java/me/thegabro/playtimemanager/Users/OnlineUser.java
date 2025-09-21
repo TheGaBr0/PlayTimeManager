@@ -1,10 +1,12 @@
 package me.thegabro.playtimemanager.Users;
 
+import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class OnlineUser extends DBUser {
     protected final Player playerInstance;
@@ -234,5 +236,14 @@ public class OnlineUser extends DBUser {
             currentSessionAFKTime += afkDuration;
             afkTimeFinalized = true;
         }
+    }
+
+    public boolean isExpired(RewardSubInstance subInstance){
+        for(RewardSubInstance subInstance2 : rewardsToBeClaimed){
+            if(Objects.equals(subInstance2.mainInstanceID(), subInstance.mainInstanceID()) &&
+                    Objects.equals(subInstance2.requiredJoins(), subInstance.requiredJoins()))
+                return subInstance2.expired();
+        }
+        return false;
     }
 }

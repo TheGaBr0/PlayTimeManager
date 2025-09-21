@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
+import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 
 public class DBUser {
     protected String uuid;
@@ -26,8 +27,8 @@ public class DBUser {
     protected final GoalsManager goalsManager = GoalsManager.getInstance();
     protected int relativeJoinStreak;
     protected int absoluteJoinStreak;
-    protected LinkedHashSet<String> receivedRewards = new LinkedHashSet<>();
-    protected LinkedHashSet<String> rewardsToBeClaimed = new LinkedHashSet<>();
+    protected ArrayList<RewardSubInstance> receivedRewards = new ArrayList<>();
+    protected ArrayList<RewardSubInstance> rewardsToBeClaimed = new ArrayList<>();
     protected boolean afk;
     protected OfflinePlayer playerInstance;
 
@@ -50,7 +51,7 @@ public class DBUser {
      */
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, long DBAFKplaytime,
                    ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int relativeJoinStreak,
-                   int absoluteJoinStreak, LinkedHashSet<String> receivedRewards, LinkedHashSet<String> rewardsToBeClaimed){
+                   int absoluteJoinStreak, ArrayList<RewardSubInstance> receivedRewards, ArrayList<RewardSubInstance> rewardsToBeClaimed){
 
         this.uuid = uuid;
         this.nickname = nickname;
@@ -110,8 +111,8 @@ public class DBUser {
         LocalDateTime firstJoin = db.getFirstJoin(uuid);
         int relativeJoinStreak = db.getRelativeJoinStreak(uuid);
         int absoluteJoinStreak = db.getAbsoluteJoinStreak(uuid);
-        LinkedHashSet<String> receivedRewards = db.getReceivedRewards(uuid);
-        LinkedHashSet<String> rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
+        ArrayList<RewardSubInstance> receivedRewards = db.getReceivedRewards(uuid);
+        ArrayList<RewardSubInstance> rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
 
         return new DBUser(uuid, nickname, playtime, artificialPlaytime, afkplaytime, completedGoals, lastSeen, firstJoin, relativeJoinStreak,
                 absoluteJoinStreak, receivedRewards, rewardsToBeClaimed);
@@ -356,112 +357,114 @@ public class DBUser {
     }
 
     /**
-     * Migrates unclaimed rewards to the new format by adding ".R" suffix if not present.
-     * Preserves existing rewards that already have the correct format.
+     * Marks all currently unclaimed rewards as expired
+     * Called when a reward cycle ends to handle rewards not claimed within the time limit.
      */
     public void migrateUnclaimedRewards(){
-        LinkedHashSet<String> newRewardsToBeClaimed = new LinkedHashSet<String>();
-        for(String reward : rewardsToBeClaimed){
-            if (reward != null) {
-                if(!reward.endsWith("R")){
-                    String modifiedReward = reward + ".R";
-                    newRewardsToBeClaimed.add(modifiedReward);
-                }else{
-                    //do not delete already stored unclaimed rewards of previous cycles
-                    newRewardsToBeClaimed.add(reward);
-                }
-            }
+        if (rewardsToBeClaimed.isEmpty()) {
+            return;
         }
-        rewardsToBeClaimed = newRewardsToBeClaimed;
-        db.updateRewardsToBeClaimed(uuid, newRewardsToBeClaimed);
+
+        // Create new expired instances and replace the old ones
+        List<RewardSubInstance> expiredRewards = new ArrayList<>();
+        for(RewardSubInstance subInstance : rewardsToBeClaimed){
+            // Create a new record with expired = true
+            RewardSubInstance expiredInstance = new RewardSubInstance(
+                    subInstance.mainInstanceID(),
+                    subInstance.requiredJoins(),
+                    true
+            );
+            expiredRewards.add(expiredInstance);
+        }
+
+        // Replace the old list with expired instances
+        rewardsToBeClaimed.clear();
+        rewardsToBeClaimed.addAll(expiredRewards);
+
+        // Mark all current unclaimed rewards as expired in the database
+        db.markRewardsAsExpired(uuid);
     }
 
     /**
-     * Removes a specific reward from the player's unclaimed rewards and updates the database.
+     * Removes a specific reward from the player's unclaimed rewards.
      *
-     * @param rewardId the ID of the reward to unclaim
+     * @param rewardSubInstance the reward to remove from unclaimed rewards
      */
-    public void unclaimReward(String rewardId) {
-        rewardsToBeClaimed.remove(rewardId);
-        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    public void unclaimReward(RewardSubInstance rewardSubInstance) {
+
+        rewardsToBeClaimed.removeIf(unclaimedReward -> unclaimedReward.mainInstanceID().equals(rewardSubInstance.mainInstanceID()) &&
+                unclaimedReward.requiredJoins().equals(rewardSubInstance.requiredJoins()));
+
+        db.removeRewardToBeClaimed(uuid, rewardSubInstance);
     }
 
     /**
-     * Removes a specific reward from the player's received rewards and updates the database.
+     * Removes a specific reward from the player's received rewards.
      *
-     * @param rewardId the ID of the reward to unreceive
+     * @param rewardSubInstance the reward to remove from received rewards
      */
-    public void unreceiveReward(String rewardId) {
-        receivedRewards.remove(rewardId);
-        db.updateReceivedRewards(uuid, receivedRewards);
+    public void unreceiveReward(RewardSubInstance rewardSubInstance) {
+
+        receivedRewards.removeIf(receivedReward -> receivedReward.mainInstanceID().equals(rewardSubInstance.mainInstanceID()) &&
+                receivedReward.requiredJoins().equals(rewardSubInstance.requiredJoins()));
+
+        db.removeReceivedReward(uuid,  rewardSubInstance);
     }
 
     /**
-     * Removes all unclaimed rewards that match the specified reward ID (by main instance).
-     * Compares the integer part before the dot separator.
+     * Removes all unclaimed rewards that share the same main instance ID.
      *
-     * @param rewardId the main reward ID to wipe from unclaimed rewards
+     * @param mainInstanceID the reward containing the main instance ID to match against
      */
-    public void wipeRewardToBeClaimed(String rewardId) {
-        // Remove all rewards where the integer part matches rewardId
-        rewardsToBeClaimed.removeIf(reward -> {
-            String mainInstance = reward.split("\\.")[0];
-            return mainInstance.equals(rewardId);
-        });
-        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    public void wipeRewardsToBeClaimed(Integer mainInstanceID) {
+        rewardsToBeClaimed.removeIf(r -> Objects.equals(r.mainInstanceID(), mainInstanceID));
     }
 
     /**
-     * Removes all received rewards that match the specified reward ID (by main instance).
-     * Compares the integer part before the dot separator.
+     * Removes all received rewards that share the same main instance ID.
      *
-     * @param rewardId the main reward ID to wipe from received rewards
+     * @param mainInstanceID the reward containing the main instance ID to match against
      */
-    public void wipeReceivedReward(String rewardId) {
-        // Remove all rewards where the integer part matches rewardId
-        receivedRewards.removeIf(reward -> {
-            String mainInstance = reward.split("\\.")[0];
-            return mainInstance.equals(rewardId);
-        });
-        db.updateReceivedRewards(uuid, receivedRewards);
+    public void wipeReceivedRewards(Integer mainInstanceID) {
+        receivedRewards.removeIf(r -> Objects.equals(r.mainInstanceID(), mainInstanceID));
     }
 
     /**
-     * Adds a reward to the player's unclaimed rewards list and updates the database.
+     * Adds a reward to the player's unclaimed rewards list.
      *
-     * @param rewardKey the reward key to add to unclaimed rewards
+     * @param rewardSubInstance the reward to add to unclaimed rewards
      */
-    public void addRewardToBeClaimed(String rewardKey) {
-        rewardsToBeClaimed.add(rewardKey);
-        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+    public void addRewardToBeClaimed(RewardSubInstance rewardSubInstance) {
+        rewardsToBeClaimed.add(rewardSubInstance);
+        db.addRewardToBeClaimed(uuid,  nickname, rewardSubInstance);
     }
 
     /**
-     * Adds a reward to the player's received rewards list and updates the database.
+     * Adds a reward to the player's received rewards list.
      *
-     * @param rewardKey the reward key to add to received rewards
+     * @param rewardSubInstance the reward to add to received rewards
      */
-    public void addReceivedReward(String rewardKey) {
-        receivedRewards.add(rewardKey);
-        db.updateReceivedRewards(uuid, receivedRewards);
+    public void addReceivedReward(RewardSubInstance rewardSubInstance) {
+        receivedRewards.add(rewardSubInstance);
+        db.addReceivedReward(uuid, nickname, rewardSubInstance);
     }
 
     /**
-     * Returns a copy of the player's received rewards set.
+     * Returns a copy of the player's received rewards.
      *
-     * @return a new HashSet containing all received reward IDs
+     * @return a new list containing all received rewards
      */
-    public Set<String> getReceivedRewards() {
-        return new HashSet<>(receivedRewards); // Return a copy to prevent modification
+    public ArrayList<RewardSubInstance> getReceivedRewards() {
+        return new ArrayList<>(receivedRewards); // Return a copy to prevent modification
     }
 
     /**
-     * Returns a copy of the player's unclaimed rewards set.
+     * Returns a copy of the player's unclaimed rewards.
      *
-     * @return a new HashSet containing all unclaimed reward IDs
+     * @return a new list containing all unclaimed rewards
      */
-    public Set<String> getRewardsToBeClaimed() {
-        return new HashSet<>(rewardsToBeClaimed); // Return a copy to prevent modification
+    public ArrayList<RewardSubInstance> getRewardsToBeClaimed() {
+        return new ArrayList<>(rewardsToBeClaimed); // Return a copy to prevent modification
     }
 
     /**
@@ -558,8 +561,7 @@ public class DBUser {
         db.updateFirstJoin(uuid, null);
         db.setRelativeJoinStreak(uuid, 0);
         db.setAbsoluteJoinStreak(uuid, 0);
-        db.updateReceivedRewards(uuid, receivedRewards);
-        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+        db.resetAllUserRewards(uuid);
     }
 
     /**
@@ -600,8 +602,7 @@ public class DBUser {
         this.receivedRewards.clear();
         this.rewardsToBeClaimed.clear();
 
-        db.updateReceivedRewards(uuid, receivedRewards);
-        db.updateRewardsToBeClaimed(uuid, rewardsToBeClaimed);
+        db.resetAllUserRewards(uuid);
     }
 
     /**

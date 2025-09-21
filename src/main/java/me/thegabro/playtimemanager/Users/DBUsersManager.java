@@ -213,12 +213,12 @@ public class DBUsersManager {
         db.removeGoalFromAllUsers(goalName);
     }
 
-    public void removeRewardFromAllUsers(String rewardID){
+    public void removeRewardFromAllUsers(Integer mainInstanceID){
         for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
-            user.wipeReceivedReward(rewardID);
-            user.wipeRewardToBeClaimed(rewardID);
+            user.wipeReceivedRewards(mainInstanceID);
+            user.wipeRewardsToBeClaimed(mainInstanceID);
         }
-        db.removeRewardFromAllUsers(rewardID);
+        db.removeRewardFromAllUsers(mainInstanceID);
     }
 
     public List<DBUser> getAllDBUsers() {

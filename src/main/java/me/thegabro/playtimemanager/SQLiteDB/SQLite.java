@@ -28,11 +28,38 @@ public class SQLite extends PlayTimeDatabase {
             "first_join DATETIME DEFAULT NULL,"+
             "relative_join_streak INT DEFAULT 0,"+
             "absolute_join_streak INT DEFAULT 0,"+
-            "received_rewards TEXT DEFAULT '',"+
-            "rewards_to_be_claimed TEXT DEFAULT '',"+
-            "hide_from_leaderboard BOOLEAN DEFAULT FALSE,"+
             "PRIMARY KEY (uuid)" +
             ");";
+
+    public String ReceivedRewardsTable = "CREATE TABLE IF NOT EXISTS received_rewards (" +
+            "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+            "user_uuid VARCHAR(32) NOT NULL," +
+            "nickname VARCHAR(32) NOT NULL," +
+            "main_instance_ID INT NOT NULL," +
+            "required_joins INT NOT NULL," +
+            "received_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+            "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid)" +
+            ");";
+
+    public String RewardsToBeClaimedTable = "CREATE TABLE IF NOT EXISTS rewards_to_be_claimed (" +
+            "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+            "user_uuid VARCHAR(32) NOT NULL," +
+            "nickname VARCHAR(32) NOT NULL," +
+            "main_instance_ID INT NOT NULL," +
+            "required_joins INT NOT NULL," +
+            "created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+            "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+            "expired BOOLEAN DEFAULT FALSE," +
+            "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid)" +
+            ");";
+
+    // Indexes for the new reward tables
+    private String[] rewardIndexes = {
+            "CREATE INDEX IF NOT EXISTS idx_received_rewards_uuid ON received_rewards(user_uuid);",
+            "CREATE INDEX IF NOT EXISTS idx_received_rewards_date ON received_rewards(received_at);",
+            "CREATE INDEX IF NOT EXISTS idx_rewards_to_claim_uuid ON rewards_to_be_claimed(user_uuid);",
+            "CREATE INDEX IF NOT EXISTS idx_rewards_to_claim_date ON rewards_to_be_claimed(created_at);"
+    };
 
     public Connection getSQLConnection() {
         if (dataSource == null) {
@@ -52,8 +79,14 @@ public class SQLite extends PlayTimeDatabase {
         try {
             Statement s = connection.createStatement();
 
-            // Create table if it doesn't exist
             s.executeUpdate(PlayTimeTable);
+            s.executeUpdate(ReceivedRewardsTable);
+            s.executeUpdate(RewardsToBeClaimedTable);
+
+            for (String index : rewardIndexes) {
+                s.executeUpdate(index);
+            }
+
             s.close();
         } catch (SQLException e) {
             e.printStackTrace();

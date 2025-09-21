@@ -1,7 +1,8 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
+import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
+import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
@@ -22,25 +23,24 @@ public class RewardExecutor {
         this.messageService = new RewardMessageService(plugin);
     }
 
-    public void processCompletedReward(Player player, JoinStreakReward reward, String instance) {
+    public void processCompletedReward(Player player, RewardSubInstance subInstance) {
         OnlineUser onlineUser = OnlineUsersManager.getInstance().getOnlineUser(player.getName());
+        JoinStreakReward reward = JoinStreaksManager.getInstance().getRewardRegistry().getReward(subInstance.mainInstanceID());
 
-        onlineUser.unclaimReward(instance);
-
-        // This logic ensures that relative rewards (those ending with "R") are only marked as received if the player's
-        // current relative join streak meets the condition. This is required otherwise if the player doesn't
-        // claim any reward for the current cycle, in the next one they will only be claimable once. If they click on
-        // claim all this should only be applied to rewards with a join streak less or equal than the current relative one.
-        if (instance.endsWith("R")) {
+        // Logic for expired rewards: only mark as received if the player's current relative
+        // join streak meets the condition. This prevents issues when players don't claim
+        // rewards in the current cycle - they should only be claimable once in the next cycle.
+        if (onlineUser.isExpired(subInstance)) {
+            onlineUser.unclaimReward(subInstance);
             try {
-                String[] parts = instance.split("\\.");
-                int instancePart = Integer.parseInt(parts[1]);
-                if (onlineUser.getRelativeJoinStreak() >= instancePart) {
-                    onlineUser.addReceivedReward(instance.replace(".R", ""));
+                if (onlineUser.getRelativeJoinStreak() >= subInstance.requiredJoins()) {
+                    onlineUser.addReceivedReward(subInstance);
                 }
             } catch (NumberFormatException | ArrayIndexOutOfBoundsException ignored) {}
         } else {
-            onlineUser.addReceivedReward(instance);
+            // Regular reward - always mark as received
+            onlineUser.unclaimReward(subInstance);
+            onlineUser.addReceivedReward(subInstance);
         }
 
         if (plugin.isPermissionsManagerConfigured()) {
@@ -49,11 +49,10 @@ public class RewardExecutor {
 
         executeRewardCommands(reward, player);
 
-        messageService.sendRewardRelatedMessage(player, instance, reward.getRewardMessage(), 1);
+        messageService.sendRewardRelatedMessage(player, subInstance, reward.getRewardMessage(), 1);
 
         playRewardSound(player, reward);
     }
-
     private void assignPermissionsForReward(OnlineUser onlineUser, JoinStreakReward reward) {
         ArrayList<String> permissions = reward.getPermissions();
         if (permissions != null && !permissions.isEmpty()) {

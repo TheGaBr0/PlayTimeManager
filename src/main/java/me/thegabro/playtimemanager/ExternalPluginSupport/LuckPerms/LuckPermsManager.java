@@ -1,7 +1,7 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms;
 
 import me.thegabro.playtimemanager.Goals.Goal;
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
+import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;

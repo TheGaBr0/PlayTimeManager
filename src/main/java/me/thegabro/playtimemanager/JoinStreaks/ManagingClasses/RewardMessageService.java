@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
+import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
@@ -20,11 +21,10 @@ public class RewardMessageService {
         this.plugin = plugin;
     }
 
-    public void sendRewardRelatedMessage(Player player, String instance, String message, int delaySeconds) {
+    public void sendRewardRelatedMessage(Player player, RewardSubInstance subInstance, String message, int delaySeconds) {
         Map<String, String> replacements = new HashMap<>();
         replacements.put("%PLAYER_NAME%", player.getName());
-        replacements.put("%REQUIRED_JOINS%", instance.matches("^\\d+\\.\\d+.*") ?
-                instance.replaceAll("^\\d+\\.(\\d+).*", "$1") : "");
+        replacements.put("%REQUIRED_JOINS%", String.valueOf(subInstance.requiredJoins()));
 
         final Component finalMessage = Utils.parseColors(replacePlaceholders(message, replacements));
         Bukkit.getScheduler().runTaskLater(this.plugin, () -> {

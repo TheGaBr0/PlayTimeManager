@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
+import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -7,6 +8,7 @@ import me.thegabro.playtimemanager.Users.OnlineUser;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Set;
 
 public class StreakTracker {
@@ -67,9 +69,9 @@ public class StreakTracker {
     }
 
     public void restartUserJoinStreakRewards(DBUser user) {
-        Set<String> userRewards = user.getReceivedRewards();
-        for (String rewardId : userRewards) {
-            user.unreceiveReward(rewardId);
+        ArrayList<RewardSubInstance> userReceivedRewards = user.getReceivedRewards();
+        for (RewardSubInstance subInstance : userReceivedRewards) {
+            user.unreceiveReward(subInstance);
         }
         user.migrateUnclaimedRewards();
         user.resetRelativeJoinStreak();

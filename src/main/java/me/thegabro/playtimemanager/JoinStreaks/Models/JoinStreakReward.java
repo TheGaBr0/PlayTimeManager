@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.JoinStreaks;
+package me.thegabro.playtimemanager.JoinStreaks.Models;
 
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -35,7 +35,6 @@ public class JoinStreakReward {
         this.rewardFile = new File(plugin.getDataFolder() + File.separator + "Rewards" + File.separator + id + ".yml");
         loadFromFile();
         saveToFile();
-        rewardsManager.getRewardRegistry().addReward(this);
     }
 
 
@@ -304,7 +303,7 @@ public class JoinStreakReward {
 
     public void kill() {
         rewardsManager.getRewardRegistry().removeReward(this);
-        DBUsersManager.getInstance().removeRewardFromAllUsers(String.valueOf(id));
+        DBUsersManager.getInstance().removeRewardFromAllUsers(id);
         deleteFile();
     }
 

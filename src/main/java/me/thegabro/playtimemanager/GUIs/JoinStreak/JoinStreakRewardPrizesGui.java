@@ -2,7 +2,7 @@ package me.thegabro.playtimemanager.GUIs.JoinStreak;
 
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
+import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import me.thegabro.playtimemanager.Events.ChatEventManager;

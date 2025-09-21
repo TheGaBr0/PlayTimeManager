@@ -8,7 +8,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-
+import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -326,50 +326,109 @@ public abstract class PlayTimeDatabase {
 
     public void updateNickname(String uuid, String newNickname) {
         Connection conn = null;
-        PreparedStatement ps = null;
+        PreparedStatement ps1 = null;
+        PreparedStatement ps2 = null;
+        PreparedStatement ps3 = null;
+
         try {
             conn = getSQLConnection();
+            conn.setAutoCommit(false);
 
-            ps = conn.prepareStatement("UPDATE play_time SET nickname = ? WHERE uuid = ?;");
+            // Update play_time table
+            ps1 = conn.prepareStatement("UPDATE play_time SET nickname = ? WHERE uuid = ?;");
+            ps1.setString(1, newNickname);
+            ps1.setString(2, uuid);
+            ps1.executeUpdate();
 
-            ps.setString(1, newNickname);
-            ps.setString(2, uuid);
+            // Update received_rewards table
+            ps2 = conn.prepareStatement("UPDATE received_rewards SET nickname = ? WHERE user_uuid = ?;");
+            ps2.setString(1, newNickname);
+            ps2.setString(2, uuid);
+            ps2.executeUpdate();
 
-            ps.executeUpdate();
+            // Update rewards_to_be_claimed table
+            ps3 = conn.prepareStatement("UPDATE rewards_to_be_claimed SET nickname = ? WHERE user_uuid = ?;");
+            ps3.setString(1, newNickname);
+            ps3.setString(2, uuid);
+            ps3.executeUpdate();
+
+            conn.commit();
+
         } catch (SQLException ex) {
+            // Rollback on error
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    plugin.getLogger().log(Level.SEVERE, "Failed to rollback nickname update", rollbackEx);
+                }
+            }
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
             try {
-                if (ps != null)
-                    ps.close();
-                if (conn != null)
+                if (ps1 != null) ps1.close();
+                if (ps2 != null) ps2.close();
+                if (ps3 != null) ps3.close();
+                if (conn != null) {
+                    conn.setAutoCommit(true); // Reset auto-commit
                     conn.close();
+                }
             } catch (SQLException ex) {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
     }
 
-    public void updateUUID(String uuid, String nickname) {
+
+    public void updateUUID(String newUUID, String nickname) {
         Connection conn = null;
-        PreparedStatement ps = null;
+        PreparedStatement ps1 = null;
+        PreparedStatement ps2 = null;
+        PreparedStatement ps3 = null;
+
         try {
             conn = getSQLConnection();
+            conn.setAutoCommit(false);
 
-            ps = conn.prepareStatement("UPDATE play_time SET uuid = ? WHERE nickname = ?;");
+            // Update play_time table
+            ps1 = conn.prepareStatement("UPDATE play_time SET uuid = ? WHERE nickname = ?;");
+            ps1.setString(1, newUUID);
+            ps1.setString(2, nickname);
+            ps1.executeUpdate();
 
-            ps.setString(1, uuid);         // Set the new UUID
-            ps.setString(2, nickname);     // Use nickname in WHERE clause
+            // Update received_rewards table
+            ps2 = conn.prepareStatement("UPDATE received_rewards SET user_uuid = ? WHERE nickname = ?;");
+            ps2.setString(1, newUUID);
+            ps2.setString(2, nickname);
+            ps2.executeUpdate();
 
-            ps.executeUpdate();
+            // Update rewards_to_be_claimed table
+            ps3 = conn.prepareStatement("UPDATE rewards_to_be_claimed SET user_uuid = ? WHERE nickname = ?;");
+            ps3.setString(1, newUUID);
+            ps3.setString(2, nickname);
+            ps3.executeUpdate();
+
+            conn.commit();
+
         } catch (SQLException ex) {
+            // Rollback on error
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackEx) {
+                    plugin.getLogger().log(Level.SEVERE, "Failed to rollback UUID update", rollbackEx);
+                }
+            }
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
             try {
-                if (ps != null)
-                    ps.close();
-                if (conn != null)
+                if (ps1 != null) ps1.close();
+                if (ps2 != null) ps2.close();
+                if (ps3 != null) ps3.close();
+                if (conn != null) {
+                    conn.setAutoCommit(true); // Reset auto-commit
                     conn.close();
+                }
             } catch (SQLException ex) {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
@@ -806,6 +865,38 @@ public abstract class PlayTimeDatabase {
         return null;
     }
 
+    public Set<String> getPlayersWithActiveStreaks() {
+        Set<String> players = new HashSet<>();
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement("SELECT uuid FROM play_time WHERE absolute_join_streak > 0;");
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                players.add(rs.getString("uuid"));
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        } finally {
+            try {
+                if (rs != null)
+                    rs.close();
+                if (ps != null)
+                    ps.close();
+                if (conn != null)
+                    conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+
+        return players;
+    }
+
     public int getRelativeJoinStreak(String uuid) {
         Connection conn = null;
         PreparedStatement ps = null;
@@ -913,59 +1004,57 @@ public abstract class PlayTimeDatabase {
     }
 
 
-    public Set<String> getPlayersWithActiveStreaks() {
-        Set<String> players = new HashSet<>();
+    public void markRewardsAsExpired(String uuid) {
         Connection conn = null;
         PreparedStatement ps = null;
-        ResultSet rs = null;
 
         try {
             conn = getSQLConnection();
-            ps = conn.prepareStatement("SELECT uuid FROM play_time WHERE absolute_join_streak > 0;");
-            rs = ps.executeQuery();
+            ps = conn.prepareStatement(
+                    "UPDATE rewards_to_be_claimed " +
+                            "SET expired = ?, updated_at = CURRENT_TIMESTAMP " +
+                            "WHERE user_uuid = ?"
+            );
 
-            while (rs.next()) {
-                players.add(rs.getString("uuid"));
-            }
+            ps.setBoolean(1, true);
+            ps.setString(2, uuid);
+
+            ps.executeUpdate(); // no need for batching here
+
         } catch (SQLException ex) {
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
             try {
-                if (rs != null)
-                    rs.close();
-                if (ps != null)
-                    ps.close();
-                if (conn != null)
-                    conn.close();
+                if (ps != null) ps.close();
+                if (conn != null) conn.close();
             } catch (SQLException ex) {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-
-        return players;
     }
 
-    public LinkedHashSet<String> getRewardsToBeClaimed(String uuid) {
+    public ArrayList<RewardSubInstance> getRewardsToBeClaimed(String uuid) {
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
 
-        LinkedHashSet<String> rewards = new LinkedHashSet<>();
+        ArrayList<RewardSubInstance> rewards = new ArrayList<>();
 
         try {
             conn = getSQLConnection();
-            ps = conn.prepareStatement("SELECT rewards_to_be_claimed FROM play_time WHERE uuid = ?;");
+            ps = conn.prepareStatement(
+                    "SELECT main_instance_ID, required_joins, expired " +
+                            "FROM rewards_to_be_claimed WHERE user_uuid = ? ORDER BY created_at;"
+            );
             ps.setString(1, uuid);
 
             rs = ps.executeQuery();
-            if (rs.next()) {
-                String rewardsStr = rs.getString("rewards_to_be_claimed");
-                if (rewardsStr != null && !rewardsStr.isEmpty()) {
-                    String[] rewardArray = rewardsStr.split(",");
-                    for (String reward : rewardArray) {
-                        rewards.add(reward.trim());
-                    }
-                }
+            while (rs.next()) {
+                rewards.add(new RewardSubInstance(
+                        rs.getInt("main_instance_ID"),
+                        rs.getInt("required_joins"),
+                        rs.getBoolean("expired")
+                ));
             }
         } catch (SQLException ex) {
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
@@ -982,27 +1071,29 @@ public abstract class PlayTimeDatabase {
         return rewards;
     }
 
-    public LinkedHashSet<String> getReceivedRewards(String uuid) {
+
+    public ArrayList<RewardSubInstance> getReceivedRewards(String uuid) {
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
 
-        LinkedHashSet<String> rewards = new LinkedHashSet<>();
+        ArrayList<RewardSubInstance> rewards = new ArrayList<>();
 
         try {
             conn = getSQLConnection();
-            ps = conn.prepareStatement("SELECT received_rewards FROM play_time WHERE uuid = ?;");
+            ps = conn.prepareStatement(
+                    "SELECT main_instance_ID, required_joins " +
+                            "FROM received_rewards WHERE user_uuid = ? ORDER BY received_at;"
+            );
             ps.setString(1, uuid);
 
             rs = ps.executeQuery();
-            if (rs.next()) {
-                String rewardsStr = rs.getString("received_rewards");
-                if (rewardsStr != null && !rewardsStr.isEmpty()) {
-                    String[] rewardArray = rewardsStr.split(",");
-                    for (String reward : rewardArray) {
-                        rewards.add(reward.trim());
-                    }
-                }
+            while (rs.next()) {
+                rewards.add(new RewardSubInstance(
+                        rs.getInt("main_instance_ID"),
+                        rs.getInt("required_joins"),
+                        false
+                ));
             }
         } catch (SQLException ex) {
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
@@ -1019,21 +1110,66 @@ public abstract class PlayTimeDatabase {
         return rewards;
     }
 
-    public void updateReceivedRewards(String uuid, LinkedHashSet<String> rewards) {
+    public void removeRewardFromAllUsers(Integer mainInstanceID) {
         Connection conn = null;
-        PreparedStatement ps = null;
+        PreparedStatement deleteReceivedPs = null;
+        PreparedStatement deleteClaimablePs = null;
+
         try {
             conn = getSQLConnection();
-            ps = conn.prepareStatement("UPDATE play_time SET received_rewards = ? WHERE uuid = ?;");
+            conn.setAutoCommit(false); // Use transaction for consistency
 
-            String rewardsStr = String.join(",", rewards);
 
-            ps.setString(1, rewardsStr);
-            ps.setString(2, uuid);
+            deleteReceivedPs = conn.prepareStatement("DELETE FROM received_rewards WHERE main_instance_ID = ?;");
 
-            ps.executeUpdate();
+            deleteReceivedPs.setInt(1, mainInstanceID); // Exact match
+
+            deleteReceivedPs.executeUpdate();
+
+            deleteClaimablePs = conn.prepareStatement("DELETE FROM rewards_to_be_claimed WHERE main_instance_ID = ?;" );
+            deleteClaimablePs.setInt(1, mainInstanceID); // Exact match
+
+            deleteClaimablePs.executeUpdate();
+
+            conn.commit();
+
         } catch (SQLException ex) {
-            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+            try {
+                if (conn != null) conn.rollback();
+            } catch (SQLException rollbackEx) {
+                plugin.getLogger().log(Level.SEVERE, "Error rolling back transaction", rollbackEx);
+            }
+            plugin.getLogger().log(Level.SEVERE, "Error removing reward " + mainInstanceID + " from all players: " + ex.getMessage());
+        } finally {
+            try {
+                if (conn != null) conn.setAutoCommit(true);
+                if (deleteReceivedPs != null) deleteReceivedPs.close();
+                if (deleteClaimablePs != null) deleteClaimablePs.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public void addReceivedReward(String uuid, String nickname, RewardSubInstance reward) {
+        Connection conn = null;
+        PreparedStatement ps = null;
+
+        try {
+            conn = getSQLConnection();
+            ps = conn.prepareStatement(
+                    "INSERT INTO received_rewards (user_uuid, nickname, main_instance_ID, required_joins, received_at) " +
+                            "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP);"
+            );
+            ps.setString(1, uuid);
+            ps.setString(2, nickname);
+            ps.setInt(3, reward.mainInstanceID());
+            ps.setInt(4, reward.requiredJoins());
+            ps.executeUpdate();
+
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, "Error adding received reward", ex);
         } finally {
             try {
                 if (ps != null) ps.close();
@@ -1044,21 +1180,26 @@ public abstract class PlayTimeDatabase {
         }
     }
 
-    public void updateRewardsToBeClaimed(String uuid, LinkedHashSet<String> rewards) {
+
+    public void addRewardToBeClaimed(String uuid, String nickname, RewardSubInstance reward) {
         Connection conn = null;
         PreparedStatement ps = null;
+
         try {
             conn = getSQLConnection();
-            ps = conn.prepareStatement("UPDATE play_time SET rewards_to_be_claimed = ? WHERE uuid = ?;");
-
-            String rewardsStr = String.join(",", rewards);
-
-            ps.setString(1, rewardsStr);
-            ps.setString(2, uuid);
-
+            ps = conn.prepareStatement(
+                    "INSERT INTO rewards_to_be_claimed (user_uuid, nickname, main_instance_ID, required_joins, created_at, updated_at, expired) " +
+                            "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?);"
+            );
+            ps.setString(1, uuid);
+            ps.setString(2, nickname);
+            ps.setInt(3, reward.mainInstanceID());
+            ps.setInt(4, reward.requiredJoins());
+            ps.setBoolean(5, reward.expired());
             ps.executeUpdate();
+
         } catch (SQLException ex) {
-            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+            plugin.getLogger().log(Level.SEVERE, "Error adding reward to be claimed", ex);
         } finally {
             try {
                 if (ps != null) ps.close();
@@ -1069,107 +1210,74 @@ public abstract class PlayTimeDatabase {
         }
     }
 
-    public void removeRewardFromAllUsers(String rewardID) {
+    public void removeRewardToBeClaimed(String uuid, RewardSubInstance reward) {
+        try (Connection conn = getSQLConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "DELETE FROM rewards_to_be_claimed WHERE user_uuid = ? AND main_instance_ID = ? AND required_joins = ?"
+             )) {
+            ps.setString(1, uuid);
+            ps.setInt(2, reward.mainInstanceID());
+            ps.setInt(3, reward.requiredJoins());
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        }
+    }
+
+    public void removeReceivedReward(String uuid, RewardSubInstance reward) {
+        try (Connection conn = getSQLConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "DELETE FROM received_rewards WHERE user_uuid = ? AND main_instance_ID = ? AND required_joins = ?"
+             )) {
+            ps.setString(1, uuid);
+            ps.setInt(2, reward.mainInstanceID());
+            ps.setInt(3, reward.requiredJoins());
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        }
+    }
+
+    public void resetAllUserRewards(String uuid) {
         Connection conn = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
+        PreparedStatement ps1 = null;
+        PreparedStatement ps2 = null;
+
         try {
             conn = getSQLConnection();
+            conn.setAutoCommit(false); // Start transaction
 
-            // First, get all players who have received rewards or have rewards to be claimed
-            ps = conn.prepareStatement("SELECT uuid, received_rewards, rewards_to_be_claimed FROM play_time WHERE " +
-                    "(received_rewards IS NOT NULL AND received_rewards != '') OR " +
-                    "(rewards_to_be_claimed IS NOT NULL AND rewards_to_be_claimed != '');");
-            rs = ps.executeQuery();
+            // Delete all received rewards for this user
+            ps1 = conn.prepareStatement("DELETE FROM received_rewards WHERE user_uuid = ?");
+            ps1.setString(1, uuid);
+            ps1.executeUpdate();
 
-            PreparedStatement updateStmt = conn.prepareStatement("UPDATE play_time SET received_rewards = ?, rewards_to_be_claimed = ? WHERE uuid = ?;");
+            // Delete all rewards to be claimed for this user
+            ps2 = conn.prepareStatement("DELETE FROM rewards_to_be_claimed WHERE user_uuid = ?");
+            ps2.setString(1, uuid);
+            ps2.executeUpdate();
 
-            // Get the integer part of the rewardID being removed
-            String rewardIntegerPart = rewardID;
-            if (rewardID != null && rewardID.contains(".")) {
-                String[] parts = rewardID.split("\\.", 2);
-                if (parts.length > 0) {
-                    rewardIntegerPart = parts[0];
-                }
-            }
-
-            while (rs.next()) {
-                String uuid = rs.getString("uuid");
-                String receivedRewards = rs.getString("received_rewards");
-                String rewardsToBeClaimed = rs.getString("rewards_to_be_claimed");
-
-                // Process received_rewards column
-                LinkedHashSet<String> receivedRewardsList = new LinkedHashSet<>();
-                if (receivedRewards != null && !receivedRewards.isEmpty()) {
-                    for (String reward : receivedRewards.split(",")) {
-                        String trimmedReward = reward.trim();
-
-                        // Extract the integer part using split
-                        String integerPart = trimmedReward;
-                        if (trimmedReward.contains(".")) {
-                            String[] parts = trimmedReward.split("\\.", 2);
-                            if (parts.length > 0) {
-                                integerPart = parts[0];
-                            }
-                        }
-
-                        // Keep only if the integer part doesn't match the rewardID's integer part
-                        if (!integerPart.equals(rewardIntegerPart)) {
-                            receivedRewardsList.add(trimmedReward);
-                        }
-                    }
-                }
-
-                // Process rewards_to_be_claimed column
-                LinkedHashSet<String> rewardsToBeClaimedList = new LinkedHashSet<>();
-                if (rewardsToBeClaimed != null && !rewardsToBeClaimed.isEmpty()) {
-                    for (String reward : rewardsToBeClaimed.split(",")) {
-                        String trimmedReward = reward.trim();
-
-                        // Extract the integer part using split
-                        String integerPart = trimmedReward;
-                        if (trimmedReward.contains(".")) {
-                            String[] parts = trimmedReward.split("\\.", 2);
-                            if (parts.length > 0) {
-                                integerPart = parts[0];
-                            }
-                        }
-
-                        // Keep only if the integer part doesn't match the rewardID's integer part
-                        if (!integerPart.equals(rewardIntegerPart)) {
-                            rewardsToBeClaimedList.add(trimmedReward);
-                        }
-                    }
-                }
-
-                // Convert back to comma-separated strings
-                String updatedReceivedRewards = String.join(",", receivedRewardsList);
-                String updatedRewardsToBeClaimed = String.join(",", rewardsToBeClaimedList);
-
-                // Update the database
-                updateStmt.setString(1, updatedReceivedRewards);
-                updateStmt.setString(2, updatedRewardsToBeClaimed);
-                updateStmt.setString(3, uuid);
-                updateStmt.executeUpdate();
-            }
-
-            updateStmt.close();
-
+            conn.commit(); // Commit transaction
         } catch (SQLException ex) {
-            plugin.getLogger().log(Level.SEVERE, "Error removing reward " + rewardID + " from all players: " + ex.getMessage());
+            try {
+                if (conn != null) {
+                    conn.rollback(); // Rollback on error
+                }
+            } catch (SQLException rollbackEx) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to rollback transaction", rollbackEx);
+            }
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
             try {
-                if (rs != null)
-                    rs.close();
-                if (ps != null)
-                    ps.close();
-                if (conn != null)
-                    conn.close();
+                if (conn != null) {
+                    conn.setAutoCommit(true); // Reset auto-commit
+                }
+                if (ps1 != null) ps1.close();
+                if (ps2 != null) ps2.close();
+                if (conn != null) conn.close();
             } catch (SQLException ex) {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
     }
-
-
 }

@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.GUIs.JoinStreak;
 
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
+import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;

@@ -225,11 +225,10 @@ public class Version354to355Updater {
 
     private void removeOldColumns(Connection connection) {
         try {
-            // SQLite doesn't support DROP COLUMN directly, so we need to:
-            // 1. Create new table without the old columns
-            // 2. Copy data to new table
-            // 3. Drop old table
-            // 4. Rename new table
+            // Clean up in case a failed migration left a stale table
+            PreparedStatement dropNewIfExists = connection.prepareStatement("DROP TABLE IF EXISTS play_time_new");
+            dropNewIfExists.executeUpdate();
+            dropNewIfExists.close();
 
             String createNewTableQuery = "CREATE TABLE play_time_new (" +
                     "uuid VARCHAR(32) NOT NULL UNIQUE," +
@@ -249,31 +248,27 @@ public class Version354to355Updater {
             createStmt.executeUpdate();
             createStmt.close();
 
-            // Copy data to new table (excluding the old reward columns)
             String copyDataQuery = "INSERT INTO play_time_new " +
                     "(uuid, nickname, playtime, artificial_playtime, afk_playtime, completed_goals, " +
                     "last_seen, first_join, relative_join_streak, absolute_join_streak) " +
                     "SELECT uuid, nickname, playtime, artificial_playtime, afk_playtime, completed_goals, " +
-                    "last_seen, first_join, relative_join_streak, absolute_join_streak FROM play_time";
+                    "last_seen, first_join, relative_join_streak, absolute_join_streak " +
+                    "FROM play_time";
 
             PreparedStatement copyStmt = connection.prepareStatement(copyDataQuery);
             copyStmt.executeUpdate();
             copyStmt.close();
 
-            // Drop old table
             PreparedStatement dropStmt = connection.prepareStatement("DROP TABLE play_time");
             dropStmt.executeUpdate();
             dropStmt.close();
 
-            // Rename new table
             PreparedStatement renameStmt = connection.prepareStatement("ALTER TABLE play_time_new RENAME TO play_time");
             renameStmt.executeUpdate();
             renameStmt.close();
 
-            plugin.getLogger().info("Successfully removed old reward columns from play_time table.");
-
         } catch (SQLException e) {
-            plugin.getLogger().severe("Error removing old columns: " + e.getMessage());
+            plugin.getLogger().severe("Error removing old columns / adding new column: " + e.getMessage());
             e.printStackTrace();
         }
     }

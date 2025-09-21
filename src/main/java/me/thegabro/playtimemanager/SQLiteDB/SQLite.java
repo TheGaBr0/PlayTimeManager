@@ -17,17 +17,17 @@ public class SQLite extends PlayTimeDatabase {
         dbname = "play_time";
     }
 
-    public String PlayTimeTable = "CREATE TABLE IF NOT EXISTS play_time (" +
+    public String PlayTimeTable = "CREATE TABLE play_time_new (" +
             "uuid VARCHAR(32) NOT NULL UNIQUE," +
             "nickname VARCHAR(32) NOT NULL UNIQUE," +
             "playtime BIGINT NOT NULL," +
             "artificial_playtime BIGINT NOT NULL," +
-            "afk_playtime BIGINT NOT NULL,"+
+            "afk_playtime BIGINT NOT NULL," +
             "completed_goals TEXT DEFAULT ''," +
-            "last_seen DATETIME DEFAULT NULL,"+
-            "first_join DATETIME DEFAULT NULL,"+
-            "relative_join_streak INT DEFAULT 0,"+
-            "absolute_join_streak INT DEFAULT 0,"+
+            "last_seen DATETIME DEFAULT NULL," +
+            "first_join DATETIME DEFAULT NULL," +
+            "relative_join_streak INT DEFAULT 0," +
+            "absolute_join_streak INT DEFAULT 0," +
             "PRIMARY KEY (uuid)" +
             ");";
 
@@ -53,13 +53,6 @@ public class SQLite extends PlayTimeDatabase {
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid)" +
             ");";
 
-    // Indexes for the new reward tables
-    private String[] rewardIndexes = {
-            "CREATE INDEX IF NOT EXISTS idx_received_rewards_uuid ON received_rewards(user_uuid);",
-            "CREATE INDEX IF NOT EXISTS idx_received_rewards_date ON received_rewards(received_at);",
-            "CREATE INDEX IF NOT EXISTS idx_rewards_to_claim_uuid ON rewards_to_be_claimed(user_uuid);",
-            "CREATE INDEX IF NOT EXISTS idx_rewards_to_claim_date ON rewards_to_be_claimed(created_at);"
-    };
 
     public Connection getSQLConnection() {
         if (dataSource == null) {
@@ -83,14 +76,8 @@ public class SQLite extends PlayTimeDatabase {
             s.executeUpdate(ReceivedRewardsTable);
             s.executeUpdate(RewardsToBeClaimedTable);
 
-            for (String index : rewardIndexes) {
-                s.executeUpdate(index);
-            }
-
             s.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        } catch (SQLException ignored) {}
     }
 
 

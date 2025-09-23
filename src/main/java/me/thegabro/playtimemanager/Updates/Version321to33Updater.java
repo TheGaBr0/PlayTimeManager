@@ -1,19 +1,17 @@
 package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Configuration;
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.SQLiteDB.SQLite;
+import me.thegabro.playtimemanager.Database.SQLiteDatabase;
 import java.sql.*;
 
 
 public class Version321to33Updater {
-    private final PlayTimeManager plugin;
-    private final SQLite database;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final DatabaseHandler database = DatabaseHandler.getInstance();
 
-    public Version321to33Updater(PlayTimeManager plugin) {
-        this.plugin = plugin;
-        this.database = (SQLite) plugin.getDatabase();
-    }
+    public Version321to33Updater() {}
 
     public void performUpgrade() {
         addFirstJoinColumn();
@@ -21,7 +19,7 @@ public class Version321to33Updater {
     }
 
     public void addFirstJoinColumn() {
-        try (Connection connection = database.getSQLConnection()) {
+        try (Connection connection = database.getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {

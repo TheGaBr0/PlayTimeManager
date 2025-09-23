@@ -1,21 +1,19 @@
 package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Configuration;
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.SQLiteDB.SQLite;
+import me.thegabro.playtimemanager.Database.SQLiteDatabase;
 
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Level;
 
 public class Version31to32Updater {
-    private final PlayTimeManager plugin;
-    private final SQLite database;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final DatabaseHandler database = DatabaseHandler.getInstance();
 
-    public Version31to32Updater(PlayTimeManager plugin) {
-        this.plugin = plugin;
-        this.database = (SQLite) plugin.getDatabase();
-    }
+    public Version31to32Updater() {}
 
     public void performUpgrade() {
         handleDuplicates();
@@ -41,7 +39,7 @@ public class Version31to32Updater {
     }
 
     private void handleDuplicates() {
-        try (Connection connection = database.getSQLConnection()) {
+        try (Connection connection = database.getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {
@@ -156,7 +154,7 @@ public class Version31to32Updater {
     }
 
     public void updateUniqueDBEntries() {
-        try (Connection connection = database.getSQLConnection()) {
+        try (Connection connection = database.getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {
@@ -189,7 +187,7 @@ public class Version31to32Updater {
     }
 
     public void addLastSeenColumn() {
-        try (Connection connection = database.getSQLConnection()) {
+        try (Connection connection = database.getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {

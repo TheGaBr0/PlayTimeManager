@@ -269,7 +269,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
         if (slot == CREATE_REWARD && clickedItem.getType() == Material.EMERALD) {
             whoClicked.closeInventory();
-            rewardsManager.getRewardRegistry().addReward(new JoinStreakReward(plugin, rewardsManager.getRewardRegistry().getNextRewardId(), -1));
+            rewardsManager.getRewardRegistry().addReward(new JoinStreakReward(rewardsManager.getRewardRegistry().getNextRewardId(), -1));
             openInventory(whoClicked);
             return;
         }
@@ -341,7 +341,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
     }
 
     private JoinStreakReward cloneReward(int newId, JoinStreakReward reward) {
-        JoinStreakReward clonedReward = new JoinStreakReward(plugin, newId, reward.getMinRequiredJoins());
+        JoinStreakReward clonedReward = new JoinStreakReward(newId, reward.getMinRequiredJoins());
 
         clonedReward.setRequiredJoinsRange(reward.getMinRequiredJoins(), reward.getMaxRequiredJoins());
         clonedReward.setItemIcon(reward.getItemIcon());

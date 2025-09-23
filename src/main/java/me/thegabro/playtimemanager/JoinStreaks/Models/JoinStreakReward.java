@@ -15,7 +15,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public class JoinStreakReward {
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
     private final int id;
     private int[] requiredJoinsRange;
@@ -28,8 +28,7 @@ public class JoinStreakReward {
     private String description;
     private String rewardDescription;
 
-    public JoinStreakReward(PlayTimeManager plugin, int id, int requiredJoins) {
-        this.plugin = plugin;
+    public JoinStreakReward(int id, int requiredJoins) {
         this.id = id;
         this.requiredJoinsRange = new int[]{requiredJoins, requiredJoins}; // Initialize as single value
         this.rewardFile = new File(plugin.getDataFolder() + File.separator + "Rewards" + File.separator + id + ".yml");

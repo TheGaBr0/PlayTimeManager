@@ -15,12 +15,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class RewardExecutor {
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final RewardMessageService messageService;
 
-    public RewardExecutor(PlayTimeManager plugin) {
-        this.plugin = plugin;
-        this.messageService = new RewardMessageService(plugin);
+    public RewardExecutor() {
+        this.messageService = new RewardMessageService();
     }
 
     public void processCompletedReward(Player player, RewardSubInstance subInstance) {

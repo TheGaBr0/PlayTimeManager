@@ -19,7 +19,7 @@ public class OnlineUsersManager {
     private static volatile OnlineUsersManager instance;
     private BukkitTask goalSchedule;
     private BukkitTask dbUpdateSchedule;
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final Map<String, OnlineUser> onlineUsersByName;
     private final Map<String, OnlineUser> onlineUsersByUUID;
@@ -28,7 +28,6 @@ public class OnlineUsersManager {
     private static final int DB_UPDATE_INTERVAL = 300 * 20; // 5 minutes in ticks
 
     private OnlineUsersManager() {
-        this.plugin = PlayTimeManager.getInstance();
         this.onlineUsersByName = new ConcurrentHashMap<>();
         this.onlineUsersByUUID = new ConcurrentHashMap<>();
         this.goalMessageReplacements = new HashMap<>();

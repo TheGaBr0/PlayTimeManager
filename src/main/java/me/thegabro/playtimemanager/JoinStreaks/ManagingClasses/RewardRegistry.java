@@ -12,14 +12,12 @@ import java.io.IOException;
 import java.util.*;
 
 public class RewardRegistry {
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final Set<JoinStreakReward> rewards = new HashSet<>();
     private final ArrayList<RewardSubInstance> joinRewardsInstances = new ArrayList<RewardSubInstance>();
     private JoinStreakReward lastRewardByJoins;
 
-    public RewardRegistry(PlayTimeManager plugin) {
-        this.plugin = plugin;
-    }
+    public RewardRegistry() {}
 
     public void createRewardsDirectory() {
         File rewardsFolder = new File(plugin.getDataFolder(), "Rewards");
@@ -58,7 +56,7 @@ public class RewardRegistry {
                 for (File file : rewardFiles) {
                     String rewardID = file.getName().replace(".yml", "");
                     try {
-                        JoinStreakReward reward = new JoinStreakReward(plugin, Integer.parseInt(rewardID), -1);
+                        JoinStreakReward reward = new JoinStreakReward(Integer.parseInt(rewardID), -1);
                         addReward(reward);
                     } catch (NumberFormatException e) {
                         plugin.getLogger().warning("Invalid reward file name: " + file.getName());

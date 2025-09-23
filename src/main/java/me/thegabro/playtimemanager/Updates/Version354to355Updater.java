@@ -1,8 +1,8 @@
 package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Configuration;
-import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
 import java.sql.Connection;
@@ -15,12 +15,11 @@ import java.util.stream.Collectors;
 
 public class Version354to355Updater {
 
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final DatabaseHandler database = DatabaseHandler.getInstance();
     private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
 
-    public Version354to355Updater(PlayTimeManager plugin) {
-        this.plugin = plugin;
-    }
+    public Version354to355Updater() {}
 
     public void performUpgrade() {
         recreateConfigFile();
@@ -36,7 +35,7 @@ public class Version354to355Updater {
     private void migrateRewardData() {
         plugin.getLogger().info("Starting reward data migration from version 3.5.4 to 3.5.5...");
 
-        try (Connection connection = plugin.getDatabase().getSQLConnection()) {
+        try (Connection connection = database.getConnection()) {
             // First, check if the old columns exist
             if (!columnsExist(connection)) {
                 plugin.getLogger().info("Old reward columns not found, migration not needed.");

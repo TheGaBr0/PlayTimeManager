@@ -8,7 +8,6 @@ import java.util.regex.Pattern;
 
 public class PlaceholderConditionEvaluator {
 
-    // Singleton instance
     private static PlaceholderConditionEvaluator instance;
 
     private static final Pattern EXPRESSION_PATTERN = Pattern.compile("(.+?)\\s*(==|!=|>=|<=|>|<)\\s*(.+)");

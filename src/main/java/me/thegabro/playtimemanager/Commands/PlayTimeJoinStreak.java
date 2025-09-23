@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
-    private final JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {

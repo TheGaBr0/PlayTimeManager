@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Goals;
 
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
@@ -27,6 +28,7 @@ public class Goal {
     private String goalMessage;
     private String goalSound;
     private boolean active;
+    private DatabaseHandler db = DatabaseHandler.getInstance();
 
     public Goal(PlayTimeManager plugin, String name) {
         this.plugin = plugin;
@@ -201,7 +203,8 @@ public class Goal {
             saveToFile();
 
             // Update the name in the database for all users
-            plugin.getDatabase().updateGoalName(oldFile.getName().replace(".yml", ""), newName);
+            //TODO: async
+            db.getGoalsDAO().updateGoalName(oldFile.getName().replace(".yml", ""), newName);
 
             oldFile.delete();
 

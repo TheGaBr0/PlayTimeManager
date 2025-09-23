@@ -45,7 +45,6 @@ public class GoalRewardRequirement {
         return true;
     }
 
-    // Getters and setters
     public List<String> getPermissions() {
         return permissions;
     }

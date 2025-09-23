@@ -9,20 +9,18 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 
 public class RewardProcessor {
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final RewardRegistry rewardRegistry;
     private final StreakTracker streakTracker;
     private final RewardExecutor rewardExecutor;
     private final RewardMessageService messageService;
 
     public RewardProcessor(
-            PlayTimeManager plugin,
             RewardRegistry rewardRegistry,
             StreakTracker streakTracker,
             RewardExecutor rewardExecutor,
             RewardMessageService messageService
     ) {
-        this.plugin = plugin;
         this.rewardRegistry = rewardRegistry;
         this.streakTracker = streakTracker;
         this.rewardExecutor = rewardExecutor;

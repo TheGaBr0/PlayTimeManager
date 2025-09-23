@@ -47,7 +47,7 @@ public class OnlineUser extends DBUser {
      */
     public void updatePlayTimeWithSnapshot(long playtimeSnapshot) {
         long currentPlaytime = DBplaytime + (playtimeSnapshot - fromServerOnJoinPlayTime);
-        db.updatePlaytime(uuid, currentPlaytime);
+        db.getPlayerDAO().updatePlaytime(uuid, currentPlaytime);
     }
 
     /**
@@ -56,7 +56,7 @@ public class OnlineUser extends DBUser {
      */
     public void updatePlayTime() {
         long currentPlaytime = getCachedPlayTime();
-        db.updatePlaytime(uuid, currentPlaytime);
+        db.getPlayerDAO().updatePlaytime(uuid, currentPlaytime);
     }
 
     /**
@@ -71,7 +71,7 @@ public class OnlineUser extends DBUser {
 
         long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
 
-        db.updateAFKPlaytime(uuid, totalAFKTime);
+        db.getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
     }
 
     /**
@@ -80,7 +80,7 @@ public class OnlineUser extends DBUser {
      */
     public void updateLastSeen() {
         this.lastSeen = LocalDateTime.now();
-        db.updateLastSeen(uuid, this.lastSeen);
+        db.getPlayerDAO().updateLastSeen(uuid, this.lastSeen);
     }
 
     /**

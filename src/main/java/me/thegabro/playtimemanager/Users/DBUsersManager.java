@@ -3,7 +3,7 @@ package me.thegabro.playtimemanager.Users;
 import me.thegabro.playtimemanager.Configuration;
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
-import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 
@@ -13,8 +13,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 public class DBUsersManager {
-    private final PlayTimeDatabase db;
-    private final PlayTimeManager plugin;
+    private final DatabaseHandler db = DatabaseHandler.getInstance();
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private static volatile DBUsersManager instance;
     private final List<DBUser> topPlayers;
     private final Map<String, DBUser> userCache;
@@ -25,8 +25,6 @@ public class DBUsersManager {
     private static final int TOP_PLAYERS_LIMIT = 100;
     private List<String> playersHiddenFromLeaderBoard;
     private DBUsersManager() {
-        this.plugin = PlayTimeManager.getInstance();
-        this.db = plugin.getDatabase();
         this.topPlayers = Collections.synchronizedList(new ArrayList<>());
         this.userCache = new ConcurrentHashMap<>();
 
@@ -54,7 +52,7 @@ public class DBUsersManager {
 
     public DBUser getUserFromNickname(String nickname) {
         // First, try to get UUID from database
-        String uuid = db.getUUIDFromNickname(nickname);
+        String uuid = db.getPlayerDAO().getUUIDFromNickname(nickname);
 
         // If UUID exists, use it to retrieve or create the DBUser
         if (uuid != null) {
@@ -66,7 +64,7 @@ public class DBUsersManager {
 
     public DBUser getUserFromNicknameWithContext(String nickname, String context) {
         // First, try to get UUID from database
-        String uuid = db.getUUIDFromNickname(nickname);
+        String uuid = db.getPlayerDAO().getUUIDFromNickname(nickname);
 
         // If UUID exists, use it to retrieve or create the DBUser
         if (uuid != null) {
@@ -84,12 +82,12 @@ public class DBUsersManager {
         }
 
         // Check if player exists in database
-        if (!db.playerExists(uuid)) {
+        if (!db.getPlayerDAO().playerExists(uuid)) {
             return null;
         }
 
         if(plugin.CACHE_DEBUG) {
-            plugin.getLogger().info("Looking for player: " + db.getNickname(uuid) + " from context: unknown");
+            plugin.getLogger().info("Looking for player: " + db.getPlayerDAO().getNickname(uuid) + " from context: unknown");
             plugin.getLogger().info("Presence in cache:" + userCache.containsKey(uuid));
         }
 
@@ -106,12 +104,12 @@ public class DBUsersManager {
         }
 
         // Check if player exists in database
-        if (!db.playerExists(uuid)) {
+        if (!db.getPlayerDAO().playerExists(uuid)) {
             return null;
         }
 
         if(plugin.CACHE_DEBUG){
-            plugin.getLogger().info("Looking for player: "+db.getNickname(uuid)+" from context: "+context);
+            plugin.getLogger().info("Looking for player: "+db.getPlayerDAO().getNickname(uuid)+" from context: "+context);
             plugin.getLogger().info("Presence in cache:"+ userCache.containsKey(uuid));
         }
 
@@ -129,7 +127,7 @@ public class DBUsersManager {
                 playersHiddenFromLeaderBoard = plugin.getConfiguration().getStringList("placeholders.playtime-leaderboard-blacklist");
 
                 // Fetch more players from DB to account for those that will be filtered out
-                Map<String, String> dbTopPlayers = db.getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersHiddenFromLeaderBoard.size());
+                Map<String, String> dbTopPlayers = db.getStatisticsDAO().getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersHiddenFromLeaderBoard.size());
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     List<DBUser> validTopPlayers = dbTopPlayers.keySet().stream()
@@ -210,7 +208,7 @@ public class DBUsersManager {
         for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
             user.unmarkGoalAsCompleted(goalName);
         }
-        db.removeGoalFromAllUsers(goalName);
+        db.getGoalsDAO().removeGoalFromAllUsers(goalName);
     }
 
     public void removeRewardFromAllUsers(Integer mainInstanceID){
@@ -218,11 +216,11 @@ public class DBUsersManager {
             user.wipeReceivedRewards(mainInstanceID);
             user.wipeRewardsToBeClaimed(mainInstanceID);
         }
-        db.removeRewardFromAllUsers(mainInstanceID);
+        db.getStreakDAO().removeRewardFromAllUsers(mainInstanceID);
     }
 
     public List<DBUser> getAllDBUsers() {
-        return db.getAllNicknames().stream()
+        return db.getPlayerDAO().getAllNicknames().stream()
                 .map(this::getUserFromNickname)
                 .collect(Collectors.toList());
     }

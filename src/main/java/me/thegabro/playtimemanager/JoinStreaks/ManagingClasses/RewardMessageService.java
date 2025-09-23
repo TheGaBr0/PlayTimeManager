@@ -15,11 +15,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class RewardMessageService {
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
 
-    public RewardMessageService(PlayTimeManager plugin) {
-        this.plugin = plugin;
-    }
+    public RewardMessageService() {}
 
     public void sendRewardRelatedMessage(Player player, RewardSubInstance subInstance, String message, int delaySeconds) {
         Map<String, String> replacements = new HashMap<>();

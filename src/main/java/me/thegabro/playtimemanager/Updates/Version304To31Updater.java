@@ -1,9 +1,10 @@
 package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Configuration;
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.SQLiteDB.SQLite;
+import me.thegabro.playtimemanager.Database.SQLiteDatabase;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,16 +14,12 @@ import java.util.*;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 public class Version304To31Updater {
-    private final PlayTimeManager plugin;
-    private final SQLite database;
-    private final GoalsManager goalsManager;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final DatabaseHandler database = DatabaseHandler.getInstance();
+    private final GoalsManager goalsManager = GoalsManager.getInstance();
 
-    public Version304To31Updater(PlayTimeManager plugin) {
-        this.plugin = plugin;
-        this.database = (SQLite) plugin.getDatabase();
-        this.goalsManager = GoalsManager.getInstance();
+    public Version304To31Updater() {
         goalsManager.initialize(plugin);
-
     }
 
     public void performUpgrade() {
@@ -32,7 +29,7 @@ public class Version304To31Updater {
     }
 
     private void performDatabaseMigration() {
-        try (Connection connection = database.getSQLConnection()) {
+        try (Connection connection = database.getConnection()) {
 
             try (Statement s = connection.createStatement()) {
                 s.executeUpdate("ALTER TABLE play_time ADD COLUMN completed_goals TEXT DEFAULT ''");
@@ -139,7 +136,7 @@ public class Version304To31Updater {
 
         // Get all users from database
         String selectUsersQuery = "SELECT uuid, playtime, completed_goals FROM play_time";
-        try (Connection conn = database.getSQLConnection();
+        try (Connection conn = database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(selectUsersQuery);
              ResultSet rs = stmt.executeQuery()) {
 
@@ -201,7 +198,7 @@ public class Version304To31Updater {
             @SuppressWarnings("unchecked")
             ArrayList<String> completedGoals = (ArrayList<String>) entry.getValue()[1];
 
-            database.updateCompletedGoals(uuid, completedGoals);
+            database.getGoalsDAO().updateCompletedGoals(uuid, completedGoals);
         }
     }
 

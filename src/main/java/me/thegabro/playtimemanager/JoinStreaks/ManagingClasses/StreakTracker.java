@@ -12,13 +12,9 @@ import java.util.ArrayList;
 import java.util.Set;
 
 public class StreakTracker {
-    private final PlayTimeManager plugin;
-    private final DBUsersManager dbUsersManager;
+    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
 
-    public StreakTracker(PlayTimeManager plugin, DBUsersManager dbUsersManager) {
-        this.plugin = plugin;
-        this.dbUsersManager = dbUsersManager;
-    }
+    public StreakTracker() {}
 
     public void incrementAbsoluteStreak(OnlineUser user) {
         user.incrementAbsoluteJoinStreak();

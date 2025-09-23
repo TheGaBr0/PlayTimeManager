@@ -1,7 +1,7 @@
 package me.thegabro.playtimemanager.Users;
 
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
-import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -21,7 +21,7 @@ public class DBUser {
     protected static final PlayTimeManager plugin = PlayTimeManager.getInstance();
     protected long fromServerOnJoinPlayTime;
     protected ArrayList<String> completedGoals;
-    protected static PlayTimeDatabase db = plugin.getDatabase();
+    protected static DatabaseHandler db = DatabaseHandler.getInstance();
     protected LocalDateTime lastSeen;
     protected LocalDateTime firstJoin;
     protected final GoalsManager goalsManager = GoalsManager.getInstance();
@@ -87,7 +87,7 @@ public class DBUser {
         // first_join values for older players into their db. If such players join and this check isn't here: KABOOM.
         if(firstJoin == null){
             firstJoin = LocalDateTime.now();
-            db.updateFirstJoin(uuid, firstJoin);
+            db.getPlayerDAO().updateFirstJoin(uuid, firstJoin);
         }
     }
 
@@ -102,17 +102,17 @@ public class DBUser {
         if(uuid == null)
             return null;
 
-        String nickname = db.getNickname(uuid);
-        long playtime = db.getPlaytime(uuid);
-        long artificialPlaytime = db.getArtificialPlaytime(uuid);
-        long afkplaytime = db.getAFKPlaytime(uuid);
-        ArrayList<String> completedGoals = db.getCompletedGoals(uuid);
-        LocalDateTime lastSeen = db.getLastSeen(uuid);
-        LocalDateTime firstJoin = db.getFirstJoin(uuid);
-        int relativeJoinStreak = db.getRelativeJoinStreak(uuid);
-        int absoluteJoinStreak = db.getAbsoluteJoinStreak(uuid);
-        ArrayList<RewardSubInstance> receivedRewards = db.getReceivedRewards(uuid);
-        ArrayList<RewardSubInstance> rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
+        String nickname = db.getPlayerDAO().getNickname(uuid);
+        long playtime = db.getPlayerDAO().getPlaytime(uuid);
+        long artificialPlaytime = db.getPlayerDAO().getArtificialPlaytime(uuid);
+        long afkplaytime = db.getPlayerDAO().getAFKPlaytime(uuid);
+        ArrayList<String> completedGoals = db.getGoalsDAO().getCompletedGoals(uuid);
+        LocalDateTime lastSeen = db.getPlayerDAO().getLastSeen(uuid);
+        LocalDateTime firstJoin = db.getPlayerDAO().getFirstJoin(uuid);
+        int relativeJoinStreak = db.getStreakDAO().getRelativeJoinStreak(uuid);
+        int absoluteJoinStreak = db.getStreakDAO().getAbsoluteJoinStreak(uuid);
+        ArrayList<RewardSubInstance> receivedRewards = db.getStreakDAO().getReceivedRewards(uuid);
+        ArrayList<RewardSubInstance> rewardsToBeClaimed = db.getStreakDAO().getRewardsToBeClaimed(uuid);
 
         return new DBUser(uuid, nickname, playtime, artificialPlaytime, afkplaytime, completedGoals, lastSeen, firstJoin, relativeJoinStreak,
                 absoluteJoinStreak, receivedRewards, rewardsToBeClaimed);
@@ -123,16 +123,16 @@ public class DBUser {
      * Called during construction to populate all user statistics and settings.
      */
     private void loadUserData() {
-        this.DBplaytime = db.getPlaytime(uuid);
-        this.DBAFKplaytime = db.getAFKPlaytime(uuid);
-        this.artificialPlaytime = db.getArtificialPlaytime(uuid);
-        this.completedGoals = db.getCompletedGoals(uuid);
-        this.lastSeen = db.getLastSeen(uuid);
-        this.firstJoin = db.getFirstJoin(uuid);
-        this.relativeJoinStreak = db.getRelativeJoinStreak(uuid);
-        this.absoluteJoinStreak = db.getRelativeJoinStreak(uuid);
-        this.receivedRewards = db.getReceivedRewards(uuid);
-        this.rewardsToBeClaimed = db.getRewardsToBeClaimed(uuid);
+        this.DBplaytime = db.getPlayerDAO().getPlaytime(uuid);
+        this.DBAFKplaytime = db.getPlayerDAO().getAFKPlaytime(uuid);
+        this.artificialPlaytime = db.getPlayerDAO().getArtificialPlaytime(uuid);
+        this.completedGoals = db.getGoalsDAO().getCompletedGoals(uuid);
+        this.lastSeen = db.getPlayerDAO().getLastSeen(uuid);
+        this.firstJoin = db.getPlayerDAO().getFirstJoin(uuid);
+        this.relativeJoinStreak = db.getStreakDAO().getRelativeJoinStreak(uuid);
+        this.absoluteJoinStreak = db.getStreakDAO().getRelativeJoinStreak(uuid);
+        this.receivedRewards = db.getStreakDAO().getReceivedRewards(uuid);
+        this.rewardsToBeClaimed = db.getStreakDAO().getRewardsToBeClaimed(uuid);
         afk = false;
     }
 
@@ -252,7 +252,7 @@ public class DBUser {
      */
     public void setArtificialPlaytime(long artificialPlaytime) {
         this.artificialPlaytime = artificialPlaytime;
-        db.updateArtificialPlaytime(uuid, artificialPlaytime);
+        db.getPlayerDAO().updateArtificialPlaytime(uuid, artificialPlaytime);
     }
 
     /**
@@ -281,7 +281,7 @@ public class DBUser {
      */
     public void markGoalAsCompleted(String goalName){
         completedGoals.add(goalName);
-        db.updateCompletedGoals(uuid, completedGoals);
+        db.getGoalsDAO().updateCompletedGoals(uuid, completedGoals);
     }
 
     /**
@@ -291,7 +291,7 @@ public class DBUser {
      */
     public void unmarkGoalAsCompleted(String goalName){
         completedGoals.remove(goalName);
-        db.updateCompletedGoals(uuid, completedGoals);
+        db.getGoalsDAO().updateCompletedGoals(uuid, completedGoals);
     }
 
     /**
@@ -317,7 +317,7 @@ public class DBUser {
      */
     public void incrementRelativeJoinStreak(){
         this.relativeJoinStreak++;
-        db.setRelativeJoinStreak(uuid, this.relativeJoinStreak);
+        db.getStreakDAO().setRelativeJoinStreak(uuid, this.relativeJoinStreak);
     }
 
     /**
@@ -325,7 +325,7 @@ public class DBUser {
      */
     public void incrementAbsoluteJoinStreak(){
         this.absoluteJoinStreak++;
-        db.setAbsoluteJoinStreak(uuid, this.absoluteJoinStreak);
+        db.getStreakDAO().setAbsoluteJoinStreak(uuid, this.absoluteJoinStreak);
     }
 
     /**
@@ -335,7 +335,7 @@ public class DBUser {
      */
     public void setRelativeJoinStreak(int value){
         this.relativeJoinStreak = value;
-        db.setRelativeJoinStreak(uuid, this.relativeJoinStreak);
+        db.getStreakDAO().setRelativeJoinStreak(uuid, this.relativeJoinStreak);
     }
 
     /**
@@ -344,8 +344,8 @@ public class DBUser {
     public void resetJoinStreaks(){
         this.relativeJoinStreak = 0;
         this.absoluteJoinStreak = 0;
-        db.setAbsoluteJoinStreak(uuid, 0);
-        db.setRelativeJoinStreak(uuid, 0);
+        db.getStreakDAO().setAbsoluteJoinStreak(uuid, 0);
+        db.getStreakDAO().setRelativeJoinStreak(uuid, 0);
     }
 
     /**
@@ -353,7 +353,7 @@ public class DBUser {
      */
     public void resetRelativeJoinStreak(){
         this.relativeJoinStreak = 0;
-        db.setRelativeJoinStreak(uuid, 0);
+        db.getStreakDAO().setRelativeJoinStreak(uuid, 0);
     }
 
     /**
@@ -382,7 +382,7 @@ public class DBUser {
         rewardsToBeClaimed.addAll(expiredRewards);
 
         // Mark all current unclaimed rewards as expired in the database
-        db.markRewardsAsExpired(uuid);
+        db.getStreakDAO().markRewardsAsExpired(uuid);
     }
 
     /**
@@ -395,7 +395,7 @@ public class DBUser {
         rewardsToBeClaimed.removeIf(unclaimedReward -> unclaimedReward.mainInstanceID().equals(rewardSubInstance.mainInstanceID()) &&
                 unclaimedReward.requiredJoins().equals(rewardSubInstance.requiredJoins()));
 
-        db.removeRewardToBeClaimed(uuid, rewardSubInstance);
+        db.getStreakDAO().removeRewardToBeClaimed(uuid, rewardSubInstance);
     }
 
     /**
@@ -408,7 +408,7 @@ public class DBUser {
         receivedRewards.removeIf(receivedReward -> receivedReward.mainInstanceID().equals(rewardSubInstance.mainInstanceID()) &&
                 receivedReward.requiredJoins().equals(rewardSubInstance.requiredJoins()));
 
-        db.removeReceivedReward(uuid,  rewardSubInstance);
+        db.getStreakDAO().removeReceivedReward(uuid,  rewardSubInstance);
     }
 
     /**
@@ -436,7 +436,7 @@ public class DBUser {
      */
     public void addRewardToBeClaimed(RewardSubInstance rewardSubInstance) {
         rewardsToBeClaimed.add(rewardSubInstance);
-        db.addRewardToBeClaimed(uuid,  nickname, rewardSubInstance);
+        db.getStreakDAO().addRewardToBeClaimed(uuid,  nickname, rewardSubInstance);
     }
 
     /**
@@ -446,7 +446,7 @@ public class DBUser {
      */
     public void addReceivedReward(RewardSubInstance rewardSubInstance) {
         receivedRewards.add(rewardSubInstance);
-        db.addReceivedReward(uuid, nickname, rewardSubInstance);
+        db.getStreakDAO().addReceivedReward(uuid, nickname, rewardSubInstance);
     }
 
     /**
@@ -473,22 +473,22 @@ public class DBUser {
      * Creates new player record if neither UUID nor nickname exists.
      */
     private void userMapping() {
-        boolean uuidExists = db.playerExists(uuid);
-        String existingNickname = uuidExists ? db.getNickname(uuid) : null;
-        String existingUUID = db.getUUIDFromNickname(nickname);
+        boolean uuidExists = db.getPlayerDAO().playerExists(uuid);
+        String existingNickname = uuidExists ? db.getPlayerDAO().getNickname(uuid) : null;
+        String existingUUID = db.getPlayerDAO().getUUIDFromNickname(nickname);
 
         if (uuidExists) {
             // Case 1: UUID exists in database
             if (!nickname.equals(existingNickname)) {
                 // Same UUID but different nickname - update nickname
-                db.updateNickname(uuid, nickname);
+                db.getPlayerDAO().updateNickname(uuid, nickname);
             }
         } else if (existingUUID != null) {
             // Case 2: Nickname exists but with different UUID
-            db.updateUUID(uuid, nickname);
+            db.getPlayerDAO().updateUUID(uuid, nickname);
         } else {
             // Case 3: New user - neither UUID nor nickname exists
-            db.addNewPlayer(uuid, nickname, fromServerOnJoinPlayTime);
+            db.getPlayerDAO().addNewPlayer(uuid, nickname, fromServerOnJoinPlayTime);
         }
     }
 
@@ -553,15 +553,15 @@ public class DBUser {
 
         // Update all values in database
         // TODO: optimize with a single transaction
-        db.updatePlaytime(uuid, 0);
-        db.updateAFKPlaytime(uuid, 0);
-        db.updateArtificialPlaytime(uuid, 0);
-        db.updateCompletedGoals(uuid, completedGoals);
-        db.updateLastSeen(uuid, null);
-        db.updateFirstJoin(uuid, null);
-        db.setRelativeJoinStreak(uuid, 0);
-        db.setAbsoluteJoinStreak(uuid, 0);
-        db.resetAllUserRewards(uuid);
+        db.getPlayerDAO().updatePlaytime(uuid, 0);
+        db.getPlayerDAO().updateAFKPlaytime(uuid, 0);
+        db.getPlayerDAO().updateArtificialPlaytime(uuid, 0);
+        db.getGoalsDAO().updateCompletedGoals(uuid, completedGoals);
+        db.getPlayerDAO().updateLastSeen(uuid, null);
+        db.getPlayerDAO().updateFirstJoin(uuid, null);
+        db.getStreakDAO().setRelativeJoinStreak(uuid, 0);
+        db.getStreakDAO().setAbsoluteJoinStreak(uuid, 0);
+        db.getStreakDAO().resetAllUserRewards(uuid);
     }
 
     /**
@@ -574,9 +574,9 @@ public class DBUser {
         this.artificialPlaytime = 0;
         this.fromServerOnJoinPlayTime = 0;
 
-        db.updatePlaytime(uuid, 0);
-        db.updateArtificialPlaytime(uuid, 0);
-        db.updateAFKPlaytime(uuid, 0);
+        db.getPlayerDAO().updatePlaytime(uuid, 0);
+        db.getPlayerDAO().updateArtificialPlaytime(uuid, 0);
+        db.getPlayerDAO().updateAFKPlaytime(uuid, 0);
     }
 
     /**
@@ -584,7 +584,7 @@ public class DBUser {
      */
     public void resetLastSeen() {
         this.lastSeen = null;
-        db.updateLastSeen(uuid, null);
+        db.getPlayerDAO().updateLastSeen(uuid, null);
     }
 
     /**
@@ -592,7 +592,7 @@ public class DBUser {
      */
     public void resetFirstJoin() {
         this.firstJoin = null;
-        db.updateFirstJoin(uuid, null);
+        db.getPlayerDAO().updateFirstJoin(uuid, null);
     }
 
     /**
@@ -602,7 +602,7 @@ public class DBUser {
         this.receivedRewards.clear();
         this.rewardsToBeClaimed.clear();
 
-        db.resetAllUserRewards(uuid);
+        db.getStreakDAO().resetAllUserRewards(uuid);
     }
 
     /**
@@ -611,6 +611,6 @@ public class DBUser {
      */
     public void resetGoals() {
         this.completedGoals.clear();
-        db.updateCompletedGoals(uuid, completedGoals);
+        db.getGoalsDAO().updateCompletedGoals(uuid, completedGoals);
     }
 }

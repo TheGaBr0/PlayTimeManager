@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -16,19 +17,16 @@ import java.time.ZoneId;
 import java.util.*;
 
 public class CycleScheduler {
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private CronExpression cronExpression;
     private TimeZone timezone;
     private Date nextIntervalReset;
     private long exactIntervalSeconds;
-    private long currentCycleStartTime;
+    private DatabaseHandler db = DatabaseHandler.getInstance();
     private BukkitTask intervalTask;
     private final Set<String> playersJoinedDuringCurrentCycle = new HashSet<>();
 
-    public CycleScheduler(PlayTimeManager plugin) {
-        this.plugin = plugin;
-        this.currentCycleStartTime = System.currentTimeMillis();
-    }
+    public CycleScheduler() {}
 
     public void initialize() {
         validateConfiguration();
@@ -113,7 +111,6 @@ public class CycleScheduler {
             @Override
             public void run() {
                 playersJoinedDuringCurrentCycle.clear();
-                currentCycleStartTime = System.currentTimeMillis();
 
                 JoinStreaksManager.getInstance().resetMissingPlayerStreaks();
 
@@ -141,7 +138,6 @@ public class CycleScheduler {
     public boolean isEligibleForStreak(OnlineUser user) {
         if (!isCurrentCycle()) {
             playersJoinedDuringCurrentCycle.clear();
-            currentCycleStartTime = System.currentTimeMillis();
         }
 
         if (playersJoinedDuringCurrentCycle.contains(user.getUuid())) {
@@ -188,13 +184,13 @@ public class CycleScheduler {
         // Recalculate if we're in the same cycle as when we last tracked
         if (!isCurrentCycle()) {
             playersJoinedDuringCurrentCycle.clear();
-            currentCycleStartTime = System.currentTimeMillis();
         }
 
         // If schedule is active, add players to the joined list whose last seen is within the current cycle
         if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
             try {
-                Set<String> playersWithStreaks = plugin.getDatabase().getPlayersWithActiveStreaks();
+                //TODO: async
+                Set<String> playersWithStreaks = db.getStreakDAO().getPlayersWithActiveStreaks();
                 Date cycleStartDate = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);
 
                 for (String playerUUID : playersWithStreaks) {

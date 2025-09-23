@@ -1,6 +1,5 @@
 package me.thegabro.playtimemanager.Commands;
 
-import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -19,7 +18,6 @@ import java.util.List;
 public class PlayTimeAttributeCommand implements CommandExecutor, TabCompleter {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final PlayTimeDatabase db = plugin.getDatabase();
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {

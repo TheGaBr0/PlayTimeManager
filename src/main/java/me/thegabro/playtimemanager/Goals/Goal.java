@@ -1,19 +1,24 @@
 package me.thegabro.playtimemanager.Goals;
 
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
+import me.thegabro.playtimemanager.Utils;
+import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+import org.quartz.CronExpression;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class Goal {
     // Fields
@@ -21,22 +26,36 @@ public class Goal {
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private String name;
-    private final File goalFile;
+    protected final File goalFile;
     private final GoalRewardRequirement requirements;
     private ArrayList<String> rewardPermissions = new ArrayList<>();
     private ArrayList<String> rewardCommands = new ArrayList<>();
     private String goalMessage;
     private String goalSound;
     private boolean active;
-    private DatabaseHandler db = DatabaseHandler.getInstance();
+    private boolean isRepeatable;
+    private String checkTimeInterval;
+    private String checkTimeTimezone;
+    private boolean isVerbose;
+    private CronExpression cronExpression;
+    private TimeZone timezone;
+    private final DatabaseHandler db = DatabaseHandler.getInstance();
+    private BukkitTask intervalTask;
+    private Date nextIntervalReset;
+    private final Map<String, String> goalMessageReplacements;
+
+
+    private boolean useCronExpression = true; // true for cron, false for seconds
+    private long intervalSeconds = 900; // default 15 minutes in seconds
 
     public Goal(PlayTimeManager plugin, String name) {
         this.plugin = plugin;
         this.name = name;
         this.goalFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + name + ".yml");
         this.requirements = new GoalRewardRequirement();
-        loadFromFile(); // Load before modifying anything
-        goalsManager.addGoal(this);
+        this.goalMessageReplacements = new HashMap<>();
+        loadFromFile();
+        validateConfiguration();
     }
 
     public Goal(PlayTimeManager plugin, String name, boolean active) {
@@ -45,15 +64,68 @@ public class Goal {
         this.goalFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + name + ".yml");
 
         this.requirements = new GoalRewardRequirement();
-        loadFromFile(); // Load before modifying anything
+        this.goalMessageReplacements = new HashMap<>();
 
         this.active = active;
-        saveToFile(); // Now save the updated object
-        goalsManager.addGoal(this);
+
+        loadFromFile();
+        validateConfiguration();
+        saveToFile();
+    }
+
+    private void validateConfiguration() {
+        try {
+            parseCheckTimeInterval(checkTimeInterval);
+
+            if ("utc".equalsIgnoreCase(checkTimeTimezone)) {
+                this.timezone = TimeZone.getTimeZone("UTC");
+            } else {
+                this.timezone = TimeZone.getDefault();
+            }
+
+            if (useCronExpression && cronExpression != null) {
+                this.cronExpression.setTimeZone(timezone);
+            }
+
+            saveToFile();
+
+        } catch(Exception e) {
+            plugin.getLogger().severe("Invalid check-time-interval configuration in goal " + name + "! Setting the goal as inactive: " + e.getMessage());
+            setActivation(false);
+        }
+    }
+
+    private void parseCheckTimeInterval(String interval) throws Exception {
+        if (interval == null || interval.trim().isEmpty()) {
+            interval = "900"; // default 900 seconds (15 minutes)
+        }
+        try {
+            // Try to parse as a long (seconds)
+            long seconds = Long.parseLong(interval.trim());
+            if (seconds <= 0) {
+                throw new IllegalArgumentException("Interval in seconds must be positive");
+            }
+            this.intervalSeconds = seconds;
+            this.useCronExpression = false;
+            this.cronExpression = null;
+
+            if (isVerbose) {
+                plugin.getLogger().info("Goal " + name + " using interval mode: " + seconds + " seconds");
+            }
+
+        } catch (NumberFormatException e) {
+            // Not a number, try parsing as cron expression
+            this.cronExpression = new CronExpression(interval);
+            this.useCronExpression = true;
+
+            if (isVerbose) {
+                plugin.getLogger().info("Goal " + name + " using cron mode: " + interval);
+            }
+        }
     }
 
     // Core file operations
-    private void loadFromFile() {
+    protected void loadFromFile() {
         if (goalFile.exists()) {
             FileConfiguration config = YamlConfiguration.loadConfiguration(goalFile);
             requirements.setTime(config.getLong("requirements.time", Long.MAX_VALUE));
@@ -64,15 +136,23 @@ public class Goal {
             rewardPermissions = new ArrayList<>(config.getStringList("rewards.permissions"));
             rewardCommands = new ArrayList<>(config.getStringList("rewards.commands"));
             active = config.getBoolean("active", false);
+            isRepeatable = config.getBoolean("repeatable", false);
+            checkTimeInterval = config.getString("check-time-interval", "900");
+            checkTimeTimezone = config.getString("check-time-timezone", "server");
+            isVerbose = config.getBoolean("verbose", false);
         } else {
             goalMessage = getDefaultGoalMessage();
             goalSound = getDefaultGoalSound();
             rewardPermissions = new ArrayList<>();
             rewardCommands = new ArrayList<>();
+            isRepeatable = false;
+            checkTimeInterval = "900";
+            checkTimeTimezone = "server";
+            isVerbose = false;
         }
     }
 
-    private void saveToFile() {
+    protected void saveToFile() {
         try {
             if (!goalFile.exists()) {
                 goalFile.getParentFile().mkdirs();
@@ -81,37 +161,83 @@ public class Goal {
 
             FileConfiguration config = new YamlConfiguration();
             config.options().setHeader(Arrays.asList(
-                    "GUIDE OF AVAILABLE OPTIONS:",
-                    "---------------------------",
-                    "goal-sound is played to a player if it reaches the time specified in this config.",
-                    "A list of available sounds can be found here: https://jd.papermc.io/paper/<VERSION>/org/bukkit/Sound.html",
-                    "Replace '<VERSION>' in the link with your current minecraft version. If it doesn't work try with the ",
-                    "latest update of your version (e.g. '1.19' doesn't work and you need to use '1.19.4')",
-                    "---------------------------",
-                    "goal-message is showed to a player if it reaches the time specified in this config.",
-                    "Available placeholders: %TIME_REQUIRED%, %PLAYER_NAME%. %GOAL_NAME%",
-                    "---------------------------",
-                    "active determines whether this goal is enabled and being checked by the plugin",
-                    "Set to 'true' to enable the goal and track player progress",
-                    "Set to 'false' (default option) to disable the goal without deleting it",
-                    "This is useful for:",
-                    "* Temporarily disabling goals without removing them",
-                    "* Testing new goals before making them live",
-                    "* Managing seasonal or event-specific goals",
-                    "---------------------------",
-                    "requirements:",
-                    "  time: Required playtime (in seconds) for the goal to be completed",
-                    "   - Note: if time isn't set, it defaults to a very long number, it is intended!",
-                    "  permissions: List of permissions that the player must have to complete this goal",
-                    "  placeholders: List of placeholder conditions that must be met to complete this goal",
-                    "---------------------------",
-                    "reward:",
-                    "  permissions: Permissions that will be granted to a player when they reach this goal",
-                    "  commands: List of commands that will be executed when a player reaches this goal",
-                    "  Available placeholders in commands: PLAYER_NAME"
-
+                    "active:",
+                    "  - Determines whether this goal is enabled and tracked by the plugin.",
+                    "  - Set to 'true' to enable the goal and track player progress.",
+                    "  - Set to 'false' (default) to disable the goal without deleting it.",
+                    "",
+                    "repeatable:",
+                    "  - Determines whether the goal can be completed multiple times by a player.",
+                    "  - Set to 'true' if players should be able to complete it again after finishing.",
+                    "  - Set to 'false' if it should only be completed once.",
+                    "",
+                    "check-time-interval:",
+                    "  - Defines the completion check time rate for the goal.",
+                    "  - Can be set in two formats:",
+                    "",
+                    "  FORMAT 1 - SECONDS (number only):",
+                    "    - Enter a number representing seconds (e.g., 900 for 15 minutes)",
+                    "    - The check will start immediately after server reload/restart",
+                    "    - Subsequent checks will occur every X seconds from the first check",
+                    "    - Examples: 300 (5 minutes), 900 (15 minutes), 3600 (1 hour)",
+                    "",
+                    "  FORMAT 2 - CRON EXPRESSION:",
+                    "    - Format: <seconds> <minute> <hour> <day-of-month> <month> <day-of-week>",
+                    "    - Checks occur at fixed times regardless of server restarts",
+                    "    - I suggest using this website: https://www.freeformatter.com/cron-expression-generator-quartz.html",
+                    "    - ChatGPT is also helpful - use the keyword 'quartz cron format'",
+                    "    - Examples:",
+                    "      '0 */15 * * * ?' - Every 15 minutes at fixed times (e.g., :00, :15, :30, :45)",
+                    "      '0 0 0 * * ?' - Daily at midnight (00:00)",
+                    "      '0 0 0 ? * MON' - Weekly on Monday at midnight",
+                    "      '0 0 0 1 * ?' - Monthly on the 1st at midnight",
+                    "",
+                    "check-time-timezone:",
+                    "  - Whether to use server timezone or UTC for cron scheduling",
+                    "  - Values: 'server' or 'utc'",
+                    "  - Only applies to cron expressions, not seconds format",
+                    "",
+                    "verbose:",
+                    "  - Enable or disable debug logging in the console for this goal",
+                    "",
+                    "goal-sound:",
+                    "  - The sound played when a player reaches this goal.",
+                    "  - A list of available sounds can be found here:",
+                    "    https://jd.papermc.io/paper/<VERSION>/org/bukkit/Sound.html",
+                    "  - Replace '<VERSION>' with your server's Minecraft version.",
+                    "  - Example: if '1.19' doesn't work, use '1.19.4'.",
+                    "",
+                    "goal-message:",
+                    "  - The message shown to the player when they complete this goal.",
+                    "  - Available placeholders:",
+                    "    %TIME_REQUIRED% → The time needed to complete the goal.",
+                    "    %PLAYER_NAME%   → The player's name.",
+                    "    %GOAL_NAME%     → The name of the goal.",
+                    "",
+                    "requirements.time:",
+                    "  - Required playtime (in seconds) for the goal to be completed.",
+                    "  - If not set, it defaults to a very large number (intended behavior).",
+                    "",
+                    "requirements.permissions:",
+                    "  - A list of permissions the player must have to complete this goal.",
+                    "",
+                    "requirements.placeholders:",
+                    "  - A list of placeholder conditions that must be met to complete this goal.",
+                    "",
+                    "rewards.permissions:",
+                    "  - Permissions that will be granted to the player when they complete the goal.",
+                    "",
+                    "rewards.commands:",
+                    "  - Commands that will be executed when the player completes the goal.",
+                    "  - Available placeholders in commands:",
+                    "    PLAYER_NAME → The player's name.",
+                    ""
             ));
             config.set("active", active);
+            config.set("repeatable", isRepeatable);
+            config.set("check-time-interval", checkTimeInterval);
+            config.set("check-time-timezone", checkTimeTimezone);
+            config.set("verbose", isVerbose);
             config.set("goal-sound", goalSound);
             config.set("goal-message", goalMessage);
             config.set("requirements.time", requirements.getTime());
@@ -130,6 +256,212 @@ public class Goal {
             if (!goalFile.delete()) {
                 plugin.getLogger().warning("Failed to delete goal file for " + name);
             }
+        }
+    }
+
+    public void cancelCheckTask() {
+        if (intervalTask != null) {
+            intervalTask.cancel();
+            intervalTask = null;
+        }
+    }
+
+    public void startCheckTask() {
+        if (useCronExpression) {
+            startCronTask();
+        } else {
+            startIntervalTask();
+        }
+    }
+
+    private void startCronTask() {
+        updateIntervalResetTimes();
+        scheduleNextReset();
+    }
+
+    private void startIntervalTask() {
+        cancelCheckTask();
+
+        long delayInTicks = intervalSeconds * 20L; // Convert seconds to ticks
+
+        intervalTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+                    if (onlineUser != null) {
+                        checkCompletion(onlineUser, player);
+                    }
+                }
+
+                if (isVerbose) {
+                    Map<String, Object> scheduleInfo = getNextSchedule();
+                    plugin.getLogger().info(String.format("Goal %s check completed, next check will occur in %s on %s",
+                            name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
+                }
+            }
+        }.runTaskTimer(plugin, delayInTicks, delayInTicks);
+    }
+
+    private void scheduleNextReset() {
+        cancelCheckTask();
+
+        Date now = new Date();
+        // Add a small buffer (e.g., 1 second) to avoid scheduling for a time that's too close
+        if (nextIntervalReset.getTime() - now.getTime() < 1000) {
+            // Get the next interval after the current nextIntervalReset
+            nextIntervalReset = cronExpression.getNextValidTimeAfter(nextIntervalReset);
+        }
+
+        long delayInMillis = nextIntervalReset.getTime() - now.getTime();
+        long delayInTicks = Math.max(20, delayInMillis / 50); // Min 1 second (20 ticks)
+
+        if (isVerbose) {
+            Map<String, Object> scheduleInfo = getNextSchedule();
+            plugin.getLogger().info(String.format("Goal %s completion check will " +
+                    "occur in %s on %s", name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
+        }
+
+        intervalTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+                    if (onlineUser != null) {
+                        checkCompletion(onlineUser, player);
+                    }
+                }
+
+                // Calculate the next reset time and reschedule
+                Date oldNextReset = nextIntervalReset;
+                updateIntervalResetTimes();
+
+                // Ensure we don't get stuck in a loop if times are too close
+                if (Math.abs(nextIntervalReset.getTime() - oldNextReset.getTime()) < 1000) {
+                    nextIntervalReset = cronExpression.getNextValidTimeAfter(nextIntervalReset);
+                }
+
+                scheduleNextReset(); // Re-run with the updated time
+
+                if (isVerbose) {
+                    Map<String, Object> scheduleInfo = getNextSchedule();
+                    plugin.getLogger().info(String.format("Goal %s check completed, will " +
+                            "occur in %s on %s", name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
+                }
+            }
+        }.runTaskLater(plugin, delayInTicks);
+    }
+
+    private void checkCompletion(OnlineUser onlineUser, Player player) {
+        if (onlineUser.hasCompletedGoal(name) && !isRepeatable) {
+            return;
+        }
+
+        if (getRequirements().checkRequirements(player, onlineUser.getPlaytime())) {
+            processCompletedGoal(onlineUser, player);
+        }
+    }
+
+    private void processCompletedGoal(OnlineUser onlineUser, Player player) {
+        onlineUser.markGoalAsCompleted(name);
+
+        if (plugin.isPermissionsManagerConfigured()) {
+            assignPermissionsForGoal(onlineUser);
+        }
+
+        executeCommands(player);
+        sendGoalMessage(player);
+
+        if(isVerbose){
+            plugin.getLogger().info(String.format("User %s has reached the goal %s which requires %s!",
+                    onlineUser.getNickname(), name,Utils.ticksToFormattedPlaytime(getRequirements().getTime())));
+        }
+
+        playGoalSound(player);
+    }
+
+    private void assignPermissionsForGoal(OnlineUser onlineUser) {
+        List<String> permissions = rewardPermissions;
+        if (permissions != null && !permissions.isEmpty()) {
+            try {
+                LuckPermsManager.getInstance(plugin).assignGoalPermissions(onlineUser.getUuid(), this);
+            } catch (Exception e) {
+                plugin.getLogger().severe(String.format("Failed to assign permissions for goal %s to player %s: %s",
+                        name, onlineUser.getNickname(), e.getMessage()));
+            }
+        }
+    }
+
+    private void executeCommands(Player player) {
+        List<String> commands = rewardCommands;
+        if (commands != null && !commands.isEmpty()) {
+            commands.forEach(command -> {
+                try {
+                    String formattedCommand = formatCommand(command, player);
+                    if (plugin.getConfiguration().getBoolean("goal-check-verbose")) {
+                        plugin.getLogger().info("Executing command: " + formattedCommand);
+                    }
+                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), formattedCommand);
+                } catch (Exception e) {
+                    plugin.getLogger().severe(String.format("Failed to execute command for goal %s: %s",
+                            name, e.getMessage()));
+                }
+            });
+        }
+    }
+
+    private String formatCommand(String command, Player player) {
+        goalMessageReplacements.put("PLAYER_NAME", player.getName());
+        return replacePlaceholders(command).replaceFirst("/", "");
+    }
+
+    private void playGoalSound(Player player) {
+        try {
+            Sound sound = null;
+
+            // Simple direct field access - most efficient when the name matches exactly
+            try {
+                sound = (Sound) Sound.class.getField(goalSound).get(null);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                // Log the actual error for debugging if verbose is enabled
+                if (plugin.getConfiguration().getBoolean("goal-check-verbose")) {
+                    plugin.getLogger().info("Could not find sound directly, attempting fallback: " + e.getMessage());
+                }
+            }
+
+            if (sound != null) {
+                player.playSound(player.getLocation(), sound, 10.0f, 0.0f);
+            } else {
+                plugin.getLogger().warning(String.format("Could not find sound '%s' for goal '%s'",
+                        goalSound, name));
+            }
+        } catch (Exception e) {
+            plugin.getLogger().severe(String.format("Failed to play sound '%s' for goal '%s': %s",
+                    goalSound, name, e.getMessage()));
+        }
+    }
+
+    private void sendGoalMessage(Player player) {
+        goalMessageReplacements.put("%PLAYER_NAME%", player.getName());
+        goalMessageReplacements.put("%TIME_REQUIRED%",
+                getRequirements().getTime() != Long.MAX_VALUE ? Utils.ticksToFormattedPlaytime(requirements.getTime()) : "-");
+        goalMessageReplacements.put("%GOAL_NAME%", name);
+        player.sendMessage(Utils.parseColors(replacePlaceholders(goalMessage)));
+    }
+
+    private String replacePlaceholders(String input) {
+        String result = input;
+        for (Map.Entry<String, String> entry : goalMessageReplacements.entrySet()) {
+            result = result.replace(entry.getKey(), entry.getValue());
+        }
+        goalMessageReplacements.clear();
+        return result;
+    }
+
+    public void updateIntervalResetTimes() {
+        if (useCronExpression && cronExpression != null) {
+            Date now = new Date();
+            nextIntervalReset = cronExpression.getNextValidTimeAfter(now);
         }
     }
 
@@ -163,12 +495,47 @@ public class Goal {
         return active;
     }
 
+    public boolean isRepeatable(){ return isRepeatable; }
+
     public ArrayList<String> getRewardCommands() {
         return rewardCommands;
     }
 
     public ArrayList<String> getRewardPermissions() {
         return rewardPermissions;
+    }
+
+    public Map<String, Object> getNextSchedule() {
+        Map<String, Object> scheduleInfo = new HashMap<>();
+
+        if (active) {
+            if (useCronExpression) {
+                updateIntervalResetTimes();
+                scheduleInfo.put("nextCheck", nextIntervalReset);
+                Date now = new Date();
+                long delayInMillis = nextIntervalReset.getTime() - now.getTime();
+                long delayInTicks = Math.max(20, delayInMillis / 50);
+                scheduleInfo.put("timeRemaining", Utils.ticksToFormattedPlaytime(delayInTicks));
+            } else {
+                if (intervalTask != null && !intervalTask.isCancelled()) {
+                    long intervalTicks = intervalSeconds * 20L;
+                    long currentTick = plugin.getServer().getCurrentTick();
+
+                    // Estimate next run time (this is approximate since we don't store the exact start time)
+                    long ticksSinceStart = currentTick % intervalTicks;
+                    long ticksUntilNext = intervalTicks - ticksSinceStart;
+
+                    Date nextCheck = new Date(System.currentTimeMillis() + (ticksUntilNext * 50));
+                    scheduleInfo.put("nextCheck", nextCheck);
+                    scheduleInfo.put("timeRemaining", Utils.ticksToFormattedPlaytime(ticksUntilNext));
+                }
+            }
+        } else {
+            scheduleInfo.put("nextCheck", null);
+            scheduleInfo.put("timeRemaining", "-");
+        }
+
+        return scheduleInfo;
     }
 
     public void rename(String newName) {
@@ -234,6 +601,36 @@ public class Goal {
         saveToFile();
     }
 
+    public void setRepeatable(boolean repeatable){
+        this.isRepeatable = repeatable;
+        saveToFile();
+    }
+
+    public boolean setCheckTime(String checkTime){
+        try {
+            parseCheckTimeInterval(checkTime);
+
+            if ("utc".equalsIgnoreCase(checkTimeTimezone)) {
+                this.timezone = TimeZone.getTimeZone("UTC");
+            } else {
+                this.timezone = TimeZone.getDefault();
+            }
+
+            if (useCronExpression && cronExpression != null) {
+                this.cronExpression.setTimeZone(timezone);
+            }
+
+            this.checkTimeInterval = checkTime;
+            saveToFile();
+
+            return true;
+        } catch(Exception e) {
+            plugin.getLogger().severe("Failed to set check time for goal " + name + ": " + e.getMessage());
+            setActivation(false);
+            return false;
+        }
+    }
+
     public void addCommand(String command) {
         rewardCommands.add(command);
         saveToFile();
@@ -290,6 +687,19 @@ public class Goal {
         deleteFile();
     }
 
+    // New getter methods for the dual time support
+    public boolean isUsingCronExpression() {
+        return useCronExpression;
+    }
+
+    public long getIntervalSeconds() {
+        return intervalSeconds;
+    }
+
+    public String getCheckTimeInterval() {
+        return checkTimeInterval;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -315,7 +725,8 @@ public class Goal {
                 ", commands=" + rewardCommands.size() +
                 ", message='" + goalMessage + '\'' +
                 ", sound='" + goalSound + '\'' +
+                ", checkMode=" + (useCronExpression ? "cron" : "interval") +
+                ", checkValue=" + (useCronExpression ? checkTimeInterval : intervalSeconds + "s") +
                 '}';
     }
-
 }

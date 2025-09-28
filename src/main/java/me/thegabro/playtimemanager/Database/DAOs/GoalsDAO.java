@@ -21,170 +21,105 @@ public class GoalsDAO {
     }
 
     public void removeGoalFromAllUsers(String goalToRemove) {
-        Connection conn = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        try {
-            conn = dbManager.getConnection();
+        String deleteQuery = "DELETE FROM completed_goals WHERE goal_name = ?";
 
-            // First, get all players who have completed goals
-            ps = conn.prepareStatement("SELECT uuid, completed_goals FROM play_time WHERE completed_goals IS NOT NULL AND completed_goals != '';");
-            rs = ps.executeQuery();
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(deleteQuery)) {
 
-            PreparedStatement updateStmt = conn.prepareStatement("UPDATE play_time SET completed_goals = ? WHERE uuid = ?;");
-
-            while (rs.next()) {
-                String uuid = rs.getString("uuid");
-                String completedGoals = rs.getString("completed_goals");
-
-                if (completedGoals == null || completedGoals.isEmpty()) {
-                    continue;
-                }
-
-                // Convert to ArrayList, remove the goal, and convert back to string
-                ArrayList<String> goals = new ArrayList<>();
-                for (String goal : completedGoals.split(",")) {
-                    String trimmedGoal = goal.trim();
-                    if (!trimmedGoal.isEmpty() && !trimmedGoal.equals(goalToRemove)) {
-                        goals.add(trimmedGoal);
-                    }
-                }
-
-                // Convert back to comma-separated string
-                String updatedGoals = goals.stream()
-                        .map(String::trim)
-                        .filter(goal -> !goal.isEmpty())
-                        .collect(Collectors.joining(","));
-
-                // Update the database
-                updateStmt.setString(1, updatedGoals);
-                updateStmt.setString(2, uuid);
-                updateStmt.executeUpdate();
-            }
-
-            updateStmt.close();
+            ps.setString(1, goalToRemove);
+            ps.executeUpdate();
 
         } catch (SQLException ex) {
             plugin.getLogger().log(Level.SEVERE, "Error removing goal " + goalToRemove + " from all players: " + ex.getMessage());
-        } finally {
-            try {
-                if (rs != null)
-                    rs.close();
-                if (ps != null)
-                    ps.close();
-                if (conn != null)
-                    conn.close();
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
-            }
+        }
+    }
+
+    public void removeAllGoalsFromUser(String uuid) {
+        String deleteQuery = "DELETE FROM completed_goals WHERE uuid = ?";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(deleteQuery)) {
+
+            ps.setString(1, uuid);
+            ps.executeUpdate();
+
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, "Error removing goals from user "+uuid+": " + ex.getMessage());
         }
     }
 
     public ArrayList<String> getCompletedGoals(String uuid) {
-        String query = "SELECT completed_goals FROM play_time WHERE uuid = ?";
+        String query = "SELECT goal_name FROM completed_goals WHERE user_uuid = ? ORDER BY received_at ASC";
         ArrayList<String> goals = new ArrayList<>();
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
 
             stmt.setString(1, uuid);
-            var rs = stmt.executeQuery();
+            ResultSet rs = stmt.executeQuery();
 
-            if (rs.next()) {
-                String completedGoals = rs.getString("completed_goals");
-                if (completedGoals != null && !completedGoals.isEmpty()) {
-                    // Split the goals string into individual goals and add them to the ArrayList
-                    String[] goalsArray = completedGoals.split(",");
-                    for (String goal : goalsArray) {
-                        String trimmedGoal = goal.trim();
-                        if (!trimmedGoal.isEmpty()) {
-                            goals.add(trimmedGoal);
-                        }
-                    }
+            while (rs.next()) {
+                String goalName = rs.getString("goal_name");
+                if (goalName != null && !goalName.trim().isEmpty()) {
+                    goals.add(goalName.trim());
                 }
             }
-            return goals;
 
         } catch (SQLException e) {
-            e.printStackTrace();
-            return goals;
+            plugin.getLogger().log(Level.SEVERE, "Error getting completed goals for UUID " + uuid + ": " + e.getMessage());
+        }
+
+        return goals;
+    }
+
+    public void addCompletedGoal(String uuid, String nickname, String goalName) {
+
+        String insertQuery = "INSERT INTO completed_goals (goal_name, user_uuid, nickname, received_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(insertQuery)) {
+
+            ps.setString(1, goalName.trim());
+            ps.setString(2, uuid);
+            ps.setString(3, nickname);
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Error adding completed goal '" + goalName + "' for UUID " + uuid + ": " + e.getMessage());
         }
     }
 
-    public void updateCompletedGoals(String uuid, ArrayList<String> goals) {
-        String updateQuery = "UPDATE play_time SET completed_goals = ? WHERE uuid = ?";
+    public void removeCompletedGoal(String uuid, String goalName) {
+        String deleteQuery = "DELETE FROM completed_goals WHERE user_uuid = ? AND goal_name = ?";
 
         try (Connection conn = dbManager.getConnection();
-             PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
+             PreparedStatement ps = conn.prepareStatement(deleteQuery)) {
 
-            // Convert ArrayList to comma-separated string, filtering out empty goals
-            String updatedGoals = goals.stream()
-                    .map(String::trim)
-                    .filter(goal -> !goal.isEmpty())
-                    .collect(Collectors.joining(","));
+            ps.setString(1, uuid);
+            ps.setString(2, goalName.trim());
+            int deletedRows = ps.executeUpdate();
 
-            updateStmt.setString(1, updatedGoals);
-            updateStmt.setString(2, uuid);
-            updateStmt.executeUpdate();
+            if (deletedRows > 0) {
+                plugin.getLogger().info("Removed goal '" + goalName + "' from player with UUID: " + uuid);
+            }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.SEVERE, "Error removing completed goal '" + goalName + "' for UUID " + uuid + ": " + e.getMessage());
         }
     }
 
     public void updateGoalName(String oldName, String newName) {
-        Connection conn = null;
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        try {
-            conn = dbManager.getConnection();
+        String updateQuery = "UPDATE completed_goals SET goal_name = ? WHERE goal_name = ?";
 
-            ps = conn.prepareStatement("SELECT uuid, completed_goals FROM play_time WHERE completed_goals IS NOT NULL AND completed_goals != '';");
-            rs = ps.executeQuery();
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(updateQuery)) {
 
-            PreparedStatement updateStmt = conn.prepareStatement("UPDATE play_time SET completed_goals = ? WHERE uuid = ?;");
-
-            while (rs.next()) {
-                String uuid = rs.getString("uuid");
-                String completedGoals = rs.getString("completed_goals");
-
-                if (completedGoals == null || completedGoals.isEmpty()) {
-                    continue;
-                }
-
-                String[] goals = completedGoals.split(",");
-                boolean needsUpdate = false;
-
-                for (int i = 0; i < goals.length; i++) {
-                    if (goals[i].trim().equals(oldName)) {
-                        goals[i] = newName;
-                        needsUpdate = true;
-                    }
-                }
-
-                if (needsUpdate) {
-                    String updatedGoals = String.join(",", goals);
-                    updateStmt.setString(1, updatedGoals);
-                    updateStmt.setString(2, uuid);
-                    updateStmt.executeUpdate();
-                }
-            }
-
-            updateStmt.close();
+            ps.setString(1, newName);
+            ps.setString(2, oldName);
+            ps.executeUpdate();
 
         } catch (SQLException ex) {
             plugin.getLogger().log(Level.SEVERE, "Error updating goal name from " + oldName + " to " + newName + ": " + ex.getMessage());
-        } finally {
-            try {
-                if (rs != null)
-                    rs.close();
-                if (ps != null)
-                    ps.close();
-                if (conn != null)
-                    conn.close();
-            } catch (SQLException ex) {
-                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
-            }
         }
     }
 }

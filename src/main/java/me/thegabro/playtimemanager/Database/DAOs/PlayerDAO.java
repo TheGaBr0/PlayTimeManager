@@ -292,6 +292,12 @@ public class PlayerDAO {
             ps1.setString(2, uuid);
             ps1.executeUpdate();
 
+            // Update completed_goals table
+            ps3 = conn.prepareStatement("UPDATE completed_goals SET nickname = ? WHERE uuid = ?;");
+            ps3.setString(1, newNickname);
+            ps3.setString(2, uuid);
+            ps3.executeUpdate();
+
             // Update received_rewards table
             ps2 = conn.prepareStatement("UPDATE received_rewards SET nickname = ? WHERE user_uuid = ?;");
             ps2.setString(1, newNickname);
@@ -347,6 +353,12 @@ public class PlayerDAO {
             ps1.setString(1, newUUID);
             ps1.setString(2, nickname);
             ps1.executeUpdate();
+
+            // Update completed_goals table
+            ps3 = conn.prepareStatement("UPDATE completed_goals SET user_uuid = ? WHERE nickname = ?;");
+            ps3.setString(1, newUUID);
+            ps3.setString(2, nickname);
+            ps3.executeUpdate();
 
             // Update received_rewards table
             ps2 = conn.prepareStatement("UPDATE received_rewards SET user_uuid = ? WHERE nickname = ?;");
@@ -522,6 +534,80 @@ public class PlayerDAO {
             return null;
         }
         return null;
+    }
+
+    public void resetUserInDatabase(String uuid) {
+        Connection conn = null;
+        try {
+            conn = dbManager.getConnection();
+            conn.setAutoCommit(false); // Start transaction
+
+            // 1. Reset main play_time table
+            String updatePlayTimeQuery = "UPDATE play_time SET " +
+                    "playtime = 0, " +
+                    "artificial_playtime = 0, " +
+                    "afk_playtime = 0, " +
+                    "last_seen = NULL, " +
+                    "first_join = NULL, " +
+                    "relative_join_streak = 0, " +
+                    "absolute_join_streak = 0 " +
+                    "WHERE uuid = ?";
+
+            try (PreparedStatement ps = conn.prepareStatement(updatePlayTimeQuery)) {
+                ps.setString(1, uuid);
+                ps.executeUpdate();
+            }
+
+            // 2. Delete all completed goals
+            String deleteGoalsQuery = "DELETE FROM completed_goals WHERE user_uuid = ?";
+            try (PreparedStatement ps = conn.prepareStatement(deleteGoalsQuery)) {
+                ps.setString(1, uuid);
+                ps.executeUpdate();
+            }
+
+            // 3. Delete all received rewards
+            String deleteReceivedRewardsQuery = "DELETE FROM received_rewards WHERE user_uuid = ?";
+            try (PreparedStatement ps = conn.prepareStatement(deleteReceivedRewardsQuery)) {
+                ps.setString(1, uuid);
+                ps.executeUpdate();
+            }
+
+            // 4. Delete all rewards to be claimed
+            String deleteClaimableRewardsQuery = "DELETE FROM rewards_to_be_claimed WHERE user_uuid = ?";
+            try (PreparedStatement ps = conn.prepareStatement(deleteClaimableRewardsQuery)) {
+                ps.setString(1, uuid);
+                ps.executeUpdate();
+            }
+
+            // 5. Reset any other user-specific data (sessions, etc.)
+            // Add more DELETE/UPDATE statements here as needed
+
+            conn.commit(); // Commit all changes atomically
+
+            plugin.getLogger().info("Successfully reset all data for user: " + uuid);
+
+        } catch (SQLException e) {
+            // Rollback on any error
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                    plugin.getLogger().severe("Database reset failed for user " + uuid + ", rolled back changes: " + e.getMessage());
+                } catch (SQLException rollbackEx) {
+                    plugin.getLogger().severe("Failed to rollback reset transaction for user " + uuid + ": " + rollbackEx.getMessage());
+                }
+            }
+            e.printStackTrace();
+        } finally {
+            // Clean up connection
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true); // Reset auto-commit
+                    conn.close();
+                } catch (SQLException ex) {
+                    plugin.getLogger().severe("Error closing connection after user reset: " + ex.getMessage());
+                }
+            }
+        }
     }
 
 }

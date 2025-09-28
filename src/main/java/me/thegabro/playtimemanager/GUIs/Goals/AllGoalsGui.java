@@ -205,7 +205,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
         chatEventManager.startChatInput(player, (p, message) -> {
             if (!message.equalsIgnoreCase("cancel")) {
                 if(!message.isEmpty()){
-                    new Goal(plugin, message, false);
+                    goalsManager.addGoal(new Goal(plugin, message, false));
                 }
                 player.sendMessage(Utils.parseColors("&aGoal §e" + message + " &ahas been created"));
             } else {

@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager.Updates;
 import me.thegabro.playtimemanager.Configuration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
+import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
 import java.sql.Connection;
@@ -24,6 +25,9 @@ public class Version354to355Updater {
     public void performUpgrade() {
         recreateConfigFile();
         migrateRewardData();
+        migrateGoalData();
+        removeOldColumns();
+        updateGoalData();
     }
 
     private void recreateConfigFile() {
@@ -78,9 +82,7 @@ public class Version354to355Updater {
             rs.close();
             selectStmt.close();
 
-            // After successful migration, remove the old columns
             if (migratedPlayers > 0) {
-                removeOldColumns(connection);
                 plugin.getLogger().info(String.format(
                         "Migration completed successfully! Migrated %d players, %d received rewards, %d claimable rewards",
                         migratedPlayers, totalReceivedRewards, totalClaimableRewards
@@ -91,6 +93,50 @@ public class Version354to355Updater {
 
         } catch (SQLException e) {
             plugin.getLogger().severe("Error during reward data migration: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void migrateGoalData() {
+        plugin.getLogger().info("Starting goal data migration from version 3.5.4 to 3.5.5...");
+
+        try (Connection connection = database.getConnection()) {
+            // Get all players with completed goals
+            String selectQuery = "SELECT uuid, nickname, completed_goals FROM play_time " +
+                    "WHERE completed_goals IS NOT NULL AND completed_goals != ''";
+
+            PreparedStatement selectStmt = connection.prepareStatement(selectQuery);
+            ResultSet rs = selectStmt.executeQuery();
+
+            int migratedPlayers = 0;
+            int totalGoals = 0;
+
+            while (rs.next()) {
+                String uuid = rs.getString("uuid");
+                String nickname = rs.getString("nickname");
+                String completedGoals = rs.getString("completed_goals");
+
+                if (completedGoals != null && !completedGoals.trim().isEmpty()) {
+                    List<String> goalNames = parseGoalString(completedGoals);
+                    int insertedGoals = insertCompletedGoals(connection, uuid, nickname, goalNames);
+                    totalGoals += insertedGoals;
+
+                    if (insertedGoals > 0) {
+                        migratedPlayers++;
+                    }
+                }
+            }
+
+            rs.close();
+            selectStmt.close();
+
+            plugin.getLogger().info(String.format(
+                    "Goal migration completed! Migrated %d players with %d total completed goals",
+                    migratedPlayers, totalGoals
+            ));
+
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Error during goal data migration: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -118,6 +164,18 @@ public class Version354to355Updater {
         return Arrays.stream(rewardStr.split(","))
                 .map(String::trim)
                 .filter(reward -> !reward.isEmpty())
+                .collect(Collectors.toList());
+    }
+
+    private List<String> parseGoalString(String goalStr) {
+        if (goalStr == null || goalStr.trim().isEmpty()) {
+            return List.of();
+        }
+
+        // Split by comma and clean up each goal name
+        return Arrays.stream(goalStr.split(","))
+                .map(String::trim)
+                .filter(goal -> !goal.isEmpty())
                 .collect(Collectors.toList());
     }
 
@@ -222,9 +280,38 @@ public class Version354to355Updater {
         }
     }
 
-    private void removeOldColumns(Connection connection) {
+    private int insertCompletedGoals(Connection connection, String uuid, String nickname, List<String> goalNames) {
+        if (goalNames.isEmpty()) {
+            return 0;
+        }
+
+        try {
+            String insertQuery = "INSERT INTO completed_goals (goal_name, user_uuid, nickname, received_at) " +
+                    "VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
+            PreparedStatement stmt = connection.prepareStatement(insertQuery);
+
+            for (String goalName : goalNames) {
+                stmt.setString(1, goalName);
+                stmt.setString(2, uuid);
+                stmt.setString(3, nickname);
+                stmt.addBatch();
+            }
+
+            int[] results = stmt.executeBatch();
+            stmt.close();
+
+            return results.length;
+
+        } catch (SQLException e) {
+            plugin.getLogger().warning("Error inserting completed goals for UUID " + uuid + ": " + e.getMessage());
+            return 0;
+        }
+    }
+
+    private void removeOldColumns() {
         try {
             // Clean up in case a failed migration left a stale table
+            Connection connection = database.getConnection();
             PreparedStatement dropNewIfExists = connection.prepareStatement("DROP TABLE IF EXISTS play_time_new");
             dropNewIfExists.executeUpdate();
             dropNewIfExists.close();
@@ -235,7 +322,6 @@ public class Version354to355Updater {
                     "playtime BIGINT NOT NULL," +
                     "artificial_playtime BIGINT NOT NULL," +
                     "afk_playtime BIGINT NOT NULL," +
-                    "completed_goals TEXT DEFAULT ''," +
                     "last_seen DATETIME DEFAULT NULL," +
                     "first_join DATETIME DEFAULT NULL," +
                     "relative_join_streak INT DEFAULT 0," +
@@ -248,9 +334,9 @@ public class Version354to355Updater {
             createStmt.close();
 
             String copyDataQuery = "INSERT INTO play_time_new " +
-                    "(uuid, nickname, playtime, artificial_playtime, afk_playtime, completed_goals, " +
+                    "(uuid, nickname, playtime, artificial_playtime, afk_playtime, " +
                     "last_seen, first_join, relative_join_streak, absolute_join_streak) " +
-                    "SELECT uuid, nickname, playtime, artificial_playtime, afk_playtime, completed_goals, " +
+                    "SELECT uuid, nickname, playtime, artificial_playtime, afk_playtime, " +
                     "last_seen, first_join, relative_join_streak, absolute_join_streak " +
                     "FROM play_time";
 
@@ -270,5 +356,11 @@ public class Version354to355Updater {
             plugin.getLogger().severe("Error removing old columns / adding new column: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    public void updateGoalData(){
+        GoalsManager goalsManager = GoalsManager.getInstance();
+        goalsManager.initialize(plugin);
+        goalsManager.goalsUpdater();
     }
 }

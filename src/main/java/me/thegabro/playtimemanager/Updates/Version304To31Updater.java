@@ -130,18 +130,31 @@ public class Version304To31Updater {
         Configuration.getInstance().updateConfig(true);
     }
 
+    private static class UserData {
+        String nickname;
+        long playtime;
+        ArrayList<String> completedGoals;
+
+        UserData(String nickname, long playtime, ArrayList<String> completedGoals) {
+            this.nickname = nickname;
+            this.playtime = playtime;
+            this.completedGoals = completedGoals;
+        }
+    }
+
     private void migrateUserGoalData() {
-        // Map to store user data: UUID -> [playtime, completed goals list]
-        Map<String, Object[]> userData = new HashMap<>();
+        // Map to store user data: UUID -> UserData
+        Map<String, UserData> userData = new HashMap<>();
 
         // Get all users from database
-        String selectUsersQuery = "SELECT uuid, playtime, completed_goals FROM play_time";
+        String selectUsersQuery = "SELECT uuid, nickname, playtime, completed_goals FROM play_time";
         try (Connection conn = database.getConnection();
              PreparedStatement stmt = conn.prepareStatement(selectUsersQuery);
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
                 String uuid = rs.getString("uuid");
+                String nickname = rs.getString("nickname");
                 long userPlaytime = rs.getLong("playtime");
                 String completedGoalsStr = rs.getString("completed_goals");
 
@@ -152,7 +165,7 @@ public class Version304To31Updater {
                 }
 
                 // Store user data in the map
-                userData.put(uuid, new Object[]{userPlaytime, completedGoals});
+                userData.put(uuid, new UserData(nickname, userPlaytime, completedGoals));
             }
         } catch (SQLException e) {
             plugin.getLogger().severe("Error retrieving user data: " + e.getMessage());
@@ -179,26 +192,25 @@ public class Version304To31Updater {
             long goalTime = goalConfig.getLong("time", 0);
 
             // Check each user against this goal
-            for (Map.Entry<String, Object[]> entry : userData.entrySet()) {
+            for (Map.Entry<String, UserData> entry : userData.entrySet()) {
                 String uuid = entry.getKey();
-                long userPlaytime = (long) entry.getValue()[0];
-                @SuppressWarnings("unchecked")
-                ArrayList<String> completedGoals = (ArrayList<String>) entry.getValue()[1];
+                UserData user = entry.getValue();
 
                 // Add goal if user meets the time requirement and hasn't already completed it
-                if (userPlaytime >= goalTime && !completedGoals.contains(goalName)) {
-                    completedGoals.add(goalName);
+                if (user.playtime >= goalTime && !user.completedGoals.contains(goalName)) {
+                    user.completedGoals.add(goalName);
                 }
             }
         }
 
         // Update database for all users with modified goal lists
-        for (Map.Entry<String, Object[]> entry : userData.entrySet()) {
+        for (Map.Entry<String, UserData> entry : userData.entrySet()) {
             String uuid = entry.getKey();
-            @SuppressWarnings("unchecked")
-            ArrayList<String> completedGoals = (ArrayList<String>) entry.getValue()[1];
+            UserData user = entry.getValue();
 
-            database.getGoalsDAO().updateCompletedGoals(uuid, completedGoals);
+            for(String completedGoal : user.completedGoals){
+                database.getGoalsDAO().addCompletedGoal(uuid, user.nickname, completedGoal);
+            }
         }
     }
 

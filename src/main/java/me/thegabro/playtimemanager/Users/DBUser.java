@@ -281,7 +281,7 @@ public class DBUser {
      */
     public void markGoalAsCompleted(String goalName){
         completedGoals.add(goalName);
-        db.getGoalsDAO().updateCompletedGoals(uuid, completedGoals);
+        db.getGoalsDAO().addCompletedGoal(uuid, nickname, goalName);
     }
 
     /**
@@ -291,7 +291,7 @@ public class DBUser {
      */
     public void unmarkGoalAsCompleted(String goalName){
         completedGoals.remove(goalName);
-        db.getGoalsDAO().updateCompletedGoals(uuid, completedGoals);
+        db.getGoalsDAO().removeCompletedGoal(uuid, goalName);
     }
 
     /**
@@ -551,17 +551,7 @@ public class DBUser {
         this.receivedRewards.clear();
         this.rewardsToBeClaimed.clear();
 
-        // Update all values in database
-        // TODO: optimize with a single transaction
-        db.getPlayerDAO().updatePlaytime(uuid, 0);
-        db.getPlayerDAO().updateAFKPlaytime(uuid, 0);
-        db.getPlayerDAO().updateArtificialPlaytime(uuid, 0);
-        db.getGoalsDAO().updateCompletedGoals(uuid, completedGoals);
-        db.getPlayerDAO().updateLastSeen(uuid, null);
-        db.getPlayerDAO().updateFirstJoin(uuid, null);
-        db.getStreakDAO().setRelativeJoinStreak(uuid, 0);
-        db.getStreakDAO().setAbsoluteJoinStreak(uuid, 0);
-        db.getStreakDAO().resetAllUserRewards(uuid);
+        db.getPlayerDAO().resetUserInDatabase(uuid);
     }
 
     /**
@@ -611,6 +601,6 @@ public class DBUser {
      */
     public void resetGoals() {
         this.completedGoals.clear();
-        db.getGoalsDAO().updateCompletedGoals(uuid, completedGoals);
+        db.getGoalsDAO().removeAllGoalsFromUser(uuid);
     }
 }

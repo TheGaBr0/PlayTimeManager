@@ -41,8 +41,9 @@ public class Goal {
     private TimeZone timezone;
     private final DatabaseHandler db = DatabaseHandler.getInstance();
     private BukkitTask intervalTask;
-    private Date nextIntervalReset;
+    private Date nextIntervalCheckCron;
     private final Map<String, String> goalMessageReplacements;
+    private Date nextIntervalCheck; // Track next check time for interval mode
 
 
     private boolean useCronExpression = true; // true for cron, false for seconds
@@ -275,50 +276,25 @@ public class Goal {
     }
 
     private void startCronTask() {
-        updateIntervalResetTimes();
         scheduleNextReset();
+        if (isVerbose) {
+            Map<String, Object> scheduleInfo = getNextSchedule();
+            plugin.getLogger().info(String.format("Goal %s completion next check will " +
+                    "occur in %s on %s", name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
+        }
     }
 
     private void startIntervalTask() {
         cancelCheckTask();
 
-        long delayInTicks = intervalSeconds * 20L; // Convert seconds to ticks
+        long delayInTicks = intervalSeconds * 20L;
 
-        intervalTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
-                    if (onlineUser != null) {
-                        checkCompletion(onlineUser, player);
-                    }
-                }
+        // Set the initial next check time
+        nextIntervalCheck = new Date(System.currentTimeMillis() + (intervalSeconds * 1000));
 
-                if (isVerbose) {
-                    Map<String, Object> scheduleInfo = getNextSchedule();
-                    plugin.getLogger().info(String.format("Goal %s check completed, next check will occur in %s on %s",
-                            name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
-                }
-            }
-        }.runTaskTimer(plugin, delayInTicks, delayInTicks);
-    }
-
-    private void scheduleNextReset() {
-        cancelCheckTask();
-
-        Date now = new Date();
-        // Add a small buffer (e.g., 1 second) to avoid scheduling for a time that's too close
-        if (nextIntervalReset.getTime() - now.getTime() < 1000) {
-            // Get the next interval after the current nextIntervalReset
-            nextIntervalReset = cronExpression.getNextValidTimeAfter(nextIntervalReset);
-        }
-
-        long delayInMillis = nextIntervalReset.getTime() - now.getTime();
-        long delayInTicks = Math.max(20, delayInMillis / 50); // Min 1 second (20 ticks)
-
-        if (isVerbose) {
+        if (isVerbose && intervalTask == null) {
             Map<String, Object> scheduleInfo = getNextSchedule();
-            plugin.getLogger().info(String.format("Goal %s completion check will " +
+            plugin.getLogger().info(String.format("Goal %s completion next check will " +
                     "occur in %s on %s", name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
         }
 
@@ -332,13 +308,42 @@ public class Goal {
                     }
                 }
 
-                // Calculate the next reset time and reschedule
-                Date oldNextReset = nextIntervalReset;
-                updateIntervalResetTimes();
+                // Update next check time AFTER completing the check
+                nextIntervalCheck = new Date(System.currentTimeMillis() + (intervalSeconds * 1000));
 
-                // Ensure we don't get stuck in a loop if times are too close
-                if (Math.abs(nextIntervalReset.getTime() - oldNextReset.getTime()) < 1000) {
-                    nextIntervalReset = cronExpression.getNextValidTimeAfter(nextIntervalReset);
+                if (isVerbose) {
+                    Map<String, Object> scheduleInfo = getNextSchedule();
+                    plugin.getLogger().info(String.format("Goal %s check completed, next check will occur in %s on %s",
+                            name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
+                }
+            }
+        }.runTaskTimer(plugin, delayInTicks, delayInTicks);
+    }
+
+    private void scheduleNextReset() {
+        cancelCheckTask();
+
+        Date oldSchedule;
+
+        if(nextIntervalCheckCron == null)
+            oldSchedule = new Date();
+        else
+            oldSchedule = nextIntervalCheckCron;
+
+        nextIntervalCheckCron = cronExpression.getNextValidTimeAfter(oldSchedule);
+
+        long delayInMillis = nextIntervalCheckCron.getTime() - oldSchedule.getTime();
+
+        long delayInTicks = Math.max(20, delayInMillis / 50); // Min 1 second (20 ticks)
+
+        intervalTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+                    if (onlineUser != null) {
+                        checkCompletion(onlineUser, player);
+                    }
                 }
 
                 scheduleNextReset(); // Re-run with the updated time
@@ -458,13 +463,6 @@ public class Goal {
         return result;
     }
 
-    public void updateIntervalResetTimes() {
-        if (useCronExpression && cronExpression != null) {
-            Date now = new Date();
-            nextIntervalReset = cronExpression.getNextValidTimeAfter(now);
-        }
-    }
-
     // Default values
     private String getDefaultGoalSound() {
         return "ENTITY_PLAYER_LEVELUP";
@@ -509,27 +507,13 @@ public class Goal {
         Map<String, Object> scheduleInfo = new HashMap<>();
 
         if (active) {
-            if (useCronExpression) {
-                updateIntervalResetTimes();
-                scheduleInfo.put("nextCheck", nextIntervalReset);
-                Date now = new Date();
-                long delayInMillis = nextIntervalReset.getTime() - now.getTime();
-                long delayInTicks = Math.max(20, delayInMillis / 50);
-                scheduleInfo.put("timeRemaining", Utils.ticksToFormattedPlaytime(delayInTicks));
-            } else {
-                if (intervalTask != null && !intervalTask.isCancelled()) {
-                    long intervalTicks = intervalSeconds * 20L;
-                    long currentTick = plugin.getServer().getCurrentTick();
+            Date now = new Date();
+            Date nextCheck = useCronExpression ? nextIntervalCheckCron : nextIntervalCheck;
+            long delayInMillis = nextCheck.getTime() - now.getTime();
+            long delayInTicks = Math.max(20, delayInMillis / 50);
 
-                    // Estimate next run time (this is approximate since we don't store the exact start time)
-                    long ticksSinceStart = currentTick % intervalTicks;
-                    long ticksUntilNext = intervalTicks - ticksSinceStart;
-
-                    Date nextCheck = new Date(System.currentTimeMillis() + (ticksUntilNext * 50));
-                    scheduleInfo.put("nextCheck", nextCheck);
-                    scheduleInfo.put("timeRemaining", Utils.ticksToFormattedPlaytime(ticksUntilNext));
-                }
-            }
+            scheduleInfo.put("nextCheck", nextCheck);
+            scheduleInfo.put("timeRemaining", Utils.ticksToFormattedPlaytime(delayInTicks));
         } else {
             scheduleInfo.put("nextCheck", null);
             scheduleInfo.put("timeRemaining", "-");

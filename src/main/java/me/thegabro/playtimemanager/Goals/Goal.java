@@ -1,5 +1,9 @@
 package me.thegabro.playtimemanager.Goals;
 
+import com.cronutils.descriptor.CronDescriptor;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -15,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.quartz.CronExpression;
+
 
 import java.io.File;
 import java.io.IOException;
@@ -34,10 +39,11 @@ public class Goal {
     private String goalSound;
     private boolean active;
     private boolean isRepeatable;
-    private String checkTimeInterval;
+    private String completionCheckInterval;
     private String checkTimeTimezone;
     private boolean isVerbose;
     private CronExpression cronExpression;
+    private String checkTimeToText;
     private TimeZone timezone;
     private final DatabaseHandler db = DatabaseHandler.getInstance();
     private BukkitTask intervalTask;
@@ -76,7 +82,7 @@ public class Goal {
 
     private void validateConfiguration() {
         try {
-            parseCheckTimeInterval(checkTimeInterval);
+            parseCheckTimeInterval(completionCheckInterval);
 
             if ("utc".equalsIgnoreCase(checkTimeTimezone)) {
                 this.timezone = TimeZone.getTimeZone("UTC");
@@ -87,7 +93,6 @@ public class Goal {
             if (useCronExpression && cronExpression != null) {
                 this.cronExpression.setTimeZone(timezone);
             }
-
             saveToFile();
 
         } catch(Exception e) {
@@ -118,11 +123,12 @@ public class Goal {
             // Not a number, try parsing as cron expression
             this.cronExpression = new CronExpression(interval);
             this.useCronExpression = true;
-
             if (isVerbose) {
                 plugin.getLogger().info("Goal " + name + " using cron mode: " + interval);
             }
         }
+
+        translateCheckTimeToText();
     }
 
     // Core file operations
@@ -138,7 +144,7 @@ public class Goal {
             rewardCommands = new ArrayList<>(config.getStringList("rewards.commands"));
             active = config.getBoolean("active", false);
             isRepeatable = config.getBoolean("repeatable", false);
-            checkTimeInterval = config.getString("check-time-interval", "900");
+            completionCheckInterval = config.getString("check-time-interval", "900");
             checkTimeTimezone = config.getString("check-time-timezone", "server");
             isVerbose = config.getBoolean("verbose", false);
         } else {
@@ -147,7 +153,7 @@ public class Goal {
             rewardPermissions = new ArrayList<>();
             rewardCommands = new ArrayList<>();
             isRepeatable = false;
-            checkTimeInterval = "900";
+            completionCheckInterval = "900";
             checkTimeTimezone = "server";
             isVerbose = false;
         }
@@ -237,7 +243,7 @@ public class Goal {
             ));
             config.set("active", active);
             config.set("repeatable", isRepeatable);
-            config.set("check-time-interval", checkTimeInterval);
+            config.set("check-time-interval", completionCheckInterval);
             config.set("check-time-timezone", checkTimeTimezone);
             config.set("verbose", isVerbose);
             config.set("goal-sound", goalSound);
@@ -463,6 +469,70 @@ public class Goal {
         return result;
     }
 
+    public void translateCheckTimeToText() {
+
+        if(useCronExpression){
+            try {
+                CronParser parser = new CronParser(
+                        CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ)
+                );
+
+                var cron = parser.parse(this.cronExpression.toString());
+                cron.validate();
+
+                CronDescriptor descriptor = CronDescriptor.instance(Locale.ENGLISH);
+                this.checkTimeToText = descriptor.describe(cron);
+
+            } catch (Exception e) {
+                this.checkTimeToText = "Invalid Quartz cron expression";
+            }
+        }else{
+            this.checkTimeToText = "every " + Utils.ticksToFormattedPlaytime(intervalSeconds*20L);
+        }
+    }
+
+    public void rename(String newName) {
+        File oldFile = this.goalFile;
+
+        for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
+            user.unmarkGoalAsCompleted(name);
+            user.markGoalAsCompleted(newName);
+        }
+
+        this.name = newName;
+
+        File newFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + newName + ".yml");
+
+        try {
+            // Create parent directories if they don't exist
+            if (!newFile.getParentFile().exists()) {
+                newFile.getParentFile().mkdirs();
+            }
+
+            // If old file exists, move it to new location
+            if (oldFile.exists()) {
+                if (!oldFile.renameTo(newFile)) {
+                    // If rename fails, try to copy and delete
+                    YamlConfiguration config = YamlConfiguration.loadConfiguration(oldFile);
+                    config.save(newFile);
+                    oldFile.delete();
+                }
+            }
+
+            // Save to ensure all data is current
+            saveToFile();
+
+            // Update the name in the database for all users
+            //TODO: async
+            db.getGoalsDAO().updateGoalName(oldFile.getName().replace(".yml", ""), newName);
+
+            oldFile.delete();
+
+        } catch (IOException e) {
+            plugin.getLogger().severe("Could not rename goal file from " + oldFile.getName() + " to " + newFile.getName() + ": " + e.getMessage());
+        }
+    }
+
     // Default values
     private String getDefaultGoalSound() {
         return "ENTITY_PLAYER_LEVELUP";
@@ -515,53 +585,12 @@ public class Goal {
             scheduleInfo.put("nextCheck", nextCheck);
             scheduleInfo.put("timeRemaining", Utils.ticksToFormattedPlaytime(delayInTicks));
         } else {
-            scheduleInfo.put("nextCheck", null);
+            scheduleInfo.put("nextCheck", "-");
             scheduleInfo.put("timeRemaining", "-");
-        }
 
+        }
+        scheduleInfo.put("timeCheckToText", checkTimeToText);
         return scheduleInfo;
-    }
-
-    public void rename(String newName) {
-        File oldFile = this.goalFile;
-
-        for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
-            user.unmarkGoalAsCompleted(name);
-            user.markGoalAsCompleted(newName);
-        }
-
-        this.name = newName;
-
-        File newFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + newName + ".yml");
-
-        try {
-            // Create parent directories if they don't exist
-            if (!newFile.getParentFile().exists()) {
-                newFile.getParentFile().mkdirs();
-            }
-
-            // If old file exists, move it to new location
-            if (oldFile.exists()) {
-                if (!oldFile.renameTo(newFile)) {
-                    // If rename fails, try to copy and delete
-                    YamlConfiguration config = YamlConfiguration.loadConfiguration(oldFile);
-                    config.save(newFile);
-                    oldFile.delete();
-                }
-            }
-
-            // Save to ensure all data is current
-            saveToFile();
-
-            // Update the name in the database for all users
-            //TODO: async
-            db.getGoalsDAO().updateGoalName(oldFile.getName().replace(".yml", ""), newName);
-
-            oldFile.delete();
-
-        } catch (IOException e) {
-            plugin.getLogger().severe("Could not rename goal file from " + oldFile.getName() + " to " + newFile.getName() + ": " + e.getMessage());
-        }
     }
 
     // Setters and modifiers
@@ -617,7 +646,7 @@ public class Goal {
                 this.cronExpression.setTimeZone(timezone);
             }
 
-            this.checkTimeInterval = checkTime;
+            this.completionCheckInterval = checkTime;
             saveToFile();
 
             return true;
@@ -692,8 +721,8 @@ public class Goal {
         return intervalSeconds;
     }
 
-    public String getCheckTimeInterval() {
-        return checkTimeInterval;
+    public String getCompletionCheckInterval() {
+        return completionCheckInterval;
     }
 
     @Override
@@ -722,7 +751,7 @@ public class Goal {
                 ", message='" + goalMessage + '\'' +
                 ", sound='" + goalSound + '\'' +
                 ", checkMode=" + (useCronExpression ? "cron" : "interval") +
-                ", checkValue=" + (useCronExpression ? checkTimeInterval : intervalSeconds + "s") +
+                ", checkValue=" + (useCronExpression ? completionCheckInterval : intervalSeconds + "s") +
                 '}';
     }
 }

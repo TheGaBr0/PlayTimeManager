@@ -103,6 +103,9 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text("§7The next completion check will occur in §e"+ scheduleInfo.get("timeRemaining") +
                         "§7 on §e"+scheduleInfo.get("nextCheck")),
                 Component.text(""),
+                Component.text("§7Completion check time is currently set to: §e"+goal.getCompletionCheckInterval()),
+                Component.text("§7which means it will occur §e"+scheduleInfo.get("timeCheckToText")),
+                Component.text(""),
                 Component.text("§7Click to change when the next check occurs")
 
         ));
@@ -263,7 +266,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         player.closeInventory();
 
         // Header with goal name
-        Component header = Utils.parseColors("&6&l✎ Edit Next Check for: &e" + goal.getName());
+        Component header = Utils.parseColors("&6&l✎ Edit Completion Check Interval for: &e" + goal.getName());
 
         // Divider for visual separation
         Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
@@ -298,18 +301,31 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
                 if(success){
                     Map<String, Object> scheduleInfo = goal.getNextSchedule();
-                    Component response = Utils.parseColors(
+
+                    Component response1 = Utils.parseColors(
+                            "&7Completion check interval updated to occur\n&e"+
+                                    scheduleInfo.get("timeCheckToText")
+                    );
+
+                    Component response2 = Utils.parseColors(
                                 "&7Changes apply after the next check which will occur in "+ scheduleInfo.get("timeRemaining") +
                                         " on "+scheduleInfo.get("nextCheck")+".\n"+
                                 "&7Use &e/ptreload &7to apply it now."
                     );
 
-                    player.sendMessage(Utils.parseColors("&aNext completion check updated!"));
+                    player.sendMessage(response1);
+                    player.sendMessage(response2);
+                }else{
+                    Component response = Utils.parseColors(
+                            "&7Couldn't update completion check interval since\n&e"+
+                                    message+" &7is not a valid input."
+                    );
                     player.sendMessage(response);
+
                 }
 
             } else {
-                player.sendMessage(Utils.parseColors("&cNext completion check update cancelled"));
+                player.sendMessage(Utils.parseColors("&cCompletion check interval update cancelled"));
             }
 
             // Reopen the GUI
@@ -317,7 +333,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         });
 
     }
-
+    //TODO: Implement a generic method for message editors
     private void openMessageEditor(Player player) {
         player.closeInventory();
 

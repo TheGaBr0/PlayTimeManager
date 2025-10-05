@@ -32,12 +32,14 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
     private static final class Slots {
+        static final int COMPLETION_CHECK = 4;
         static final int GOAL_REWARDS = 19;
         static final int GOAL_REQUIREMENTS = 21;
         static final int GOAL_MESSAGE = 23;
         static final int GOAL_SOUND = 25;
         static final int UNCOMPLETE_GOAL = 36;
-        static final int GOAL_ACTIVATION_STATUS = 40;
+        static final int GOAL_ACTIVATION_STATUS = 39;
+        static final int GOAL_REPEATABLE_STATUS = 41;
         static final int BACK_BUTTON = 44;
     }
 
@@ -94,7 +96,16 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
             lore.add(Component.text("§4§lWARNING: §cNo permissions plugin detected!"));
             lore.add(Component.text("§cPermissions will not be assigned"));
         }
+        Map<String, Object> scheduleInfo = goal.getNextSchedule();
+        inventory.setItem(Slots.COMPLETION_CHECK, createGuiItem(
+                Material.COMPASS,
+                Component.text("§e§lCompletion check settings"),
+                Component.text("§7The next completion check will occur in §e"+ scheduleInfo.get("timeRemaining") +
+                        "§7 on §e"+scheduleInfo.get("nextCheck")),
+                Component.text(""),
+                Component.text("§7Click to change when the next check occurs")
 
+        ));
 
         inventory.setItem(Slots.GOAL_REWARDS, createGuiItem(
                 Material.CHEST_MINECART,
@@ -108,7 +119,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
         ));
 
-        // Message button
         inventory.setItem(Slots.GOAL_MESSAGE, createGuiItem(
                 Material.OAK_SIGN,
                 Component.text("§e§lGoal Message"),
@@ -117,7 +127,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text("§7Right-click to display the message")
         ));
 
-        // Sound button
         inventory.setItem(Slots.GOAL_SOUND, createGuiItem(
                 Material.NOTE_BLOCK,
                 Component.text("§e§lGoal Sound"),
@@ -127,14 +136,18 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text("§7Right click to play the sound.")
         ));
 
-        // Activation status button
+        inventory.setItem(Slots.GOAL_REPEATABLE_STATUS, createGuiItem(
+                goal.isRepeatable() ? Material.LIME_DYE : Material.GRAY_DYE,
+                Component.text(goal.isRepeatable() ? "§a§lGoal repeatable" : "§c§lGoal not repeatable"),
+                Component.text("§7Click to make this goal " + (goal.isActive() ? "not " : "") + "repeatable")
+        ));
+
         inventory.setItem(Slots.GOAL_ACTIVATION_STATUS, createGuiItem(
                 goal.isActive() ? Material.GREEN_CONCRETE : Material.RED_CONCRETE,
                 Component.text(goal.isActive() ? "§a§lGoal Active" : "§c§lGoal Inactive"),
                 Component.text("§7Click to " + (goal.isActive() ? "deactivate" : "activate") + " this goal")
         ));
 
-        // Delete button
         inventory.setItem(Slots.GOAL_REQUIREMENTS, createGuiItem(
                 Material.PAPER,
                 Component.text("§c§lRequirements"),
@@ -146,7 +159,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text("§7Click to manage requirements")
         ));
 
-        // Add uncomplete goal button
         inventory.setItem(Slots.UNCOMPLETE_GOAL, createGuiItem(
                 Material.PLAYER_HEAD,
                 Component.text("§e§lUncomplete Goal for Player"),
@@ -155,7 +167,6 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text("§7from a specific player")
         ));
 
-        // Back button
         inventory.setItem(Slots.BACK_BUTTON, createGuiItem(
                 Material.MAGENTA_GLAZED_TERRACOTTA,
                 Component.text("§e§lBack")
@@ -195,6 +206,12 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
         switch (slot) {
 
+            case Slots.COMPLETION_CHECK:
+                if (clickType == ClickType.LEFT) {
+                    openCompletionCheckEditor(player);
+                }
+                break;
+
             case Slots.GOAL_MESSAGE:
                 if (clickType == ClickType.LEFT) {
                     openMessageEditor(player);
@@ -217,6 +234,11 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 new GoalRewardsGui(goal, this).openInventory(player);
                 break;
 
+            case Slots.GOAL_REPEATABLE_STATUS:
+                goal.setRepeatable(!goal.isRepeatable());
+                initializeItems();
+                break;
+
             case Slots.GOAL_ACTIVATION_STATUS:
                 goal.setActivation(!goal.isActive());
                 initializeItems();
@@ -235,6 +257,65 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 handleBackButton(player);
                 break;
         }
+    }
+
+    private void openCompletionCheckEditor(Player player) {
+        player.closeInventory();
+
+        // Header with goal name
+        Component header = Utils.parseColors("&6&l✎ Edit Next Check for: &e" + goal.getName());
+
+        // Divider for visual separation
+        Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+
+        // Instructions with formatting
+        Component instructions = Utils.parseColors(
+                "&7Set how often the goal is checked.&r\n" +
+                        "&7• Use one of the following formats:\n"+
+                        "&e • SECONDS &7(e.g. 900) or a\n"+
+                        "&e • CRON expression&7 (e.g. 0 */15 * * * ?).\n"+
+                        "&7• Type &c&ocancel&r&7 to exit\n" +
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7For more info regarding the issue and workarounds."
+        );
+
+
+        Component fullMessage = Component.empty()
+                .append(header)
+                .append(Component.newline())
+                .append(divider)
+                .append(Component.newline())
+                .append(Component.newline())
+                .append(instructions)
+                .append(Component.newline())
+                .append(divider);
+
+        player.sendMessage(fullMessage);
+
+        chatEventManager.startChatInput(player, (p, message) -> {
+            if (!message.equalsIgnoreCase("cancel")) {
+                boolean success = goal.setCheckTime(message);
+
+                if(success){
+                    Map<String, Object> scheduleInfo = goal.getNextSchedule();
+                    Component response = Utils.parseColors(
+                                "&7Changes apply after the next check which will occur in "+ scheduleInfo.get("timeRemaining") +
+                                        " on "+scheduleInfo.get("nextCheck")+".\n"+
+                                "&7Use &e/ptreload &7to apply it now."
+                    );
+
+                    player.sendMessage(Utils.parseColors("&aNext completion check updated!"));
+                    player.sendMessage(response);
+                }
+
+            } else {
+                player.sendMessage(Utils.parseColors("&cNext completion check update cancelled"));
+            }
+
+            // Reopen the GUI
+            reopenMainGui(player);
+        });
+
     }
 
     private void openMessageEditor(Player player) {

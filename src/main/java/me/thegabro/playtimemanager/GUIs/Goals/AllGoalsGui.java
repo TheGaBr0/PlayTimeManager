@@ -87,6 +87,10 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                                 .append(Component.text(goal.isActive() ? "true" : "false")
                                         .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
                                 .decoration(TextDecoration.ITALIC, false),
+                        Utils.parseColors("§7Repeatable: ")
+                                .append(Component.text(goal.isRepeatable() ? "true" : "false")
+                                        .color(goal.isRepeatable() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
+                                .decoration(TextDecoration.ITALIC, false),
                         Utils.parseColors("§e" + goal.getRewardPermissions().size() + "§7 " + (goal.getRewardPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
                         Utils.parseColors("§e" + goal.getRewardCommands().size() + "§7 " + (goal.getRewardCommands().size() != 1 ? "commands loaded" : "command loaded")),
                         Utils.parseColors(""),

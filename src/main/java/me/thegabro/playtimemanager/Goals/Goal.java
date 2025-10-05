@@ -206,7 +206,8 @@ public class Goal {
                     "  - A list of available sounds can be found here:",
                     "    https://jd.papermc.io/paper/<VERSION>/org/bukkit/Sound.html",
                     "  - Replace '<VERSION>' with your server's Minecraft version.",
-                    "  - Example: if '1.19' doesn't work, use '1.19.4'.",
+                    "  - N.B. If your current version doesn’t work, use the latest patch of the same major version. ",
+                    "    E.g. '1.19' doesn't work, use '1.19.4'.",
                     "",
                     "goal-message:",
                     "  - The message shown to the player when they complete this goal.",
@@ -279,13 +280,12 @@ public class Goal {
         scheduleNextReset();
         if (isVerbose) {
             Map<String, Object> scheduleInfo = getNextSchedule();
-            plugin.getLogger().info(String.format("Goal %s completion next check will " +
+            plugin.getLogger().info(String.format("Next Goal %s completion check " +
                     "occur in %s on %s", name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
         }
     }
 
     private void startIntervalTask() {
-        cancelCheckTask();
 
         long delayInTicks = intervalSeconds * 20L;
 
@@ -294,7 +294,7 @@ public class Goal {
 
         if (isVerbose && intervalTask == null) {
             Map<String, Object> scheduleInfo = getNextSchedule();
-            plugin.getLogger().info(String.format("Goal %s completion next check will " +
+            plugin.getLogger().info(String.format("Next Goal %s completion check will " +
                     "occur in %s on %s", name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
         }
 
@@ -581,7 +581,20 @@ public class Goal {
     }
 
     public void setActivation(boolean activation) {
+
         this.active = activation;
+
+        if(activation){
+            startCheckTask();
+            if(isVerbose)
+                plugin.getLogger().info("Goal "+name+" has been activated");
+        }
+        else{
+            cancelCheckTask();
+            if(isVerbose)
+                plugin.getLogger().info("Goal "+name+" has been deactivated");
+        }
+
         saveToFile();
     }
 
@@ -609,7 +622,6 @@ public class Goal {
 
             return true;
         } catch(Exception e) {
-            plugin.getLogger().severe("Failed to set check time for goal " + name + ": " + e.getMessage());
             setActivation(false);
             return false;
         }

@@ -78,7 +78,7 @@ public class LuckPermsManager {
         try {
             Group group = luckPermsApi.getGroupManager().getGroup(groupName);
             if (group == null) {
-                plugin.getLogger().warning("Group not found: " + groupName);
+                plugin.getLogger().warning("LuckPerms group not found: " + groupName);
                 return;
             }
 

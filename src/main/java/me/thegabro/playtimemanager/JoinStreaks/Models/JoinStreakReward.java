@@ -95,6 +95,8 @@ public class JoinStreakReward {
                     "reward-sound is played to a player if it reaches the join streak specified in this config.",
                     "A list of available sounds can be found here: https://jd.papermc.io/paper/<VERSION>/org/bukkit/Sound.html",
                     "Replace '<VERSION>' in the link with your current minecraft version.",
+                    "N.B. If your current version doesn’t work, use the latest patch of the same major version. ",
+                    "E.g. '1.19' doesn't work, use '1.19.4'.",
                     "---------------------------",
                     "reward-message is showed to a player if it reaches the join streak specified in this config.",
                     "Available placeholders: %REQUIRED_JOINS%, %PLAYER_NAME%",

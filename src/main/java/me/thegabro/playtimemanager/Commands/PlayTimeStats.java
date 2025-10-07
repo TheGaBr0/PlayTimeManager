@@ -18,9 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class PlayTimeStats implements CommandExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
@@ -136,8 +134,15 @@ public class PlayTimeStats implements CommandExecutor {
         if (user.getCompletedGoals().isEmpty()) {
             sender.sendMessage(Utils.parseColors("&7No goals completed yet"));
         } else {
-            for (String goal : user.getCompletedGoals()) {
-                sender.sendMessage(Utils.parseColors("&7- &e" + goal));
+
+            ArrayList<String> completedGoals = user.getCompletedGoals();
+            Map<String, Integer> goalsCount = new LinkedHashMap<>();
+            for (String name : completedGoals) {
+                goalsCount.put(name, goalsCount.getOrDefault(name, 0) + 1);
+            }
+
+            for (Map.Entry<String, Integer> entry : goalsCount.entrySet()) {
+                sender.sendMessage(Utils.parseColors("&7- &e" + entry.getKey() + "&7(&e" + entry.getValue() + "&7)"));
             }
         }
 

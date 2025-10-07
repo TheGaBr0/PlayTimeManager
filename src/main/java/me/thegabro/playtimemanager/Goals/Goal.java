@@ -651,7 +651,6 @@ public class Goal {
 
             return true;
         } catch(Exception e) {
-            setActivation(false);
             return false;
         }
     }

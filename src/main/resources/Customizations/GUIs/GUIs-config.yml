@@ -122,7 +122,7 @@ player-stats-gui:
 
   goals-settings:
     # This setting controls how goals are formatted when using the %GOALS_LIST% placeholder
-    list-format: "&7• &e%GOAL%"
+    list-format: "&7• &e%GOAL% &7(&e%GOAL_COMPLETED_TIMES%)"
 
   leaderboard-settings:
     # Fallback message shown when %POSITION% placeholder is used for unranked players

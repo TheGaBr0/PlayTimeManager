@@ -497,11 +497,15 @@ public class PlayerStatsGui extends BaseCustomGUI {
      */
     private void createStatItem(int slot, String materialString, String rawName, List<String> loreConfig, String itemType, @Nullable OfflinePlayer offlinePlayer) {
         List<Component> lore = new ArrayList<>();
-
+        List<Component> lineComponents;
         // Process lore with placeholders
         for (String loreLine : loreConfig) {
+
             String processedLine = processPlaceholders(loreLine, itemType, offlinePlayer);
-            lore.add(Utils.parseColors(processedLine));
+
+            lineComponents = Utils.formatLore(processedLine);
+
+            lore.addAll(lineComponents);
         }
 
         // Process name with placeholders
@@ -685,17 +689,31 @@ public class PlayerStatsGui extends BaseCustomGUI {
             case "goals":
                 // Handle goal list placeholders - display in rows of 3
                 ArrayList<String> completedGoals = subject.getCompletedGoals();
+
+                Map<String, Integer> goalsCount = new LinkedHashMap<>();
+
+                for (String name : completedGoals) {
+                    goalsCount.put(name, goalsCount.getOrDefault(name, 0) + 1);
+                }
+
                 StringBuilder goalsList = new StringBuilder();
 
-                for (int i = 0; i < completedGoals.size(); i++) {
+                String goalFormat = config.getOrDefaultString("player-stats-gui.goals-settings.list-format", "&7- &e%GOAL%");
+                int i = 0;
+                for (Map.Entry<String, Integer> entry : goalsCount.entrySet()) {
                     if (i > 0 && i % 3 == 0) {
-                        goalsList.append("\n"); // New line every 3 goals
+                        goalsList.append("/n");
                     } else if (i > 0) {
                         goalsList.append(" "); // Space between goals on same line
                     }
 
-                    String goalFormat = config.getOrDefaultString("player-stats-gui.goals-settings.list-format", "&7- &e%GOAL%");
-                    goalsList.append(goalFormat.replace("%GOAL%", completedGoals.get(i)));
+                    goalsList.append(
+                            goalFormat
+                                    .replace("%GOAL%", entry.getKey())
+                                    .replace("%GOAL_COMPLETED_TIMES%", String.valueOf(entry.getValue()))
+                    );
+
+                    i++;
                 }
 
                 combinations.put("%GOALS_LIST%", goalsList.toString());

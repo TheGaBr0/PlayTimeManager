@@ -7,11 +7,14 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class Utils {
@@ -444,6 +447,29 @@ public class Utils {
         message = message.replaceAll("\\s+", " ");
 
         return message;
+    }
+
+
+    /**
+     * Formats a raw lore string into a list of colored lines for Minecraft item lore.
+     * Splits the input string by /n characters and applies color formatting to each line.
+     *
+     * @param rawLore The raw lore string containing /n separators and color codes
+     * @return A list of formatted strings ready to be used with ItemMeta.setLore()
+     */
+    public static List<Component> formatLore(String rawLore) {
+        if (rawLore == null || rawLore.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String[] lines = rawLore.split("/n");
+        List<Component> formattedLore = new ArrayList<>();
+
+        for (String line : lines) {
+            formattedLore.add(parseColors(line));
+        }
+
+        return formattedLore;
     }
 
 

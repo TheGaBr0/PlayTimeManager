@@ -31,11 +31,11 @@ import java.util.*;
 
 public class RewardsInfoGui extends BaseCustomGUI {
 
+    //TODO: refactor how internal placeholders are handled
     private final Inventory inv;
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
-    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final GUIsConfiguration config;
     private final boolean isOwner;
     private final DBUser subject;

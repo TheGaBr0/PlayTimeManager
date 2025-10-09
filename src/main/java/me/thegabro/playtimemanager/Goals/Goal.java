@@ -268,10 +268,10 @@ public class Goal {
     }
 
     public void cancelCheckTask() {
-        if (completionCheckTask != null) {
+        if (completionCheckTask != null && !completionCheckTask.isCancelled()) {
             completionCheckTask.cancel();
-            completionCheckTask = null;
         }
+        completionCheckTask = null;
     }
 
     public void restartCompletionCheckTask() {
@@ -290,7 +290,6 @@ public class Goal {
 
         // Set the initial next check time
         nextIntervalCheck = new Date(System.currentTimeMillis() + (intervalSeconds * 1000));
-
 
         completionCheckTask = new BukkitRunnable() {
             @Override

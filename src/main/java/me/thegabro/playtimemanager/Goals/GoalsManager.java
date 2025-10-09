@@ -52,6 +52,11 @@ public class GoalsManager {
     }
 
     public void clearGoals() {
+
+        for(Goal g : goals){ //IMPORTANT
+            g.cancelCheckTask();
+        }
+
         goals.clear();
     }
 

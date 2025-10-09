@@ -4,6 +4,7 @@ import me.thegabro.playtimemanager.GUIs.Goals.AllGoalsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
@@ -16,7 +17,7 @@ import java.util.*;
 
 public class PlaytimeGoal implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final String[] SUBCOMMANDS = {"create", "remove", "rename"};  // Added "create" subcommand
+    private final String[] SUBCOMMANDS = {"create", "remove", "rename", "checknow"};  // Added "create" subcommand
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
 
@@ -66,6 +67,14 @@ public class PlaytimeGoal implements TabExecutor {
                 String oldName = args[1];
                 String newName = args[2];
                 renameGoal(sender, oldName, newName);
+                break;
+            case "checknow":
+                if (args.length < 2) {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Usage: /playtimegoal checknow <goalname>"));
+                    return false;
+                }
+                goalName = args[1];
+                checkNow(sender, goalName);
                 break;
             default:
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Subcommand " + subCommand + " is not valid."));
@@ -138,10 +147,34 @@ public class PlaytimeGoal implements TabExecutor {
 
             // Switch back to main thread for UI updates and schedule changes
             Bukkit.getScheduler().runTask(plugin, () -> {
-                onlineUsersManager.startGoalCheckSchedule();
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " The goal &e" + goalName + " &7has been removed!"));
             });
         });
+    }
+
+    private void checkNow(CommandSender sender, String goalName){
+        Goal goal = goalsManager.getGoal(goalName);
+        if (goal == null) {
+            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " The goal &e" + goalName + " &7doesn't exist!"));
+            return;
+        }
+
+        goal.cancelCheckTask();
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+            if (onlineUser != null) {
+                goal.checkCompletion(onlineUser, player);
+            }
+        }
+
+        if (goal.isVerbose()) {
+            Map<String, Object> scheduleInfo = goal.getNextSchedule();
+            plugin.getLogger().info(String.format("Goal %s check completed, will " +
+                    "occur in %s on %s", goal.getName(), scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
+        }
+
+        goal.restartCompletionCheckTask();
     }
 
     @Override
@@ -154,7 +187,8 @@ public class PlaytimeGoal implements TabExecutor {
         }
 
         if (args.length == 2) {
-            if(args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("rename")) {
+            if(args[0].equalsIgnoreCase("remove") || args[0].equalsIgnoreCase("rename")
+                    || args[0].equalsIgnoreCase("checknow")) {
                 StringUtil.copyPartialMatches(args[1], goalsManager.getGoalsNames(), completions);
             }
             return completions;

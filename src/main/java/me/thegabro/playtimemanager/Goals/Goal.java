@@ -41,12 +41,12 @@ public class Goal {
     private boolean isRepeatable;
     private String completionCheckInterval;
     private String checkTimeTimezone;
-    private boolean isVerbose;
+    private boolean verbose;
     private CronExpression cronExpression;
     private String checkTimeToText;
     private TimeZone timezone;
     private final DatabaseHandler db = DatabaseHandler.getInstance();
-    private BukkitTask intervalTask;
+    private BukkitTask completionCheckTask;
     private Date nextIntervalCheckCron;
     private final Map<String, String> goalMessageReplacements;
     private Date nextIntervalCheck; // Track next check time for interval mode
@@ -115,20 +115,20 @@ public class Goal {
             this.useCronExpression = false;
             this.cronExpression = null;
 
-            if (isVerbose) {
-                plugin.getLogger().info("Goal " + name + " using interval mode: " + seconds + " seconds");
-            }
-
         } catch (NumberFormatException e) {
             // Not a number, try parsing as cron expression
             this.cronExpression = new CronExpression(interval);
             this.useCronExpression = true;
-            if (isVerbose) {
-                plugin.getLogger().info("Goal " + name + " using cron mode: " + interval);
-            }
         }
 
         translateCheckTimeToText();
+        if (verbose) {
+            if(active){
+                plugin.getLogger().info("Goal " + name + " completion check will occur "+ checkTimeToText);
+            }else{
+                plugin.getLogger().info("Goal " + name + " completion set to occur "+ checkTimeToText + " when the goal will be reactivated");
+            }
+        }
     }
 
     // Core file operations
@@ -146,7 +146,7 @@ public class Goal {
             isRepeatable = config.getBoolean("repeatable", false);
             completionCheckInterval = config.getString("check-time-interval", "900");
             checkTimeTimezone = config.getString("check-time-timezone", "server");
-            isVerbose = config.getBoolean("verbose", false);
+            verbose = config.getBoolean("verbose", false);
         } else {
             goalMessage = getDefaultGoalMessage();
             goalSound = getDefaultGoalSound();
@@ -155,7 +155,7 @@ public class Goal {
             isRepeatable = false;
             completionCheckInterval = "900";
             checkTimeTimezone = "server";
-            isVerbose = false;
+            verbose = false;
         }
     }
 
@@ -245,7 +245,7 @@ public class Goal {
             config.set("repeatable", isRepeatable);
             config.set("check-time-interval", completionCheckInterval);
             config.set("check-time-timezone", checkTimeTimezone);
-            config.set("verbose", isVerbose);
+            config.set("verbose", verbose);
             config.set("goal-sound", goalSound);
             config.set("goal-message", goalMessage);
             config.set("requirements.time", requirements.getTime());
@@ -268,43 +268,31 @@ public class Goal {
     }
 
     public void cancelCheckTask() {
-        if (intervalTask != null) {
-            intervalTask.cancel();
-            intervalTask = null;
+        if (completionCheckTask != null) {
+            completionCheckTask.cancel();
+            completionCheckTask = null;
         }
     }
 
-    public void startCheckTask() {
+    public void restartCompletionCheckTask() {
+        cancelCheckTask();
         if (useCronExpression) {
-            startCronTask();
+            startCronCompletionCheck();
         } else {
-            startIntervalTask();
+            startSecondsCompletionCheck();
         }
     }
 
-    private void startCronTask() {
-        scheduleNextReset();
-        if (isVerbose) {
-            Map<String, Object> scheduleInfo = getNextSchedule();
-            plugin.getLogger().info(String.format("Next Goal %s completion check " +
-                    "occur in %s on %s", name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
-        }
-    }
 
-    private void startIntervalTask() {
+    private void startSecondsCompletionCheck() {
 
         long delayInTicks = intervalSeconds * 20L;
 
         // Set the initial next check time
         nextIntervalCheck = new Date(System.currentTimeMillis() + (intervalSeconds * 1000));
 
-        if (isVerbose && intervalTask == null) {
-            Map<String, Object> scheduleInfo = getNextSchedule();
-            plugin.getLogger().info(String.format("Next Goal %s completion check will " +
-                    "occur in %s on %s", name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
-        }
 
-        intervalTask = new BukkitRunnable() {
+        completionCheckTask = new BukkitRunnable() {
             @Override
             public void run() {
                 for (Player player : Bukkit.getOnlinePlayers()) {
@@ -317,7 +305,7 @@ public class Goal {
                 // Update next check time AFTER completing the check
                 nextIntervalCheck = new Date(System.currentTimeMillis() + (intervalSeconds * 1000));
 
-                if (isVerbose) {
+                if (verbose) {
                     Map<String, Object> scheduleInfo = getNextSchedule();
                     plugin.getLogger().info(String.format("Goal %s check completed, next check will occur in %s on %s",
                             name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
@@ -326,15 +314,10 @@ public class Goal {
         }.runTaskTimer(plugin, delayInTicks, delayInTicks);
     }
 
-    private void scheduleNextReset() {
-        cancelCheckTask();
-
+    private void startCronCompletionCheck() {
         Date oldSchedule;
 
-        if(nextIntervalCheckCron == null)
-            oldSchedule = new Date();
-        else
-            oldSchedule = nextIntervalCheckCron;
+        oldSchedule = Objects.requireNonNullElseGet(nextIntervalCheckCron, Date::new);
 
         nextIntervalCheckCron = cronExpression.getNextValidTimeAfter(oldSchedule);
 
@@ -342,7 +325,7 @@ public class Goal {
 
         long delayInTicks = Math.max(20, delayInMillis / 50); // Min 1 second (20 ticks)
 
-        intervalTask = new BukkitRunnable() {
+        completionCheckTask = new BukkitRunnable() {
             @Override
             public void run() {
                 for (Player player : Bukkit.getOnlinePlayers()) {
@@ -352,24 +335,26 @@ public class Goal {
                     }
                 }
 
-                scheduleNextReset(); // Re-run with the updated time
+                restartCompletionCheckTask(); // Re-run with the updated time
 
-                if (isVerbose) {
+                if (verbose) {
                     Map<String, Object> scheduleInfo = getNextSchedule();
-                    plugin.getLogger().info(String.format("Goal %s check completed, will " +
+                    plugin.getLogger().info(String.format("Goal %s check completed, next check will " +
                             "occur in %s on %s", name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
                 }
             }
         }.runTaskLater(plugin, delayInTicks);
     }
 
-    private void checkCompletion(OnlineUser onlineUser, Player player) {
+    public void checkCompletion(OnlineUser onlineUser, Player player) {
         if (onlineUser.hasCompletedGoal(name) && !isRepeatable) {
             return;
         }
 
         if (getRequirements().checkRequirements(player, onlineUser.getPlaytime())) {
-            processCompletedGoal(onlineUser, player);
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                processCompletedGoal(onlineUser, player);
+            });
         }
     }
 
@@ -383,7 +368,7 @@ public class Goal {
         executeCommands(player);
         sendGoalMessage(player);
 
-        if(isVerbose){
+        if(verbose){
             plugin.getLogger().info(String.format("User %s has reached the goal %s which requires %s!",
                     onlineUser.getNickname(), name,Utils.ticksToFormattedPlaytime(getRequirements().getTime())));
         }
@@ -563,6 +548,10 @@ public class Goal {
         return active;
     }
 
+    public boolean isVerbose(){
+        return verbose;
+    }
+
     public boolean isRepeatable(){ return isRepeatable; }
 
     public ArrayList<String> getRewardCommands() {
@@ -576,9 +565,10 @@ public class Goal {
     public Map<String, Object> getNextSchedule() {
         Map<String, Object> scheduleInfo = new HashMap<>();
 
-        if (active) {
+        Date nextCheck = useCronExpression ? nextIntervalCheckCron : nextIntervalCheck;
+
+        if (active && nextCheck != null) {
             Date now = new Date();
-            Date nextCheck = useCronExpression ? nextIntervalCheckCron : nextIntervalCheck;
             long delayInMillis = nextCheck.getTime() - now.getTime();
             long delayInTicks = Math.max(20, delayInMillis / 50);
 
@@ -614,13 +604,13 @@ public class Goal {
         this.active = activation;
 
         if(activation){
-            startCheckTask();
-            if(isVerbose)
+            restartCompletionCheckTask();
+            if(verbose)
                 plugin.getLogger().info("Goal "+name+" has been activated");
         }
         else{
             cancelCheckTask();
-            if(isVerbose)
+            if(verbose)
                 plugin.getLogger().info("Goal "+name+" has been deactivated");
         }
 
@@ -707,6 +697,7 @@ public class Goal {
 
     public void kill() {
         goalsManager.removeGoal(this);
+        cancelCheckTask();
         DBUsersManager.getInstance().removeGoalFromAllUsers(name);
         deleteFile();
     }

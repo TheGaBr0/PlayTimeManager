@@ -303,18 +303,21 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                     Map<String, Object> scheduleInfo = goal.getNextSchedule();
 
                     Component response1 = Utils.parseColors(
-                            "&7Completion check interval updated to occur\n&e"+
-                                    scheduleInfo.get("timeCheckToText")
+                            "&7Completion check interval updated to occur &e"+ scheduleInfo.get("timeCheckToText")
                     );
-
-                    Component response2 = Utils.parseColors(
-                                "&7Changes apply after the next check which will occur in "+ scheduleInfo.get("timeRemaining") +
-                                        " on "+scheduleInfo.get("nextCheck")+".\n"+
-                                "&7Use &e/ptreload &7to apply it now."
-                    );
-
                     player.sendMessage(response1);
-                    player.sendMessage(response2);
+                    if(goal.isActive()){
+                        Component response2 = Utils.parseColors(
+                                "&7Changes apply after the next check which will occur in &e"+ scheduleInfo.get("timeRemaining") +
+                                        "&7 on &e"+scheduleInfo.get("nextCheck")+"&7.\n"+
+                                        "&7Use &e/ptreload &7to apply them now."
+                        );
+                        player.sendMessage(response2);
+                    }else{
+                        Component response2 = Utils.parseColors(
+                                "&7Remember that the goal is currently &cinactive!");
+                        player.sendMessage(response2);
+                    }
                 }else{
                     Component response = Utils.parseColors(
                             "&7Couldn't update completion check interval since\n&e"+

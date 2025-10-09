@@ -55,7 +55,6 @@ public class PlaytimeReload implements CommandExecutor {
             onlineUsersManager.loadOnlineUsers();
 
 
-            // Restart LuckPerms schedule if applicable
             onlineUsersManager.startGoalCheckSchedule();
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Goal check schedule has been restarted"));
 

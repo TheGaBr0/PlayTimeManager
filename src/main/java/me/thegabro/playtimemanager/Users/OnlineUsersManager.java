@@ -77,7 +77,7 @@ public class OnlineUsersManager {
         Set<Goal> goals = goalsManager.getGoals();
         for(Goal g : goals){
             if(g.isActive()){
-                g.startCheckTask();
+                g.restartCompletionCheckTask();
             }
         }
 

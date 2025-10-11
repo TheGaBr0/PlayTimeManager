@@ -1,5 +1,9 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
+import com.cronutils.descriptor.CronDescriptor;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
@@ -25,6 +29,7 @@ public class CycleScheduler {
     private DatabaseHandler db = DatabaseHandler.getInstance();
     private BukkitTask intervalTask;
     private final Set<String> playersJoinedDuringCurrentCycle = new HashSet<>();
+    private String checkTimeToText;
 
     public CycleScheduler() {}
 
@@ -37,8 +42,11 @@ public class CycleScheduler {
 
         long intervalMillis = secondTrigger.getTime() - firstTrigger.getTime();
         exactIntervalSeconds = intervalMillis / 1000;
+        translateCheckTimeToText();
 
-        updateIntervalResetTimes();
+        nextIntervalReset = null;
+
+        scheduleNextReset();
     }
 
     private void validateConfiguration() {
@@ -75,32 +83,39 @@ public class CycleScheduler {
         }
     }
 
-    public void updateIntervalResetTimes() {
-        Date now = new Date();
-        nextIntervalReset = cronExpression.getNextValidTimeAfter(now);
-    }
+    public void translateCheckTimeToText() {
+        try {
+            CronParser parser = new CronParser(
+                    CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ)
+            );
 
-    public void startIntervalTask() {
-        updateIntervalResetTimes();
-        scheduleNextReset();
+            var cron = parser.parse(this.cronExpression.toString());
+            cron.validate();
+
+            CronDescriptor descriptor = CronDescriptor.instance(Locale.ENGLISH);
+            this.checkTimeToText = descriptor.describe(cron);
+
+        } catch (Exception e) {
+            this.checkTimeToText = "Invalid Quartz cron expression";
+        }
     }
 
     private void scheduleNextReset() {
         cancelIntervalTask();
 
+        Date oldSchedule;
+
+        oldSchedule = Objects.requireNonNullElseGet(nextIntervalReset, Date::new);
+
+        nextIntervalReset = cronExpression.getNextValidTimeAfter(oldSchedule);
+
+        long delayInMillis = nextIntervalReset.getTime() - oldSchedule.getTime();
+
+        long delayInTicks = Math.max(20, delayInMillis / 50); // Min 1 second (20 ticks)
+
         if (JoinStreaksManager.getInstance().getRewardRegistry().isEmpty() && plugin.getConfiguration().getBoolean("streak-check-verbose")) {
             plugin.getLogger().info("No active rewards found, but scheduler will continue running to track absolute join streaks.");
         }
-
-        Date now = new Date();
-        // Add a small buffer (e.g., 1 second) to avoid scheduling for a time that's too close
-        if (nextIntervalReset.getTime() - now.getTime() < 1000) {
-            // Get the next interval after the current nextIntervalReset
-            nextIntervalReset = cronExpression.getNextValidTimeAfter(nextIntervalReset);
-        }
-
-        long delayInMillis = nextIntervalReset.getTime() - now.getTime();
-        long delayInTicks = Math.max(20, delayInMillis / 50); // Min 1 second (20 ticks)
 
         if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
             plugin.getLogger().info("Next join streak interval reset scheduled for: " + nextIntervalReset +
@@ -111,19 +126,8 @@ public class CycleScheduler {
             @Override
             public void run() {
                 playersJoinedDuringCurrentCycle.clear();
-
                 JoinStreaksManager.getInstance().resetMissingPlayerStreaks();
-
-                // Calculate the next reset time and reschedule
-                Date oldNextReset = nextIntervalReset;
-                updateIntervalResetTimes();
-
-                // Ensure we don't get stuck in a loop if times are too close
-                if (Math.abs(nextIntervalReset.getTime() - oldNextReset.getTime()) < 1000) {
-                    nextIntervalReset = cronExpression.getNextValidTimeAfter(nextIntervalReset);
-                }
-
-                scheduleNextReset(); // Re-run with the updated time
+                scheduleNextReset();
             }
         }.runTaskLater(plugin, delayInTicks);
     }
@@ -158,7 +162,6 @@ public class CycleScheduler {
     }
 
     public Map<String, Object> getNextSchedule() {
-        updateIntervalResetTimes();
 
         Map<String, Object> scheduleInfo = new HashMap<>();
 
@@ -173,13 +176,14 @@ public class CycleScheduler {
             scheduleInfo.put("nextReset", null);
             scheduleInfo.put("timeRemaining", "-");
         }
-
+        scheduleInfo.put("timeCheckToText", checkTimeToText);
         return scheduleInfo;
     }
 
     public void updateOnReload() {
         // Update interval reset times first to ensure accurate cycle information
-        updateIntervalResetTimes();
+        Date now = new Date();
+        nextIntervalReset = cronExpression.getNextValidTimeAfter(now);
 
         // Recalculate if we're in the same cycle as when we last tracked
         if (!isCurrentCycle()) {

@@ -67,7 +67,7 @@ public class PlaytimeReload implements CommandExecutor {
 
             // Only start the task if it's enabled in config
             if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
-                joinStreaksManager.getCycleScheduler().startIntervalTask();
+                joinStreaksManager.getCycleScheduler().getNextSchedule();
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Join streak check schedule has been restarted"));
             }
 

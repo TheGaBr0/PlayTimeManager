@@ -2,7 +2,6 @@ package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
@@ -54,7 +53,7 @@ public class JoinStreaksManager {
         cycleScheduler.initialize();
 
         if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
-            cycleScheduler.startIntervalTask();
+            cycleScheduler.getNextSchedule();
         }
     }
 
@@ -120,7 +119,7 @@ public class JoinStreaksManager {
                 return false;
             }
 
-            cycleScheduler.startIntervalTask();
+            cycleScheduler.getNextSchedule();
             messageService.sendScheduleActivationMessage(sender, true);
 
             Map<String, Object> scheduleInfo = cycleScheduler.getNextSchedule();

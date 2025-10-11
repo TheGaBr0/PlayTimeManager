@@ -54,7 +54,7 @@ check-for-updates: true
 # If you want to use Purpur base afk detection, you need to:
 # - Set player-idle-timeout field greater than 0 (minutes) in server.properties
 # - Set player.idle-timeout.kick-if-idle field to false in purpur.yml
-# The purpur option works for Leaf servers as well.
+# The purpur option works for Leaf and LightSpigot servers as well.
 #
 #Using a different afk detection system? Let me know on my GitHub issues page!
 afk-detection-plugin: "essentials"

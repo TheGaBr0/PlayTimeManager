@@ -98,6 +98,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             }
         }
 
+        Map<String, Object> scheduleInfo = rewardsManager.getCycleScheduler().getNextSchedule();
         inv.setItem(INFO, createGuiItem(
                 Material.COMPASS,
                 Utils.parseColors("&e&lSystem Information"),
@@ -116,7 +117,11 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                         (rewardsManager.getRewardRegistry().getLastRewardByJoins() != null ? rewardsManager.getRewardRegistry().getLastRewardByJoins().getId() : "-")),
                 Utils.parseColors("&7which requires &e"+
                         (rewardsManager.getRewardRegistry().getLastRewardByJoins() != null ? rewardsManager.getRewardRegistry().getLastRewardByJoins().getMaxRequiredJoins() : "-")
-                        +" &7consecutive joins to complete")
+                        +" &7consecutive joins to complete"),
+                Utils.parseColors(""),
+                Utils.parseColors("§7Join streak reset time is currently set to: §e"+plugin.getConfiguration().getString("streak-reset-schedule")),
+                Utils.parseColors("§7which means it will occur §e"+scheduleInfo.get("timeCheckToText")),
+                Utils.parseColors("")
         ));
         protectedSlots.add(CREATE_REWARD);
 

@@ -308,34 +308,48 @@ public class DBUsersManager {
         db.getStreakDAO().removeRewardFromAllUsers(mainInstanceID);
     }
 
-    public void getAllDBUsersAsync(Consumer<List<DBUser>> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            // Fetch all nicknames (DB call)
-            List<String> nicknames = db.getPlayerDAO().getAllNicknames();
+    /**
+     * Updates the nickname in cache when a player changes their name.
+     * Must be called from the main thread.
+     *
+     * @param uuid The player's UUID
+     * @param oldNickname The old nickname to remove from index
+     * @param newNickname The new nickname to add to index
+     */
+    public void updateNicknameInCache(String uuid, String oldNickname, String newNickname) {
+        if (oldNickname != null) {
+            nicknameToUuidCache.remove(oldNickname.toLowerCase());
+        }
 
-            // Convert each nickname to a DBUser asynchronously
-            List<CompletableFuture<DBUser>> futures = nicknames.stream()
-                    .map(nickname -> {
-                        CompletableFuture<DBUser> future = new CompletableFuture<>();
-                        getUserFromNicknameAsyncWithContext(nickname, "getAllDBUsers", future::complete);
-                        return future;
-                    })
-                    .toList();
+        DBUser cachedUser = userCache.get(uuid);
+        if (cachedUser != null) {
+            nicknameToUuidCache.put(newNickname.toLowerCase(), uuid);
+        }
 
-            // Combine all futures
-            CompletableFuture
-                    .allOf(futures.toArray(new CompletableFuture[0]))
-                    .thenRunAsync(() -> {
-                        // Collect results
-                        List<DBUser> users = futures.stream()
-                                .map(CompletableFuture::join)
-                                .filter(Objects::nonNull)
-                                .collect(Collectors.toList());
+        if (plugin.CACHE_DEBUG) {
+            plugin.getLogger().info("Updated nickname in cache: " + oldNickname + " -> " + newNickname + " for UUID: " + uuid);
+        }
+    }
 
-                        // Return the final list safely on the main thread
-                        Bukkit.getScheduler().runTask(plugin, () -> callback.accept(users));
-                    });
-        });
+    /**
+     * Updates the UUID in cache when a player's UUID changes (rare case).
+     * Must be called from the main thread.
+     *
+     * @param oldUUID The old UUID to remove
+     * @param newUUID The new UUID to add
+     * @param nickname The player's nickname
+     */
+    public void updateUUIDInCache(String oldUUID, String newUUID, String nickname) {
+        DBUser user = userCache.remove(oldUUID);
+        if (user != null) {
+            userCache.put(newUUID, user);
+        }
+
+        nicknameToUuidCache.put(nickname.toLowerCase(), newUUID);
+
+        if (plugin.CACHE_DEBUG) {
+            plugin.getLogger().info("Updated UUID in cache: " + oldUUID + " -> " + newUUID + " for nickname: " + nickname);
+        }
     }
 
     public List<String> getPlayersHiddenFromLeaderBoard(){

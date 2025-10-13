@@ -464,19 +464,29 @@ public class DBUser {
     /**
      * Handles user mapping logic for UUID and nickname consistency.
      * Updates database records when UUID or nickname changes are detected.
+     * Also updates caches to maintain consistency.
      * Must be called from an async context.
      */
     private void userMapping() {
         boolean uuidExists = db.getPlayerDAO().playerExists(uuid);
         String existingNickname = uuidExists ? db.getPlayerDAO().getNickname(uuid) : null;
         String existingUUID = db.getPlayerDAO().getUUIDFromNickname(nickname);
+        DBUsersManager dbUsersManager = DBUsersManager.getInstance();
 
         if (uuidExists) {
             if (!nickname.equals(existingNickname)) {
                 db.getPlayerDAO().updateNickname(uuid, nickname);
+
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    dbUsersManager.updateNicknameInCache(uuid, existingNickname, nickname);
+                });
             }
         } else if (existingUUID != null) {
             db.getPlayerDAO().updateUUID(uuid, nickname);
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                dbUsersManager.updateUUIDInCache(existingUUID, uuid, nickname);
+            });
         } else {
             db.getPlayerDAO().addNewPlayer(uuid, nickname, fromServerOnJoinPlayTime);
         }

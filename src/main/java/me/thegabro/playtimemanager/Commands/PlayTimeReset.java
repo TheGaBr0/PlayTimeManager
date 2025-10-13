@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -22,13 +23,14 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 public class PlayTimeReset {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
-
+    private final DatabaseHandler db = DatabaseHandler.getInstance();
     // Map to store pending confirmations with a timestamp
     private static final Map<UUID, PendingReset> pendingResets = new HashMap<>();
     // Timeout for confirmation (60 seconds)
@@ -116,57 +118,60 @@ public class PlayTimeReset {
      * Reset server playtime statistics for a player
      */
     public void resetPlayerServerPlaytime(CommandSender sender, String playerName) {
-        DBUser user = getValidatedUser(sender, playerName);
-        if (user == null) return;
+        getValidatedUser(sender, playerName, user -> {
+            if (user == null) return;
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            long resetPlaytime = 0;
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                long resetPlaytime = 0;
 
-            // Reset for online player
-            if (user instanceof OnlineUser) {
-                Player p = Bukkit.getPlayerExact(playerName);
-                if (p != null) {
-                    resetPlaytime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
-                    p.setStatistic(Statistic.PLAY_ONE_MINUTE, 0);
-                    ((OnlineUser) user).refreshFromServerOnJoinPlayTime();
-                }
-            }
-            // Reset for offline player
-            else {
-                OfflinePlayer p = Bukkit.getOfflinePlayer(playerName);
-                if (p.hasPlayedBefore()) {
-                    try {
+                // Reset for online player
+                if (user instanceof OnlineUser) {
+                    Player p = Bukkit.getPlayerExact(playerName);
+                    if (p != null) {
                         resetPlaytime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
                         p.setStatistic(Statistic.PLAY_ONE_MINUTE, 0);
-                    } catch (Exception e) {
-                        plugin.getLogger().warning("Failed to reset server playtime for offline player: " + playerName);
+                        ((OnlineUser) user).refreshFromServerOnJoinPlayTime();
                     }
                 }
-            }
+                // Reset for offline player
+                else {
+                    OfflinePlayer p = Bukkit.getOfflinePlayer(playerName);
+                    if (p.hasPlayedBefore()) {
+                        try {
+                            resetPlaytime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
+                            p.setStatistic(Statistic.PLAY_ONE_MINUTE, 0);
+                        } catch (Exception e) {
+                            plugin.getLogger().warning("Failed to reset server playtime for offline player: " + playerName);
+                        }
+                    }
+                }
 
-            final long finalResetPlaytime = resetPlaytime;
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                    " Reset server playtime for player &e" + playerName +
-                    "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(finalResetPlaytime) + "&7 of playtime)"));
+                final long finalResetPlaytime = resetPlaytime;
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                        " Reset server playtime for player &e" + playerName +
+                        "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(finalResetPlaytime) + "&7 of playtime)"));
+            });
         });
     }
+
 
     /**
      * Reset database playtime (both regular and artificial) for a player
      */
     public void resetPlayerPlaytime(CommandSender sender, String playerName) {
-        DBUser user = getValidatedUser(sender, playerName);
-        if (user == null) return;
+        getValidatedUser(sender, playerName, user -> {
+            if (user == null) return;
 
-        long playtimeBeforeReset = user.getPlaytime();
+            long playtimeBeforeReset = user.getPlaytime();
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            user.resetPlaytime();
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                user.resetPlaytime();
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " Reset playtime for player &e" + playerName +
-                        "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(playtimeBeforeReset) + "&7 of playtime)"));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            " Reset playtime for player &e" + playerName +
+                            "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(playtimeBeforeReset) + "&7 of playtime)"));
+                });
             });
         });
     }
@@ -175,15 +180,16 @@ public class PlayTimeReset {
      * Reset last seen data for a player
      */
     public void resetPlayerLastSeen(CommandSender sender, String playerName) {
-        DBUser user = getValidatedUser(sender, playerName);
-        if (user == null) return;
+        getValidatedUser(sender, playerName, user -> {
+            if (user == null) return;
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            user.resetLastSeen();
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                user.resetLastSeen();
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " Reset last seen data for player &e" + playerName + "&7"));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            " Reset last seen data for player &e" + playerName + "&7"));
+                });
             });
         });
     }
@@ -192,15 +198,16 @@ public class PlayTimeReset {
      * Reset first join data for a player
      */
     public void resetPlayerFirstJoin(CommandSender sender, String playerName) {
-        DBUser user = getValidatedUser(sender, playerName);
-        if (user == null) return;
+        getValidatedUser(sender, playerName, user -> {
+            if (user == null) return;
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            user.resetFirstJoin();
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                user.resetFirstJoin();
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " Reset first join data for player &e" + playerName + "&7"));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            " Reset first join data for player &e" + playerName + "&7"));
+                });
             });
         });
     }
@@ -209,19 +216,20 @@ public class PlayTimeReset {
      * Reset join streak data for a player
      */
     public void resetPlayerJoinstreak(CommandSender sender, String playerName) {
-        DBUser user = getValidatedUser(sender, playerName);
-        if (user == null) return;
+        getValidatedUser(sender, playerName, user -> {
+            if (user == null) return;
 
-        int joinStreakBeforeReset = user.getRelativeJoinStreak();
+            int joinStreakBeforeReset = user.getRelativeJoinStreak();
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            user.resetJoinStreaks();
-            joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                user.resetJoinStreaks();
+                joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " Reset join streak for player &e" + playerName +
-                        "&7 (Removed &e" + joinStreakBeforeReset + "&7 joins)"));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            " Reset join streak for player &e" + playerName +
+                            "&7 (Removed &e" + joinStreakBeforeReset + "&7 joins)"));
+                });
             });
         });
     }
@@ -230,16 +238,17 @@ public class PlayTimeReset {
      * Reset join streak rewards for a player
      */
     public void resetPlayerJoinstreakRewards(CommandSender sender, String playerName) {
-        DBUser user = getValidatedUser(sender, playerName);
-        if (user == null) return;
+        getValidatedUser(sender, playerName, user -> {
+            if (user == null) return;
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            user.resetJoinStreakRewards();
-            joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                user.resetJoinStreakRewards();
+                joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " Reset join streak rewards for player &e" + playerName + "&7"));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            " Reset join streak rewards for player &e" + playerName + "&7"));
+                });
             });
         });
     }
@@ -248,18 +257,19 @@ public class PlayTimeReset {
      * Reset goals data for a player
      */
     public void resetPlayerGoals(CommandSender sender, String playerName) {
-        DBUser user = getValidatedUser(sender, playerName);
-        if (user == null) return;
+        getValidatedUser(sender, playerName, user -> {
+            if (user == null) return;
 
-        int completedGoalsCount = user.getCompletedGoals().size();
+            int completedGoalsCount = user.getCompletedGoals().size();
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            user.resetGoals();
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                user.resetGoals();
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " Reset goals for player &e" + playerName +
-                        "&7 (Removed &e" + completedGoalsCount + "&7 completed goals)"));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            " Reset goals for player &e" + playerName +
+                            "&7 (Removed &e" + completedGoalsCount + "&7 completed goals)"));
+                });
             });
         });
     }
@@ -268,18 +278,19 @@ public class PlayTimeReset {
      * Reset everything for a player (equivalent to old "all" reset)
      */
     public void resetPlayerEverything(CommandSender sender, String playerName) {
-        DBUser user = getValidatedUser(sender, playerName);
-        if (user == null) return;
+        getValidatedUser(sender, playerName, user -> {
+            if (user == null) return;
 
-        long playtimeBeforeReset = user.getPlaytime();
+            long playtimeBeforeReset = user.getPlaytime();
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            user.reset();
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                user.reset();
 
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " Reset everything for player &e" + playerName +
-                        "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(playtimeBeforeReset) + "&7 of playtime)"));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            " Reset everything for player &e" + playerName +
+                            "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(playtimeBeforeReset) + "&7 of playtime)"));
+                });
             });
         });
     }
@@ -352,59 +363,67 @@ public class PlayTimeReset {
                 " Starting reset of all players' " + displayName + ", this will take some time..."));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<DBUser> users = dbUsersManager.getAllDBUsers();
+            List<String> allNicknames = db.getPlayerDAO().getAllNicknames(); // safe to fetch sync
             AtomicInteger totalPlayersReset = new AtomicInteger();
             AtomicLong totalDataReset = new AtomicLong();
+            AtomicInteger processedPlayers = new AtomicInteger();
 
-            for (DBUser user : users) {
-                switch (resetType) {
-                    case "playtime":
-                        totalDataReset.addAndGet(user.getPlaytime());
-                        user.resetPlaytime();
-                        dbUsersManager.updateTopPlayersFromDB();
-                        break;
-                    case "last_seen":
-                        user.resetLastSeen();
-                        dbUsersManager.updateTopPlayersFromDB();
-                        break;
-                    case "first_join":
-                        user.resetFirstJoin();
-                        break;
-                    case "joinstreak":
-                        totalDataReset.addAndGet(user.getRelativeJoinStreak());
-                        user.resetJoinStreaks();
-                        joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
-                        break;
-                    case "joinstreak_rewards":
-                        user.resetJoinStreakRewards();
-                        joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
-                        break;
-                    case "goals":
-                        totalDataReset.addAndGet(user.getCompletedGoals().size());
-                        user.resetGoals();
-                        break;
-                    case "everything":
-                        totalDataReset.addAndGet(user.getPlaytime());
-                        user.reset();
-                        dbUsersManager.updateTopPlayersFromDB();
-                        break;
-                }
-                totalPlayersReset.getAndIncrement();
+            for (String nickname : allNicknames) {
+                dbUsersManager.getUserFromNicknameAsyncWithContext(nickname, "reset all players generic command", user -> {
+                    if (user != null) {
+                        switch (resetType) {
+                            case "playtime":
+                                totalDataReset.addAndGet(user.getPlaytime());
+                                user.resetPlaytime();
+                                dbUsersManager.updateTopPlayersFromDB();
+                                break;
+                            case "last_seen":
+                                user.resetLastSeen();
+                                dbUsersManager.updateTopPlayersFromDB();
+                                break;
+                            case "first_join":
+                                user.resetFirstJoin();
+                                break;
+                            case "joinstreak":
+                                totalDataReset.addAndGet(user.getRelativeJoinStreak());
+                                user.resetJoinStreaks();
+                                joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
+                                break;
+                            case "joinstreak_rewards":
+                                user.resetJoinStreakRewards();
+                                joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
+                                break;
+                            case "goals":
+                                totalDataReset.addAndGet(user.getCompletedGoals().size());
+                                user.resetGoals();
+                                break;
+                            case "everything":
+                                totalDataReset.addAndGet(user.getPlaytime());
+                                user.reset();
+                                dbUsersManager.updateTopPlayersFromDB();
+                                break;
+                        }
+                        totalPlayersReset.incrementAndGet();
+                    }
+
+                    // Check if all players have been processed
+                    if (processedPlayers.incrementAndGet() == allNicknames.size()) {
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            String message = " All players' " + displayName + " has been reset! Total: &e" + totalPlayersReset + "&7 players";
+
+                            if (resetType.equals("playtime") || resetType.equals("everything")) {
+                                message += " with &e" + Utils.ticksToFormattedPlaytime(totalDataReset.get()) + "&7 of playtime";
+                            } else if (resetType.equals("joinstreak")) {
+                                message += " with &e" + totalDataReset + "&7 joins";
+                            } else if (resetType.equals("goals")) {
+                                message += " with &e" + totalDataReset + "&7 completed goals";
+                            }
+
+                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + message));
+                        });
+                    }
+                });
             }
-
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                String message = " All players' " + displayName + " has been reset! Total: &e" + totalPlayersReset + "&7 players";
-
-                if (resetType.equals("playtime") || resetType.equals("everything")) {
-                    message += " with &e" + Utils.ticksToFormattedPlaytime(totalDataReset.get()) + "&7 of playtime";
-                } else if (resetType.equals("joinstreak")) {
-                    message += " with &e" + totalDataReset + "&7 joins";
-                } else if (resetType.equals("goals")) {
-                    message += " with &e" + totalDataReset + "&7 completed goals";
-                }
-
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + message));
-            });
         });
     }
 
@@ -521,15 +540,15 @@ public class PlayTimeReset {
     /**
      * Validate user exists and return user object
      */
-    private DBUser getValidatedUser(CommandSender sender, String playerName) {
-        DBUser user = dbUsersManager.getUserFromNicknameWithContext(playerName, "playtime reset command");
-        if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                    " The player &e" + playerName + "&7 has never joined the server!"));
-        }
-        return user;
+    private void getValidatedUser(CommandSender sender, String playerName, Consumer<DBUser> callback) {
+        dbUsersManager.getUserFromNicknameAsyncWithContext(playerName, "playtime reset command", user -> {
+            if (user == null) {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                        " The player &e" + playerName + "&7 has never joined the server!"));
+            }
+            callback.accept(user);
+        });
     }
-
     /**
      * Clean up expired confirmations
      */

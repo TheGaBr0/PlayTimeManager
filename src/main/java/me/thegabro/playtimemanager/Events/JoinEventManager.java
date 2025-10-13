@@ -18,13 +18,15 @@ public class JoinEventManager implements Listener {
     @EventHandler
     public void onJoin(PlayerJoinEvent event){
 
-            OnlineUser onlineUser = new OnlineUser(event.getPlayer());
-            onlineUsersManager.addOnlineUser(onlineUser);
+        OnlineUser.createOnlineUserAsync(event.getPlayer(), onlineUser -> {
+                onlineUsersManager.addOnlineUser(onlineUser);
 
-            plugin.getServer().getScheduler().runTaskAsynchronously(plugin, onlineUser::updateLastSeen);
+                onlineUser.updateLastSeen();
 
-            joinStreaksManager.processPlayerLogin(event.getPlayer());
-            dbUsersManager.updateCachedTopPlayers(onlineUser);
+                joinStreaksManager.processPlayerLogin(event.getPlayer());
+
+                dbUsersManager.updateCachedTopPlayers(onlineUser);
+            });
 
 
     }

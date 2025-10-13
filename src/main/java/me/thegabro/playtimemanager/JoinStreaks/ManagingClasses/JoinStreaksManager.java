@@ -5,6 +5,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -73,22 +74,25 @@ public class JoinStreaksManager {
         }
     }
 
-    public void resetMissingPlayerStreaks() {
-        if (plugin.getConfiguration().getBoolean("reset-joinstreak.enabled")) {
-            //TODO: async
+    public void resetMissingPlayerStreaksAsync() {
+        if (!plugin.getConfiguration().getBoolean("reset-joinstreak.enabled")) return;
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             Set<String> playersWithStreaks = db.getStreakDAO().getPlayersWithActiveStreaks();
-            int playersReset = streakTracker.resetInactivePlayerStreaks(
+
+            streakTracker.resetInactivePlayerStreaksAsync(
                     playersWithStreaks,
                     cycleScheduler.getIntervalSeconds(),
-                    plugin.getConfiguration().getInt("reset-joinstreak.missed-joins")
+                    plugin.getConfiguration().getInt("reset-joinstreak.missed-joins"),
+                    playersReset -> {
+                        if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
+                            plugin.getLogger().info(String.format("Streak reset for %d players", playersReset));
+                        }
+                    }
             );
+        });
 
-            if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
-                plugin.getLogger().info(String.format("Streak reset for %d players", playersReset));
-            }
-        }
-
-        // Process online players
+        // Process online players on main thread if needed
         onlineUsersManager.getOnlineUsersByUUID().values().forEach(this::processOnlineUserForCycleReset);
     }
 

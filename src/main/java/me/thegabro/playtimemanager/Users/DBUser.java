@@ -9,6 +9,7 @@ import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 
@@ -34,20 +35,7 @@ public class DBUser {
 
     /**
      * Private constructor to create a DBUser with all data loaded from database.
-     * Used internally by the factory method fromUUID.
-     *
-     * @param uuid the player's unique identifier
-     * @param nickname the player's display name
-     * @param playtime the player's total playtime in ticks
-     * @param artificialPlaytime additional playtime added artificially
-     * @param DBAFKplaytime the player's AFK time in ticks
-     * @param completedGoals list of goals the player has completed
-     * @param lastSeen timestamp of when the player was last seen
-     * @param firstJoin timestamp of when the player first joined
-     * @param relativeJoinStreak current relative join streak
-     * @param absoluteJoinStreak total absolute join streak
-     * @param receivedRewards set of rewards the player has received
-     * @param rewardsToBeClaimed set of rewards waiting to be claimed
+     * Used internally by factory methods.
      */
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, long DBAFKplaytime,
                    ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int relativeJoinStreak,
@@ -70,35 +58,72 @@ public class DBUser {
     }
 
     /**
-     * Constructs a new DBUser for an active player.
-     * Handles user mapping and loads existing data from database.
-     * Initializes first join timestamp if null for legacy compatibility.
-     *
-     * @param p the Player object representing the user
+     * Protected constructor for subclass use only (OnlineUser).
+     * The subclass is responsible for calling loadUserDataAsync and handling initialization.
      */
-    public DBUser(Player p) {
-        this.uuid = p.getUniqueId().toString();
-        this.nickname = p.getName();
-        this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
-        userMapping();
-        loadUserData();
-
-        //LEAVE THIS HERE: since first_join field was added some releases later...some servers may have null
-        // first_join values for older players into their db. If such players join and this check isn't here: KABOOM.
-        if(firstJoin == null){
-            firstJoin = LocalDateTime.now();
-            db.getPlayerDAO().updateFirstJoin(uuid, firstJoin);
-        }
+    protected DBUser() {
+        this.completedGoals = new ArrayList<>();
+        this.receivedRewards = new ArrayList<>();
+        this.rewardsToBeClaimed = new ArrayList<>();
+        this.afk = false;
+        this.playerInstance = null;
     }
 
     /**
-     * Factory method to create a DBUser instance by UUID.
+     * Asynchronously creates a new DBUser for an active player.
+     * Handles user mapping and loads existing data from database.
+     *
+     * @param p the Player object representing the user
+     * @param callback Called when user is fully loaded with the DBUser instance
+     */
+    public static void createDBUserAsync(Player p, Consumer<DBUser> callback) {
+        String uuid = p.getUniqueId().toString();
+        String nickname = p.getName();
+        long fromServerPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            DBUser user = new DBUser(uuid, nickname, 0, 0, 0,
+                    new ArrayList<>(), null, null, 0, 0,
+                    new ArrayList<>(), new ArrayList<>());
+            user.fromServerOnJoinPlayTime = fromServerPlayTime;
+
+            user.userMapping();
+            user.loadUserDataSync();
+
+            // Handle legacy null first_join values
+            if(user.firstJoin == null){
+                user.firstJoin = LocalDateTime.now();
+                db.getPlayerDAO().updateFirstJoin(uuid, user.firstJoin);
+            }
+
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(user));
+        });
+    }
+
+    /**
+     * Factory method to create DBUser asynchronously from UUID.
      * Loads all user data from the database and creates a new instance.
      *
      * @param uuid the player's unique identifier string
-     * @return a new DBUser instance with data loaded from database, or null if UUID is null
+     * @param callback Called with the loaded DBUser instance (or null if UUID is null)
      */
-    protected static DBUser fromUUID(String uuid) {
+    public static void fromUUIDAsync(String uuid, Consumer<DBUser> callback) {
+        if(uuid == null) {
+            callback.accept(null);
+            return;
+        }
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            DBUser user = fromUUIDSync(uuid);
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(user));
+        });
+    }
+
+    /**
+     * Internal synchronous method to load user from UUID.
+     * Should only be called from async contexts.
+     */
+    private static DBUser fromUUIDSync(String uuid) {
         if(uuid == null)
             return null;
 
@@ -120,9 +145,10 @@ public class DBUser {
 
     /**
      * Loads user data from the database into instance variables.
-     * Called during construction to populate all user statistics and settings.
+     * Called during async construction to populate all user statistics.
+     * Must be called from an async context.
      */
-    private void loadUserData() {
+    protected void loadUserDataSync() {
         this.DBplaytime = db.getPlayerDAO().getPlaytime(uuid);
         this.DBAFKplaytime = db.getPlayerDAO().getAFKPlaytime(uuid);
         this.artificialPlaytime = db.getPlayerDAO().getArtificialPlaytime(uuid);
@@ -133,37 +159,38 @@ public class DBUser {
         this.absoluteJoinStreak = db.getStreakDAO().getRelativeJoinStreak(uuid);
         this.receivedRewards = db.getStreakDAO().getReceivedRewards(uuid);
         this.rewardsToBeClaimed = db.getStreakDAO().getRewardsToBeClaimed(uuid);
-        afk = false;
     }
 
     /**
-     * Checks if this user is currently online.
+     * Asynchronously loads user data from database and calls callback when complete.
+     * Used by subclasses that need to load data after construction.
      *
-     * @return true if the user is an instance of OnlineUser, false otherwise
+     * @param callback Called on main thread after data is loaded
      */
+    protected void loadUserDataAsync(Runnable callback) {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            loadUserDataSync();
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
+    }
+
     public boolean isOnline() {
         return this instanceof OnlineUser;
     }
 
-    /**
-     * Gets the OfflinePlayer instance asynchronously to avoid blocking the main thread.
-     * Uses cached instance if available, otherwise fetches from Bukkit asynchronously.
-     *
-     * @param callback Consumer function to handle the OfflinePlayer result
-     */
     public void getPlayerInstance(Consumer<OfflinePlayer> callback) {
         if (playerInstance != null) {
             callback.accept(playerInstance);
             return;
         }
 
-        // Run asynchronously to prevent main thread blocking
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
                 UUID parsedUuid = UUID.fromString(uuid);
                 OfflinePlayer player = Bukkit.getOfflinePlayer(parsedUuid);
 
-                // Update on main thread
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     playerInstance = player;
                     callback.accept(player);
@@ -175,200 +202,166 @@ public class DBUser {
         });
     }
 
-    /**
-     * Returns the timestamp when the player first joined the server.
-     *
-     * @return the first join LocalDateTime
-     */
+    // Getters - these are safe as synchronous since they use cached data
     public LocalDateTime getFirstJoin(){ return firstJoin; }
-
-    /**
-     * Returns the timestamp when the player was last seen on the server.
-     *
-     * @return the last seen LocalDateTime
-     */
     public LocalDateTime getLastSeen() { return lastSeen; }
+    public String getUuid() { return uuid; }
+    public String getNickname() { return nickname; }
 
-    /**
-     * Returns the player's unique identifier.
-     *
-     * @return the UUID string
-     */
-    public String getUuid() {
-        return uuid;
-    }
-
-    /**
-     * Returns the player's display name/nickname.
-     *
-     * @return the player's nickname
-     */
-    public String getNickname() {
-        return nickname;
-    }
-
-    /**
-     * Calculates and returns the player's total playtime.
-     * Combines database playtime with artificial playtime, optionally excluding AFK time.
-     *
-     * @return the total playtime in ticks
-     */
     public long getPlaytime() {
         long totalPlaytime = DBplaytime + artificialPlaytime;
-
         if (plugin.getConfiguration().getBoolean("ignore-afk-time")) {
             totalPlaytime -= DBAFKplaytime;
         }
-
         return totalPlaytime;
     }
 
-    /**
-     * Gets playtime using a snapshot value - base implementation for offline users
-     * For offline users, snapshot is ignored and regular getPlaytime() is used
-     *
-     * @param playtimeSnapshot Ignored for offline users
-     * @return Total playtime in ticks
-     */
     public long getPlaytimeWithSnapshot(long playtimeSnapshot) {
-        // For offline users, just return regular playtime calculation
         return getPlaytime();
     }
 
-
-    /**
-     * Returns the player's artificial playtime (manually added time).
-     *
-     * @return the artificial playtime in ticks
-     */
     public long getArtificialPlaytime() {
         return artificialPlaytime;
     }
 
-    /**
-     * Sets the player's artificial playtime and updates the database.
-     *
-     * @param artificialPlaytime the new artificial playtime value in ticks
-     */
-    public void setArtificialPlaytime(long artificialPlaytime) {
+    public void setArtificialPlaytimeAsync(long artificialPlaytime, Runnable callback) {
         this.artificialPlaytime = artificialPlaytime;
-        db.getPlayerDAO().updateArtificialPlaytime(uuid, artificialPlaytime);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getPlayerDAO().updateArtificialPlaytime(uuid, artificialPlaytime);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Returns a list of goals the player has completed.
-     *
-     * @return ArrayList of completed goal names
-     */
+    public void setArtificialPlaytime(long artificialPlaytime) {
+        setArtificialPlaytimeAsync(artificialPlaytime, null);
+    }
+
     public ArrayList<String> getCompletedGoals(){
         return completedGoals;
     }
 
-    /**
-     * Checks if the player has completed a specific goal.
-     *
-     * @param goalName the name of the goal to check
-     * @return true if the goal has been completed, false otherwise
-     */
     public boolean hasCompletedGoal(String goalName){
         return completedGoals.contains(goalName);
     }
 
-    /**
-     * Marks a goal as completed for the player and updates the database.
-     *
-     * @param goalName the name of the goal to mark as completed
-     */
-    public void markGoalAsCompleted(String goalName){
+    public void markGoalAsCompletedAsync(String goalName, Runnable callback){
         completedGoals.add(goalName);
-        db.getGoalsDAO().addCompletedGoal(uuid, nickname, goalName);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getGoalsDAO().addCompletedGoal(uuid, nickname, goalName);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Removes a goal from the player's completed goals list and updates the database.
-     *
-     * @param goalName the name of the goal to unmark
-     */
-    public void unmarkGoalAsCompleted(String goalName){
+    public void markGoalAsCompleted(String goalName){
+        markGoalAsCompletedAsync(goalName, null);
+    }
+
+    public void unmarkGoalAsCompletedAsync(String goalName, Runnable callback){
         completedGoals.remove(goalName);
-        db.getGoalsDAO().removeCompletedGoal(uuid, goalName);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getGoalsDAO().removeCompletedGoal(uuid, goalName);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Returns the player's absolute join streak count.
-     *
-     * @return the absolute join streak value
-     */
+    public void unmarkGoalAsCompleted(String goalName){
+        unmarkGoalAsCompletedAsync(goalName, null);
+    }
+
     public int getAbsoluteJoinStreak(){
         return absoluteJoinStreak;
     }
 
-    /**
-     * Returns the player's relative join streak count.
-     *
-     * @return the relative join streak value
-     */
     public int getRelativeJoinStreak(){
         return relativeJoinStreak;
     }
 
-    /**
-     * Increments the player's relative join streak by 1 and updates the database.
-     */
-    public void incrementRelativeJoinStreak(){
+    public void incrementRelativeJoinStreakAsync(Runnable callback){
         this.relativeJoinStreak++;
-        db.getStreakDAO().setRelativeJoinStreak(uuid, this.relativeJoinStreak);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getStreakDAO().setRelativeJoinStreak(uuid, this.relativeJoinStreak);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Increments the player's absolute join streak by 1 and updates the database.
-     */
-    public void incrementAbsoluteJoinStreak(){
+    public void incrementRelativeJoinStreak(){
+        incrementRelativeJoinStreakAsync(null);
+    }
+
+    public void incrementAbsoluteJoinStreakAsync(Runnable callback){
         this.absoluteJoinStreak++;
-        db.getStreakDAO().setAbsoluteJoinStreak(uuid, this.absoluteJoinStreak);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getStreakDAO().setAbsoluteJoinStreak(uuid, this.absoluteJoinStreak);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Sets the player's relative join streak to a specific value and updates the database.
-     *
-     * @param value the new relative join streak value
-     */
-    public void setRelativeJoinStreak(int value){
+    public void incrementAbsoluteJoinStreak(){
+        incrementAbsoluteJoinStreakAsync(null);
+    }
+
+    public void setRelativeJoinStreakAsync(int value, Runnable callback){
         this.relativeJoinStreak = value;
-        db.getStreakDAO().setRelativeJoinStreak(uuid, this.relativeJoinStreak);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getStreakDAO().setRelativeJoinStreak(uuid, this.relativeJoinStreak);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Resets both relative and absolute join streaks to 0 and updates the database.
-     */
-    public void resetJoinStreaks(){
+    public void setRelativeJoinStreak(int value){
+        setRelativeJoinStreakAsync(value, null);
+    }
+
+    public void resetJoinStreaksAsync(Runnable callback){
         this.relativeJoinStreak = 0;
         this.absoluteJoinStreak = 0;
-        db.getStreakDAO().setAbsoluteJoinStreak(uuid, 0);
-        db.getStreakDAO().setRelativeJoinStreak(uuid, 0);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getStreakDAO().setAbsoluteJoinStreak(uuid, 0);
+            db.getStreakDAO().setRelativeJoinStreak(uuid, 0);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Resets the relative join streak to 0 and updates the database.
-     */
-    public void resetRelativeJoinStreak(){
+    public void resetJoinStreaks(){
+        resetJoinStreaksAsync(null);
+    }
+
+    public void resetRelativeJoinStreakAsync(Runnable callback){
         this.relativeJoinStreak = 0;
-        db.getStreakDAO().setRelativeJoinStreak(uuid, 0);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getStreakDAO().setRelativeJoinStreak(uuid, 0);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Marks all currently unclaimed rewards as expired
-     * Called when a reward cycle ends to handle rewards not claimed within the time limit.
-     */
-    public void migrateUnclaimedRewards(){
+    public void resetRelativeJoinStreak(){
+        resetRelativeJoinStreakAsync(null);
+    }
+
+    public void migrateUnclaimedRewardsAsync(Runnable callback){
         if (rewardsToBeClaimed.isEmpty()) {
+            if(callback != null) callback.run();
             return;
         }
 
-        // Create new expired instances and replace the old ones
         List<RewardSubInstance> expiredRewards = new ArrayList<>();
         for(RewardSubInstance subInstance : rewardsToBeClaimed){
-            // Create a new record with expired = true
             RewardSubInstance expiredInstance = new RewardSubInstance(
                     subInstance.mainInstanceID(),
                     subInstance.requiredJoins(),
@@ -377,100 +370,101 @@ public class DBUser {
             expiredRewards.add(expiredInstance);
         }
 
-        // Replace the old list with expired instances
         rewardsToBeClaimed.clear();
         rewardsToBeClaimed.addAll(expiredRewards);
 
-        // Mark all current unclaimed rewards as expired in the database
-        db.getStreakDAO().markRewardsAsExpired(uuid);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getStreakDAO().markRewardsAsExpired(uuid);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Removes a specific reward from the player's unclaimed rewards.
-     *
-     * @param rewardSubInstance the reward to remove from unclaimed rewards
-     */
-    public void unclaimReward(RewardSubInstance rewardSubInstance) {
+    public void migrateUnclaimedRewards(){
+        migrateUnclaimedRewardsAsync(null);
+    }
 
+    public void unclaimRewardAsync(RewardSubInstance rewardSubInstance, Runnable callback) {
         rewardsToBeClaimed.removeIf(unclaimedReward -> unclaimedReward.mainInstanceID().equals(rewardSubInstance.mainInstanceID()) &&
                 unclaimedReward.requiredJoins().equals(rewardSubInstance.requiredJoins()));
 
-        db.getStreakDAO().removeRewardToBeClaimed(uuid, rewardSubInstance);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getStreakDAO().removeRewardToBeClaimed(uuid, rewardSubInstance);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Removes a specific reward from the player's received rewards.
-     *
-     * @param rewardSubInstance the reward to remove from received rewards
-     */
-    public void unreceiveReward(RewardSubInstance rewardSubInstance) {
+    public void unclaimReward(RewardSubInstance rewardSubInstance) {
+        unclaimRewardAsync(rewardSubInstance, null);
+    }
 
+    public void unreceiveRewardAsync(RewardSubInstance rewardSubInstance, Runnable callback) {
         receivedRewards.removeIf(receivedReward -> receivedReward.mainInstanceID().equals(rewardSubInstance.mainInstanceID()) &&
                 receivedReward.requiredJoins().equals(rewardSubInstance.requiredJoins()));
 
-        db.getStreakDAO().removeReceivedReward(uuid,  rewardSubInstance);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getStreakDAO().removeReceivedReward(uuid, rewardSubInstance);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Removes all unclaimed rewards that share the same main instance ID.
-     *
-     * @param mainInstanceID the reward containing the main instance ID to match against
-     */
+    public void unreceiveReward(RewardSubInstance rewardSubInstance) {
+        unreceiveRewardAsync(rewardSubInstance, null);
+    }
+
     public void wipeRewardsToBeClaimed(Integer mainInstanceID) {
         rewardsToBeClaimed.removeIf(r -> Objects.equals(r.mainInstanceID(), mainInstanceID));
     }
 
-    /**
-     * Removes all received rewards that share the same main instance ID.
-     *
-     * @param mainInstanceID the reward containing the main instance ID to match against
-     */
     public void wipeReceivedRewards(Integer mainInstanceID) {
         receivedRewards.removeIf(r -> Objects.equals(r.mainInstanceID(), mainInstanceID));
     }
 
-    /**
-     * Adds a reward to the player's unclaimed rewards list.
-     *
-     * @param rewardSubInstance the reward to add to unclaimed rewards
-     */
-    public void addRewardToBeClaimed(RewardSubInstance rewardSubInstance) {
+    public void addRewardToBeClaimedAsync(RewardSubInstance rewardSubInstance, Runnable callback) {
         rewardsToBeClaimed.add(rewardSubInstance);
-        db.getStreakDAO().addRewardToBeClaimed(uuid,  nickname, rewardSubInstance);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getStreakDAO().addRewardToBeClaimed(uuid, nickname, rewardSubInstance);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Adds a reward to the player's received rewards list.
-     *
-     * @param rewardSubInstance the reward to add to received rewards
-     */
-    public void addReceivedReward(RewardSubInstance rewardSubInstance) {
+    public void addRewardToBeClaimed(RewardSubInstance rewardSubInstance) {
+        addRewardToBeClaimedAsync(rewardSubInstance, null);
+    }
+
+    public void addReceivedRewardAsync(RewardSubInstance rewardSubInstance, Runnable callback) {
         receivedRewards.add(rewardSubInstance);
-        db.getStreakDAO().addReceivedReward(uuid, nickname, rewardSubInstance);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getStreakDAO().addReceivedReward(uuid, nickname, rewardSubInstance);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Returns a copy of the player's received rewards.
-     *
-     * @return a new list containing all received rewards
-     */
+    public void addReceivedReward(RewardSubInstance rewardSubInstance) {
+        addReceivedRewardAsync(rewardSubInstance, null);
+    }
+
     public ArrayList<RewardSubInstance> getReceivedRewards() {
-        return new ArrayList<>(receivedRewards); // Return a copy to prevent modification
+        return new ArrayList<>(receivedRewards);
     }
 
-    /**
-     * Returns a copy of the player's unclaimed rewards.
-     *
-     * @return a new list containing all unclaimed rewards
-     */
     public ArrayList<RewardSubInstance> getRewardsToBeClaimed() {
-        return new ArrayList<>(rewardsToBeClaimed); // Return a copy to prevent modification
+        return new ArrayList<>(rewardsToBeClaimed);
     }
 
     /**
      * Handles user mapping logic for UUID and nickname consistency.
      * Updates database records when UUID or nickname changes are detected.
-     * Creates new player record if neither UUID nor nickname exists.
+     * Must be called from an async context.
      */
     private void userMapping() {
         boolean uuidExists = db.getPlayerDAO().playerExists(uuid);
@@ -478,65 +472,33 @@ public class DBUser {
         String existingUUID = db.getPlayerDAO().getUUIDFromNickname(nickname);
 
         if (uuidExists) {
-            // Case 1: UUID exists in database
             if (!nickname.equals(existingNickname)) {
-                // Same UUID but different nickname - update nickname
                 db.getPlayerDAO().updateNickname(uuid, nickname);
             }
         } else if (existingUUID != null) {
-            // Case 2: Nickname exists but with different UUID
             db.getPlayerDAO().updateUUID(uuid, nickname);
         } else {
-            // Case 3: New user - neither UUID nor nickname exists
             db.getPlayerDAO().addNewPlayer(uuid, nickname, fromServerOnJoinPlayTime);
         }
     }
 
-    /**
-     * Returns the player's total AFK playtime from the database.
-     *
-     * @return the AFK playtime in ticks
-     */
     public long getAFKPlaytime() {
         return DBAFKplaytime;
     }
 
-    /**
-     * Gets AFK playtime using a snapshot value - base implementation for offline users
-     * For offline users, snapshot is ignored and regular getAFKPlaytime() is used
-     *
-     * @param playtimeSnapshot Ignored for offline users
-     * @return Total AFK playtime in ticks
-     */
     public long getAFKPlaytimeWithSnapshot(long playtimeSnapshot) {
-        // For offline users, just return regular AFK playtime
         return getAFKPlaytime();
     }
 
-    /**
-     * Returns the player's current AFK status.
-     *
-     * @return true if player is currently AFK, false otherwise
-     */
     public boolean isAFK() {
         return afk;
     }
 
-    /**
-     * Sets the player's AFK status.
-     *
-     * @param afk true to mark player as AFK, false otherwise
-     */
     public void setAFK(boolean afk) {
         this.afk = afk;
     }
 
-    /**
-     * Completely resets all player data to default values.
-     * Clears playtime, goals, rewards, streaks, and timestamps.
-     * Updates all values in the database (TODO: optimize with single transaction).
-     */
-    public void reset() {
+    public void resetAsync(Runnable callback) {
         this.DBplaytime = 0;
         this.DBAFKplaytime = 0;
         this.artificialPlaytime = 0;
@@ -545,62 +507,97 @@ public class DBUser {
         this.firstJoin = null;
         this.relativeJoinStreak = 0;
         this.absoluteJoinStreak = 0;
-
-        // Reset completed goals
         this.completedGoals.clear();
         this.receivedRewards.clear();
         this.rewardsToBeClaimed.clear();
 
-        db.getPlayerDAO().resetUserInDatabase(uuid);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getPlayerDAO().resetUserInDatabase(uuid);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Resets all playtime-related data to 0.
-     * Includes regular playtime, AFK time, and artificial playtime.
-     */
-    public void resetPlaytime() {
+    public void reset() {
+        resetAsync(null);
+    }
+
+    public void resetPlaytimeAsync(Runnable callback) {
         this.DBplaytime = 0;
         this.DBAFKplaytime = 0;
         this.artificialPlaytime = 0;
         this.fromServerOnJoinPlayTime = 0;
 
-        db.getPlayerDAO().updatePlaytime(uuid, 0);
-        db.getPlayerDAO().updateArtificialPlaytime(uuid, 0);
-        db.getPlayerDAO().updateAFKPlaytime(uuid, 0);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getPlayerDAO().updatePlaytime(uuid, 0);
+            db.getPlayerDAO().updateArtificialPlaytime(uuid, 0);
+            db.getPlayerDAO().updateAFKPlaytime(uuid, 0);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Resets the player's last seen timestamp to null and updates the database.
-     */
-    public void resetLastSeen() {
+    public void resetPlaytime() {
+        resetPlaytimeAsync(null);
+    }
+
+    public void resetLastSeenAsync(Runnable callback) {
         this.lastSeen = null;
-        db.getPlayerDAO().updateLastSeen(uuid, null);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getPlayerDAO().updateLastSeen(uuid, null);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Resets the player's first join timestamp to null and updates the database.
-     */
-    public void resetFirstJoin() {
+    public void resetLastSeen() {
+        resetLastSeenAsync(null);
+    }
+
+    public void resetFirstJoinAsync(Runnable callback) {
         this.firstJoin = null;
-        db.getPlayerDAO().updateFirstJoin(uuid, null);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getPlayerDAO().updateFirstJoin(uuid, null);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Resets all join streak rewards (both received and unclaimed) and updates the database.
-     */
-    public void resetJoinStreakRewards() {
+    public void resetFirstJoin() {
+        resetFirstJoinAsync(null);
+    }
+
+    public void resetJoinStreakRewardsAsync(Runnable callback) {
         this.receivedRewards.clear();
         this.rewardsToBeClaimed.clear();
 
-        db.getStreakDAO().resetAllUserRewards(uuid);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getStreakDAO().resetAllUserRewards(uuid);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
-    /**
-     * Resets the player's completed goals list and updates the database.
-     * Clears all goal completion progress.
-     */
-    public void resetGoals() {
+    public void resetJoinStreakRewards() {
+        resetJoinStreakRewardsAsync(null);
+    }
+
+    public void resetGoalsAsync(Runnable callback) {
         this.completedGoals.clear();
-        db.getGoalsDAO().removeAllGoalsFromUser(uuid);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getGoalsDAO().removeAllGoalsFromUser(uuid);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
+    }
+
+    public void resetGoals() {
+        resetGoalsAsync(null);
     }
 }

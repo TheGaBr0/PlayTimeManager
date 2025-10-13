@@ -7,6 +7,7 @@ import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Utils;
 import me.thegabro.playtimemanager.GUIs.Player.PlayerStatsGui;
+import org.bukkit.Bukkit;
 import org.bukkit.Statistic;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -44,31 +45,30 @@ public class PlayTimeStats implements CommandExecutor {
                 return false;
             }
         } else {
-
             if (!sender.hasPermission("playtime.others.stats")) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " "+
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
                         GUIsConfiguration.getInstance().getString("player-stats-gui.messages.no-permission-others")));
                 return false;
             }
             targetPlayerName = args[0];
         }
 
-        DBUser user = dbUsersManager.getUserFromNicknameWithContext(targetPlayerName, "ptstats command");
+        dbUsersManager.getUserFromNicknameAsyncWithContext(targetPlayerName, "ptstats command", user -> {
+            if (user == null) {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+                        GUIsConfiguration.getInstance().getString("player-stats-gui.messages.player-not-found")));
+                return;
+            }
 
-        if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " "+
-                    GUIsConfiguration.getInstance().getString("player-stats-gui.messages.player-not-found")));
-            return false;
-        }
-
-        if (sender instanceof ConsoleCommandSender) {
-            sendTextStats(sender, user);
-        } else if (sender instanceof Player player) {
-            openStatsGui(player, user);
-        } else {
-            // Fallback
-            sendTextStats(sender, user);
-        }
+            if (sender instanceof ConsoleCommandSender) {
+                sendTextStats(sender, user);
+            } else if (sender instanceof Player player) {
+                // Schedule GUI opening on main thread
+                Bukkit.getScheduler().runTask(plugin, () -> openStatsGui(player, user));
+            } else {
+                sendTextStats(sender, user);
+            }
+        });
 
         return true;
     }

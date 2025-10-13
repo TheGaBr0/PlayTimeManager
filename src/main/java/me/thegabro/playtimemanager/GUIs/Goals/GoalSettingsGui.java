@@ -500,19 +500,15 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         player.closeInventory();
 
         Component header = Utils.parseColors("&c&l✎ Uncomplete Goal: &e" + goal.getName());
-
         Component divider = Utils.parseColors("&8▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
-
-        // Instructions with better spacing and formatting
         Component instructions = Utils.parseColors(
                 "&fEnter the player name to uncomplete this goal for.\n" +
                         "&7• Player must have completed this goal\n" +
-                        "&7• Type &c&ocancel&r&7 to exit\n"+
-                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
+                        "&7• Type &c&ocancel&r&7 to exit\n" +
+                        "&7If chat input &cdoesn't work&7 please take a look at the wiki\n" +
                         "&7For more info regarding the issue and workarounds."
         );
 
-        // Create full message
         Component fullMessage = Component.empty()
                 .append(header)
                 .append(Component.newline())
@@ -527,10 +523,16 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         player.sendMessage(fullMessage);
 
         chatEventManager.startChatInput(player, (p, input) -> {
-            if (!input.equalsIgnoreCase("cancel")) {
-                String playerName = input.replace(" ", "");
-                DBUser user = dbUsersManager.getUserFromNicknameWithContext(playerName, "uncomplete goal for user");
+            if (input.equalsIgnoreCase("cancel")) {
+                player.sendMessage(Utils.parseColors("&cUncomplete goal operation cancelled"));
+                reopenMainGui(player);
+                return;
+            }
 
+            String playerName = input.replace(" ", "");
+
+            // Async user retrieval
+            dbUsersManager.getUserFromNicknameAsyncWithContext(playerName, "uncomplete goal for user", user -> {
                 if (user == null) {
                     player.sendMessage(Utils.parseColors("&cPlayer not found!"));
                 } else if (user.hasCompletedGoal(goal.getName())) {
@@ -540,12 +542,10 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 } else {
                     player.sendMessage(Utils.parseColors("&cPlayer hasn't completed that goal!"));
                 }
-            } else {
-                player.sendMessage(Utils.parseColors("&cUncomplete goal operation cancelled"));
-            }
 
-            // Reopen the GUI
-            reopenMainGui(player);
+                // Reopen the GUI after processing
+                reopenMainGui(player);
+            });
         });
     }
 

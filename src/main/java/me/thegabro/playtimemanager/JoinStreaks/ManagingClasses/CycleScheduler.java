@@ -10,6 +10,7 @@ import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.quartz.CronExpression;
@@ -126,7 +127,9 @@ public class CycleScheduler {
             @Override
             public void run() {
                 playersJoinedDuringCurrentCycle.clear();
-                JoinStreaksManager.getInstance().resetMissingPlayerStreaks();
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    JoinStreaksManager.getInstance().resetMissingPlayerStreaksAsync();
+                });
                 scheduleNextReset();
             }
         }.runTaskLater(plugin, delayInTicks);
@@ -181,42 +184,36 @@ public class CycleScheduler {
     }
 
     public void updateOnReload() {
-        // Update interval reset times first to ensure accurate cycle information
+        // Update interval reset times first
         Date now = new Date();
         nextIntervalReset = cronExpression.getNextValidTimeAfter(now);
 
-        // Recalculate if we're in the same cycle as when we last tracked
         if (!isCurrentCycle()) {
             playersJoinedDuringCurrentCycle.clear();
         }
 
-        // If schedule is active, add players to the joined list whose last seen is within the current cycle
-        if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
-            try {
-                //TODO: async
-                Set<String> playersWithStreaks = db.getStreakDAO().getPlayersWithActiveStreaks();
-                Date cycleStartDate = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);
+        if (!plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) return;
 
-                for (String playerUUID : playersWithStreaks) {
-                    DBUser user = DBUsersManager.getInstance().getUserFromUUIDWithContext(playerUUID, "add players to current active cycle time window");
-                    if (user != null) {
-                        LocalDateTime lastSeen = user.getLastSeen();
+        try {
+            Set<String> playersWithStreaks = db.getStreakDAO().getPlayersWithActiveStreaks();
+            Date cycleStartDate = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);
 
-                        if (lastSeen == null) {
-                            continue;
-                        }
+            for (String playerUUID : playersWithStreaks) {
+                DBUsersManager.getInstance().getUserFromUUIDAsyncWithContext(playerUUID,
+                        "add players to current active cycle time window",
+                        dbUser -> {
+                            if (dbUser == null || dbUser.getLastSeen() == null) return;
 
-                        Date lastSeenDate = Date.from(lastSeen.atZone(ZoneId.systemDefault()).toInstant());
-
-                        // Check if the player's last seen time is within the current cycle
-                        if (lastSeenDate.after(cycleStartDate) && lastSeenDate.before(nextIntervalReset)) {
-                            playersJoinedDuringCurrentCycle.add(playerUUID);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                plugin.getLogger().severe("Error processing players during reload: " + e.getMessage());
+                            Date lastSeenDate = Date.from(dbUser.getLastSeen().atZone(ZoneId.systemDefault()).toInstant());
+                            if (lastSeenDate.after(cycleStartDate) && lastSeenDate.before(nextIntervalReset)) {
+                                synchronized (playersJoinedDuringCurrentCycle) {
+                                    playersJoinedDuringCurrentCycle.add(playerUUID);
+                                }
+                            }
+                        });
             }
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error processing players during reload: " + e.getMessage());
         }
     }
 

@@ -37,41 +37,43 @@ public class PlayTimeAttributeCommand implements CommandExecutor, TabCompleter {
         String playerName = args[0];
         String attribute = args[1].toLowerCase();
 
-        // Validate attribute
         if (!attribute.equals("hidefromleaderboard")) {
             sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                     " Invalid attribute. Available: hidefromleaderboard"));
             return false;
         }
 
-        DBUser user = DBUsersManager.getInstance().getUserFromNicknameWithContext(playerName, "set hidefromleaderboard attribute command");
-        if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                    " The player &e" + playerName + "&7 has never joined the server!"));
-            return false;
-        }
-
-        boolean newValue;
-
-        if (args.length == 3) {
-            // Value provided - validate it
-            String value = args[2].toLowerCase();
-            if (!value.equals("true") && !value.equals("false")) {
+        DBUsersManager.getInstance().getUserFromNicknameAsyncWithContext(playerName, "set hidefromleaderboard attribute command", user -> {
+            if (user == null) {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " Invalid value. Use: true or false"));
-                return false;
+                        " The player &e" + playerName + "&7 has never joined the server!"));
+                return;
             }
-            newValue = Boolean.parseBoolean(value);
-        } else {
-            // No value provided - toggle current value
-            newValue = !getCurrentAttributeValue(user, attribute);
-        }
 
-        // Update the attribute in database
-        updatePlayerAttribute(sender, user, attribute, newValue, playerName);
+            boolean newValue;
+
+            if (args.length == 3) {
+                // Value provided - validate it
+                String value = args[2].toLowerCase();
+                if (!value.equals("true") && !value.equals("false")) {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            " Invalid value. Use: true or false"));
+                    return;
+                }
+                newValue = Boolean.parseBoolean(value);
+            } else {
+                // No value provided - toggle current value
+                newValue = !getCurrentAttributeValue(user, attribute);
+            }
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                updatePlayerAttribute(sender, user, attribute, newValue, playerName);
+            });
+        });
 
         return true;
     }
+
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd,

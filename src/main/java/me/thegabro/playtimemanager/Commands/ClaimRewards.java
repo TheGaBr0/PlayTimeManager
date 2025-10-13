@@ -5,6 +5,7 @@ import me.thegabro.playtimemanager.GUIs.Player.RewardsInfoGui;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -52,9 +53,18 @@ public class ClaimRewards implements CommandExecutor {
         // Create a session token for this GUI interaction
         String sessionToken = UUID.randomUUID().toString();
         plugin.getSessionManager().createSession(player.getUniqueId(), sessionToken);
-        // Open the rewards inventory with session validation
-        RewardsInfoGui rewardsGui = new RewardsInfoGui(player, dbUsersManager.getUserFromNicknameWithContext(player.getName(), "claimrewards command"), sessionToken);
-        rewardsGui.openInventory();
+
+        dbUsersManager.getUserFromNicknameAsyncWithContext(player.getName(), "claimrewards command", dbUser -> {
+            if (dbUser == null) {
+                plugin.getLogger().warning("No DB user found for player: " + player.getName());
+                return;
+            }
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                RewardsInfoGui rewardsGui = new RewardsInfoGui(player, dbUser, sessionToken);
+                rewardsGui.openInventory();
+            });
+        });
         return true;
     }
 

@@ -393,10 +393,9 @@ public class Goal {
             commands.forEach(command -> {
                 try {
                     String formattedCommand = formatCommand(command, player);
-                    if (plugin.getConfiguration().getBoolean("goal-check-verbose")) {
-                        plugin.getLogger().info("Executing command: " + formattedCommand);
-                    }
-                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), formattedCommand);
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), formattedCommand)
+                    );
                 } catch (Exception e) {
                     plugin.getLogger().severe(String.format("Failed to execute command for goal %s: %s",
                             name, e.getMessage()));
@@ -417,12 +416,7 @@ public class Goal {
             // Simple direct field access - most efficient when the name matches exactly
             try {
                 sound = (Sound) Sound.class.getField(goalSound).get(null);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                // Log the actual error for debugging if verbose is enabled
-                if (plugin.getConfiguration().getBoolean("goal-check-verbose")) {
-                    plugin.getLogger().info("Could not find sound directly, attempting fallback: " + e.getMessage());
-                }
-            }
+            } catch (NoSuchFieldException | IllegalAccessException ignored) {}
 
             if (sound != null) {
                 player.playSound(player.getLocation(), sound, 10.0f, 0.0f);

@@ -37,95 +37,96 @@ public class PlayTimeCommandManager implements TabExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, Command command, @NotNull String label, String[] args) {
-        if (!command.getName().equalsIgnoreCase("playtime")) {
-            return false;
-        }
+        if (!command.getName().equalsIgnoreCase("playtime")) return false;
 
-        // First check if sender has the base permission
         if (!(sender instanceof Player) || sender.hasPermission("playtime")) {
-            // Handle basic command with player name
+
+            // Case: /playtime <playername>
             if (args.length == 1) {
-                // For /playtime <playername>, check if user has the permission to view others
                 if (!sender.hasPermission("playtime.others")) {
                     sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                             " You don't have permission to execute this command"));
                     return false;
                 }
 
-                // Now check if player exists
-                if (dbUsersManager.getUserFromNickname(args[0]) == null) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                            " The player &e" + args[0] + "&7 has never joined the server!"));
-                    return false;
-                }
+                dbUsersManager.getUserFromNicknameAsyncWithContext(args[0], "playtime command", user -> {
+                    if (user == null) {
+                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                                " The player &e" + args[0] + "&7 has never joined the server!"));
+                        return;
+                    }
+                    Bukkit.getScheduler().runTask(plugin, () -> new PlaytimeCommand(sender, args));
+                });
 
-                new PlaytimeCommand(sender, args);
-                return true;
+                return true; // Return immediately, actual execution is async
             }
 
-            // Handle no args case (self stats)
+            // Case: /playtime (self stats)
             if (args.length == 0) {
                 new PlaytimeCommand(sender, args);
                 return true;
             }
 
-            // Handle subcommands
+            // Case: subcommands
             if (args.length > 1) {
                 String targetPlayerName = args[0];
                 String subCommand = args[1];
 
-                // Check if the subcommand is valid
                 if (!subCommands.contains(subCommand)) {
                     sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Unknown subcommand: " + subCommand));
                     return false;
                 }
 
-                // Check for wildcard reset and special permission
                 boolean isWildcardReset = subCommand.equals("reset") && targetPlayerName.equals("*");
-
-                // Check for wildcard permission if trying to use wildcard reset
                 if (isWildcardReset && !sender.hasPermission("playtime.others.modify.all")) {
                     sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
                             " You don't have permission to use wildcards with the reset command"));
                     return false;
                 }
 
-                // Check if player exists (only if not a wildcard reset)
-                if (!isWildcardReset && dbUsersManager.getUserFromNickname(targetPlayerName) == null) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                            " The player &e" + targetPlayerName + "&7 has never joined the server!"));
-                    return false;
-                }
-
-                // Process subcommands with specific permissions
-                switch (subCommand) {
-                    case "add":
-                        if (!sender.hasPermission("playtime.others.modify")) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
-                            return false;
+                if (!isWildcardReset) {
+                    dbUsersManager.getUserFromNicknameAsyncWithContext(targetPlayerName, "playtime subcommand", user -> {
+                        if (user == null) {
+                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                                    " The player &e" + targetPlayerName + "&7 has never joined the server!"));
+                            return;
                         }
-                        new PlayTimeAddTime(sender, args);
-                        return true;
 
-                    case "remove":
-                        if (!sender.hasPermission("playtime.others.modify")) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
-                            return false;
-                        }
-                        new PlayTimeRemoveTime(sender, args);
-                        return true;
+                        // Execute subcommand on main thread
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            switch (subCommand) {
+                                case "add":
+                                    if (!sender.hasPermission("playtime.others.modify")) {
+                                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
+                                        return;
+                                    }
+                                    new PlayTimeAddTime(sender, args);
+                                    break;
 
-                    case "reset":
-                        if (!sender.hasPermission("playtime.others.modify")) {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
-                            return false;
-                        }
-                        new PlayTimeReset(sender, args);
-                        return true;
+                                case "remove":
+                                    if (!sender.hasPermission("playtime.others.modify")) {
+                                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
+                                        return;
+                                    }
+                                    new PlayTimeRemoveTime(sender, args);
+                                    break;
 
-                    default:
-                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Unknown subcommand: " + subCommand));
-                        return false;
+                                case "reset":
+                                    if (!sender.hasPermission("playtime.others.modify")) {
+                                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
+                                        return;
+                                    }
+                                    new PlayTimeReset(sender, args);
+                                    break;
+                            }
+                        });
+                    });
+
+                    return true; // Return immediately, execution happens asynchronously
+                } else {
+                    // Wildcard reset logic can run immediately
+                    Bukkit.getScheduler().runTask(plugin, () -> new PlayTimeReset(sender, args));
+                    return true;
                 }
             }
         } else {
@@ -135,6 +136,7 @@ public class PlayTimeCommandManager implements TabExecutor {
 
         return false;
     }
+
 
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, String[] args) {

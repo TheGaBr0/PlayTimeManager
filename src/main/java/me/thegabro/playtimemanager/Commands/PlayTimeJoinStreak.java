@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.AllJoinStreakRewardsGui;
 import me.thegabro.playtimemanager.GUIs.Player.RewardsInfoGui;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
-
+    private final DatabaseHandler db = DatabaseHandler.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
@@ -60,20 +61,25 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
             }
 
             String targetPlayerName = args[1];
-            DBUser user = dbUsersManager.getUserFromNicknameWithContext(targetPlayerName, "join streak seeplayer command");
 
-            if (user == null) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " The player &e" + targetPlayerName + "&7 has never joined the server!"));
-                return true;
-            }
+            dbUsersManager.getUserFromNicknameAsyncWithContext(targetPlayerName, "join streak seeplayer command", user -> {
+                if (user == null) {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            " The player &e" + targetPlayerName + "&7 has never joined the server!"));
+                    return;
+                }
 
-            String sessionToken = UUID.randomUUID().toString();
-            plugin.getSessionManager().createSession(player.getUniqueId(), sessionToken);
+                // Generate session and open GUI on main thread
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    String sessionToken = UUID.randomUUID().toString();
+                    plugin.getSessionManager().createSession(player.getUniqueId(), sessionToken);
 
-            RewardsInfoGui rewardsGui = new RewardsInfoGui(player, user, sessionToken);
-            rewardsGui.openInventory();
-            return true;
+                    RewardsInfoGui rewardsGui = new RewardsInfoGui(player, user, sessionToken);
+                    rewardsGui.openInventory();
+                });
+            });
+
+            return true; // Return immediately; the rest happens async
         }
 
         if (args.length >= 3 && args[0].equalsIgnoreCase("set")) {
@@ -121,23 +127,23 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
     }
 
     private void setPlayerJoinStreak(CommandSender sender, String playerName, int newValue) {
-        DBUser user = dbUsersManager.getUserFromNicknameWithContext(playerName, "set join streak command");
-
-        if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                    " The player &e" + playerName + "&7 has never joined the server!"));
-            return;
-        }
-
-        int oldStreakValue = user.getRelativeJoinStreak();
-
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            user.setRelativeJoinStreak(newValue);
-
-            Bukkit.getScheduler().runTask(plugin, () -> {
+        dbUsersManager.getUserFromNicknameAsyncWithContext(playerName, "set join streak command", user -> {
+            if (user == null) {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " Set join streak for player &e" + playerName +
-                        "&7 from &e" + oldStreakValue + "&7 to &e" + newValue + "&7 joins"));
+                        " The player &e" + playerName + "&7 has never joined the server!"));
+                return;
+            }
+
+            int oldStreakValue = user.getRelativeJoinStreak();
+
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                user.setRelativeJoinStreak(newValue);
+
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            " Set join streak for player &e" + playerName +
+                            "&7 from &e" + oldStreakValue + "&7 to &e" + newValue + "&7 joins"));
+                });
             });
         });
     }
@@ -147,20 +153,29 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
                 " Starting to set all players' join streaks to &e" + newValue + "&7, this will take some time..."));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<DBUser> users = dbUsersManager.getAllDBUsers();
+            List<String> allNicknames = db.getPlayerDAO().getAllNicknames();
             AtomicInteger totalPlayersModified = new AtomicInteger();
+            AtomicInteger processedPlayers = new AtomicInteger();
 
-            for (DBUser u : users) {
-                u.setRelativeJoinStreak(newValue);
-                totalPlayersModified.getAndIncrement();
+            for (String nickname : allNicknames) {
+                dbUsersManager.getUserFromNicknameAsyncWithContext(nickname, "set all join streaks command", user -> {
+                    if (user != null) {
+                        user.setRelativeJoinStreak(newValue);
+                        totalPlayersModified.incrementAndGet();
+                    }
+
+                    // Check if all players have been processed
+                    if (processedPlayers.incrementAndGet() == allNicknames.size()) {
+                        dbUsersManager.clearCaches();
+
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                                    " All players' join streaks have been set to &e" + newValue + "&7! Total: &e" +
+                                    totalPlayersModified.get() + "&7 players modified"));
+                        });
+                    }
+                });
             }
-
-            dbUsersManager.clearCaches();
-
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " All players' join streaks have been set to &e" + newValue + "&7! Total: &e" + totalPlayersModified + "&7 players modified"));
-            });
         });
     }
 

@@ -70,7 +70,9 @@ public class RewardExecutor {
             commands.forEach(command -> {
                 try {
                     String formattedCommand = formatRewardCommand(command, player, reward);
-                    Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), formattedCommand);
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                        Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), formattedCommand)
+                    );
                 } catch (Exception e) {
                     plugin.getLogger().severe(String.format("Failed to execute command for join streak reward %d: %s",
                             reward.getId(), e.getMessage()));

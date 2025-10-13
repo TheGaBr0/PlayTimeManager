@@ -59,8 +59,7 @@ public class OnlineUsersManager {
 
     public void loadOnlineUsers() {
         Bukkit.getOnlinePlayers().forEach(player -> {
-            OnlineUser onlineUser = new OnlineUser(player);
-            addOnlineUser(onlineUser);
+            OnlineUser.createOnlineUserAsync(player, this::addOnlineUser);
         });
     }
 

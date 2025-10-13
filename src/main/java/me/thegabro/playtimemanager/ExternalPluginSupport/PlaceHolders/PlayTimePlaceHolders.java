@@ -28,6 +28,27 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private DateTimeFormatter formatter;
     private PlaytimeFormat playtimeFormat;
 
+    /**
+     * Get user data from cache or trigger async load
+     * Returns the cached user if available, otherwise triggers async load and returns null
+     */
+    private DBUser getUserFromCache(String nickname) {
+        // Check if user is in cache (synchronous)
+        DBUser cachedUser = dbUsersManager.getUserFromCacheSync(nickname);
+
+        if (cachedUser != null) {
+            return cachedUser;
+        }
+
+        // Not in cache - trigger async load (fire and forget)
+        dbUsersManager.getUserFromNicknameAsync(nickname, user -> {
+            // User will be cached by DBUsersManager
+            // Next placeholder evaluation will find it
+        });
+
+        return null; // Show "Loading..." until cached
+    }
+
     private String processParams(String params) {
         // Find the last occurrence of "_"
         int lastUnderscoreIndex = params.lastIndexOf("_");
@@ -70,7 +91,6 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     }
 
     public PlayTimePlaceHolders() {
-
         if (plugin.isPermissionsManagerConfigured()) {
             try {
                 this.luckPermsManager = LuckPermsManager.getInstance(plugin);
@@ -109,9 +129,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         // Handle rank placeholder
         if (params.equalsIgnoreCase("rank")) {
             try {
-
-                int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(player.getName()))  + 1;
-
+                int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(player.getName())) + 1;
                 return position != 0 ? String.valueOf(position) : plugin.getConfiguration().getString("placeholders.not-in-leaderboard-message");
             } catch (Exception e) {
                 return e.getMessage();
@@ -133,7 +151,6 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
                 return getErrorMessage("couldn't get first join date");
             }
         }
-
 
         // Handle join streak placeholder
         if (params.equalsIgnoreCase("joinstreak")) {
@@ -337,22 +354,24 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     }
 
     private String handleLastSeenElapsed(String nickname, String unit) {
-        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        DBUser user = getUserFromCache(nickname);
 
-        if (user == null) return getErrorMessage("wrong nickname?");
+        if (user == null) return "Loading...";
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
+        // Calculate FRESH elapsed time on every call
         Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
         return String.valueOf(Utils.ticksToTimeUnit(duration.getSeconds() * 20, unit));
     }
 
     private String handleLastSeenElapsed(String nickname) {
-        DBUser user = dbUsersManager.getUserFromNickname(nickname);
-        if (user == null) return getErrorMessage("wrong nickname?");
+        DBUser user = getUserFromCache(nickname);
+
+        if (user == null) return "Loading...";
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
+        // Calculate FRESH elapsed time on every call
         Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
-
         return Utils.ticksToFormattedPlaytime(duration.getSeconds() * 20);
     }
 
@@ -382,31 +401,31 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     }
 
     private String handleAFKPlayTime(String nickname, String unit) {
-        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        DBUser user = getUserFromCache(nickname);
         return user != null ?
                 String.valueOf(Utils.ticksToTimeUnit(user.getAFKPlaytime(), unit)) :
-                getErrorMessage("wrong nickname?");
+                "Loading...";
     }
 
     private String handleAFKPlayTime(String nickname) {
-        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        DBUser user = getUserFromCache(nickname);
         return user != null ?
                 Utils.ticksToFormattedPlaytime(user.getAFKPlaytime(), playtimeFormat) :
-                getErrorMessage("wrong nickname?");
+                "Loading...";
     }
 
     private String handlePlayTime(String nickname, String unit) {
-        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        DBUser user = getUserFromCache(nickname);
         return user != null ?
                 String.valueOf(Utils.ticksToTimeUnit(user.getPlaytime(), unit)) :
-                getErrorMessage("wrong nickname?");
+                "Loading...";
     }
 
     private String handlePlayTime(String nickname) {
-        DBUser user = dbUsersManager.getUserFromNickname(nickname);
+        DBUser user = getUserFromCache(nickname);
         return user != null ?
                 Utils.ticksToFormattedPlaytime(user.getPlaytime(), playtimeFormat) :
-                getErrorMessage("wrong nickname?");
+                "Loading...";
     }
 
     private String handleLastSeenTop(String posStr) {
@@ -421,49 +440,51 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     }
 
     private String handleLastSeen(String nickname) {
-        DBUser user = dbUsersManager.getUserFromNickname(nickname);
-        if (user == null) return getErrorMessage("wrong nickname?");
+        DBUser user = getUserFromCache(nickname);
+
+        if (user == null) return "Loading...";
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(
+                plugin.getConfiguration().getString("datetime-format")
+        );
         return user.getLastSeen().format(formatter);
     }
 
-    private String handleJoinStreak(String nickname) {
-        DBUser user = dbUsersManager.getUserFromNickname(nickname);
-        return user != null ?
-                String.valueOf(user.getAbsoluteJoinStreak()) :
-                getErrorMessage("wrong nickname?");
-    }
+    private String handleFirstJoin(String nickname) {
+        DBUser user = getUserFromCache(nickname);
 
-    private String handleFirstJoin(String nickname){
-        DBUser user = dbUsersManager.getUserFromNickname(nickname);
-        if (user == null) return getErrorMessage("wrong nickname?");
-
-        LocalDateTime firstJoin = user.getFirstJoin();
-        if (firstJoin == null) return getErrorMessage("first join data missing");
+        if (user == null) return "Loading...";
+        if (user.getFirstJoin() == null) return getErrorMessage("first join data missing");
 
         try {
-            formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
-            return firstJoin.format(formatter);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(
+                    plugin.getConfiguration().getString("datetime-format")
+            );
+            return user.getFirstJoin().format(formatter);
         } catch (Exception e) {
             return getErrorMessage("date formatting error");
         }
     }
 
-    private String handleRank(String nickname){
-        try {
+    private String handleJoinStreak(String nickname) {
+        DBUser user = getUserFromCache(nickname);
+        return user != null ?
+                String.valueOf(user.getAbsoluteJoinStreak()) :
+                "Loading...";
+    }
 
+    private String handleRank(String nickname) {
+        try {
             int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(nickname));
             return position != -1 ? String.valueOf(position + 1) : plugin.getConfiguration().getString("placeholders.not-in-leaderboard-message");
-
         } catch (Exception e) {
             return e.getMessage();
         }
     }
 
     private String getErrorMessage(String error) {
-        return plugin.getConfiguration().getBoolean("placeholders.enable-errors") ? "Error: " + error :  plugin.getConfiguration().getString("placeholders.default-message");
+        return plugin.getConfiguration().getBoolean("placeholders.enable-errors") ? "Error: " + error : plugin.getConfiguration().getString("placeholders.default-message");
     }
 
     private boolean isStringInt(String s) {

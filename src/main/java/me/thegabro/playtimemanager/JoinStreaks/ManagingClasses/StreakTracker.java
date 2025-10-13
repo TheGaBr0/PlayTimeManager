@@ -10,6 +10,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public class StreakTracker {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
@@ -28,41 +30,44 @@ public class StreakTracker {
         user.resetJoinStreaks();
     }
 
-    public int resetInactivePlayerStreaks(Set<String> playersWithStreaks, long intervalSeconds, int missesAllowed) {
-        int playersReset = 0;
+    public void resetInactivePlayerStreaksAsync(Set<String> playersWithStreaks, long intervalSeconds, int missesAllowed, Consumer<Integer> callback) {
+        AtomicInteger playersReset = new AtomicInteger();
+        AtomicInteger processedCount = new AtomicInteger();
 
-        for (String playerUUID : playersWithStreaks) {
-            DBUser user = dbUsersManager.getUserFromUUIDWithContext(playerUUID, "reset inactive player streak");
-            if (user != null) {
-                // Check if the player's last seen time is older than the interval
-                LocalDateTime lastSeen = user.getLastSeen();
-
-                // Null or empty check first
-                if (lastSeen == null) {
-                    user.resetJoinStreaks();
-                    playersReset++;
-                    continue;
-                }
-
-                // Calculate seconds since last seen
-                long secondsSinceLastSeen = Duration.between(lastSeen, LocalDateTime.now()).getSeconds();
-
-                //misses can't be lower than 0... otherwise it will reset immediately
-                if(missesAllowed <=0)
-                    missesAllowed = 1;
-
-                // Reset if seconds since last seen is greater than interval
-                if (secondsSinceLastSeen > intervalSeconds * missesAllowed) {
-                    user.resetJoinStreaks();
-                    restartUserJoinStreakRewards(user);
-                    playersReset++;
-
-                }
-            }
+        int totalPlayers = playersWithStreaks.size();
+        if (totalPlayers == 0) {
+            callback.accept(0);
+            return;
         }
 
-        return playersReset;
+        for (String playerUUID : playersWithStreaks) {
+            dbUsersManager.getUserFromUUIDAsyncWithContext(playerUUID, "reset inactive player streak", user -> {
+                if (user != null) {
+                    LocalDateTime lastSeen = user.getLastSeen();
+
+                    if (lastSeen == null) {
+                        user.resetJoinStreaks();
+                        playersReset.incrementAndGet();
+                    } else {
+                        long secondsSinceLastSeen = Duration.between(lastSeen, LocalDateTime.now()).getSeconds();
+                        int effectiveMisses = Math.max(missesAllowed, 1);
+
+                        if (secondsSinceLastSeen > intervalSeconds * effectiveMisses) {
+                            user.resetJoinStreaks();
+                            restartUserJoinStreakRewards(user);
+                            playersReset.incrementAndGet();
+                        }
+                    }
+                }
+
+                // Track when all async operations finish
+                if (processedCount.incrementAndGet() == totalPlayers) {
+                    callback.accept(playersReset.get());
+                }
+            });
+        }
     }
+
 
     public void restartUserJoinStreakRewards(DBUser user) {
         ArrayList<RewardSubInstance> userReceivedRewards = user.getReceivedRewards();

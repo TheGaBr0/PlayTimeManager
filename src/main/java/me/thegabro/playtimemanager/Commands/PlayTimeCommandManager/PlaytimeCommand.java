@@ -8,6 +8,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -86,27 +87,36 @@ public class PlaytimeCommand {
     }
 
     private boolean handleOther(CommandSender sender, String playerName) {
-        DBUser user = dbUsersManager.getUserFromNicknameWithContext(playerName, "playtime command");
+        // Load DBUser asynchronously
+        dbUsersManager.getUserFromNicknameAsyncWithContext(playerName, "playtime command", user -> {
+            if (user == null) {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                        " Player not found: " + playerName));
+                return;
+            }
 
-        // Check if prefix placeholder is used and LuckPerms is configured
-        if (config.getString("playtime-others-message").contains("%PREFIX%") && plugin.isPermissionsManagerConfigured()) {
-            luckPermsManager.getPrefixAsync(user.getUuid())
-                    .thenAccept(prefix -> {
-                        String message = createMessage(config.getString("playtime-others-message"),
-                                playerName,
-                                String.valueOf(user.getPlaytime()),
-                                prefix);
-                        sender.sendMessage(Utils.parseColors(message));
-                    });
-        } else {
-            String message = createMessage(config.getString("playtime-others-message"),
-                    playerName,
-                    String.valueOf(user.getPlaytime()),
-                    "");
-            sender.sendMessage(Utils.parseColors(message));
-        }
+            if (config.getString("playtime-others-message").contains("%PREFIX%") && plugin.isPermissionsManagerConfigured()) {
+                // Fetch prefix asynchronously
+                luckPermsManager.getPrefixAsync(user.getUuid()).thenAccept(prefix -> {
+                    String message = createMessage(config.getString("playtime-others-message"),
+                            playerName,
+                            String.valueOf(user.getPlaytime()),
+                            prefix);
+                    sender.sendMessage(Utils.parseColors(message));
+                });
+            } else {
+                // No prefix needed, send message on main thread
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    String message = createMessage(config.getString("playtime-others-message"),
+                            playerName,
+                            String.valueOf(user.getPlaytime()),
+                            "");
+                    sender.sendMessage(Utils.parseColors(message));
+                });
+            }
+        });
 
-        return true;
+        return true; // Still return true immediately
     }
 
     private String createMessage(String template, String playerName, String playtime, String prefix) {

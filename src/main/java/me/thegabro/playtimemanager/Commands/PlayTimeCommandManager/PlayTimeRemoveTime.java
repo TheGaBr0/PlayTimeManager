@@ -4,6 +4,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
 public class PlayTimeRemoveTime {
@@ -30,18 +31,29 @@ public class PlayTimeRemoveTime {
         // Make the time negative since we're removing
         timeToTicks = -timeToTicks;
 
-        DBUser user = dbUsersManager.getUserFromNicknameWithContext(args[0], "remove playtime command");
-        long oldPlaytime = user.getPlaytime();
+        long finalTimeToTicks = timeToTicks;
+        dbUsersManager.getUserFromNicknameAsyncWithContext(args[0], "remove playtime command", user -> {
+            if (user == null) {
+                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Player not found: " + args[0]));
+                return;
+            }
 
-        long newArtificialPlaytime = user.getArtificialPlaytime() + timeToTicks;
+            long oldPlaytime = user.getPlaytime();
+            long newArtificialPlaytime = user.getArtificialPlaytime() + finalTimeToTicks;
 
-        String formattedOldPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime);
-        user.setArtificialPlaytime(newArtificialPlaytime);
-        String formattedNewPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime + timeToTicks);
+            user.setArtificialPlaytimeAsync(newArtificialPlaytime, () -> {
+                String formattedOldPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime);
+                String formattedNewPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime + finalTimeToTicks);
 
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " PlayTime of &e" + args[0] +
-                "&7 has been updated from &6" + formattedOldPlaytime + "&7 to &6" + formattedNewPlaytime + "!"));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            " PlayTime of &e" + args[0] +
+                            "&7 has been updated from &6" + formattedOldPlaytime +
+                            "&7 to &6" + formattedNewPlaytime + "!"));
 
-        dbUsersManager.updateTopPlayersFromDB();
+                    dbUsersManager.updateTopPlayersFromDB();
+                });
+            });
+        });
     }
 }

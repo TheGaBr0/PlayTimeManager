@@ -50,7 +50,7 @@ public class PlayTimeManager extends JavaPlugin{
 
     public final String CURRENT_CONFIG_VERSION = "4.0";
     public final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
-    public final boolean CACHE_DEBUG = false;
+    public final boolean CACHE_DEBUG = true;
     @Override
     public void onEnable() {
 

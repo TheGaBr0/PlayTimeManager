@@ -9,7 +9,6 @@ import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 
@@ -188,8 +187,8 @@ public class DBUser {
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
-                UUID parsedUuid = UUID.fromString(uuid);
-                OfflinePlayer player = Bukkit.getOfflinePlayer(parsedUuid);
+
+                OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     playerInstance = player;
@@ -197,6 +196,9 @@ public class DBUser {
                 });
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().warning("Invalid UUID format for player: " + uuid);
+                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
+            } catch (Exception e) {
+                // Silently handle any other exceptions (like profile lookup failures)
                 Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
             }
         });

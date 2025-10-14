@@ -524,7 +524,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
                 item = Utils.createPlayerHead(processedMaterialString);
             } else {
                 // No specific nickname - use createPlayerHeadWithContext with subject
-                item = Utils.createPlayerHeadWithContext(processedMaterialString, subject.getNickname());
+                item = Utils.createPlayerHeadWithContext(processedMaterialString, subject.getNickname(), offlinePlayer);
             }
 
             // Apply name and lore to the player head

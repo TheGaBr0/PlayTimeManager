@@ -22,7 +22,7 @@ public class PlaytimeCommand {
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private LuckPermsManager luckPermsManager = null;
 
-    public PlaytimeCommand(CommandSender sender, String[] args) {
+    public PlaytimeCommand(CommandSender sender, DBUser user) {
         if (plugin.isPermissionsManagerConfigured()) {
             try {
                 this.luckPermsManager = LuckPermsManager.getInstance(plugin);
@@ -30,31 +30,23 @@ public class PlaytimeCommand {
                 // LuckPerms is not loaded, leave luckPermsManager as null
             }
         }
-        execute(sender, args);
+        execute(sender, user);
     }
 
-    public boolean execute(CommandSender sender, String[] args) {
-        // Check base permissions first
-        if (args.length == 0) {
+    public boolean execute(CommandSender sender, DBUser user) {
+        if (user == null) {
             if (!sender.hasPermission("playtime")) {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to check playtime."));
                 return false;
             }
             return handleSelf(sender);
-        }
-
-        // Check other player playtime permissions
-        if (args.length == 1) {
+        }else{
             if (!sender.hasPermission("playtime.others")) {
                 sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to check other players' playtime."));
                 return false;
             }
-            return handleOther(sender, args[0]);
+            return handleOther(sender, user);
         }
-
-        // Invalid command usage
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Usage: /playtime [player]"));
-        return false;
     }
 
     private boolean handleSelf(CommandSender sender) {
@@ -86,37 +78,24 @@ public class PlaytimeCommand {
         return true;
     }
 
-    private boolean handleOther(CommandSender sender, String playerName) {
-        // Load DBUser asynchronously
-        dbUsersManager.getUserFromNicknameAsyncWithContext(playerName, "playtime command", user -> {
-            if (user == null) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " Player not found: " + playerName));
-                return;
-            }
+    private boolean handleOther(CommandSender sender, DBUser user) {
+        if (config.getString("playtime-others-message").contains("%PREFIX%") && plugin.isPermissionsManagerConfigured()) {
+            luckPermsManager.getPrefixAsync(user.getUuid()).thenAccept(prefix -> {
+                String message = createMessage(config.getString("playtime-others-message"),
+                        user.getNickname(),
+                        String.valueOf(user.getPlaytime()),
+                        prefix);
+                sender.sendMessage(Utils.parseColors(message));
+            });
+        } else {
+            String message = createMessage(config.getString("playtime-others-message"),
+                        user.getNickname(),
+                        String.valueOf(user.getPlaytime()),
+                        "");
+            sender.sendMessage(Utils.parseColors(message));
+        }
 
-            if (config.getString("playtime-others-message").contains("%PREFIX%") && plugin.isPermissionsManagerConfigured()) {
-                // Fetch prefix asynchronously
-                luckPermsManager.getPrefixAsync(user.getUuid()).thenAccept(prefix -> {
-                    String message = createMessage(config.getString("playtime-others-message"),
-                            playerName,
-                            String.valueOf(user.getPlaytime()),
-                            prefix);
-                    sender.sendMessage(Utils.parseColors(message));
-                });
-            } else {
-                // No prefix needed, send message on main thread
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    String message = createMessage(config.getString("playtime-others-message"),
-                            playerName,
-                            String.valueOf(user.getPlaytime()),
-                            "");
-                    sender.sendMessage(Utils.parseColors(message));
-                });
-            }
-        });
-
-        return true; // Still return true immediately
+        return true;
     }
 
     private String createMessage(String template, String playerName, String playtime, String prefix) {

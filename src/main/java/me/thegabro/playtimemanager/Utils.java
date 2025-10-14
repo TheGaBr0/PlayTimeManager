@@ -10,8 +10,11 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +27,16 @@ public class Utils {
     private static final long TICKS_PER_HOUR = TICKS_PER_MINUTE * 60;
     private static final long TICKS_PER_DAY = TICKS_PER_HOUR * 24;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
+
+    /**
+     * Uses a regex to check if an input nickname is valid or not
+     *
+     * @param username The input string containing the nickname to check
+     * @return whether it's valid or not
+     */
+    public static boolean isValidMinecraftUsername(String username) {
+        return username != null && username.matches("^[a-zA-Z0-9_]{3,16}$");
+    }
 
     /**
      * Parses color codes and formatting from a string and converts it to a Component
@@ -476,12 +489,12 @@ public class Utils {
     /**
      * Creates a player head ItemStack from input format "PLAYER_HEAD:playername"
      * If no player name is specified or the format is invalid, defaults to Steve's head
+     * Handles both Java and Bedrock Edition players (Bedrock players via Geyser/Floodgate)
      *
      * @param input The input string in format "PLAYER_HEAD:playername" or just "PLAYER_HEAD"
      * @return ItemStack of a player head with the specified player's skin, or Steve by default
      */
     public static ItemStack createPlayerHead(String input) {
-
         ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
 
         if (input == null || input.trim().isEmpty()) {
@@ -489,7 +502,6 @@ public class Utils {
         }
 
         String[] parts = input.split(":", 2);
-
 
         // Check if it's a player head request
         if (!parts[0].equalsIgnoreCase("PLAYER_HEAD")) {
@@ -500,27 +512,37 @@ public class Utils {
 
         if (skullMeta != null) {
             try {
-            String playerName = (parts.length > 1 && !parts[1].trim().isEmpty()) ? parts[1].trim() : "Steve";
-            PlayerProfile profile = Bukkit.createProfile(playerName);
-            skullMeta.setPlayerProfile(profile);
-            skull.setItemMeta(skullMeta);
-            } catch (Exception ignored) {}
+                String playerName = (parts.length > 1 && !parts[1].trim().isEmpty()) ? parts[1].trim() : "Steve";
+
+                // Try to get the player if they're online (works for both Java and Bedrock)
+                Player onlinePlayer = Bukkit.getPlayerExact(playerName);
+                if (onlinePlayer != null) {
+                    skullMeta.setOwningPlayer(onlinePlayer);
+                } else {
+                    // For offline players, try to create profile
+                    // This will work for Java players but may fail for Bedrock players
+                    PlayerProfile profile = Bukkit.createProfile(playerName);
+                    skullMeta.setPlayerProfile(profile);
+                }
+                skull.setItemMeta(skullMeta);
+            } catch (Exception e) {
+                // If profile creation fails (e.g., Bedrock player), skull remains as default (Steve)
+                // This is intentional - we silently fall back to Steve's head
+            }
         }
 
         return skull;
     }
 
     /**
-     * Creates a player head ItemStack from input format "PLAYER_HEAD:playername" with context player fallback
-     * Uses Paper's Profile API to properly fetch skin data for players who may not have joined the server
-     * If no player name is specified, uses the context player's name instead of defaulting to Steve
-     * If the format is invalid, still defaults to Steve's head
+     * Creates a player head ItemStack with proper handling for online/offline and Java/Bedrock players
      *
      * @param input The input string in format "PLAYER_HEAD:playername" or just "PLAYER_HEAD"
      * @param contextPlayerName The player name to use when no specific player is specified
-     * @return ItemStack of a player head with the specified or context player's skin, or Steve by default
+     * @param offlinePlayer Optional OfflinePlayer instance (can be null)
+     * @return ItemStack of a player head with the specified or context player's skin
      */
-    public static ItemStack createPlayerHeadWithContext(String input, String contextPlayerName) {
+    public static ItemStack createPlayerHeadWithContext(String input, String contextPlayerName, @Nullable OfflinePlayer offlinePlayer) {
         ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
 
         if (input == null || input.trim().isEmpty()) return skull;
@@ -540,10 +562,25 @@ public class Utils {
         SkullMeta meta = (SkullMeta) skull.getItemMeta();
         if (meta != null) {
             try {
-                PlayerProfile profile = Bukkit.createProfile(playerName);
-                meta.setPlayerProfile(profile);
-                skull.setItemMeta(meta);
-            } catch (Exception ignored) {}
+                // If we have an OfflinePlayer instance and it matches our target, use it directly
+                if (offlinePlayer != null && offlinePlayer.getName() != null &&
+                        offlinePlayer.getName().equalsIgnoreCase(playerName)) {
+                    meta.setOwningPlayer(offlinePlayer);
+                    skull.setItemMeta(meta);
+                    return skull;
+                }
+
+                // For offline Java players only - Bedrock player names start with special chars
+                if (isValidMinecraftUsername(playerName)) {
+                    PlayerProfile profile = Bukkit.createProfile(playerName);
+                    meta.setPlayerProfile(profile);
+                    skull.setItemMeta(meta);
+                }
+                // For Bedrock players, skull remains as Steve (default)
+
+            } catch (Exception e) {
+                // Silently fall back to Steve's head
+            }
         }
 
         return skull;

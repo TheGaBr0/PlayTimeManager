@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
 
 import me.thegabro.playtimemanager.Commands.PlayTimeReset;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
@@ -19,7 +20,7 @@ public class PlayTimeCommandManager implements TabExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final List<String> resetOptions = new ArrayList<>();
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     public PlayTimeCommandManager() {
         subCommands.add("add");
         subCommands.add("remove");
@@ -50,15 +51,15 @@ public class PlayTimeCommandManager implements TabExecutor {
             // Case: /playtime <playername>
             if (args.length == 1) {
                 if (!sender.hasPermission("playtime.others")) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                            " You don't have permission to execute this command"));
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                            config.getString("no-permission")));
                     return false;
                 }
 
                 dbUsersManager.getUserFromNicknameAsyncWithContext(args[0], "playtime command", user -> {
                     if (user == null) {
-                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                                " The player &e" + args[0] + "&7 has never joined the server!"));
+                        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                        config.getString("player-never-joined").replace("%PLAYER%", args[0])));
                         return;
                     }
                     Bukkit.getScheduler().runTask(plugin, () -> new PlaytimeCommand(sender, user));
@@ -72,22 +73,22 @@ public class PlayTimeCommandManager implements TabExecutor {
             String subCommand = args[1];
 
             if (!subCommands.contains(subCommand)) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Unknown subcommand: " + subCommand));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("unknown-subcommand")));
                 return false;
             }
 
             boolean isWildcardReset = subCommand.equals("reset") && targetPlayerName.equals("*");
             if (isWildcardReset && !sender.hasPermission("playtime.others.modify.all")) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " You don't have permission to use wildcards with the reset command"));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                        config.getString("no-permission-wildcard-reset")));
                 return false;
             }
 
             if (!isWildcardReset) {
                 dbUsersManager.getUserFromNicknameAsyncWithContext(targetPlayerName, "playtime subcommand", user -> {
                     if (user == null) {
-                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                                " The player &e" + targetPlayerName + "&7 has never joined the server!"));
+                        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                                config.getString("player-never-joined").replace("%PLAYER%", targetPlayerName)));
                         return;
                     }
 
@@ -96,7 +97,7 @@ public class PlayTimeCommandManager implements TabExecutor {
                         switch (subCommand) {
                             case "add":
                                 if (!sender.hasPermission("playtime.others.modify")) {
-                                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
+                                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
                                     return;
                                 }
                                 new PlayTimeAddTime(sender, args);
@@ -104,7 +105,7 @@ public class PlayTimeCommandManager implements TabExecutor {
 
                             case "remove":
                                 if (!sender.hasPermission("playtime.others.modify")) {
-                                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
+                                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
                                     return;
                                 }
                                 new PlayTimeRemoveTime(sender, args);
@@ -112,7 +113,7 @@ public class PlayTimeCommandManager implements TabExecutor {
 
                             case "reset":
                                 if (!sender.hasPermission("playtime.others.modify")) {
-                                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
+                                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
                                     return;
                                 }
                                 new PlayTimeReset(sender, args);
@@ -128,7 +129,7 @@ public class PlayTimeCommandManager implements TabExecutor {
                 return true;
             }
         } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
             return false;
         }
 

@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUser;
@@ -35,6 +36,7 @@ public class PlayTimeReset {
     private static final Map<UUID, PendingReset> pendingResets = new HashMap<>();
     // Timeout for confirmation (60 seconds)
     private static final long CONFIRMATION_TIMEOUT_SECONDS = 60;
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
 
     /**
      * Class to store pending reset information
@@ -108,7 +110,7 @@ public class PlayTimeReset {
                 dbUsersManager.updateTopPlayersFromDB();
                 break;
             default:
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                         " Unknown reset type: &e" + resetType + "&7. Valid types: server_playtime, playtime, last_seen, first_join, joinstreak, joinstreak_rewards, goals, everything"));
                 break;
         }
@@ -147,7 +149,7 @@ public class PlayTimeReset {
                 }
 
                 final long finalResetPlaytime = resetPlaytime;
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                         " Reset server playtime for player &e" + playerName +
                         "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(finalResetPlaytime) + "&7 of playtime)"));
             });
@@ -168,7 +170,7 @@ public class PlayTimeReset {
                 user.resetPlaytime();
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                             " Reset playtime for player &e" + playerName +
                             "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(playtimeBeforeReset) + "&7 of playtime)"));
                 });
@@ -187,7 +189,7 @@ public class PlayTimeReset {
                 user.resetLastSeen();
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                             " Reset last seen data for player &e" + playerName + "&7"));
                 });
             });
@@ -205,7 +207,7 @@ public class PlayTimeReset {
                 user.resetFirstJoin();
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                             " Reset first join data for player &e" + playerName + "&7"));
                 });
             });
@@ -226,7 +228,7 @@ public class PlayTimeReset {
                 joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                             " Reset join streak for player &e" + playerName +
                             "&7 (Removed &e" + joinStreakBeforeReset + "&7 joins)"));
                 });
@@ -246,7 +248,7 @@ public class PlayTimeReset {
                 joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                             " Reset join streak rewards for player &e" + playerName + "&7"));
                 });
             });
@@ -266,7 +268,7 @@ public class PlayTimeReset {
                 user.resetGoals();
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                             " Reset goals for player &e" + playerName +
                             "&7 (Removed &e" + completedGoalsCount + "&7 completed goals)"));
                 });
@@ -287,7 +289,7 @@ public class PlayTimeReset {
                 user.reset();
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                             " Reset everything for player &e" + playerName +
                             "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(playtimeBeforeReset) + "&7 of playtime)"));
                 });
@@ -299,7 +301,7 @@ public class PlayTimeReset {
      * Reset server playtime statistics for all players
      */
     public void resetAllPlayerServerPlaytime(CommandSender sender) {
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                 " Starting reset of all players' server playtime, this will take some time..."));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -348,7 +350,7 @@ public class PlayTimeReset {
                     }
                 }
 
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                         " All players' server playtime has been reset! Total: &e" + totalPlayersReset +
                         "&7 players with &e" + Utils.ticksToFormattedPlaytime(totalPlaytimeReset.get()) + "&7 of playtime"));
             });
@@ -359,7 +361,7 @@ public class PlayTimeReset {
      * Generic method to reset specific data for all players
      */
     private void resetAllPlayersGeneric(CommandSender sender, String resetType, String displayName) {
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                 " Starting reset of all players' " + displayName + ", this will take some time..."));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -419,7 +421,7 @@ public class PlayTimeReset {
                                 message += " with &e" + totalDataReset + "&7 completed goals";
                             }
 
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + message));
+                            sender.sendMessage(Utils.parseColors(config.getString("prefix") + message));
                         });
                     }
                 });
@@ -440,7 +442,7 @@ public class PlayTimeReset {
 
             if (pendingReset.isExpired()) {
                 pendingResets.remove(senderUUID);
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                         " Your previous reset confirmation has expired. Please try again."));
                 requestConfirmation(sender, senderUUID, resetType);
                 return;
@@ -448,7 +450,7 @@ public class PlayTimeReset {
 
             if (!pendingReset.resetType.equals(resetType)) {
                 pendingResets.remove(senderUUID);
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                         " Reset type has changed. Please confirm again."));
                 requestConfirmation(sender, senderUUID, resetType);
                 return;
@@ -491,7 +493,7 @@ public class PlayTimeReset {
                 resetAllPlayersGeneric(sender, "everything", "data");
                 break;
             default:
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                         " Unknown reset type: &e" + resetType + "&7. Valid types: server_playtime, playtime, last_seen, first_join, joinstreak, joinstreak_rewards, goals, everything"));
                 break;
         }
@@ -503,10 +505,10 @@ public class PlayTimeReset {
     private void requestConfirmation(CommandSender sender, UUID senderUUID, String resetType) {
         pendingResets.put(senderUUID, new PendingReset(resetType));
 
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                 " &c&lWARNING&r&7: You are about to reset " + getResetTypeDescription(resetType) +
                 " for &e&lALL players&7!"));
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                 " &7This action cannot be undone. Run the command again within " +
                 CONFIRMATION_TIMEOUT_SECONDS + " seconds to confirm."));
     }
@@ -543,8 +545,8 @@ public class PlayTimeReset {
     private void getValidatedUser(CommandSender sender, String playerName, Consumer<DBUser> callback) {
         dbUsersManager.getUserFromNicknameAsyncWithContext(playerName, "playtime reset command", user -> {
             if (user == null) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " The player &e" + playerName + "&7 has never joined the server!"));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                        config.getString("player-never-joined").replace("%PLAYER%", playerName)));
             }
             callback.accept(user);
         });

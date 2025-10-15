@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
@@ -26,11 +27,11 @@ public class PlayTimeStats implements CommandExecutor {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private static final Map<UUID, Long> lastGuiOpenTime = new HashMap<>();
     private static final long GUI_OPEN_COOLDOWN = 1000;
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!sender.hasPermission("playtime.stats")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                     GUIsConfiguration.getInstance().getString("player-stats-gui.messages.no-permission")));
             return false;
         }
@@ -46,7 +47,7 @@ public class PlayTimeStats implements CommandExecutor {
             }
         } else {
             if (!sender.hasPermission("playtime.others.stats")) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                         GUIsConfiguration.getInstance().getString("player-stats-gui.messages.no-permission-others")));
                 return false;
             }
@@ -55,7 +56,7 @@ public class PlayTimeStats implements CommandExecutor {
 
         dbUsersManager.getUserFromNicknameAsyncWithContext(targetPlayerName, "ptstats command", user -> {
             if (user == null) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                         GUIsConfiguration.getInstance().getString("player-stats-gui.messages.player-not-found")));
                 return;
             }
@@ -156,7 +157,7 @@ public class PlayTimeStats implements CommandExecutor {
         if (lastGuiOpenTime.containsKey(playerId)) {
             long lastTime = lastGuiOpenTime.get(playerId);
             if (currentTime - lastTime < GUI_OPEN_COOLDOWN) {
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " "+
+                player.sendMessage(Utils.parseColors(config.getString("prefix") + " "+
                         GUIsConfiguration.getInstance().getString("player-stats-gui.messages.command-spam")));
                 return;
             }

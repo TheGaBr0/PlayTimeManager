@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Configuration;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
@@ -20,6 +21,7 @@ public class Version354to355Updater {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DatabaseHandler database = DatabaseHandler.getInstance();
     private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
+    private final CommandsConfiguration commandsConfiguration = CommandsConfiguration.getInstance();
 
     public Version354to355Updater() {}
 
@@ -33,8 +35,11 @@ public class Version354to355Updater {
 
     private void recreateConfigFile() {
         Configuration.getInstance().updateConfig(false);
+        commandsConfiguration.initialize(plugin);
+        commandsConfiguration.updateConfig();
         guIsConfiguration.initialize(plugin);
         guIsConfiguration.updateConfig();
+
 
         guIsConfiguration.set("player-stats-gui.goals-settings.list-format", "&7• &e%GOAL% &7(&e%GOAL_COMPLETED_TIMES%)");
     }

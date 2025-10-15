@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.AllJoinStreakRewardsGui;
 import me.thegabro.playtimemanager.GUIs.Player.RewardsInfoGui;
@@ -26,17 +27,18 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final DatabaseHandler db = DatabaseHandler.getInstance();
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
         if (!sender.hasPermission("playtime.joinstreak")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have the permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
             return false;
         }
 
         if (args.length == 0) {
             if (!(sender instanceof Player)) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Only players can use the GUI!"));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Only players can use the GUI!"));
                 return false;
             }
             AllJoinStreakRewardsGui gui = new AllJoinStreakRewardsGui();
@@ -45,18 +47,18 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
         }
 
         if(args.length == 1){
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Too few arguments!"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("too-few-arguments")));
             return false;
         }
 
         if (args[0].equalsIgnoreCase("seeplayer")) {
             if (!(sender instanceof Player player)) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Only players can use this command!"));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("must-be-player")));
                 return false;
             }
 
             if (!player.hasPermission("playtime.joinstreak.seeplayer")) {
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &cYou don't have permission to view other players' rewards."));
+                player.sendMessage(Utils.parseColors(config.getString("prefix") + " &cYou don't have permission to view other players' rewards."));
                 return true;
             }
 
@@ -64,8 +66,8 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
 
             dbUsersManager.getUserFromNicknameAsyncWithContext(targetPlayerName, "join streak seeplayer command", user -> {
                 if (user == null) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                            " The player &e" + targetPlayerName + "&7 has never joined the server!"));
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                            config.getString("player-never-joined").replace("%PLAYER%", targetPlayerName)));
                     return;
                 }
 
@@ -88,13 +90,13 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
 
             if (targetPlayerName.equals("*")) {
                 if (!sender.hasPermission("playtime.others.modify.all")) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                             " &cYou don't have permission to modify all players' join streaks."));
                     return true;
                 }
             } else {
                 if (!sender.hasPermission("playtime.others.modify")) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                             " &cYou don't have permission to modify other players' join streaks."));
                     return true;
                 }
@@ -104,12 +106,12 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
             try {
                 newStreakValue = Integer.parseInt(valueString);
                 if (newStreakValue < 0) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                             " &cJoin streak value must be 0 or greater!"));
                     return true;
                 }
             } catch (NumberFormatException e) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                         " &cInvalid number: &e" + valueString + "&c. Please enter a valid integer."));
                 return true;
             }
@@ -129,8 +131,8 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
     private void setPlayerJoinStreak(CommandSender sender, String playerName, int newValue) {
         dbUsersManager.getUserFromNicknameAsyncWithContext(playerName, "set join streak command", user -> {
             if (user == null) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " The player &e" + playerName + "&7 has never joined the server!"));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                        config.getString("player-never-joined").replace("%PLAYER%", playerName)));
                 return;
             }
 
@@ -140,7 +142,7 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
                 user.setRelativeJoinStreak(newValue);
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                             " Set join streak for player &e" + playerName +
                             "&7 from &e" + oldStreakValue + "&7 to &e" + newValue + "&7 joins"));
                 });
@@ -149,7 +151,7 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
     }
 
     private void setAllPlayersJoinStreak(CommandSender sender, int newValue) {
-        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                 " Starting to set all players' join streaks to &e" + newValue + "&7, this will take some time..."));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -169,7 +171,7 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
                         dbUsersManager.clearCaches();
 
                         Bukkit.getScheduler().runTask(plugin, () -> {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                                     " All players' join streaks have been set to &e" + newValue + "&7! Total: &e" +
                                     totalPlayersModified.get() + "&7 players modified"));
                         });

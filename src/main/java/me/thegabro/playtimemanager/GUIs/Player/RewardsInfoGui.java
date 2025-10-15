@@ -503,7 +503,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
                         String instance = container.get(idKey, PersistentDataType.STRING);
                         claimReward(instance);
                     } else {
-                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+                        whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                                 config.getString("rewards-gui.messages.not-available")));
                         whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
                     }
@@ -531,7 +531,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
             int specificJoinCount = Integer.parseInt(parts[1]);
 
             if (!sender.hasPermission("playtime.joinstreak.claim")) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                         config.getString("rewards-gui.messages.no-permission")));
                 sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
                 return;
@@ -539,7 +539,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
 
             JoinStreakReward reward = rewardsManager.getRewardRegistry().getReward(rewardId);
             if (reward == null) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                         config.getString("rewards-gui.messages.reward-not-found")));
                 sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
                 return;
@@ -557,7 +557,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
             } catch (Exception e) {
                 plugin.getLogger().severe("Error processing reward for player " + sender.getName() + ": " + e.getMessage());
                 e.printStackTrace();
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                         config.getString("rewards-gui.messages.error-processing")));
                 sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             }
@@ -578,7 +578,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
         }
 
         if (!sender.hasPermission("playtime.joinstreak.claim")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                     config.getString("rewards-gui.messages.no-permission")));
             sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return;
@@ -603,7 +603,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
                     "%COUNT%", String.valueOf(claimedCount)
             );
 
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " + message));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " + message));
             sender.playSound(sender.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
 
             // Reload the rewards to refresh the GUI
@@ -611,7 +611,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
             applyFilters();
             initializeItems();
         } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                     config.getString("rewards-gui.messages.error-processing")));
             sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
         }

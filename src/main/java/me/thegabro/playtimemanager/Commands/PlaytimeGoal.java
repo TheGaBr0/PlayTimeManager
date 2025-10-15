@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.GUIs.Goals.AllGoalsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
@@ -20,19 +21,19 @@ public class PlaytimeGoal implements TabExecutor {
     private final String[] SUBCOMMANDS = {"create", "remove", "rename", "checknow"};  // Added "create" subcommand
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
         if (!sender.hasPermission("playtime.goal")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have the permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
             return false;
         }
 
         // If no arguments provided and sender is a player, open GUI
         if (args.length == 0) {
             if (!(sender instanceof Player)) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Only players can use the GUI!"));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Only players can use the GUI!"));
                 return false;
             }
             AllGoalsGui gui = new AllGoalsGui();
@@ -45,7 +46,7 @@ public class PlaytimeGoal implements TabExecutor {
         switch (subCommand) {
             case "create":
                 if (args.length < 2) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Usage: /playtimegoal create <goalName>"));
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Usage: /playtimegoal create <goalName>"));
                     return false;
                 }
                 goalName = args[1];
@@ -53,7 +54,7 @@ public class PlaytimeGoal implements TabExecutor {
                 break;
             case "remove":
                 if (args.length < 2) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Usage: /playtimegoal remove <goalName>"));
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Usage: /playtimegoal remove <goalName>"));
                     return false;
                 }
                 goalName = args[1];
@@ -61,7 +62,7 @@ public class PlaytimeGoal implements TabExecutor {
                 break;
             case "rename":
                 if (args.length != 3) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Usage: /playtimegoal rename <oldName> <newName>"));
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Usage: /playtimegoal rename <oldName> <newName>"));
                     return false;
                 }
                 String oldName = args[1];
@@ -70,14 +71,14 @@ public class PlaytimeGoal implements TabExecutor {
                 break;
             case "checknow":
                 if (args.length < 2) {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Usage: /playtimegoal checknow <goalname>"));
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Usage: /playtimegoal checknow <goalname>"));
                     return false;
                 }
                 goalName = args[1];
                 checkNow(sender, goalName);
                 break;
             default:
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Subcommand " + subCommand + " is not valid."));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Subcommand " + subCommand + " is not valid."));
                 return false;
         }
 
@@ -87,13 +88,13 @@ public class PlaytimeGoal implements TabExecutor {
     private void createGoal(CommandSender sender, String goalName) {
         // Check if goal already exists
         if (goalsManager.getGoal(goalName) != null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " A goal with the name &e" + goalName + " &7already exists!"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " A goal with the name &e" + goalName + " &7already exists!"));
             return;
         }
 
         // Check if goal name is empty or invalid
         if (goalName.trim().isEmpty()) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Goal name cannot be empty!"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Goal name cannot be empty!"));
             return;
         }
 
@@ -104,7 +105,7 @@ public class PlaytimeGoal implements TabExecutor {
 
             // Switch back to main thread for UI update
             Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Goal &e" + goalName + " has been created &asuccessfully &7(inactive by default)." +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Goal &e" + goalName + " has been created &asuccessfully &7(inactive by default)." +
                         " &7To edit this goal, use the GUI or manually modify the &e" + goalName + ".yml &7file."));
             });
         });
@@ -113,12 +114,12 @@ public class PlaytimeGoal implements TabExecutor {
     private void renameGoal(CommandSender sender, String oldName, String newName) {
         Goal oldGoal = goalsManager.getGoal(oldName);
         if (oldGoal == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " The goal &e" + oldName + " &7doesn't exist!"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " The goal &e" + oldName + " &7doesn't exist!"));
             return;
         }
 
         if (goalsManager.getGoal(newName) != null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " A goal with the name &e" + newName + " &7already exists!"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " A goal with the name &e" + newName + " &7already exists!"));
             return;
         }
 
@@ -128,7 +129,7 @@ public class PlaytimeGoal implements TabExecutor {
 
             // Switch back to main thread for UI update
             Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Successfully renamed goal &e" + oldName + " &7to &e" + newName));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Successfully renamed goal &e" + oldName + " &7to &e" + newName));
             });
         });
     }
@@ -137,7 +138,7 @@ public class PlaytimeGoal implements TabExecutor {
     private void removeGoal(CommandSender sender, String goalName) {
         Goal goal = goalsManager.getGoal(goalName);
         if (goal == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " The goal &e" + goalName + " &7doesn't exist!"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " The goal &e" + goalName + " &7doesn't exist!"));
             return;
         }
 
@@ -147,7 +148,7 @@ public class PlaytimeGoal implements TabExecutor {
 
             // Switch back to main thread for UI updates and schedule changes
             Bukkit.getScheduler().runTask(plugin, () -> {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " The goal &e" + goalName + " &7has been removed!"));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " The goal &e" + goalName + " &7has been removed!"));
             });
         });
     }
@@ -155,7 +156,7 @@ public class PlaytimeGoal implements TabExecutor {
     private void checkNow(CommandSender sender, String goalName){
         Goal goal = goalsManager.getGoal(goalName);
         if (goal == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " The goal &e" + goalName + " &7doesn't exist!"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " The goal &e" + goalName + " &7doesn't exist!"));
             return;
         }
 

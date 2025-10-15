@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
@@ -16,7 +17,7 @@ import java.util.Map;
 
 public class RewardMessageService {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     public RewardMessageService() {}
 
     public void sendRewardRelatedMessage(Player player, RewardSubInstance subInstance, String message, int delaySeconds) {
@@ -32,10 +33,10 @@ public class RewardMessageService {
 
     public void sendScheduleActivationMessage(CommandSender sender, boolean activated) {
         if (activated) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                     " The join streak check schedule has been activated"));
         } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                     " The join streak check schedule has been deactivated"));
         }
     }
@@ -47,7 +48,7 @@ public class RewardMessageService {
             Date nextReset = (Date) scheduleInfo.get("nextReset");
             String timeRemaining = (String) scheduleInfo.get("timeRemaining");
 
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                     " Next join streak interval reset scheduled for: &e" + formatter.format(
                     nextReset.toInstant()
                             .atZone(ZoneId.systemDefault())

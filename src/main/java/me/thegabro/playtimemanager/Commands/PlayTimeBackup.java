@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Updates.DatabaseBackupUtility;
 import me.thegabro.playtimemanager.Utils;
@@ -13,7 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class PlayTimeBackup implements CommandExecutor {
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DatabaseBackupUtility backupUtility = DatabaseBackupUtility.getInstance();
 
@@ -24,15 +25,15 @@ public class PlayTimeBackup implements CommandExecutor {
 
             File success = backupUtility.createBackup(generateReadmeContent());
             if (success != null) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                         " &7Database backup created successfully!"));
             } else {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                         " &7Failed to create database backup. Check console for details."));
             }
             return true;
         } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have the permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
         }
         return false;
     }

@@ -25,6 +25,7 @@ public class PlaytimeReload implements CommandExecutor {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
@@ -36,7 +37,7 @@ public class PlaytimeReload implements CommandExecutor {
             GUIsConfiguration.getInstance().reload();
             CommandsConfiguration.getInstance().reload();
 
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " The configuration files have been reloaded"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " The configuration files have been reloaded"));
 
             // Reload goals
             goalsManager.clearGoals();
@@ -56,7 +57,7 @@ public class PlaytimeReload implements CommandExecutor {
 
 
             onlineUsersManager.startGoalCheckSchedule();
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Goal check schedule has been restarted"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Goal check schedule has been restarted"));
 
             dbUsersManager.updateTopPlayersFromDB();
 
@@ -68,12 +69,12 @@ public class PlaytimeReload implements CommandExecutor {
             // Only start the task if it's enabled in config
             if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
                 joinStreaksManager.getCycleScheduler().getNextSchedule();
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Join streak check schedule has been restarted"));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Join streak check schedule has been restarted"));
             }
 
             return true;
         } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have the permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
         }
         return false;
     }

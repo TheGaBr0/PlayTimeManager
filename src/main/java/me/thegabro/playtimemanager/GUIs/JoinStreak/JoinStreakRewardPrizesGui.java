@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.GUIs.JoinStreak;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
 import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
@@ -34,7 +35,7 @@ public class JoinStreakRewardPrizesGui implements InventoryHolder, Listener {
     private JoinStreakRewardSettingsGui parentGui;
     private int currentPage;
     private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private static final class Slots {
         static final int PREV_PAGE = 45, NEXT_PAGE = 53, ADD_PERMISSION = 47,
                 ADD_COMMAND = 48, BACK = 50, DELETE_ALL = 51;

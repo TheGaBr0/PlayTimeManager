@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
@@ -25,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public class AllGoalsGui implements InventoryHolder, Listener {
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private final Inventory inv;
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
@@ -167,13 +168,13 @@ public class AllGoalsGui implements InventoryHolder, Listener {
     }
 
     private void handleDeleteGoal(Player player, Goal goal) {
-        player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &7Deleting goal &e" + goal.getName() + "&7..."));
+        player.sendMessage(Utils.parseColors(config.getString("prefix") + " &7Deleting goal &e" + goal.getName() + "&7..."));
         Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
             goal.kill();
 
             // Switch back to main thread for UI updates
             Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &aSuccessfully &7deleted goal &e" + goal.getName()));
+                player.sendMessage(Utils.parseColors(config.getString("prefix") + " &aSuccessfully &7deleted goal &e" + goal.getName()));
                 initializeItems();
                 player.updateInventory();
             });

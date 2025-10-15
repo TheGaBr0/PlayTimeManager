@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
@@ -18,7 +19,7 @@ public class PlaytimePercentage implements CommandExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final DatabaseHandler db = DatabaseHandler.getInstance();
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
@@ -28,7 +29,7 @@ public class PlaytimePercentage implements CommandExecutor {
                 long timeToTicks = Utils.formattedPlaytimeToTicks(args[0]);
 
                 if(timeToTicks == -1L){
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Time is not specified correctly!"));
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Time is not specified correctly!"));
                     return false;
                 }
 
@@ -46,7 +47,7 @@ public class PlaytimePercentage implements CommandExecutor {
 
                         // Send the message on the main thread
                         org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                                     " The players with playtime greater than or equal to &6" + args[0] +
                                     " &7are &6" + result[1] + " &7and represent &6" + formattedNumber +
                                     "% &7of the &6" + result[2] + " &7players stored"));
@@ -54,7 +55,7 @@ public class PlaytimePercentage implements CommandExecutor {
                     } catch (InterruptedException | ExecutionException e) {
                         // Send error message on the main thread
                         org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-                            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                                     " Error while processing command: " + e.getMessage()));
                         });
                         plugin.getLogger().severe("Error in PlaytimePercentage command: " + e.getMessage());
@@ -63,10 +64,10 @@ public class PlaytimePercentage implements CommandExecutor {
 
                 return true;
             } else {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Missing arguments"));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("too-few-arguments")));
             }
         } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have the permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
         }
         return false;
     }

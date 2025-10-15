@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Commands.PlayTimeCommandManager;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -10,7 +11,7 @@ import org.bukkit.command.CommandSender;
 public class PlayTimeRemoveTime {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     public PlayTimeRemoveTime(CommandSender sender, String[] args){
         execute(sender, args);
     }
@@ -18,13 +19,13 @@ public class PlayTimeRemoveTime {
     public void execute(CommandSender sender, String[] args){
 
         if(args.length < 3){
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Too few arguments!"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("too-few-arguments")));
             return;
         }
 
         long timeToTicks = Utils.formattedPlaytimeToTicks(args[2]);
         if (timeToTicks == -1L) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Invalid time format: " + args[2]));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("invalid-time-format").replace("%TIME%", args[2])));
             return;
         }
 
@@ -34,7 +35,8 @@ public class PlayTimeRemoveTime {
         long finalTimeToTicks = timeToTicks;
         dbUsersManager.getUserFromNicknameAsyncWithContext(args[0], "remove playtime command", user -> {
             if (user == null) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " Player not found: " + args[0]));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                        config.getString("player-never-joined").replace("%PLAYER%", args[0]) ));
                 return;
             }
 
@@ -46,10 +48,12 @@ public class PlayTimeRemoveTime {
                 String formattedNewPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime + finalTimeToTicks);
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                            " PlayTime of &e" + args[0] +
-                            "&7 has been updated from &6" + formattedOldPlaytime +
-                            "&7 to &6" + formattedNewPlaytime + "!"));
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                            config.getString("playtime-updated")
+                                    .replace("%PLAYER%", args[0])
+                                    .replace("%OLD_TIME%", formattedOldPlaytime)
+                                    .replace("%NEW_TIME%", formattedNewPlaytime)
+                    ));
 
                     dbUsersManager.updateTopPlayersFromDB();
                 });

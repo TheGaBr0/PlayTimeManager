@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
@@ -16,7 +17,7 @@ public class JoinStreaksManager {
     private PlayTimeManager plugin = PlayTimeManager.getInstance();
     private DatabaseHandler db = DatabaseHandler.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private RewardRegistry rewardRegistry;
     private StreakTracker streakTracker;
     private CycleScheduler cycleScheduler;
@@ -117,7 +118,7 @@ public class JoinStreaksManager {
 
         if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
             if (rewardRegistry.isEmpty()) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                         " No active rewards found. Join streak check schedule not started."));
                 plugin.getConfiguration().set("rewards-check-schedule-activation", false);
                 return false;

@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.JoinStreaks.Models;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -17,6 +18,7 @@ import java.util.Objects;
 public class JoinStreakReward {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private final int id;
     private int[] requiredJoinsRange;
     private final File rewardFile;
@@ -139,7 +141,7 @@ public class JoinStreakReward {
     }
 
     private String getDefaultRewardMessage() {
-        return plugin.getConfiguration().getString("prefix")+" Congratulations &e%PLAYER_NAME%&7, you have redeemed your reward successfully!";
+        return config.getString("prefix")+" Congratulations &e%PLAYER_NAME%&7, you have redeemed your reward successfully!";
     }
 
     public ItemStack getDefaultIcon(){

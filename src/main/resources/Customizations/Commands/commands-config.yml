@@ -19,11 +19,10 @@ prefix: "[&6PlayTime&eManager&f]&7 "
 
 #This messaged is showed each time /playtime is executed
 #Available placeholders: %PLAYTIME%, %PLAYER_NAME%, %PREFIX%
-playtime-self-message: "[&6PlayTime&eManager&f]&7 Your playtime is &6%PLAYTIME%"
-
-#This messaged is showed each time /playtime <username> is executed
-#Available placeholders: %PLAYTIME%, %PLAYER_NAME%, %PREFIX%
-playtime-others-message: "[&6PlayTime&eManager&f]&7 The playtime of &e%PLAYER_NAME%&7 is &6%PLAYTIME%"
+playtime:
+  self-message: "&7Your playtime is &6%PLAYTIME%"
+  others-message: "&7The playtime of &e%PLAYER_NAME%&7 is &6%PLAYTIME%"
+  updated: "&7PlayTime of &e%PLAYER_NAME%&7 has been updated from &6%OLD_TIME%&7 to &6%NEW_TIME%!"
 
 # ================================================================
 #                   COMMAND FEEDBACK AND ERRORS
@@ -47,13 +46,9 @@ player-never-joined: "&cThe player &e%PLAYER%&c has never joined the server!"
 
 # Command execution context
 must-be-player: "&cYou must be a player to execute this command"
-
 # Overflow or invalid numeric operations
 overflow-error: "&cError: Time value too large!"
 
-# Successful modification feedback
-# Placeholders: %PLAYER%, %OLD_TIME%, %NEW_TIME%
-playtime-updated: "&7PlayTime of &e%PLAYER%&7 has been updated from &6%OLD_TIME%&7 to &6%NEW_TIME%!"
 
 #=================================================================
 #                         PLAYTIMETOP

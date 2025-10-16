@@ -42,7 +42,7 @@ public class PlaytimeCommand {
                 sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission-check-others")));
                 return false;
             }
-            return handleOther(sender, user);
+            return handleOthers(sender, user);
         }
     }
 
@@ -55,41 +55,41 @@ public class PlaytimeCommand {
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
 
         // Check if prefix placeholder is used and LuckPerms is configured
-        if (config.getString("playtime-self-message").contains("%PREFIX%") && plugin.isPermissionsManagerConfigured()) {
+        if (config.getString("playtime.self-message").contains("%PREFIX%") && plugin.isPermissionsManagerConfigured()) {
             luckPermsManager.getPrefixAsync(String.valueOf(player.getUniqueId()))
                     .thenAccept(prefix -> {
-                        String message = createMessage(config.getString("playtime-self-message"),
+                        String message = createMessage(config.getString("playtime.self-message"),
                                 player.getName(),
                                 String.valueOf(onlineUser.getPlaytime()),
                                 prefix);
-                        sender.sendMessage(Utils.parseColors(message));
+                        sender.sendMessage(Utils.parseColors(config.getString("prefix") + message));
                     });
         } else {
-            String message = createMessage(config.getString("playtime-self-message"),
+            String message = createMessage(config.getString("playtime.self-message"),
                     player.getName(),
                     String.valueOf(onlineUser.getPlaytime()),
                     "");
-            sender.sendMessage(Utils.parseColors(message));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + message));
         }
 
         return true;
     }
 
-    private boolean handleOther(CommandSender sender, DBUser user) {
-        if (config.getString("playtime-others-message").contains("%PREFIX%") && plugin.isPermissionsManagerConfigured()) {
+    private boolean handleOthers(CommandSender sender, DBUser user) {
+        if (config.getString("playtime.others-message").contains("%PREFIX%") && plugin.isPermissionsManagerConfigured()) {
             luckPermsManager.getPrefixAsync(user.getUuid()).thenAccept(prefix -> {
-                String message = createMessage(config.getString("playtime-others-message"),
+                String message = createMessage(config.getString("playtime.others-message"),
                         user.getNickname(),
                         String.valueOf(user.getPlaytime()),
                         prefix);
-                sender.sendMessage(Utils.parseColors(message));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + message));
             });
         } else {
-            String message = createMessage(config.getString("playtime-others-message"),
+            String message = createMessage(config.getString("playtime.others-message"),
                         user.getNickname(),
                         String.valueOf(user.getPlaytime()),
                         "");
-            sender.sendMessage(Utils.parseColors(message));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + message));
         }
 
         return true;

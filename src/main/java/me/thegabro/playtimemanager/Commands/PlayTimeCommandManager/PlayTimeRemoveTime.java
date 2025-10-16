@@ -49,8 +49,8 @@ public class PlayTimeRemoveTime {
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                            config.getString("playtime-updated")
-                                    .replace("%PLAYER%", args[0])
+                            config.getString("playtime.updated")
+                                    .replace("%PLAYER_NAME%", args[0])
                                     .replace("%OLD_TIME%", formattedOldPlaytime)
                                     .replace("%NEW_TIME%", formattedNewPlaytime)
                     ));

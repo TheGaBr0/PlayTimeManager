@@ -5,6 +5,7 @@ import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
+import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
@@ -22,7 +23,7 @@ public class Version354to355Updater {
     private final DatabaseHandler database = DatabaseHandler.getInstance();
     private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
     private final CommandsConfiguration commandsConfiguration = CommandsConfiguration.getInstance();
-
+    private long goals_old_check_schedule;
     public Version354to355Updater() {}
 
     public void performUpgrade() {
@@ -34,13 +35,24 @@ public class Version354to355Updater {
     }
 
     private void recreateConfigFile() {
-        Configuration.getInstance().updateConfig(false);
+        Configuration config = Configuration.getInstance();
+        goals_old_check_schedule = config.getLong("goal-check-rate");
+        String prefix = config.getString("prefix");
+        config.updateConfig(false);
+
         commandsConfiguration.initialize(plugin);
+
+        String playtime_self = commandsConfiguration.getString("playtime-self-message");
+        String playtime_others = commandsConfiguration.getString("playtime-others-message");
+
         commandsConfiguration.updateConfig();
+
         guIsConfiguration.initialize(plugin);
         guIsConfiguration.updateConfig();
 
-
+        commandsConfiguration.set("prefix", prefix);
+        commandsConfiguration.set("playtime.self-message", playtime_self.replace("[§6PlayTime§eManager§f]§7 ", "&7").replace("§", "&"));
+        commandsConfiguration.set("playtime.others-message", playtime_others.replace("[§6PlayTime§eManager§f]§7 ", "&7").replace("§", "&"));
         guIsConfiguration.set("player-stats-gui.goals-settings.list-format", "&7• &e%GOAL% &7(&e%GOAL_COMPLETED_TIMES%)");
     }
 
@@ -374,5 +386,11 @@ public class Version354to355Updater {
         GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(plugin);
         goalsManager.goalsUpdater();
+
+        goalsManager.clearGoals();
+        goalsManager.loadGoals();
+        for(Goal g : goalsManager.getGoals()){
+            g.setCheckTime(String.valueOf(goals_old_check_schedule));
+        }
     }
 }

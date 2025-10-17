@@ -37,7 +37,7 @@ public class RewardProcessor {
             JoinStreakReward mainInstance = rewardRegistry.getReward(subInstance.mainInstanceID());
 
             if (onlineUser.isExpired(subInstance)) {
-                messageService.sendRewardRelatedMessage(player, subInstance, plugin.getConfiguration().getString("join-unclaimed-previous-message"), 0);
+                messageService.sendRewardRelatedMessage(onlineUser, subInstance, plugin.getConfiguration().getString("join-unclaimed-previous-message"), 0);
                 continue;
             }
 
@@ -56,7 +56,7 @@ public class RewardProcessor {
     private void processQualifiedReward(OnlineUser onlineUser, Player player, RewardSubInstance subInstance) {
         if (player.hasPermission("playtime.joinstreak.claim.automatic")) {
 
-            messageService.sendRewardRelatedMessage(player, subInstance, plugin.getConfiguration().getString("join-warn-autoclaim-message"), 1);
+            messageService.sendRewardRelatedMessage(onlineUser, subInstance, plugin.getConfiguration().getString("join-warn-autoclaim-message"), 1);
 
             rewardExecutor.processCompletedReward(player, subInstance);
         } else {
@@ -64,7 +64,7 @@ public class RewardProcessor {
                 onlineUser.addRewardToBeClaimed(subInstance);
             }
 
-            messageService.sendRewardRelatedMessage(player, subInstance, plugin.getConfiguration().getString("join-warn-claim-message"), 1);
+            messageService.sendRewardRelatedMessage(onlineUser, subInstance, plugin.getConfiguration().getString("join-warn-claim-message"), 1);
         }
     }
 }

@@ -90,6 +90,9 @@ public class JoinStreakReward {
             config.options().setHeader(Arrays.asList(
                     "GUIDE OF AVAILABLE OPTIONS:",
                     "---------------------------",
+                    "Available placeholders for reward-message, description and reward-description:",
+                    "%REQUIRED_JOINS%, %PLAYER_NAME%, %JOIN_STREAK%",
+                    "---------------------------",
                     "required-joins-range specifies the range of joins for which this reward is active.",
                     "Format: 'min-max' (e.g., '5-10' means the reward is active for 5th through 10th joins)",
                     "For a single join count, use the same number twice (e.g., '5-5' for just the 5th join)",
@@ -101,7 +104,6 @@ public class JoinStreakReward {
                     "E.g. '1.19' doesn't work, use '1.19.4'.",
                     "---------------------------",
                     "reward-message is showed to a player if it reaches the join streak specified in this config.",
-                    "Available placeholders: %REQUIRED_JOINS%, %PLAYER_NAME%",
                     "---------------------------",
                     "description provides a short text description of the reward.",
                     "---------------------------",
@@ -113,7 +115,7 @@ public class JoinStreakReward {
                     "You can specify multiple permissions and groups that will all be granted.",
                     "---------------------------",
                     "commands defines a list of commands that will be executed when a player reaches this reward",
-                    "Available placeholders: PLAYER_NAME",
+                    "Available placeholders for commands only: PLAYER_NAME",
                     "Example commands:",
                     "- '/give PLAYER_NAME diamond 64'",
                     "- '/broadcast PLAYER_NAME has reached an amazing join streak!'"
@@ -135,6 +137,7 @@ public class JoinStreakReward {
             plugin.getLogger().severe("Could not save reward file for " + id + ": " + e.getMessage());
         }
     }
+
 
     private String getDefaultRewardSound() {
         return "ENTITY_PLAYER_LEVELUP";

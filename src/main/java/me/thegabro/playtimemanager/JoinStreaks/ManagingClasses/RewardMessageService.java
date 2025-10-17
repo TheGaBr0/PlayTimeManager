@@ -3,6 +3,8 @@ package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUser;
+import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -20,14 +22,15 @@ public class RewardMessageService {
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     public RewardMessageService() {}
 
-    public void sendRewardRelatedMessage(Player player, RewardSubInstance subInstance, String message, int delaySeconds) {
+    public void sendRewardRelatedMessage(OnlineUser user, RewardSubInstance subInstance, String message, int delaySeconds) {
         Map<String, String> replacements = new HashMap<>();
-        replacements.put("%PLAYER_NAME%", player.getName());
+        replacements.put("%PLAYER_NAME%", user.getNickname());
         replacements.put("%REQUIRED_JOINS%", String.valueOf(subInstance.requiredJoins()));
+        replacements.put("%JOIN_STREAK%", String.valueOf(subInstance.requiredJoins()));
 
         final Component finalMessage = Utils.parseColors(replacePlaceholders(message, replacements));
         Bukkit.getScheduler().runTaskLater(this.plugin, () -> {
-            player.sendMessage(finalMessage);
+            user.getPlayerInstance().sendMessage(finalMessage);
         }, delaySeconds * 20L); // Convert seconds to ticks (20 ticks = 1 second)
     }
 

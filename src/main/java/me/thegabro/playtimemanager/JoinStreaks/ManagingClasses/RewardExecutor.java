@@ -48,7 +48,7 @@ public class RewardExecutor {
 
         executeRewardCommands(reward, player);
 
-        messageService.sendRewardRelatedMessage(player, subInstance, reward.getRewardMessage(), 1);
+        messageService.sendRewardRelatedMessage(onlineUser, subInstance, reward.getRewardMessage(), 1);
 
         playRewardSound(player, reward);
     }

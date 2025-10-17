@@ -302,9 +302,10 @@ public class RewardsInfoGui extends BaseCustomGUI {
                         rewardType = "LOCKED";
                         break;
                 }
+                String requiredJoins = specificJoins == -1 ? "-" : String.valueOf(specificJoins);
+                globalPlaceholders.put("%REQUIRED_JOINS%", requiredJoins);
 
                 String requiredJoinsText = translateDynamic(config.getString("rewards-gui.reward-items.info-lore.required-joins"));
-                requiredJoinsText = quickTranslate(requiredJoinsText, "%REQUIRED_JOINS%", specificJoins == -1 ? "-" : String.valueOf(specificJoins));
                 lore.add(requiredJoinsText);
 
                 if (!(displayItem.getStatus() == RewardStatus.AVAILABLE_OLD) && !(displayItem.getStatus() == RewardStatus.AVAILABLE)) {
@@ -322,18 +323,19 @@ public class RewardsInfoGui extends BaseCustomGUI {
                     lore.add(translateDynamic(config.getString("rewards-gui.reward-items.info-lore.description-separator")));
                     String descTemplate = config.getString("rewards-gui.reward-items.info-lore.description");
                     for (String line : reward.getDescription().split("/n")) {
-                        String translatedLine = translateDynamic(descTemplate);
-                        translatedLine = quickTranslate(translatedLine, "%DESCRIPTION%", line);
+                        String filled = quickTranslate(descTemplate, "%DESCRIPTION%", line);
+                        String translatedLine = translateDynamic(filled);
                         lore.add(translatedLine);
                     }
                 }
+
 
                 if (!reward.getRewardDescription().isEmpty()) {
                     lore.add(translateDynamic(config.getString("rewards-gui.reward-items.info-lore.reward-description-separator")));
                     String rewardDescTemplate = config.getString("rewards-gui.reward-items.info-lore.reward-description");
                     for (String line : reward.getRewardDescription().split("/n")) {
-                        String translatedLine = translateDynamic(rewardDescTemplate);
-                        translatedLine = quickTranslate(translatedLine, "%REWARD_DESCRIPTION%", line);
+                        String filled = quickTranslate(rewardDescTemplate, "%REWARD_DESCRIPTION%", line);
+                        String translatedLine = translateDynamic(filled);
                         lore.add(translatedLine);
                     }
                 }

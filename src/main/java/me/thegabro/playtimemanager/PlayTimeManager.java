@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager;
 import me.thegabro.playtimemanager.Commands.PlayTimeStats;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
+import me.thegabro.playtimemanager.ExternalPluginSupport.AntiAFKPlus.AntiAFKPlusAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
 import me.thegabro.playtimemanager.GUIs.Goals.*;
@@ -216,7 +217,6 @@ public class PlayTimeManager extends JavaPlugin{
             }
         }
         else if ("purpur".equals(configuredPlugin)) {
-            // Check if server is running Purpur
             try {
                 Class.forName("org.purpurmc.purpur.event.PlayerAFKEvent");
                 PurpurAFKHook afkHook = PurpurAFKHook.getInstance();
@@ -231,6 +231,26 @@ public class PlayTimeManager extends JavaPlugin{
                 return false;
             } catch (Exception e) {
                 getLogger().severe("ERROR: Failed to initialize Purpur AFK detection: " + e.getMessage());
+                return false;
+            }
+        }
+        else if ("antiafkplus".equals(configuredPlugin)) {
+            Plugin antiAFKPlus = Bukkit.getPluginManager().getPlugin("AntiAFKPlus");
+            if(antiAFKPlus != null && antiAFKPlus.isEnabled()){
+                try{
+                    AntiAFKPlusAFKHook afkHook = AntiAFKPlusAFKHook.getInstance();
+                    afkHook.register();
+                    getLogger().info("AntiAFKPlus detected! Launching related functions");
+                    return true;
+                } catch (Exception e) {
+                    getLogger().severe("ERROR: Failed to initialize AntiAFKPlus API: " + e.getMessage());
+                    return false;
+                }
+            }else{
+                getLogger().warning(
+                        "Failed to initialize afk detection: AntiAFKPlus plugin configured but not found! " +
+                                "\nUntil this is resolved, PlayTimeManager will not be able to detect afk playtime"
+                );
                 return false;
             }
         }

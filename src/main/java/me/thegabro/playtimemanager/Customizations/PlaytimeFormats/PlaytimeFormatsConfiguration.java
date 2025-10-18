@@ -1,12 +1,13 @@
 package me.thegabro.playtimemanager.Customizations.PlaytimeFormats;
 
+import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.util.*;
 
 public class PlaytimeFormatsConfiguration {
 
@@ -93,11 +94,11 @@ public class PlaytimeFormatsConfiguration {
         String secondsSingular = config.getString("seconds-singular", "s");
         String secondsPlural = config.getString("seconds-plural", "s");
         String formatting = config.getString("formatting", "%y%{years}, %d%{days}, %h%{hours}, %m%{minutes}, %s%{seconds}");
-
+        boolean distributeRemovedTime = config.getBoolean("distribute-removed-time", false);
         // Create format instance with all values from YAML
-        PlaytimeFormat format = new PlaytimeFormat(formatName, yearsSingular, yearsPlural, daysSingular,
+        PlaytimeFormat format = new PlaytimeFormat(file, formatName, yearsSingular, yearsPlural, daysSingular,
                 daysPlural, hoursSingular, hoursPlural, minutesSingular,
-                minutesPlural, secondsSingular, secondsPlural, formatting);
+                minutesPlural, secondsSingular, secondsPlural, formatting, distributeRemovedTime);
 
         playtimeFormats.add(format);
     }
@@ -115,24 +116,32 @@ public class PlaytimeFormatsConfiguration {
         return null;
     }
 
-    public List<String> getFormatNames() {
-        List<String> names = new ArrayList<>();
-        for (PlaytimeFormat format : playtimeFormats) {
-            names.add(format.getName());
+
+    public void formatsUpdater(Map<String, Object> newFields){
+        Set<PlaytimeFormat> formatsClone = new HashSet<>(playtimeFormats);
+        playtimeFormats.clear();
+
+        for(PlaytimeFormat f : formatsClone){
+            File configFile = f.getFormatFile();
+            FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+
+            // Add new fields to the config
+            for(Map.Entry<String, Object> entry : newFields.entrySet()){
+                String key = entry.getKey();
+                Object value = entry.getValue();
+
+                config.set(key, value);
+
+            }
+
+            try {
+                config.save(configFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        return names;
-    }
 
-    public boolean hasFormat(String name) {
-        return getFormat(name) != null;
-    }
-
-    public int getFormatCount() {
-        return playtimeFormats.size();
-    }
-
-    public List<PlaytimeFormat> getAllFormats() {
-        return new ArrayList<>(playtimeFormats);
+        loadAllFormats();
     }
 
 }

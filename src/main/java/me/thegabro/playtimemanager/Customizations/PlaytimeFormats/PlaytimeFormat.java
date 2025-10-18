@@ -1,24 +1,28 @@
 package me.thegabro.playtimemanager.Customizations.PlaytimeFormats;
 
+import java.io.File;
+
 public class PlaytimeFormat {
 
     private String name;
-    private String yearsSingular;
-    private String yearsPlural;
-    private String daysSingular;
-    private String daysPlural;
-    private String hoursSingular;
-    private String hoursPlural;
-    private String minutesSingular;
-    private String minutesPlural;
-    private String secondsSingular;
-    private String secondsPlural;
-    private String formatting;
-
-    public PlaytimeFormat(String name, String yearsSingular, String yearsPlural, String daysSingular,
+    private final String yearsSingular;
+    private final String yearsPlural;
+    private final String daysSingular;
+    private final String daysPlural;
+    private final String hoursSingular;
+    private final String hoursPlural;
+    private final String minutesSingular;
+    private final String minutesPlural;
+    private final String secondsSingular;
+    private final String secondsPlural;
+    private final String formatting;
+    private final File formatFile;
+    private final boolean distributeRemovedTime;
+    public PlaytimeFormat(File formatFile, String name, String yearsSingular, String yearsPlural, String daysSingular,
                           String daysPlural, String hoursSingular, String hoursPlural,
                           String minutesSingular, String minutesPlural, String secondsSingular,
-                          String secondsPlural, String formatting) {
+                          String secondsPlural, String formatting, boolean distributeRemovedTime) {
+        this.formatFile = formatFile;
         this.name = name;
         this.yearsSingular = yearsSingular;
         this.yearsPlural = yearsPlural;
@@ -31,6 +35,7 @@ public class PlaytimeFormat {
         this.secondsSingular = secondsSingular;
         this.secondsPlural = secondsPlural;
         this.formatting = formatting;
+        this.distributeRemovedTime = distributeRemovedTime;
     }
 
     // Getters
@@ -82,53 +87,11 @@ public class PlaytimeFormat {
         return formatting;
     }
 
+    public boolean shouldDistributeRemovedTime(){ return distributeRemovedTime; }
+
     // Setters
     public void setName(String name) {
         this.name = name;
-    }
-
-    public void setYearsSingular(String yearsSingular) {
-        this.yearsSingular = yearsSingular;
-    }
-
-    public void setYearsPlural(String yearsPlural) {
-        this.yearsPlural = yearsPlural;
-    }
-
-    public void setDaysSingular(String daysSingular) {
-        this.daysSingular = daysSingular;
-    }
-
-    public void setDaysPlural(String daysPlural) {
-        this.daysPlural = daysPlural;
-    }
-
-    public void setHoursSingular(String hoursSingular) {
-        this.hoursSingular = hoursSingular;
-    }
-
-    public void setHoursPlural(String hoursPlural) {
-        this.hoursPlural = hoursPlural;
-    }
-
-    public void setMinutesSingular(String minutesSingular) {
-        this.minutesSingular = minutesSingular;
-    }
-
-    public void setMinutesPlural(String minutesPlural) {
-        this.minutesPlural = minutesPlural;
-    }
-
-    public void setSecondsSingular(String secondsSingular) {
-        this.secondsSingular = secondsSingular;
-    }
-
-    public void setSecondsPlural(String secondsPlural) {
-        this.secondsPlural = secondsPlural;
-    }
-
-    public void setFormatting(String formatting) {
-        this.formatting = formatting;
     }
 
     // Utility methods
@@ -151,6 +114,8 @@ public class PlaytimeFormat {
     public String getSecondsLabel(int seconds) {
         return seconds == 1 ? secondsSingular : secondsPlural;
     }
+
+    public File getFormatFile(){ return formatFile; }
 
     @Override
     public String toString() {

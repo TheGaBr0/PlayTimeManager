@@ -31,7 +31,7 @@ public class Goal {
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private String name;
-    protected final File goalFile;
+    private final File goalFile;
     private final GoalRewardRequirement requirements;
     private ArrayList<String> rewardPermissions = new ArrayList<>();
     private ArrayList<String> rewardCommands = new ArrayList<>();
@@ -576,6 +576,10 @@ public class Goal {
         return scheduleInfo;
     }
 
+    public File getGoalFile(){
+        return goalFile;
+    }
+
     // Setters and modifiers
     public void setTime(long time) {
         this.requirements.setTime(time);
@@ -688,11 +692,14 @@ public class Goal {
         saveToFile();
     }
 
-    public void kill() {
+    public void kill(boolean update) {
         goalsManager.removeGoal(this);
         cancelCheckTask();
-        DBUsersManager.getInstance().removeGoalFromAllUsers(name);
         deleteFile();
+
+        if(!update)
+            DBUsersManager.getInstance().removeGoalFromAllUsers(name);
+
     }
 
     // New getter methods for the dual time support

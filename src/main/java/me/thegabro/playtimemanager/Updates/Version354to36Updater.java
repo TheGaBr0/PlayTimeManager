@@ -14,17 +14,19 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-public class Version354to355Updater {
+public class Version354to36Updater {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DatabaseHandler database = DatabaseHandler.getInstance();
     private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
     private final CommandsConfiguration commandsConfiguration = CommandsConfiguration.getInstance();
     private long goals_old_check_schedule;
-    public Version354to355Updater() {}
+    public Version354to36Updater() {}
 
     public void performUpgrade() {
         recreateConfigFile();
@@ -383,6 +385,8 @@ public class Version354to355Updater {
         PlaytimeFormatsConfiguration playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
         playtimeFormatsConfiguration.initialize(plugin);
 
+        updatePlaytimeFormatsData(playtimeFormatsConfiguration);
+
         GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(plugin);
         goalsManager.goalsUpdater();
@@ -392,5 +396,12 @@ public class Version354to355Updater {
         for(Goal g : goalsManager.getGoals()){
             g.setCheckTime(String.valueOf(goals_old_check_schedule));
         }
+    }
+
+    public void updatePlaytimeFormatsData(PlaytimeFormatsConfiguration playtimeFormatsConfiguration){
+        Map<String, Object> newFields = new HashMap<>();
+        newFields.put("distribute-removed-time", false);
+
+        playtimeFormatsConfiguration.formatsUpdater(newFields);
     }
 }

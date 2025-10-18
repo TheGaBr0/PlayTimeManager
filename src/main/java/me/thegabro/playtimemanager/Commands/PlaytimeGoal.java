@@ -144,7 +144,7 @@ public class PlaytimeGoal implements TabExecutor {
 
         // Run the removal process async
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            goal.kill();
+            goal.kill(false);
 
             // Switch back to main thread for UI updates and schedule changes
             Bukkit.getScheduler().runTask(plugin, () -> {

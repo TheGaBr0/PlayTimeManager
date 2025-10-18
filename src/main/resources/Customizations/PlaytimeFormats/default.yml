@@ -34,3 +34,14 @@ minutes-plural: "m"
 seconds-singular: "s"
 seconds-plural: "s"
 formatting: "%y%{years}, %d%{days}, %h%{hours}, %m%{minutes}, %s%{seconds}"
+
+# DISTRIBUTE REMOVED TIME:
+# Controls whether time from omitted units in the formatting field gets redistributed to displayed units.
+# When true: omitted larger time units are converted and added to the next smallest displayed unit.
+# When false: omitted time units are simply hidden without redistribution.
+#
+# Example with time of 1d, 12h, 1m and formatting "%h%{hours}, %m%{minutes}":
+# - If true: displays "36h, 1m" (1 day converted to 24 hours, added to 12h = 36h)
+# - If false: displays "12h, 1m" (1 day is hidden, only original 12h shown)
+distribute-removed-time: false
+

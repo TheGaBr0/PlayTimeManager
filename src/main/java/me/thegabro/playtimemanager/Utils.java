@@ -284,6 +284,7 @@ public class Utils {
     /**
      * Converts ticks to a formatted playtime string using a specific format
      * Handles negative values and formats time units according to the provided format configuration
+     * Can redistribute time from omitted units to displayed units based on format settings
      *
      * @param ticks The time in ticks to convert
      * @param format The PlaytimeFormat to use for formatting
@@ -301,18 +302,60 @@ public class Utils {
         final long SECONDS_PER_HOUR = 60 * 60;
         final long SECONDS_PER_MINUTE = 60;
 
-        // Calculate time units safely
-        long years = seconds / SECONDS_PER_YEAR;
-        seconds %= SECONDS_PER_YEAR;
+        // Get the formatting string to determine which units are included
+        String formatting = format.getFormatting();
+        boolean hasYears = formatting.contains("%y%");
+        boolean hasDays = formatting.contains("%d%");
+        boolean hasHours = formatting.contains("%h%");
+        boolean hasMinutes = formatting.contains("%m%");
+        boolean hasSeconds = formatting.contains("%s%");
 
-        long days = seconds / SECONDS_PER_DAY;
-        seconds %= SECONDS_PER_DAY;
+        long years, days, hours, minutes;
 
-        long hours = seconds / SECONDS_PER_HOUR;
-        seconds %= SECONDS_PER_HOUR;
+        // Calculate time units based on redistribution setting
+        if (format.shouldDistributeRemovedTime()) {
+            // Redistribution mode: only break down time for units that are in the format
+            if (hasYears) {
+                years = seconds / SECONDS_PER_YEAR;
+                seconds %= SECONDS_PER_YEAR;
+            } else {
+                years = 0;
+            }
 
-        long minutes = seconds / SECONDS_PER_MINUTE;
-        seconds %= SECONDS_PER_MINUTE;
+            if (hasDays) {
+                days = seconds / SECONDS_PER_DAY;
+                seconds %= SECONDS_PER_DAY;
+            } else {
+                days = 0;
+            }
+
+            if (hasHours) {
+                hours = seconds / SECONDS_PER_HOUR;
+                seconds %= SECONDS_PER_HOUR;
+            } else {
+                hours = 0;
+            }
+
+            if (hasMinutes) {
+                minutes = seconds / SECONDS_PER_MINUTE;
+                seconds %= SECONDS_PER_MINUTE;
+            } else {
+                minutes = 0;
+            }
+        } else {
+            // Standard mode: calculate all units normally
+            years = seconds / SECONDS_PER_YEAR;
+            seconds %= SECONDS_PER_YEAR;
+
+            days = seconds / SECONDS_PER_DAY;
+            seconds %= SECONDS_PER_DAY;
+
+            hours = seconds / SECONDS_PER_HOUR;
+            seconds %= SECONDS_PER_HOUR;
+
+            minutes = seconds / SECONDS_PER_MINUTE;
+            seconds %= SECONDS_PER_MINUTE;
+        }
 
         // Use the format's formatting string as template
         String result = format.getFormatting();
@@ -399,26 +442,24 @@ public class Utils {
     }
 
     /**
-     * Replaces internal placeholders in a message string with their corresponding values
+     * Replaces playtime-specific placeholders in a message string with their corresponding values
      * Handles special playtime placeholders with optional custom formatting:
      * - %PLAYTIME% / %PLAYTIME:format%
      * - %ACTUAL_PLAYTIME% / %ACTUAL_PLAYTIME:format%
      * - %ARTIFICIAL_PLAYTIME% / %ARTIFICIAL_PLAYTIME:format%
-     * Also replaces any other placeholders provided in the combinations map
+     * - %AFK_PLAYTIME% / %AFK_PLAYTIME:format%
      *
-     * @param message The message containing placeholders to replace
-     * @param combinations Map of placeholder-value pairs for replacement
-     * @return The message with all placeholders replaced and normalized spacing
+     * @param message The message containing playtime placeholders to replace
+     * @param combinations Map of placeholder-value pairs (should contain playtime values in ticks)
+     * @return The message with playtime placeholders replaced
      */
-    public static String placeholdersReplacer(String message, Map<String, String> combinations){
-
-        //Apply %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME%, %AFK_PLAYTIME% special placeholder with custom format
+    public static String playtimePlaceholdersReplacer(String message, Map<String, String> combinations){
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("%((?:AFK_|ACTUAL_|ARTIFICIAL_)?PLAYTIME)(?::(\\w+))?%");
         java.util.regex.Matcher matcher = pattern.matcher(message);
         StringBuffer result = new StringBuffer();
 
         while (matcher.find()) {
-            String playtimeType = matcher.group(1);  // PLAYTIME, ACTUAL_PLAYTIME, or ARTIFICIAL_PLAYTIME
+            String playtimeType = matcher.group(1);  // PLAYTIME, ACTUAL_PLAYTIME, ARTIFICIAL_PLAYTIME, or AFK_PLAYTIME
             String formatName = matcher.group(2);    // Optional format name after colon
 
             // Get the PlaytimeFormat for this placeholder, or default if not found
@@ -449,8 +490,18 @@ public class Utils {
         }
 
         matcher.appendTail(result);
-        message = result.toString();
+        return result.toString();
+    }
 
+    /**
+     * Replaces standard placeholders in a message string with their corresponding values
+     * Does NOT handle playtime placeholders - use playtimePlaceholdersReplacer for those
+     *
+     * @param message The message containing placeholders to replace
+     * @param combinations Map of placeholder-value pairs for replacement
+     * @return The message with all standard placeholders replaced and normalized spacing
+     */
+    public static String standardPlaceholdersReplacer(String message, Map<String, String> combinations){
         // Apply passed placeholders
         for (Map.Entry<String, String> entry : combinations.entrySet()) {
             message = message.replace(entry.getKey(), entry.getValue());
@@ -458,6 +509,24 @@ public class Utils {
 
         // Normalize multiple spaces to single space
         message = message.replaceAll("\\s+", " ");
+
+        return message;
+    }
+
+    /**
+     * Replaces all placeholders (both playtime and standard) in a message string
+     * This is a convenience method that combines both playtimePlaceholdersReplacer and standardPlaceholdersReplacer
+     *
+     * @param message The message containing placeholders to replace
+     * @param combinations Map of placeholder-value pairs for replacement
+     * @return The message with all placeholders replaced and normalized spacing
+     */
+    public static String placeholdersReplacer(String message, Map<String, String> combinations){
+        // First replace playtime placeholders (with custom formatting support)
+        message = playtimePlaceholdersReplacer(message, combinations);
+
+        // Then replace standard placeholders
+        message = standardPlaceholdersReplacer(message, combinations);
 
         return message;
     }

@@ -116,11 +116,6 @@ public class GoalsManager {
                 continue;
             }
 
-            // Skip system keys that shouldn't be restored
-            if (key.equals("config-version")) {
-                continue;
-            }
-
             // CRITICAL: Skip MemorySection objects (nested sections)
             // These contain multiple keys and restoring them would overwrite entire sections
             if (backupValue instanceof org.bukkit.configuration.MemorySection) {
@@ -148,22 +143,17 @@ public class GoalsManager {
     public void goalsUpdater(){
 
         Set<Goal> goalsClone = new HashSet<>(goals);
-
         for(Goal g : goalsClone){
-            File oldConfig = g.goalFile;
+            File oldConfig = g.getGoalFile();
             String goalName = g.getName();
             FileConfiguration config = YamlConfiguration.loadConfiguration(oldConfig);
 
             Map<String, Object> backup = createConfigBackup(config);
 
-            g.kill();
+            g.kill(true);
 
-            // Step 2: Replace the config file
-            if (oldConfig.exists()) {
-                oldConfig.delete();
-            }
-
-            new Goal(plugin, goalName);
+            Goal newGoalInstance = new Goal(plugin, goalName);
+            goals.add(newGoalInstance);
 
             restoreFromBackup(backup, config);
 

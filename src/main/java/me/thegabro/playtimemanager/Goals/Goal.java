@@ -408,7 +408,6 @@ public class Goal {
     }
 
     public void checkCompletion(DBUser user) {
-        // Skip if goal is already completed and not repeatable
         if (user.hasCompletedGoal(name) && !isRepeatable) {
             return;
         }

@@ -47,7 +47,9 @@ public class SQLiteDatabase implements Database {
             "goal_name VARCHAR(32) NOT NULL," +
             "user_uuid VARCHAR(32) NOT NULL," +
             "nickname VARCHAR(32) NOT NULL," +
-            "received_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+            "completed_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+            "received INTEGER NOT NULL DEFAULT 0," +
+            "received_at DATETIME DEFAULT NULL," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid)" +
             ");";
 

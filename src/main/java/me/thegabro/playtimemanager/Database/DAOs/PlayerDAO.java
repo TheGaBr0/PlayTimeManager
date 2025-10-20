@@ -579,9 +579,6 @@ public class PlayerDAO {
                 ps.executeUpdate();
             }
 
-            // 5. Reset any other user-specific data (sessions, etc.)
-            // Add more DELETE/UPDATE statements here as needed
-
             conn.commit(); // Commit all changes atomically
 
             plugin.getLogger().info("Successfully reset all data for user: " + uuid);
@@ -608,6 +605,31 @@ public class PlayerDAO {
                 }
             }
         }
+    }
+
+    public ArrayList<String> getPlayersSeenSince(LocalDateTime since) {
+        ArrayList<String> uuids = new ArrayList<>();
+
+        String query = "SELECT uuid FROM play_time WHERE last_seen >= ?";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            // Truncate precision to seconds to match SQL DATETIME precision
+            LocalDateTime truncated = since.truncatedTo(ChronoUnit.SECONDS);
+            ps.setTimestamp(1, Timestamp.valueOf(truncated));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    uuids.add(rs.getString("uuid"));
+                }
+            }
+
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        }
+
+        return uuids;
     }
 
 }

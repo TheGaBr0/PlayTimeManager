@@ -127,6 +127,10 @@ public class PlaytimeGoal implements TabExecutor {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             oldGoal.rename(newName);
 
+            for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
+                user.reloadGoalsSync();
+            }
+
             // Switch back to main thread for UI update
             Bukkit.getScheduler().runTask(plugin, () -> {
                 sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Successfully renamed goal &e" + oldName + " &7to &e" + newName));

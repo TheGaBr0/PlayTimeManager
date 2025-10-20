@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.Goals;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUser;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 

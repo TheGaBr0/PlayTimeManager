@@ -6,12 +6,14 @@ import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
+import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -23,13 +25,16 @@ import org.quartz.CronExpression;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class Goal {
     // Fields
     private final PlayTimeManager plugin;
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private String name;
     private final File goalFile;
     private final GoalRewardRequirement requirements;
@@ -50,7 +55,7 @@ public class Goal {
     private Date nextIntervalCheckCron;
     private final Map<String, String> goalMessageReplacements;
     private Date nextIntervalCheck; // Track next check time for interval mode
-
+    private ArrayList<DBUser> playersJoinedDuringTimeWindow;
 
     private boolean useCronExpression = true; // true for cron, false for seconds
     private long intervalSeconds = 900; // default 15 minutes in seconds
@@ -78,6 +83,53 @@ public class Goal {
         loadFromFile();
         validateConfiguration();
         saveToFile();
+    }
+
+    private void loadPlayersJoinedDuringTimeWindow(Consumer<List<DBUser>> callback) {
+        if (this.active && this.useCronExpression) {
+
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    Date now = new Date();
+                    Date firstTrigger = cronExpression.getNextValidTimeAfter(now);
+                    Date secondTrigger = cronExpression.getNextValidTimeAfter(firstTrigger);
+
+                    long intervalMillis = secondTrigger.getTime() - firstTrigger.getTime();
+                    long exactIntervalSeconds = intervalMillis / 1000;
+
+                    LocalDateTime since = LocalDateTime.now().minusSeconds(exactIntervalSeconds);
+
+                    List<String> playersUUIDs = db.getPlayerDAO().getPlayersSeenSince(since);
+
+                    List<DBUser> loadedUsers = new ArrayList<>();
+                    for (String uuid : playersUUIDs) {
+                        DBUser user = dbUsersManager.getUserFromCacheSync(uuid);
+                        if (user != null) {
+                            loadedUsers.add(user);
+                        }
+                    }
+
+                    // Safely modify shared state on main thread
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        playersJoinedDuringTimeWindow.clear();
+                        playersJoinedDuringTimeWindow.addAll(loadedUsers);
+                        plugin.getLogger().info("Loaded " + loadedUsers.size() + " players seen in the last window.");
+
+                        if (callback != null) {
+                            callback.accept(Collections.unmodifiableList(loadedUsers));
+                        }
+                    });
+
+                } catch (Exception e) {
+                    plugin.getLogger().severe("Error while loading players joined during time window: " + e.getMessage());
+                    e.printStackTrace();
+
+                    if (callback != null) {
+                        Bukkit.getScheduler().runTask(plugin, () -> callback.accept(Collections.emptyList()));
+                    }
+                }
+            });
+        }
     }
 
     private void validateConfiguration() {
@@ -297,7 +349,7 @@ public class Goal {
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
                     if (onlineUser != null) {
-                        checkCompletion(onlineUser, player);
+                        checkCompletion(onlineUser);
                     }
                 }
 
@@ -327,38 +379,70 @@ public class Goal {
         completionCheckTask = new BukkitRunnable() {
             @Override
             public void run() {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
-                    if (onlineUser != null) {
-                        checkCompletion(onlineUser, player);
-                    }
-                }
 
-                restartCompletionCheckTask(); // Re-run with the updated time
+                loadPlayersJoinedDuringTimeWindow(users -> {
 
-                if (verbose) {
-                    Map<String, Object> scheduleInfo = getNextSchedule();
-                    plugin.getLogger().info(String.format("Goal %s check completed, next check will " +
-                            "occur in %s on %s", name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
-                }
+                    // Run on main thread — Bukkit API safety
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+
+                        for (DBUser user : users) {
+                            checkCompletion(user);
+                        }
+
+                        restartCompletionCheckTask(); // Schedule next run
+
+                        if (verbose) {
+                            Map<String, Object> scheduleInfo = getNextSchedule();
+                            plugin.getLogger().info(String.format(
+                                    "Goal %s check completed for %d players, next check in %s on %s",
+                                    name,
+                                    users.size(),
+                                    scheduleInfo.get("timeRemaining"),
+                                    scheduleInfo.get("nextCheck")
+                            ));
+                        }
+                    });
+                });
             }
         }.runTaskLater(plugin, delayInTicks);
     }
 
-    public void checkCompletion(OnlineUser onlineUser, Player player) {
-        if (onlineUser.hasCompletedGoal(name) && !isRepeatable) {
+    public void checkCompletion(DBUser user) {
+        // Skip if goal is already completed and not repeatable
+        if (user.hasCompletedGoal(name) && !isRepeatable) {
             return;
         }
 
-        if (getRequirements().checkRequirements(player, onlineUser.getPlaytime())) {
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                processCompletedGoal(onlineUser, player);
-            });
-        }
+        // Run Bukkit API calls on main thread
+        Bukkit.getScheduler().runTask(plugin, () -> {
+
+            if (user.isOnline()) {
+                Player player = Bukkit.getPlayer(user.getUuid());
+                if (player == null) return; // Player went offline
+
+                // Check requirements (main thread if it uses Bukkit API)
+                if (getRequirements().checkRequirements(player, user.getPlaytime())) {
+                    // Run DB updates or heavy work async
+                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                        processCompletedGoal(user, player);
+                    });
+                }
+
+            } else {
+                // Offline player logic (cannot cast to Player)
+                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(user.getUuid());
+                if (!offlinePlayer.hasPlayedBefore()) return;
+
+                // If getRequirements() can run without Player object, run async
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    processCompletedGoalOffline(user, offlinePlayer);
+                });
+            }
+        });
     }
 
-    private void processCompletedGoal(OnlineUser onlineUser, Player player) {
-        onlineUser.markGoalAsCompleted(name);
+    private void processCompletedGoal(DBUser onlineUser, Player player) {
+        onlineUser.markGoalAsCompleted(name, true);
 
         if (plugin.isPermissionsManagerConfigured()) {
             assignPermissionsForGoal(onlineUser);
@@ -375,7 +459,7 @@ public class Goal {
         playGoalSound(player);
     }
 
-    private void assignPermissionsForGoal(OnlineUser onlineUser) {
+    private void assignPermissionsForGoal(DBUser onlineUser) {
         List<String> permissions = rewardPermissions;
         if (permissions != null && !permissions.isEmpty()) {
             try {
@@ -472,11 +556,6 @@ public class Goal {
     public void rename(String newName) {
         File oldFile = this.goalFile;
 
-        for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
-            user.unmarkGoalAsCompleted(name);
-            user.markGoalAsCompleted(newName);
-        }
-
         this.name = newName;
 
         File newFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + newName + ".yml");
@@ -501,7 +580,6 @@ public class Goal {
             saveToFile();
 
             // Update the name in the database for all users
-            //TODO: async
             db.getGoalsDAO().updateGoalName(oldFile.getName().replace(".yml", ""), newName);
 
             oldFile.delete();

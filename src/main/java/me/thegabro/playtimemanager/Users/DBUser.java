@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.Users;
 
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
+import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
@@ -31,7 +32,7 @@ public class DBUser {
     protected ArrayList<RewardSubInstance> rewardsToBeClaimed = new ArrayList<>();
     protected boolean afk;
     protected OfflinePlayer playerInstance;
-
+    protected ArrayList<Goal> notReceivedGoals;
     /**
      * Private constructor to create a DBUser with all data loaded from database.
      * Used internally by factory methods.
@@ -158,6 +159,7 @@ public class DBUser {
         this.absoluteJoinStreak = db.getStreakDAO().getRelativeJoinStreak(uuid);
         this.receivedRewards = db.getStreakDAO().getReceivedRewards(uuid);
         this.rewardsToBeClaimed = db.getStreakDAO().getRewardsToBeClaimed(uuid);
+        this.notReceivedGoals = db.getGoalsDAO().getNotReceivedGoals(uuid);
     }
 
     /**
@@ -248,18 +250,32 @@ public class DBUser {
         return completedGoals.contains(goalName);
     }
 
-    public void markGoalAsCompletedAsync(String goalName, Runnable callback){
+    public void markGoalAsReceivedAsync(String goalName, Runnable callback){
         completedGoals.add(goalName);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            db.getGoalsDAO().addCompletedGoal(uuid, nickname, goalName);
+            db.getGoalsDAO().markGoalAsReceived(uuid, goalName);
             if(callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
     }
 
-    public void markGoalAsCompleted(String goalName){
-        markGoalAsCompletedAsync(goalName, null);
+    public void markGoalAsReceived(String goalName){
+        markGoalAsReceivedAsync(goalName, null);
+    }
+
+    public void markGoalAsCompletedAsync(String goalName, boolean received, Runnable callback){
+        completedGoals.add(goalName);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getGoalsDAO().addCompletedGoal(uuid, nickname, goalName, received);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
+    }
+
+    public void markGoalAsCompleted(String goalName, boolean received){
+        markGoalAsCompletedAsync(goalName, received, null);
     }
 
     public void unmarkGoalAsCompletedAsync(String goalName, Runnable callback){
@@ -270,6 +286,11 @@ public class DBUser {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
+    }
+
+    public void reloadGoalsSync(){
+        this.completedGoals.clear();
+        this.completedGoals = db.getGoalsDAO().getCompletedGoals(uuid);
     }
 
     public void unmarkGoalAsCompleted(String goalName){

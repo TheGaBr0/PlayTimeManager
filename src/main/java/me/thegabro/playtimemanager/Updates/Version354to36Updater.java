@@ -308,8 +308,8 @@ public class Version354to36Updater {
         }
 
         try {
-            String insertQuery = "INSERT INTO completed_goals (goal_name, user_uuid, nickname, received_at) " +
-                    "VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
+            String insertQuery = "INSERT INTO completed_goals (goal_name, user_uuid, nickname, completed_at, received, received_at) " +
+                    "VALUES (?, ?, ?, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)";
             PreparedStatement stmt = connection.prepareStatement(insertQuery);
 
             for (String goalName : goalNames) {

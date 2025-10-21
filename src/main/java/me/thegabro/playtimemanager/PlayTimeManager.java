@@ -74,7 +74,12 @@ public class PlayTimeManager extends JavaPlugin{
 
         // Check config version and perform updates if needed
         if (!config.getString("config-version").equals(CURRENT_CONFIG_VERSION)) {
-            updateManager.performVersionUpdate(config.getString("config-version"), CURRENT_CONFIG_VERSION);
+            boolean success = updateManager.performVersionUpdate(config.getString("config-version"), CURRENT_CONFIG_VERSION);
+
+            if(!success){
+                Bukkit.getPluginManager().disablePlugin(this);
+                return;
+            }
         }
 
         updateManager.initialize();
@@ -157,15 +162,21 @@ public class PlayTimeManager extends JavaPlugin{
 
     @Override
     public void onDisable() {
-        onlineUsersManager.stopSchedules();
-        for(Player p : Bukkit.getOnlinePlayers()){
-            onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
-        }
 
         databaseHandler.close();
         HandlerList.unregisterAll(this);
-        dbUsersManager.clearCaches();
-        joinStreaksManager.cleanUp();
+
+        if(joinStreaksManager != null){
+            onlineUsersManager.stopSchedules();
+            for(Player p : Bukkit.getOnlinePlayers()){
+                onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
+            }
+
+            dbUsersManager.clearCaches();
+            joinStreaksManager.cleanUp();
+        }
+
+
 
         getLogger().info("has been disabled!");
     }

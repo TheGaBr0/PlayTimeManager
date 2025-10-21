@@ -32,7 +32,7 @@ public class DBUser {
     protected ArrayList<RewardSubInstance> rewardsToBeClaimed = new ArrayList<>();
     protected boolean afk;
     protected OfflinePlayer playerInstance;
-    protected ArrayList<Goal> notReceivedGoals;
+    protected ArrayList<String> notReceivedGoals;
     /**
      * Private constructor to create a DBUser with all data loaded from database.
      * Used internally by factory methods.
@@ -181,29 +181,21 @@ public class DBUser {
         return this instanceof OnlineUser;
     }
 
-    public void getPlayerInstance(Consumer<OfflinePlayer> callback) {
+    public OfflinePlayer getPlayerInstance() {
         if (playerInstance != null) {
-            callback.accept(playerInstance);
-            return;
+            return playerInstance;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            try {
-
-                OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
-
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    playerInstance = player;
-                    callback.accept(player);
-                });
-            } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid UUID format for player: " + uuid);
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
-            } catch (Exception e) {
-                // Silently handle any other exceptions (like profile lookup failures)
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
-            }
-        });
+        try {
+            playerInstance = Bukkit.getOfflinePlayer(uuid);
+            return playerInstance;
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Invalid UUID format for player: " + uuid);
+            return null;
+        } catch (Exception e) {
+            plugin.getLogger().warning("Unexpected error loading player " + uuid + ": " + e.getMessage());
+            return null;
+        }
     }
 
     // Getters - these are safe as synchronous since they use cached data
@@ -246,12 +238,16 @@ public class DBUser {
         return completedGoals;
     }
 
+    public ArrayList<String> getNotReceivedGoals(){
+        return notReceivedGoals;
+    }
+
     public boolean hasCompletedGoal(String goalName){
         return completedGoals.contains(goalName);
     }
 
     public void markGoalAsReceivedAsync(String goalName, Runnable callback){
-        completedGoals.add(goalName);
+        notReceivedGoals.remove(goalName);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             db.getGoalsDAO().markGoalAsReceived(uuid, goalName);
             if(callback != null) {
@@ -260,22 +256,19 @@ public class DBUser {
         });
     }
 
-    public void markGoalAsReceived(String goalName){
-        markGoalAsReceivedAsync(goalName, null);
-    }
 
     public void markGoalAsCompletedAsync(String goalName, boolean received, Runnable callback){
         completedGoals.add(goalName);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             db.getGoalsDAO().addCompletedGoal(uuid, nickname, goalName, received);
+
+            if(!received)
+                notReceivedGoals.add(goalName);
+
             if(callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
-    }
-
-    public void markGoalAsCompleted(String goalName, boolean received){
-        markGoalAsCompletedAsync(goalName, received, null);
     }
 
     public void unmarkGoalAsCompletedAsync(String goalName, Runnable callback){
@@ -472,9 +465,10 @@ public class DBUser {
         });
     }
 
-    public void addReceivedReward(RewardSubInstance rewardSubInstance) {
+    public void addReceivedReward(RewardSubInstance rewardSubInstance){
         addReceivedRewardAsync(rewardSubInstance, null);
     }
+
 
     public ArrayList<RewardSubInstance> getReceivedRewards() {
         return new ArrayList<>(receivedRewards);

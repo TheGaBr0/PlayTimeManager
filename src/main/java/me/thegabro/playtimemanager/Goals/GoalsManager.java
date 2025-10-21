@@ -1,9 +1,12 @@
 package me.thegabro.playtimemanager.Goals;
 
+import com.cronutils.model.field.expression.On;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
+import me.thegabro.playtimemanager.Users.OnlineUser;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.util.*;
@@ -27,6 +30,17 @@ public class GoalsManager {
         this.plugin = playTimeManager;
         clearGoals();
         loadGoals();
+    }
+
+    public void processPlayerLogin(OnlineUser user){
+        for(String unreceivedgoal : user.getNotReceivedGoals()){
+            user.markGoalAsReceivedAsync(unreceivedgoal, () -> {
+                Player player = user.getPlayerInstance();
+                if (player != null && player.isOnline()) {
+                    getGoal(unreceivedgoal).processCompletedGoal(user, player);
+                }
+            });
+        }
     }
 
     public void addGoal(Goal goal) {

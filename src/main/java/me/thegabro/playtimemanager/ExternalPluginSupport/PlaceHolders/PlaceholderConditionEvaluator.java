@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders;
 
 import me.clip.placeholderapi.PlaceholderAPI;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.regex.Matcher;
@@ -32,6 +33,33 @@ public class PlaceholderConditionEvaluator {
 
         // Replace all placeholders
         String parsed = PlaceholderAPI.setPlaceholders(player, condition.replace("PLAYER_NAME", player.getName()).trim());
+
+        Matcher matcher = EXPRESSION_PATTERN.matcher(parsed);
+        if (!matcher.matches()) {
+            return false; // Invalid expression
+        }
+
+        String leftRaw = matcher.group(1).trim();
+        String operator = matcher.group(2).trim();
+        String rightRaw = matcher.group(3).trim();
+
+        Object left = parseValue(leftRaw);
+        Object right = parseValue(rightRaw);
+
+        return compareValues(left, right, operator);
+    }
+
+    /**
+     * Evaluates a simple condition string using placeholders and Java logic for offline players.
+     * Supports operators: ==, !=, >, <, >=, <=
+     */
+    public boolean evaluate(OfflinePlayer player, String condition) {
+        if (condition == null || condition.isEmpty()) {
+            return false;
+        }
+
+        // Replace all placeholders (works with OfflinePlayer too)
+        String parsed = PlaceholderAPI.setPlaceholders(player, condition.replace("PLAYER_NAME", player.getName() != null ? player.getName() : "").trim());
 
         Matcher matcher = EXPRESSION_PATTERN.matcher(parsed);
         if (!matcher.matches()) {

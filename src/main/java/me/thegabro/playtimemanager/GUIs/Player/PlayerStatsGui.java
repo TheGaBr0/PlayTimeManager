@@ -325,13 +325,11 @@ public class PlayerStatsGui extends BaseCustomGUI {
         // Handle offline players with async PlaceholderAPI processing
         if (plugin.isPlaceholdersAPIConfigured()) {
             // Get OfflinePlayer instance asynchronously for DBUser
-            subject.getPlayerInstance(offlinePlayer -> {
-                // Process all items with the OfflinePlayer instance
-                for (String itemKey : itemsToProcess) {
+            OfflinePlayer offlinePlayer = subject.getPlayerInstance();
+            for (String itemKey : itemsToProcess) {
                     processItemWithPlayerData(itemKey, currentView, offlinePlayer);
-                }
-                callback.run();
-            });
+            }
+
         } else {
             // No PlaceholderAPI, process normally
             for (String itemKey : itemsToProcess) {

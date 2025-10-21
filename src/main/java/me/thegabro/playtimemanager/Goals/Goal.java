@@ -412,50 +412,74 @@ public class Goal {
             return;
         }
 
-        // Run Bukkit API calls on main thread
+        // Run Bukkit API operations on main thread
         Bukkit.getScheduler().runTask(plugin, () -> {
-
             if (user.isOnline()) {
                 Player player = Bukkit.getPlayer(user.getUuid());
                 if (player == null) return; // Player went offline
 
-                // Check requirements (main thread if it uses Bukkit API)
-                if (getRequirements().checkRequirements(player, user.getPlaytime())) {
-                    // Run DB updates or heavy work async
+                long playerTime = user.getPlaytime();
+                if (getRequirements().checkRequirements(player, playerTime)) {
                     Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                         processCompletedGoal(user, player);
                     });
                 }
 
             } else {
-                // Offline player logic (cannot cast to Player)
                 OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(user.getUuid());
                 if (!offlinePlayer.hasPlayedBefore()) return;
 
-                // If getRequirements() can run without Player object, run async
-                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                    processCompletedGoalOffline(user, offlinePlayer);
-                });
+                long playerTime = user.getPlaytime();
+
+                // Check offline requirements asynchronously
+                getRequirements().checkRequirementsOffline(offlinePlayer, playerTime)
+                        .thenAcceptAsync(requirementsMet -> {
+                            if (requirementsMet) {
+                                processCompletedGoalOffline(user);
+                            }
+                        }).exceptionally(ex -> {
+                            plugin.getLogger().warning("Error checking offline goal completion for "
+                                    + offlinePlayer.getName() + ": " + ex.getMessage());
+                            return null;
+                        });
             }
         });
     }
 
-    private void processCompletedGoal(DBUser onlineUser, Player player) {
-        onlineUser.markGoalAsCompleted(name, true);
+    private void processCompletedGoalOffline(DBUser user) {
+        user.markGoalAsCompletedAsync(name, false, () -> {
+            if (verbose) {
+                plugin.getLogger().info(String.format(
+                        "Offline user %s has reached the goal %s",
+                        user.getNickname(),
+                        name)
+                );
+            }
+        });
+    }
 
-        if (plugin.isPermissionsManagerConfigured()) {
-            assignPermissionsForGoal(onlineUser);
-        }
+    protected void processCompletedGoal(DBUser onlineUser, Player player) {
 
-        executeCommands(player);
-        sendGoalMessage(player);
+        onlineUser.markGoalAsCompletedAsync(name, true, () -> {
 
-        if(verbose){
-            plugin.getLogger().info(String.format("User %s has reached the goal %s which requires %s!",
-                    onlineUser.getNickname(), name,Utils.ticksToFormattedPlaytime(getRequirements().getTime())));
-        }
+            if (verbose) {
+                plugin.getLogger().info(String.format(
+                        "User %s has reached the goal %s",
+                        onlineUser.getNickname(),
+                        name)
+                );
+            }
 
-        playGoalSound(player);
+            if (plugin.isPermissionsManagerConfigured()) {
+                assignPermissionsForGoal(onlineUser);
+            }
+
+            executeCommands(player);
+            sendGoalMessage(player);
+
+            playGoalSound(player);
+        });
+
     }
 
     private void assignPermissionsForGoal(DBUser onlineUser) {

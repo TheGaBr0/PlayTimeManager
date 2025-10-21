@@ -137,6 +137,28 @@ public class LuckPermsManager {
         }
     }
 
+    public CompletableFuture<Boolean> isInGroupAsync(String uuid, String groupName) {
+        return luckPermsApi.getUserManager().loadUser(UUID.fromString(uuid))
+                .thenApply(user -> user.getInheritedGroups(user.getQueryOptions()).stream()
+                        .anyMatch(group -> group.getName().equalsIgnoreCase(groupName)))
+                .exceptionally(ex -> {
+                    plugin.getLogger().warning("Failed to check group " + groupName + " for UUID " + uuid + ": " + ex.getMessage());
+                    return false;
+                });
+    }
+
+    public CompletableFuture<Boolean> hasPermissionAsync(String uuid, String permission) {
+        return luckPermsApi.getUserManager().loadUser(UUID.fromString(uuid))
+                .thenApply(user -> user.getCachedData()
+                        .getPermissionData()
+                        .checkPermission(permission)
+                        .asBoolean())
+                .exceptionally(ex -> {
+                    plugin.getLogger().warning("Failed to check permission " + permission + " for UUID " + uuid + ": " + ex.getMessage());
+                    return false;
+                });
+    }
+
     public boolean isInGroup(String uuid, String groupName) {
         try {
             User user = luckPermsApi.getUserManager().getUser(UUID.fromString(uuid));

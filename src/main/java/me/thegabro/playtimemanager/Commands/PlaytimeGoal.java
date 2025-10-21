@@ -169,7 +169,7 @@ public class PlaytimeGoal implements TabExecutor {
         for (Player player : Bukkit.getOnlinePlayers()) {
             OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
             if (onlineUser != null) {
-                goal.checkCompletion(onlineUser, player);
+                goal.checkCompletion(onlineUser);
             }
         }
 

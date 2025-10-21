@@ -153,12 +153,12 @@ public class GoalsDAO {
         }
     }
 
-    public ArrayList<Goal> getNotReceivedGoals(String uuid) {
+    public ArrayList<String> getNotReceivedGoals(String uuid) {
         String query = "SELECT goal_name FROM completed_goals " +
                 "WHERE user_uuid = ? AND (received = 0 OR received_at IS NULL) " +
                 "ORDER BY completed_on ASC";
 
-        ArrayList<String> goals_string = new ArrayList<>();
+        ArrayList<String> goals = new ArrayList<>();
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -169,22 +169,13 @@ public class GoalsDAO {
             while (rs.next()) {
                 String goalName = rs.getString("goal_name");
                 if (goalName != null && !goalName.trim().isEmpty()) {
-                    goals_string.add(goalName.trim());
+                    goals.add(goalName.trim());
                 }
             }
 
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE,
                     "Error getting not received goals for UUID " + uuid + ": " + e.getMessage());
-        }
-
-        ArrayList<Goal> goals = new ArrayList<>();
-
-        for(String g : goals_string){
-            Goal goal = goalsManager.getGoal(g);
-            if(goal != null){
-                goals.add(goal);
-            }
         }
 
         return goals;

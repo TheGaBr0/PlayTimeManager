@@ -25,6 +25,7 @@ import org.quartz.CronExpression;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
@@ -55,7 +56,7 @@ public class Goal {
     private Date nextIntervalCheckCron;
     private final Map<String, String> goalMessageReplacements;
     private Date nextIntervalCheck; // Track next check time for interval mode
-    private ArrayList<DBUser> playersJoinedDuringTimeWindow;
+    private boolean offlineRewards;
 
     private boolean useCronExpression = true; // true for cron, false for seconds
     private long intervalSeconds = 900; // default 15 minutes in seconds
@@ -97,7 +98,12 @@ public class Goal {
                     long intervalMillis = secondTrigger.getTime() - firstTrigger.getTime();
                     long exactIntervalSeconds = intervalMillis / 1000;
 
-                    LocalDateTime since = LocalDateTime.now().minusSeconds(exactIntervalSeconds);
+                    Instant since = Instant.now().minusSeconds(exactIntervalSeconds);
+
+                    plugin.getLogger().info("=== DEBUG TIME WINDOW ===");
+                    plugin.getLogger().info("Interval seconds: " + exactIntervalSeconds);
+                    plugin.getLogger().info("Looking for players since: " + since);
+                    plugin.getLogger().info("Current time: " + LocalDateTime.now());
 
                     List<String> playersUUIDs = db.getPlayerDAO().getPlayersSeenSince(since);
 
@@ -111,8 +117,7 @@ public class Goal {
 
                     // Safely modify shared state on main thread
                     Bukkit.getScheduler().runTask(plugin, () -> {
-                        playersJoinedDuringTimeWindow.clear();
-                        playersJoinedDuringTimeWindow.addAll(loadedUsers);
+
                         plugin.getLogger().info("Loaded " + loadedUsers.size() + " players seen in the last window.");
 
                         if (callback != null) {
@@ -196,6 +201,7 @@ public class Goal {
             rewardCommands = new ArrayList<>(config.getStringList("rewards.commands"));
             active = config.getBoolean("active", false);
             isRepeatable = config.getBoolean("repeatable", false);
+            offlineRewards = config.getBoolean("offline-rewards", false);
             completionCheckInterval = config.getString("check-time-interval", "900");
             checkTimeTimezone = config.getString("check-time-timezone", "server");
             verbose = config.getBoolean("verbose", false);
@@ -205,6 +211,7 @@ public class Goal {
             rewardPermissions = new ArrayList<>();
             rewardCommands = new ArrayList<>();
             isRepeatable = false;
+            offlineRewards = false;
             completionCheckInterval = "900";
             checkTimeTimezone = "server";
             verbose = false;
@@ -229,6 +236,12 @@ public class Goal {
                     "  - Determines whether the goal can be completed multiple times by a player.",
                     "  - Set to 'true' if players should be able to complete it again after finishing.",
                     "  - Set to 'false' if it should only be completed once.",
+                    "",
+                    "offline-rewards:",
+                    "  - If true, players who are offline when completing the goal will receive rewards when they next log in.",
+                    "  - WARNING: If this goal is repeatable and has a very low completion check interval (e.g., < 1 hour), ",
+                    "    enabling offline rewards may result in a large number of queued reward executions when multiple players log in,",
+                    "    potentially causing server performance issues. BE CAREFUL WITH THIS SETTING.",
                     "",
                     "check-time-interval:",
                     "  - Defines the completion check time rate for the goal.",
@@ -295,6 +308,7 @@ public class Goal {
             ));
             config.set("active", active);
             config.set("repeatable", isRepeatable);
+            config.set("offline-rewards", offlineRewards);
             config.set("check-time-interval", completionCheckInterval);
             config.set("check-time-timezone", checkTimeTimezone);
             config.set("verbose", verbose);
@@ -346,20 +360,46 @@ public class Goal {
         completionCheckTask = new BukkitRunnable() {
             @Override
             public void run() {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
-                    if (onlineUser != null) {
-                        checkCompletion(onlineUser);
+
+                if(!offlineRewards){
+                    for (Player player : Bukkit.getOnlinePlayers()) {
+                        OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+                        if (onlineUser != null) {
+                            checkCompletion(onlineUser);
+                        }
                     }
-                }
 
-                // Update next check time AFTER completing the check
-                nextIntervalCheck = new Date(System.currentTimeMillis() + (intervalSeconds * 1000));
+                    nextIntervalCheck = new Date(System.currentTimeMillis() + (intervalSeconds * 1000));
 
-                if (verbose) {
-                    Map<String, Object> scheduleInfo = getNextSchedule();
-                    plugin.getLogger().info(String.format("Goal %s check completed, next check will occur in %s on %s",
-                            name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
+                    if (verbose) {
+                        Map<String, Object> scheduleInfo = getNextSchedule();
+                        plugin.getLogger().info(String.format("Goal %s check completed, next check will occur in %s on %s",
+                                name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
+                    }
+                }else{
+                    loadPlayersJoinedDuringTimeWindow(users -> {
+
+                        // Run on main thread — Bukkit API safety
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+
+                            for (DBUser user : users) {
+                                checkCompletion(user);
+                            }
+
+                            nextIntervalCheck = new Date(System.currentTimeMillis() + (intervalSeconds * 1000));
+
+                            if (verbose) {
+                                Map<String, Object> scheduleInfo = getNextSchedule();
+                                plugin.getLogger().info(String.format(
+                                        "Goal %s check completed for %d players, next check in %s on %s",
+                                        name,
+                                        users.size(),
+                                        scheduleInfo.get("timeRemaining"),
+                                        scheduleInfo.get("nextCheck")
+                                ));
+                            }
+                        });
+                    });
                 }
             }
         }.runTaskTimer(plugin, delayInTicks, delayInTicks);
@@ -380,29 +420,48 @@ public class Goal {
             @Override
             public void run() {
 
-                loadPlayersJoinedDuringTimeWindow(users -> {
-
-                    // Run on main thread — Bukkit API safety
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-
-                        for (DBUser user : users) {
-                            checkCompletion(user);
+                if(!offlineRewards){
+                    for (Player player : Bukkit.getOnlinePlayers()) {
+                        OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+                        if (onlineUser != null) {
+                            checkCompletion(onlineUser);
                         }
+                    }
 
-                        restartCompletionCheckTask(); // Schedule next run
+                    restartCompletionCheckTask();
 
-                        if (verbose) {
-                            Map<String, Object> scheduleInfo = getNextSchedule();
-                            plugin.getLogger().info(String.format(
-                                    "Goal %s check completed for %d players, next check in %s on %s",
-                                    name,
-                                    users.size(),
-                                    scheduleInfo.get("timeRemaining"),
-                                    scheduleInfo.get("nextCheck")
-                            ));
-                        }
+                    if (verbose) {
+                        Map<String, Object> scheduleInfo = getNextSchedule();
+                        plugin.getLogger().info(String.format("Goal %s check completed, next check will occur in %s on %s",
+                                name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
+                    }
+                }else{
+                    loadPlayersJoinedDuringTimeWindow(users -> {
+
+                        // Run on main thread — Bukkit API safety
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+
+                            for (DBUser user : users) {
+                                checkCompletion(user);
+                            }
+
+                            restartCompletionCheckTask();
+
+                            if (verbose) {
+                                Map<String, Object> scheduleInfo = getNextSchedule();
+                                plugin.getLogger().info(String.format(
+                                        "Goal %s check completed for %d players, next check in %s on %s",
+                                        name,
+                                        users.size(),
+                                        scheduleInfo.get("timeRemaining"),
+                                        scheduleInfo.get("nextCheck")
+                                ));
+                            }
+                        });
                     });
-                });
+                }
+
+
             }
         }.runTaskLater(plugin, delayInTicks);
     }
@@ -414,8 +473,9 @@ public class Goal {
 
         // Run Bukkit API operations on main thread
         Bukkit.getScheduler().runTask(plugin, () -> {
+
             if (user.isOnline()) {
-                Player player = Bukkit.getPlayer(user.getUuid());
+                Player player = Bukkit.getPlayer(UUID.fromString(user.getUuid()));
                 if (player == null) return; // Player went offline
 
                 long playerTime = user.getPlaytime();
@@ -426,7 +486,8 @@ public class Goal {
                 }
 
             } else {
-                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(user.getUuid());
+
+                OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(user.getUuid()));
                 if (!offlinePlayer.hasPlayedBefore()) return;
 
                 long playerTime = user.getPlaytime();
@@ -638,6 +699,10 @@ public class Goal {
         return goalSound;
     }
 
+    public boolean isOfflineRewardEnabled(){
+        return this.offlineRewards;
+    }
+
     public boolean isActive() {
         return active;
     }
@@ -717,6 +782,11 @@ public class Goal {
 
     public void setRepeatable(boolean repeatable){
         this.isRepeatable = repeatable;
+        saveToFile();
+    }
+
+    public void setOfflineRewardEnabling(boolean activation){
+        offlineRewards = activation;
         saveToFile();
     }
 

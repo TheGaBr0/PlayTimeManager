@@ -18,8 +18,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 import java.util.*;
 
 public class PlayTimeStats implements CommandExecutor {
@@ -88,10 +87,8 @@ public class PlayTimeStats implements CommandExecutor {
             playtimeSnapshot = 0L;
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
-
-        LocalDateTime lastSeen = user.getLastSeen();
-        LocalDateTime firstJoin = user.getFirstJoin();
+        Instant lastSeen = user.getLastSeen();
+        Instant firstJoin = user.getFirstJoin();
         long totalPlaytime = user.getPlaytimeWithSnapshot(playtimeSnapshot);
         long afkPlaytime = user.getAFKPlaytimeWithSnapshot(playtimeSnapshot);
         long artificialPlaytime = user.getArtificialPlaytime();
@@ -115,15 +112,15 @@ public class PlayTimeStats implements CommandExecutor {
 
         if (firstJoin != null) {
             sender.sendMessage(Utils.parseColors("\n&6&lFirst Join:"));
-            sender.sendMessage(Utils.parseColors("&7Date: &e" + firstJoin.format(formatter)));
-            Duration accountAge = Duration.between(firstJoin, LocalDateTime.now());
+            sender.sendMessage(Utils.parseColors("&7Date: &e" + Utils.formatInstant(firstJoin, plugin.getConfiguration().getString("datetime-format"))));
+            Duration accountAge = Duration.between(firstJoin, Instant.now());
             sender.sendMessage(Utils.parseColors("&7Account Age: &e" + Utils.ticksToFormattedPlaytime(accountAge.getSeconds() * 20)));
         }
 
-        if (lastSeen != null && !lastSeen.equals(LocalDateTime.of(1970, 1, 1, 0, 0, 0, 0))) {
+        if (lastSeen != null) {
             sender.sendMessage(Utils.parseColors("\n&6&lLast Seen:"));
-            sender.sendMessage(Utils.parseColors("&7Date: &e" + lastSeen.format(formatter)));
-            Duration timeSinceLastSeen = Duration.between(lastSeen, LocalDateTime.now());
+            sender.sendMessage(Utils.parseColors("&7Date: &e" + Utils.formatInstant(lastSeen, plugin.getConfiguration().getString("datetime-format"))));
+            Duration timeSinceLastSeen = Duration.between(lastSeen, Instant.now());
             sender.sendMessage(Utils.parseColors("&7Time Elapsed: &e" + Utils.ticksToFormattedPlaytime(timeSinceLastSeen.getSeconds() * 20)));
         }
 

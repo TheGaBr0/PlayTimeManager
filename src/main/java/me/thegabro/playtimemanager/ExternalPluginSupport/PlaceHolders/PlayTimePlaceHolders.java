@@ -13,8 +13,7 @@ import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 
 public class PlayTimePlaceHolders extends PlaceholderExpansion {
@@ -25,7 +24,6 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final PlaytimeFormatsConfiguration playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
     private LuckPermsManager luckPermsManager = null;
-    private DateTimeFormatter formatter;
     private PlaytimeFormat playtimeFormat;
 
     /**
@@ -142,11 +140,10 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
                 DBUser user = onlineUsersManager.getOnlineUser(player.getName());
                 if (user == null) return getErrorMessage("user not found");
 
-                LocalDateTime firstJoin = user.getFirstJoin();
+                Instant firstJoin = user.getFirstJoin();
                 if (firstJoin == null) return getErrorMessage("first join data missing");
 
-                formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
-                return firstJoin.format(formatter);
+                return Utils.formatInstant(firstJoin, plugin.getConfiguration().getString("datetime-format"));
             } catch (Exception e) {
                 return getErrorMessage("couldn't get first join date");
             }
@@ -338,7 +335,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user == null) return getErrorMessage("wrong top position?");
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
-        Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
+        Duration duration = Duration.between(user.getLastSeen(), Instant.now());
         return String.valueOf(Utils.ticksToTimeUnit(duration.getSeconds() * 20, unit));
     }
 
@@ -349,7 +346,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user == null) return getErrorMessage("wrong top position?");
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
-        Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
+        Duration duration = Duration.between(user.getLastSeen(), Instant.now());
         return Utils.ticksToFormattedPlaytime(duration.getSeconds() * 20);
     }
 
@@ -360,7 +357,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
         // Calculate FRESH elapsed time on every call
-        Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
+        Duration duration = Duration.between(user.getLastSeen(), Instant.now());
         return String.valueOf(Utils.ticksToTimeUnit(duration.getSeconds() * 20, unit));
     }
 
@@ -371,7 +368,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
         // Calculate FRESH elapsed time on every call
-        Duration duration = Duration.between(user.getLastSeen(), LocalDateTime.now());
+        Duration duration = Duration.between(user.getLastSeen(), Instant.now());
         return Utils.ticksToFormattedPlaytime(duration.getSeconds() * 20);
     }
 
@@ -435,8 +432,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user == null) return getErrorMessage("wrong top position?");
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
-        return user.getLastSeen().format(formatter);
+        return Utils.formatInstant(user.getLastSeen(), plugin.getConfiguration().getString("datetime-format"));
     }
 
     private String handleLastSeen(String nickname) {
@@ -445,10 +441,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user == null) return "Loading...";
         if (user.getLastSeen() == null) return getErrorMessage("last seen data missing");
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(
-                plugin.getConfiguration().getString("datetime-format")
-        );
-        return user.getLastSeen().format(formatter);
+        return Utils.formatInstant(user.getLastSeen(), plugin.getConfiguration().getString("datetime-format"));
     }
 
     private String handleFirstJoin(String nickname) {
@@ -458,10 +451,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         if (user.getFirstJoin() == null) return getErrorMessage("first join data missing");
 
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(
-                    plugin.getConfiguration().getString("datetime-format")
-            );
-            return user.getFirstJoin().format(formatter);
+            return Utils.formatInstant(user.getFirstJoin(), plugin.getConfiguration().getString("datetime-format"));
         } catch (Exception e) {
             return getErrorMessage("date formatting error");
         }

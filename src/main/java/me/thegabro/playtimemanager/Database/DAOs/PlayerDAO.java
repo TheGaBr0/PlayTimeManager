@@ -5,6 +5,7 @@ import me.thegabro.playtimemanager.Database.Errors;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
 import java.sql.*;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -466,16 +467,14 @@ public class PlayerDAO {
         }
     }
 
-    public void updateLastSeen(String uuid, LocalDateTime lastSeen) {
+    public void updateLastSeen(String uuid, Instant lastSeen) {
         try (Connection connection = dbManager.getConnection();
              PreparedStatement ps = connection.prepareStatement("UPDATE play_time SET last_seen = ? WHERE uuid = ?")) {
 
             if (lastSeen != null) {
-                // Convert LocalDateTime to Timestamp for SQL DATETIME storage
-                LocalDateTime truncated = lastSeen.truncatedTo(ChronoUnit.SECONDS);
-                ps.setTimestamp(1, Timestamp.valueOf(truncated));
+                ps.setLong(1, lastSeen.toEpochMilli());
             } else {
-                ps.setNull(1, Types.TIMESTAMP); // Handle null case properly
+                ps.setNull(1, Types.BIGINT);
             }
 
             ps.setString(2, uuid);
@@ -486,31 +485,33 @@ public class PlayerDAO {
     }
 
 
-    public LocalDateTime getLastSeen(String uuid) {
-        try (Connection connection = dbManager.getConnection();
-             PreparedStatement ps = connection.prepareStatement("SELECT last_seen FROM play_time WHERE uuid = ?")) {
+    public Instant getLastSeen(String uuid) {
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT last_seen FROM play_time WHERE uuid = ?")) {
+
             ps.setString(1, uuid);
             ResultSet rs = ps.executeQuery();
+
             if (rs.next()) {
-                Timestamp timestamp = rs.getTimestamp("last_seen");
-                return timestamp != null ? timestamp.toLocalDateTime() : null;
+                long millis = rs.getLong("last_seen");
+                if (!rs.wasNull()) {
+                    return Instant.ofEpochMilli(millis);
+                }
             }
         } catch (SQLException e) {
-            return null;
+            plugin.getLogger().severe("Error retrieving last_seen: " + e.getMessage());
         }
         return null;
     }
 
-    public void updateFirstJoin(String uuid, LocalDateTime firstJoin) {
+    public void updateFirstJoin(String uuid, Instant firstJoin) {
         try (Connection connection = dbManager.getConnection();
              PreparedStatement ps = connection.prepareStatement("UPDATE play_time SET first_join = ? WHERE uuid = ?")) {
 
             if (firstJoin != null) {
-                // Convert LocalDateTime to Timestamp for SQL DATETIME storage
-                LocalDateTime truncated = firstJoin.truncatedTo(ChronoUnit.SECONDS);
-                ps.setTimestamp(1, Timestamp.valueOf(truncated));
+                ps.setLong(1, firstJoin.toEpochMilli());
             } else {
-                ps.setNull(1, Types.TIMESTAMP); // Handle null case properly
+                ps.setNull(1, Types.BIGINT);
             }
 
             ps.setString(2, uuid);
@@ -521,17 +522,19 @@ public class PlayerDAO {
     }
 
 
-    public LocalDateTime getFirstJoin(String uuid) {
+    public Instant  getFirstJoin(String uuid) {
         try (Connection connection = dbManager.getConnection();
              PreparedStatement ps = connection.prepareStatement("SELECT first_join FROM play_time WHERE uuid = ?")) {
             ps.setString(1, uuid);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                Timestamp timestamp = rs.getTimestamp("first_join");
-                return timestamp != null ? timestamp.toLocalDateTime() : null;
+                long millis = rs.getLong("first_join");
+                if (!rs.wasNull()) {
+                    return Instant.ofEpochMilli(millis);
+                }
             }
         } catch (SQLException e) {
-            return null;
+            plugin.getLogger().severe("Error retrieving first_join: " + e.getMessage());
         }
         return null;
     }
@@ -607,17 +610,17 @@ public class PlayerDAO {
         }
     }
 
-    public ArrayList<String> getPlayersSeenSince(LocalDateTime since) {
+    public ArrayList<String> getPlayersSeenSince(Instant since) {
         ArrayList<String> uuids = new ArrayList<>();
-
         String query = "SELECT uuid FROM play_time WHERE last_seen >= ?";
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(query)) {
 
-            // Truncate precision to seconds to match SQL DATETIME precision
-            LocalDateTime truncated = since.truncatedTo(ChronoUnit.SECONDS);
-            ps.setTimestamp(1, Timestamp.valueOf(truncated));
+            long sinceMillis = since.toEpochMilli();
+
+
+            ps.setLong(1, sinceMillis);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

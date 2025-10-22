@@ -1,14 +1,14 @@
 package me.thegabro.playtimemanager.Users;
 
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
-import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
-import java.time.LocalDateTime;
+
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
@@ -23,8 +23,8 @@ public class DBUser {
     protected long fromServerOnJoinPlayTime;
     protected ArrayList<String> completedGoals;
     protected static DatabaseHandler db = DatabaseHandler.getInstance();
-    protected LocalDateTime lastSeen;
-    protected LocalDateTime firstJoin;
+    protected Instant lastSeen;
+    protected Instant firstJoin;
     protected final GoalsManager goalsManager = GoalsManager.getInstance();
     protected int relativeJoinStreak;
     protected int absoluteJoinStreak;
@@ -38,7 +38,7 @@ public class DBUser {
      * Used internally by factory methods.
      */
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, long DBAFKplaytime,
-                   ArrayList<String> completedGoals, LocalDateTime lastSeen, LocalDateTime firstJoin, int relativeJoinStreak,
+                   ArrayList<String> completedGoals, Instant lastSeen, Instant firstJoin, int relativeJoinStreak,
                    int absoluteJoinStreak, ArrayList<RewardSubInstance> receivedRewards, ArrayList<RewardSubInstance> rewardsToBeClaimed){
 
         this.uuid = uuid;
@@ -92,7 +92,7 @@ public class DBUser {
 
             // Handle legacy null first_join values
             if(user.firstJoin == null){
-                user.firstJoin = LocalDateTime.now();
+                user.firstJoin = Instant.now();
                 db.getPlayerDAO().updateFirstJoin(uuid, user.firstJoin);
             }
 
@@ -132,8 +132,8 @@ public class DBUser {
         long artificialPlaytime = db.getPlayerDAO().getArtificialPlaytime(uuid);
         long afkplaytime = db.getPlayerDAO().getAFKPlaytime(uuid);
         ArrayList<String> completedGoals = db.getGoalsDAO().getCompletedGoals(uuid);
-        LocalDateTime lastSeen = db.getPlayerDAO().getLastSeen(uuid);
-        LocalDateTime firstJoin = db.getPlayerDAO().getFirstJoin(uuid);
+        Instant lastSeen = db.getPlayerDAO().getLastSeen(uuid);
+        Instant firstJoin = db.getPlayerDAO().getFirstJoin(uuid);
         int relativeJoinStreak = db.getStreakDAO().getRelativeJoinStreak(uuid);
         int absoluteJoinStreak = db.getStreakDAO().getAbsoluteJoinStreak(uuid);
         ArrayList<RewardSubInstance> receivedRewards = db.getStreakDAO().getReceivedRewards(uuid);
@@ -199,8 +199,8 @@ public class DBUser {
     }
 
     // Getters - these are safe as synchronous since they use cached data
-    public LocalDateTime getFirstJoin(){ return firstJoin; }
-    public LocalDateTime getLastSeen() { return lastSeen; }
+    public Instant getFirstJoin(){ return firstJoin; }
+    public Instant getLastSeen() { return lastSeen; }
     public String getUuid() { return uuid; }
     public String getNickname() { return nickname; }
 

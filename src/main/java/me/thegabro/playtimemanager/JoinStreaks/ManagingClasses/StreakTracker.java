@@ -1,13 +1,12 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
-import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,13 +42,13 @@ public class StreakTracker {
         for (String playerUUID : playersWithStreaks) {
             dbUsersManager.getUserFromUUIDAsyncWithContext(playerUUID, "reset inactive player streak", user -> {
                 if (user != null) {
-                    LocalDateTime lastSeen = user.getLastSeen();
+                    Instant lastSeen = user.getLastSeen();
 
                     if (lastSeen == null) {
                         user.resetJoinStreaks();
                         playersReset.incrementAndGet();
                     } else {
-                        long secondsSinceLastSeen = Duration.between(lastSeen, LocalDateTime.now()).getSeconds();
+                        long secondsSinceLastSeen = Duration.between(lastSeen, Instant.now()).getSeconds();
                         int effectiveMisses = Math.max(missesAllowed, 1);
 
                         if (secondsSinceLastSeen > intervalSeconds * effectiveMisses) {

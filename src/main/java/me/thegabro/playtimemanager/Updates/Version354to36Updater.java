@@ -9,10 +9,7 @@ import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +31,7 @@ public class Version354to36Updater {
         migrateGoalData();
         removeOldColumns();
         updateGoalData();
+        migrateTimestampsToInstant();
     }
 
     private void recreateConfigFile() {
@@ -410,4 +408,122 @@ public class Version354to36Updater {
 
         playtimeFormatsConfiguration.formatsUpdater(newFields);
     }
+
+    private void migrateTimestampsToInstant() {
+        plugin.getLogger().info("Starting timestamp migration to Instant format (DATETIME -> BIGINT)...");
+
+        try (Connection connection = database.getConnection()) {
+
+            connection.setAutoCommit(false);
+
+            try {
+                plugin.getLogger().info("Creating new table with BIGINT timestamp columns...");
+
+                // Step 1: Create new table with BIGINT columns
+                PreparedStatement createNewTableStmt = connection.prepareStatement(
+                        "CREATE TABLE play_time_migrated (" +
+                                "uuid VARCHAR(32) NOT NULL UNIQUE, " +
+                                "nickname VARCHAR(32) NOT NULL UNIQUE, " +
+                                "playtime BIGINT NOT NULL, " +
+                                "artificial_playtime BIGINT NOT NULL, " +
+                                "afk_playtime BIGINT NOT NULL, " +
+                                "last_seen BIGINT DEFAULT NULL, " +
+                                "first_join BIGINT DEFAULT NULL, " +
+                                "relative_join_streak INT DEFAULT 0, " +
+                                "absolute_join_streak INT DEFAULT 0, " +
+                                "PRIMARY KEY (uuid)" +
+                                ")"
+                );
+                createNewTableStmt.executeUpdate();
+                createNewTableStmt.close();
+
+                // Step 2: Read old data and convert with proper timezone handling
+                plugin.getLogger().info("Converting and copying timestamp data with timezone consideration...");
+
+                PreparedStatement selectStmt = connection.prepareStatement(
+                        "SELECT uuid, nickname, playtime, artificial_playtime, afk_playtime, " +
+                                "last_seen, first_join, relative_join_streak, absolute_join_streak " +
+                                "FROM play_time"
+                );
+
+                PreparedStatement insertStmt = connection.prepareStatement(
+                        "INSERT INTO play_time_migrated " +
+                                "(uuid, nickname, playtime, artificial_playtime, afk_playtime, " +
+                                "last_seen, first_join, relative_join_streak, absolute_join_streak) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                );
+
+                ResultSet rs = selectStmt.executeQuery();
+                int rowsCopied = 0;
+
+                while (rs.next()) {
+                    insertStmt.setString(1, rs.getString("uuid"));
+                    insertStmt.setString(2, rs.getString("nickname"));
+                    insertStmt.setLong(3, rs.getLong("playtime"));
+                    insertStmt.setLong(4, rs.getLong("artificial_playtime"));
+                    insertStmt.setLong(5, rs.getLong("afk_playtime"));
+
+                    // Convert timestamps: read as Timestamp, convert to Instant epoch millis
+                    Timestamp lastSeenTs = rs.getTimestamp("last_seen");
+                    if (lastSeenTs != null && !rs.wasNull()) {
+                        insertStmt.setLong(6, lastSeenTs.getTime()); // getTime() returns epoch millis
+                    } else {
+                        insertStmt.setNull(6, Types.BIGINT);
+                    }
+
+                    Timestamp firstJoinTs = rs.getTimestamp("first_join");
+                    if (firstJoinTs != null && !rs.wasNull()) {
+                        insertStmt.setLong(7, firstJoinTs.getTime());
+                    } else {
+                        insertStmt.setNull(7, Types.BIGINT);
+                    }
+
+                    insertStmt.setInt(8, rs.getInt("relative_join_streak"));
+                    insertStmt.setInt(9, rs.getInt("absolute_join_streak"));
+
+                    insertStmt.executeUpdate();
+                    rowsCopied++;
+                }
+
+                rs.close();
+                selectStmt.close();
+                insertStmt.close();
+
+                // Step 3: Drop old table
+                plugin.getLogger().info("Removing old table...");
+                PreparedStatement dropOldTableStmt = connection.prepareStatement("DROP TABLE play_time");
+                dropOldTableStmt.executeUpdate();
+                dropOldTableStmt.close();
+
+                // Step 4: Rename new table
+                plugin.getLogger().info("Finalizing migration...");
+                PreparedStatement renameTableStmt = connection.prepareStatement(
+                        "ALTER TABLE play_time_migrated RENAME TO play_time"
+                );
+                renameTableStmt.executeUpdate();
+                renameTableStmt.close();
+
+                // Commit transaction
+                connection.commit();
+
+                plugin.getLogger().info(String.format(
+                        "Timestamp migration completed successfully! Migrated %d player records to BIGINT format",
+                        rowsCopied
+                ));
+
+            } catch (SQLException e) {
+                connection.rollback();
+                plugin.getLogger().severe("Error during timestamp migration, rolled back changes: " + e.getMessage());
+                e.printStackTrace();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Fatal error during timestamp migration: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 }

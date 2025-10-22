@@ -7,7 +7,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -16,6 +15,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.jetbrains.annotations.Nullable;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +59,7 @@ public class Utils {
         for (int i = 0; i < input.length(); i++) {
             if (input.charAt(i) == '&' && i + 1 < input.length()) {
                 // If we have accumulated text, append it with current style
-                if (currentText.length() > 0) {
+                if (!currentText.isEmpty()) {
                     message = message.append(Component.text(currentText.toString(), currentStyle));
                     currentText.setLength(0);
                 }
@@ -655,5 +657,27 @@ public class Utils {
         return skull;
     }
 
+    public static String formatInstant(Instant instant, String pattern) {
+        if (instant == null) {
+            return "Never";
+        }
+
+        DateTimeFormatter formatter;
+        try {
+            formatter = DateTimeFormatter
+                    .ofPattern(pattern)
+                    .withZone(ZoneId.systemDefault());
+        } catch (IllegalArgumentException e) {
+            PlayTimeManager.getInstance().getLogger().warning(
+                    "Invalid datetime-format pattern '" + pattern + "': " + e.getMessage() +
+                            ". Using default format 'MMM dd, yyyy HH:mm:ss'"
+            );
+            formatter = DateTimeFormatter
+                    .ofPattern("MMM dd, yyyy HH:mm:ss")
+                    .withZone(ZoneId.systemDefault());
+        }
+
+        return formatter.format(instant);
+    }
 
 }

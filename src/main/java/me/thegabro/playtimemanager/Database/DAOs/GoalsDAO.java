@@ -1,8 +1,6 @@
 package me.thegabro.playtimemanager.Database.DAOs;
 
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
-import me.thegabro.playtimemanager.Database.Errors;
-import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
@@ -12,7 +10,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 public class GoalsDAO {
     private final DatabaseHandler dbManager;
@@ -76,7 +73,7 @@ public class GoalsDAO {
 
     public void addCompletedGoal(String uuid, String nickname, String goalName, boolean received) {
         String insertQuery = "INSERT INTO completed_goals " +
-                "(goal_name, user_uuid, nickname, completed_on, received, received_at) " +
+                "(goal_name, user_uuid, nickname, completed_at, received, received_at) " +
                 "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?)";
 
         try (Connection conn = dbManager.getConnection();
@@ -156,7 +153,7 @@ public class GoalsDAO {
     public ArrayList<String> getNotReceivedGoals(String uuid) {
         String query = "SELECT goal_name FROM completed_goals " +
                 "WHERE user_uuid = ? AND (received = 0 OR received_at IS NULL) " +
-                "ORDER BY completed_on ASC";
+                "ORDER BY completed_at ASC";
 
         ArrayList<String> goals = new ArrayList<>();
 

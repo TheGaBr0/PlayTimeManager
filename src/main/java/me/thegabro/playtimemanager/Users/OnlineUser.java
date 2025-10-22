@@ -1,12 +1,11 @@
 package me.thegabro.playtimemanager.Users;
 
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
-import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -47,7 +46,7 @@ public class OnlineUser extends DBUser {
 
             // Handle legacy null first_join values
             if(user.firstJoin == null){
-                user.firstJoin = LocalDateTime.now();
+                user.firstJoin = Instant.now();
                 db.getPlayerDAO().updateFirstJoin(user.uuid, user.firstJoin);
             }
 
@@ -199,8 +198,8 @@ public class OnlineUser extends DBUser {
      * @param callback Optional callback to run on main thread after update completes
      */
     public void updateLastSeenAsync(Runnable callback) {
-        this.lastSeen = LocalDateTime.now();
-        final LocalDateTime timestampToSave = this.lastSeen;
+        this.lastSeen = Instant.now();
+        final Instant timestampToSave = this.lastSeen;
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             db.getPlayerDAO().updateLastSeen(uuid, timestampToSave);
@@ -308,8 +307,8 @@ public class OnlineUser extends DBUser {
      * @return the current LocalDateTime
      */
     @Override
-    public LocalDateTime getLastSeen() {
-        return LocalDateTime.now();
+    public Instant getLastSeen() {
+        return Instant.now();
     }
 
     /**
@@ -404,7 +403,7 @@ public class OnlineUser extends DBUser {
         // Calculate values
         long currentPlaytime = DBplaytime + (playtimeSnapshot - fromServerOnJoinPlayTime);
         long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
-        LocalDateTime lastSeenTime = LocalDateTime.now();
+        Instant lastSeenTime = Instant.now();
         this.lastSeen = lastSeenTime;
 
         // Perform all DB updates asynchronously

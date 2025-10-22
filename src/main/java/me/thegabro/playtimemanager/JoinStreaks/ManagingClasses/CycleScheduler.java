@@ -6,7 +6,6 @@ import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Utils;
@@ -17,7 +16,7 @@ import org.quartz.CronExpression;
 
 import java.text.ParseException;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.*;
 
@@ -27,7 +26,7 @@ public class CycleScheduler {
     private TimeZone timezone;
     private Date nextIntervalReset;
     private long exactIntervalSeconds;
-    private DatabaseHandler db = DatabaseHandler.getInstance();
+    private final DatabaseHandler db = DatabaseHandler.getInstance();
     private BukkitTask intervalTask;
     private final Set<String> playersJoinedDuringCurrentCycle = new HashSet<>();
     private String checkTimeToText;
@@ -151,7 +150,7 @@ public class CycleScheduler {
             return false;
         }
 
-        long secondsBetween = Duration.between(user.getLastSeen(), LocalDateTime.now()).getSeconds();
+        long secondsBetween = Duration.between(user.getLastSeen(), Instant.now()).getSeconds();
         return secondsBetween <= exactIntervalSeconds * plugin.getConfiguration().getInt("reset-joinstreak.missed-joins");
     }
 

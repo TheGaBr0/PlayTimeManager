@@ -33,7 +33,10 @@ public class GoalsManager {
     }
 
     public void processPlayerLogin(OnlineUser user){
-        for(String unreceivedgoal : user.getNotReceivedGoals()){
+
+        List<String> unreceivedgoals = new ArrayList<>(user.getNotReceivedGoals());
+
+        for(String unreceivedgoal : unreceivedgoals){
             user.markGoalAsReceivedAsync(unreceivedgoal, () -> {
                 Player player = user.getPlayerInstance();
                 if (player != null && player.isOnline()) {

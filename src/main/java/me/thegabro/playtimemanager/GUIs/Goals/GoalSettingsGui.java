@@ -39,7 +39,8 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         static final int GOAL_SOUND = 25;
         static final int UNCOMPLETE_GOAL = 36;
         static final int GOAL_ACTIVATION_STATUS = 39;
-        static final int GOAL_REPEATABLE_STATUS = 41;
+        static final int GOAL_REPEATABLE_STATUS = 40;
+        static final int GOAL_OFFLINE_REWARDS = 41;
         static final int BACK_BUTTON = 44;
     }
 
@@ -65,22 +66,14 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
     private void initializeBackground() {
         for (int i = 0; i < GUI_SIZE; i++) {
-            if (!isButtonSlot(i)) {
-                inventory.setItem(i, createGuiItem(
-                        Material.BLACK_STAINED_GLASS_PANE,
-                        Component.text("§f[§6P.T.M.§f]§7")
-                ));
-            }
+            inventory.setItem(i, createGuiItem(
+                    Material.BLACK_STAINED_GLASS_PANE,
+                    Component.text("§f[§6P.T.M.§f]§7")
+            ));
         }
     }
 
-    private boolean isButtonSlot(int slot) {
-        return slot == Slots.GOAL_REWARDS ||
-                slot == Slots.GOAL_MESSAGE ||
-                slot == Slots.GOAL_SOUND ||
-                slot == Slots.GOAL_ACTIVATION_STATUS ||
-                slot == Slots.BACK_BUTTON;
-    }
+
 
     private void initializeButtons() {
 
@@ -139,16 +132,26 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text("§7Right click to play the sound.")
         ));
 
+        inventory.setItem(Slots.GOAL_ACTIVATION_STATUS, createGuiItem(
+                goal.isActive() ? Material.GREEN_CONCRETE : Material.RED_CONCRETE,
+                Component.text(goal.isActive() ? "§a§lGoal Active" : "§c§lGoal Inactive"),
+                Component.text("§7Click to " + (goal.isActive() ? "deactivate" : "activate") + " this goal")
+        ));
+
         inventory.setItem(Slots.GOAL_REPEATABLE_STATUS, createGuiItem(
                 goal.isRepeatable() ? Material.LIME_DYE : Material.GRAY_DYE,
                 Component.text(goal.isRepeatable() ? "§a§lGoal repeatable" : "§c§lGoal not repeatable"),
                 Component.text("§7Click to make this goal " + (goal.isActive() ? "not " : "") + "repeatable")
         ));
 
-        inventory.setItem(Slots.GOAL_ACTIVATION_STATUS, createGuiItem(
-                goal.isActive() ? Material.GREEN_CONCRETE : Material.RED_CONCRETE,
-                Component.text(goal.isActive() ? "§a§lGoal Active" : "§c§lGoal Inactive"),
-                Component.text("§7Click to " + (goal.isActive() ? "deactivate" : "activate") + " this goal")
+        inventory.setItem(Slots.GOAL_OFFLINE_REWARDS, createGuiItem(
+                goal.areOfflineRewardsEnabled() ? Material.LIME_DYE : Material.GRAY_DYE,
+                Component.text(goal.areOfflineRewardsEnabled() ? "§a§lOffline rewards enabled" : "§c§lOffline rewards disabled"),
+                Component.text("§7Click to " + (goal.areOfflineRewardsEnabled() ? "§cdeactivate" : "§aactivate") + " §7offline rewards for this goal"),
+                Component.text(""),
+                Component.text("§e⚠ §6Warning: §7May cause server lag if enabled on repeatable "),
+                Component.text("§7goals with low completion check interval (e.g. <1 hour).")
+
         ));
 
         inventory.setItem(Slots.GOAL_REQUIREMENTS, createGuiItem(
@@ -239,6 +242,11 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
             case Slots.GOAL_REPEATABLE_STATUS:
                 goal.setRepeatable(!goal.isRepeatable());
+                initializeItems();
+                break;
+
+            case Slots.GOAL_OFFLINE_REWARDS:
+                goal.setOfflineRewardEnabling(!goal.areOfflineRewardsEnabled());
                 initializeItems();
                 break;
 

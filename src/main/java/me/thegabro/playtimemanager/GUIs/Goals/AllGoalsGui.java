@@ -82,8 +82,6 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 ItemMeta meta = item.getItemMeta();
                 meta.displayName(Utils.parseColors("&e" + goal.getName()).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = Arrays.asList(
-                        Utils.parseColors("§7Required Time: " + (goal.getRequirements().getTime() == Long.MAX_VALUE
-                                ? "-" : Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()))),
                         Utils.parseColors("§7Active: ")
                                 .append(Component.text(goal.isActive() ? "true" : "false")
                                         .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
@@ -91,6 +89,10 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                         Utils.parseColors("§7Repeatable: ")
                                 .append(Component.text(goal.isRepeatable() ? "true" : "false")
                                         .color(goal.isRepeatable() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
+                                .decoration(TextDecoration.ITALIC, false),
+                        Utils.parseColors("§7Offline rewards: ")
+                                .append(Component.text(goal.areOfflineRewardsEnabled() ? "true" : "false")
+                                        .color(goal.areOfflineRewardsEnabled() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
                                 .decoration(TextDecoration.ITALIC, false),
                         Utils.parseColors("§e" + goal.getRewardPermissions().size() + "§7 " + (goal.getRewardPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
                         Utils.parseColors("§e" + goal.getRewardCommands().size() + "§7 " + (goal.getRewardCommands().size() != 1 ? "commands loaded" : "command loaded")),

@@ -100,17 +100,12 @@ public class Goal {
 
                     Instant since = Instant.now().minusSeconds(exactIntervalSeconds);
 
-                    plugin.getLogger().info("=== DEBUG TIME WINDOW ===");
-                    plugin.getLogger().info("Interval seconds: " + exactIntervalSeconds);
-                    plugin.getLogger().info("Looking for players since: " + since);
-                    plugin.getLogger().info("Current time: " + LocalDateTime.now());
-
-                    List<String> playersUUIDs = db.getPlayerDAO().getPlayersSeenSince(since);
+                    List<String> playersNicknames = db.getPlayerDAO().getPlayersSeenSince(since);
 
                     List<DBUser> loadedUsers = new ArrayList<>();
-                    for (String uuid : playersUUIDs) {
-                        DBUser user = dbUsersManager.getUserFromCacheSync(uuid);
-                        if (user != null) {
+                    for (String nickname : playersNicknames) {
+                        DBUser user = dbUsersManager.getUserFromCacheSync(nickname);
+                        if (user != null && !user.isOnline()) {
                             loadedUsers.add(user);
                         }
                     }
@@ -118,7 +113,7 @@ public class Goal {
                     // Safely modify shared state on main thread
                     Bukkit.getScheduler().runTask(plugin, () -> {
 
-                        plugin.getLogger().info("Loaded " + loadedUsers.size() + " players seen in the last window.");
+                        //plugin.getLogger().info("Loaded " + loadedUsers.size() + " players seen in the last window.");
 
                         if (callback != null) {
                             callback.accept(Collections.unmodifiableList(loadedUsers));
@@ -377,6 +372,14 @@ public class Goal {
                                 name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
                     }
                 }else{
+
+                    for (Player player : Bukkit.getOnlinePlayers()) {
+                        OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+                        if (onlineUser != null) {
+                            checkCompletion(onlineUser);
+                        }
+                    }
+
                     loadPlayersJoinedDuringTimeWindow(users -> {
 
                         // Run on main thread — Bukkit API safety
@@ -436,6 +439,13 @@ public class Goal {
                                 name, scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
                     }
                 }else{
+                    for (Player player : Bukkit.getOnlinePlayers()) {
+                        OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+                        if (onlineUser != null) {
+                            checkCompletion(onlineUser);
+                        }
+                    }
+
                     loadPlayersJoinedDuringTimeWindow(users -> {
 
                         // Run on main thread — Bukkit API safety
@@ -699,7 +709,7 @@ public class Goal {
         return goalSound;
     }
 
-    public boolean isOfflineRewardEnabled(){
+    public boolean areOfflineRewardsEnabled(){
         return this.offlineRewards;
     }
 
@@ -786,7 +796,7 @@ public class Goal {
     }
 
     public void setOfflineRewardEnabling(boolean activation){
-        offlineRewards = activation;
+        this.offlineRewards = activation;
         saveToFile();
     }
 

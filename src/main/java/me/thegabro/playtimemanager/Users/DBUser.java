@@ -38,7 +38,7 @@ public class DBUser {
      * Used internally by factory methods.
      */
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, long DBAFKplaytime,
-                   ArrayList<String> completedGoals, Instant lastSeen, Instant firstJoin, int relativeJoinStreak,
+                   ArrayList<String> completedGoals, ArrayList<String> notReceivedGoals ,Instant lastSeen, Instant firstJoin, int relativeJoinStreak,
                    int absoluteJoinStreak, ArrayList<RewardSubInstance> receivedRewards, ArrayList<RewardSubInstance> rewardsToBeClaimed){
 
         this.uuid = uuid;
@@ -46,6 +46,7 @@ public class DBUser {
         this.DBplaytime = playtime;
         this.artificialPlaytime = artificialPlaytime;
         this.DBAFKplaytime = DBAFKplaytime;
+        this.notReceivedGoals = notReceivedGoals;
         this.completedGoals = completedGoals;
         this.lastSeen = lastSeen;
         this.firstJoin = firstJoin;
@@ -83,7 +84,7 @@ public class DBUser {
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DBUser user = new DBUser(uuid, nickname, 0, 0, 0,
-                    new ArrayList<>(), null, null, 0, 0,
+                    new ArrayList<>(), new ArrayList<>(), null, null, 0, 0,
                     new ArrayList<>(), new ArrayList<>());
             user.fromServerOnJoinPlayTime = fromServerPlayTime;
 
@@ -132,6 +133,7 @@ public class DBUser {
         long artificialPlaytime = db.getPlayerDAO().getArtificialPlaytime(uuid);
         long afkplaytime = db.getPlayerDAO().getAFKPlaytime(uuid);
         ArrayList<String> completedGoals = db.getGoalsDAO().getCompletedGoals(uuid);
+        ArrayList<String> notReceivedGoals = db.getGoalsDAO().getNotReceivedGoals(uuid);
         Instant lastSeen = db.getPlayerDAO().getLastSeen(uuid);
         Instant firstJoin = db.getPlayerDAO().getFirstJoin(uuid);
         int relativeJoinStreak = db.getStreakDAO().getRelativeJoinStreak(uuid);
@@ -139,7 +141,7 @@ public class DBUser {
         ArrayList<RewardSubInstance> receivedRewards = db.getStreakDAO().getReceivedRewards(uuid);
         ArrayList<RewardSubInstance> rewardsToBeClaimed = db.getStreakDAO().getRewardsToBeClaimed(uuid);
 
-        return new DBUser(uuid, nickname, playtime, artificialPlaytime, afkplaytime, completedGoals, lastSeen, firstJoin, relativeJoinStreak,
+        return new DBUser(uuid, nickname, playtime, artificialPlaytime, afkplaytime, completedGoals, notReceivedGoals, lastSeen, firstJoin, relativeJoinStreak,
                 absoluteJoinStreak, receivedRewards, rewardsToBeClaimed);
     }
 

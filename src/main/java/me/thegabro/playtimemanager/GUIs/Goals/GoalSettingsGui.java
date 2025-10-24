@@ -149,9 +149,10 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text(goal.areOfflineRewardsEnabled() ? "§a§lOffline rewards enabled" : "§c§lOffline rewards disabled"),
                 Component.text("§7Click to " + (goal.areOfflineRewardsEnabled() ? "§cdeactivate" : "§aactivate") + " §7offline rewards for this goal"),
                 Component.text(""),
-                Component.text("§e⚠ §6Warning: §7May cause server lag if enabled on repeatable "),
-                Component.text("§7goals with low completion check interval (e.g. <1 hour).")
-
+                Component.text("§eNote: §7Currently, only players who were"),
+                Component.text("§7online during the last completion check"),
+                Component.text("§7interval are eligible for offline rewards."),
+                Component.text("§7If they miss that window, they won't receive it.")
         ));
 
         inventory.setItem(Slots.GOAL_REQUIREMENTS, createGuiItem(

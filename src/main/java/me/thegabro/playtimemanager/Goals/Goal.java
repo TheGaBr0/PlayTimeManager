@@ -87,10 +87,10 @@ public class Goal {
     }
 
     private void loadPlayersJoinedDuringTimeWindow(Consumer<List<DBUser>> callback) {
-        if (this.active && this.useCronExpression) {
-
-            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                try {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try {
+                Instant since;
+                if(useCronExpression){
                     Date now = new Date();
                     Date firstTrigger = cronExpression.getNextValidTimeAfter(now);
                     Date secondTrigger = cronExpression.getNextValidTimeAfter(firstTrigger);
@@ -98,38 +98,40 @@ public class Goal {
                     long intervalMillis = secondTrigger.getTime() - firstTrigger.getTime();
                     long exactIntervalSeconds = intervalMillis / 1000;
 
-                    Instant since = Instant.now().minusSeconds(exactIntervalSeconds);
+                    since = Instant.now().minusSeconds(exactIntervalSeconds);
+                }else{
+                    since = Instant.now().minusSeconds(intervalSeconds);
+                }
 
-                    List<String> playersNicknames = db.getPlayerDAO().getPlayersSeenSince(since);
+                List<String> playersUuids = db.getPlayerDAO().getPlayersSeenSince(since);
 
-                    List<DBUser> loadedUsers = new ArrayList<>();
-                    for (String nickname : playersNicknames) {
-                        DBUser user = dbUsersManager.getUserFromCacheSync(nickname);
-                        if (user != null && !user.isOnline()) {
-                            loadedUsers.add(user);
-                        }
-                    }
-
-                    // Safely modify shared state on main thread
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-
-                        //plugin.getLogger().info("Loaded " + loadedUsers.size() + " players seen in the last window.");
-
-                        if (callback != null) {
-                            callback.accept(Collections.unmodifiableList(loadedUsers));
-                        }
-                    });
-
-                } catch (Exception e) {
-                    plugin.getLogger().severe("Error while loading players joined during time window: " + e.getMessage());
-                    e.printStackTrace();
-
-                    if (callback != null) {
-                        Bukkit.getScheduler().runTask(plugin, () -> callback.accept(Collections.emptyList()));
+                List<DBUser> loadedUsers = new ArrayList<>();
+                for (String uuid : playersUuids) {
+                    DBUser user = dbUsersManager.getUserFromUUIDSync(uuid);
+                    if (user != null && !user.isOnline()) {
+                        loadedUsers.add(user);
                     }
                 }
-            });
-        }
+
+                // Safely modify shared state on main thread
+                Bukkit.getScheduler().runTask(plugin, () -> {
+
+                    //plugin.getLogger().info("Loaded " + loadedUsers.size() + " players seen in the last window.");
+
+                    if (callback != null) {
+                        callback.accept(Collections.unmodifiableList(loadedUsers));
+                    }
+                });
+
+            } catch (Exception e) {
+                plugin.getLogger().severe("Error while loading players joined during time window: " + e.getMessage());
+                e.printStackTrace();
+
+                if (callback != null) {
+                    Bukkit.getScheduler().runTask(plugin, () -> callback.accept(Collections.emptyList()));
+                }
+            }
+        });
     }
 
     private void validateConfiguration() {
@@ -234,9 +236,8 @@ public class Goal {
                     "",
                     "offline-rewards:",
                     "  - If true, players who are offline when completing the goal will receive rewards when they next log in.",
-                    "  - WARNING: If this goal is repeatable and has a very low completion check interval (e.g., < 1 hour), ",
-                    "    enabling offline rewards may result in a large number of queued reward executions when multiple players log in,",
-                    "    potentially causing server performance issues. BE CAREFUL WITH THIS SETTING.",
+                    "  - Note: Currently, only players who were online during the last completion check interval are eligible.",
+                    "    For example, if the goal is checked daily and a player does not join within that day, they will not receive the reward.",
                     "",
                     "check-time-interval:",
                     "  - Defines the completion check time rate for the goal.",

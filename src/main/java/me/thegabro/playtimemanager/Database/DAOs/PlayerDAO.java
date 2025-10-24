@@ -611,8 +611,8 @@ public class PlayerDAO {
     }
 
     public ArrayList<String> getPlayersSeenSince(Instant since) {
-        ArrayList<String> nicknames = new ArrayList<>();
-        String query = "SELECT nickname FROM play_time WHERE last_seen >= ?";
+        ArrayList<String> uuids = new ArrayList<>();
+        String query = "SELECT uuid FROM play_time WHERE last_seen >= ?";
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(query)) {
@@ -623,7 +623,7 @@ public class PlayerDAO {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    nicknames.add(rs.getString("nickname"));
+                    uuids.add(rs.getString("uuid"));
                 }
             }
 
@@ -631,7 +631,7 @@ public class PlayerDAO {
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         }
 
-        return nicknames;
+        return uuids;
     }
 
 }

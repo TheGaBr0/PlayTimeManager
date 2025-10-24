@@ -88,6 +88,19 @@ public class DBUsersManager {
         });
     }
 
+    public DBUser getUserFromUUIDSync(String uuid) {
+        CompletableFuture<DBUser> future = new CompletableFuture<>();
+
+        getUserFromUUIDAsync(uuid, future::complete);
+
+        try {
+            return future.get(); // Blocks until the async call completes
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public void getUserFromUUIDAsync(String uuid, Consumer<DBUser> callback) {
         OnlineUser onlineUser = onlineUsersManager.getOnlineUserByUUID(uuid);
         if (onlineUser != null) {

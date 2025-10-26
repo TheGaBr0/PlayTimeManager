@@ -5,6 +5,7 @@ import me.thegabro.playtimemanager.GUIs.Goals.AllGoalsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
@@ -166,17 +167,49 @@ public class PlaytimeGoal implements TabExecutor {
 
         goal.cancelCheckTask();
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
-            if (onlineUser != null) {
-                goal.checkCompletion(onlineUser);
+        if(!goal.areOfflineRewardsEnabled()){
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+                if (onlineUser != null) {
+                    goal.checkCompletion(onlineUser);
+                }
             }
-        }
 
-        if (goal.isVerbose()) {
-            Map<String, Object> scheduleInfo = goal.getNextSchedule();
-            plugin.getLogger().info(String.format("Goal %s check completed, will " +
-                    "occur in %s on %s", goal.getName(), scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
+            if (goal.isVerbose()) {
+                Map<String, Object> scheduleInfo = goal.getNextSchedule();
+                plugin.getLogger().info(String.format("Goal %s check completed, next check will occur in %s on %s",
+                        goal.getName(), scheduleInfo.get("timeRemaining"), scheduleInfo.get("nextCheck")));
+            }
+        }else{
+
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+                if (onlineUser != null) {
+                    goal.checkCompletion(onlineUser);
+                }
+            }
+
+            goal.loadPlayersJoinedDuringTimeWindow(users -> {
+
+                // Run on main thread — Bukkit API safety
+                Bukkit.getScheduler().runTask(plugin, () -> {
+
+                    for (DBUser user : users) {
+                        goal.checkCompletion(user);
+                    }
+
+                    if (goal.isVerbose()) {
+                        Map<String, Object> scheduleInfo = goal.getNextSchedule();
+                        plugin.getLogger().info(String.format(
+                                "Goal %s check completed for %d players, next check in %s on %s",
+                                goal.getName(),
+                                users.size(),
+                                scheduleInfo.get("timeRemaining"),
+                                scheduleInfo.get("nextCheck")
+                        ));
+                    }
+                });
+            });
         }
 
         goal.restartCompletionCheckTask();

@@ -17,32 +17,33 @@ public class GoalRewardRequirement {
     private long time;
     private final PlaceholderConditionEvaluator placeholderConditionEvaluator = PlaceholderConditionEvaluator.getInstance();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final LuckPermsManager luckPermsManager = LuckPermsManager.getInstance(plugin);
+    private LuckPermsManager luckPermsManager = null;
 
     public GoalRewardRequirement() {
         this.permissions = new ArrayList<>();
         this.placeholderConditions = new ArrayList<>();
         this.time = Long.MAX_VALUE;
+
+        if(plugin.isPermissionsManagerConfigured()){
+            luckPermsManager = LuckPermsManager.getInstance(plugin);
+        }
+
     }
 
-    // Check if a player meets all requirements
     public boolean checkRequirements(Player player, long playerTime) {
 
-        // Check time requirement
         if(time != Long.MAX_VALUE){
             if (playerTime < time) {
                 return false;
             }
         }
 
-        // Check permissions
         for (String permission : permissions) {
             if (!player.hasPermission(permission)) {
                 return false;
             }
         }
 
-        // Check placeholder conditions
         for (String condition : placeholderConditions) {
             if (!placeholderConditionEvaluator.evaluate(player, condition)) {
                 return false;
@@ -59,13 +60,20 @@ public class GoalRewardRequirement {
             return CompletableFuture.completedFuture(false);
         }
 
-        CompletableFuture<Boolean> permissionChecks = CompletableFuture.completedFuture(true);
+        CompletableFuture<Boolean> permissionChecks;
 
-        for (String permission : permissions) {
-            permissionChecks = permissionChecks.thenComposeAsync(prev -> {
-                if (!prev) return CompletableFuture.completedFuture(false);
-                return luckPermsManager.hasPermissionAsync(uuid.toString(), permission);
-            });
+        if (plugin.isPermissionsManagerConfigured()) {
+            // Run async permission checks
+            permissionChecks = CompletableFuture.completedFuture(true);
+            for (String permission : permissions) {
+                permissionChecks = permissionChecks.thenComposeAsync(prev -> {
+                    if (!prev) return CompletableFuture.completedFuture(false);
+                    return luckPermsManager.hasPermissionAsync(uuid.toString(), permission);
+                });
+            }
+        } else {
+            // Skip permission checks entirely
+            permissionChecks = CompletableFuture.completedFuture(true);
         }
 
         return permissionChecks.thenApplyAsync(hasAllPerms -> {

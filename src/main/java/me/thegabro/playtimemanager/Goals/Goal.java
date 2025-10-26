@@ -67,6 +67,7 @@ public class Goal {
         this.goalFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + name + ".yml");
         this.requirements = new GoalRewardRequirement();
         this.goalMessageReplacements = new HashMap<>();
+
         loadFromFile();
         validateConfiguration();
     }
@@ -75,7 +76,6 @@ public class Goal {
         this.plugin = plugin;
         this.name = name;
         this.goalFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + name + ".yml");
-
         this.requirements = new GoalRewardRequirement();
         this.goalMessageReplacements = new HashMap<>();
 
@@ -86,7 +86,7 @@ public class Goal {
         saveToFile();
     }
 
-    private void loadPlayersJoinedDuringTimeWindow(Consumer<List<DBUser>> callback) {
+    public void loadPlayersJoinedDuringTimeWindow(Consumer<List<DBUser>> callback) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
                 Instant since;

@@ -95,11 +95,11 @@ public class PlayTimeManager extends JavaPlugin{
         CommandsConfiguration commandsConfig = CommandsConfiguration.getInstance();
         commandsConfig.initialize(this);
 
-        GoalsManager goalsManager = GoalsManager.getInstance();
-        goalsManager.initialize(this);
-
         permissionsManagerConfigured = checkPermissionsPlugin();
         afkDetectionConfigured = checkAFKPlugin();
+
+        GoalsManager goalsManager = GoalsManager.getInstance();
+        goalsManager.initialize(this);
 
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();

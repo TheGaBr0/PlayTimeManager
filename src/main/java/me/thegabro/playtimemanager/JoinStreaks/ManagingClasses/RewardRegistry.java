@@ -90,9 +90,7 @@ public class RewardRegistry {
         //List<String> debugOutput = new ArrayList<>();
 
         if (minJoins == -1) {
-            joinRewardsInstances.add(new RewardSubInstance(reward.getId(), -1, false));
-            //debugOutput.add(reward.getId() + "." + -1);
-
+            return;
         }
         else if (minJoins == maxJoins) {
             joinRewardsInstances.add(new RewardSubInstance(reward.getId(), minJoins, false));

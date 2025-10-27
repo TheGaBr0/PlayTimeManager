@@ -33,6 +33,9 @@ public class DBUser {
     protected boolean afk;
     protected OfflinePlayer playerInstance;
     protected ArrayList<String> notReceivedGoals;
+
+    public static final DBUser LOADING = new DBUser(); // Special instance for loading state
+    public static final DBUser NOT_FOUND = new DBUser(); // Special instance for not found
     /**
      * Private constructor to create a DBUser with all data loaded from database.
      * Used internally by factory methods.

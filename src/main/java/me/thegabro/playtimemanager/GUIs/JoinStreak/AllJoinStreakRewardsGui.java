@@ -277,6 +277,13 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             whoClicked.closeInventory();
             rewardsManager.getRewardRegistry().addReward(new JoinStreakReward(rewardsManager.getRewardRegistry().getNextRewardId(), -1));
             openInventory(whoClicked);
+
+            if(!plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")){
+                whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " &c&l⚠ WARNING &c&l⚠"));
+                whoClicked.sendMessage(Utils.parseColors("&7The join streak rewards schedule is currently &4&lDISABLED&6!"));
+                whoClicked.sendMessage(Utils.parseColors("&7Player join streaks will still be tracked, but &c&nno reward will be granted&r&7."));
+            }
+
             return;
         }
 
@@ -379,17 +386,6 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                 if (e.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
                     e.setCancelled(true);
                 }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onInventoryClose(InventoryCloseEvent event) {
-        if (event.getInventory().getHolder() instanceof AllJoinStreakRewardsGui && event.getPlayer() instanceof Player player) {
-            if(!plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")){
-                event.getPlayer().sendMessage(Utils.parseColors(config.getString("prefix") + " &c&l⚠ WARNING &c&l⚠"));
-                event.getPlayer().sendMessage(Utils.parseColors("&7The join streak rewards schedule is currently &4&lDISABLED&6!"));
-                event.getPlayer().sendMessage(Utils.parseColors("&7Player join streaks will still be tracked, but &c&nno reward will be granted&r&7."));
             }
         }
     }

@@ -27,7 +27,7 @@ public class RewardProcessor {
         this.messageService = messageService;
     }
 
-    public void processEligibleRewards(OnlineUser onlineUser, Player player) {
+    public void processEligibleRewards(OnlineUser onlineUser) {
         int currentStreak = onlineUser.getRelativeJoinStreak();
 
         // Get all rewards that match this specific join count
@@ -42,7 +42,7 @@ public class RewardProcessor {
             }
 
             if (mainInstance != null) {
-                processQualifiedReward(onlineUser, player, subInstance);
+                processQualifiedReward(onlineUser, subInstance);
             }
         }
 
@@ -53,7 +53,8 @@ public class RewardProcessor {
         }
     }
 
-    private void processQualifiedReward(OnlineUser onlineUser, Player player, RewardSubInstance subInstance) {
+    private void processQualifiedReward(OnlineUser onlineUser, RewardSubInstance subInstance) {
+        Player player = onlineUser.getPlayerInstance();
         if (player.hasPermission("playtime.joinstreak.claim.automatic")) {
 
             messageService.sendRewardRelatedMessage(onlineUser, subInstance, plugin.getConfiguration().getString("join-warn-autoclaim-message"), 1);

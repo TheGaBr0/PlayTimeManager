@@ -25,10 +25,11 @@ public class JoinEventManager implements Listener {
 
                 onlineUser.updateLastSeen();
 
-                joinStreaksManager.processPlayerLogin(event.getPlayer());
+                joinStreaksManager.processPlayerLogin(onlineUser);
 
                 goalsManager.processPlayerLogin(onlineUser);
 
+                dbUsersManager.markAsExistent(onlineUser.getNickname());
                 dbUsersManager.updateCachedTopPlayers(onlineUser);
             });
 

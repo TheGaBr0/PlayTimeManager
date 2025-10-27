@@ -1,5 +1,8 @@
 package me.thegabro.playtimemanager.Users;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.Maps;
 import me.thegabro.playtimemanager.Configuration;
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
@@ -25,15 +28,17 @@ public class DBUsersManager {
     private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
     private static final int TOP_PLAYERS_LIMIT = 100;
 
-    private final Map<String, String> nicknameToUuidCache;
+    private final BiMap<String, String> nicknameUuidCache;
     private final Map<String, DBUser> userCache;
+    private final Set<String> nonExistentUsers = ConcurrentHashMap.newKeySet();
 
 
     private List<String> playersHiddenFromLeaderBoard;
     private DBUsersManager() {
         this.topPlayers = Collections.synchronizedList(new ArrayList<>());
         this.userCache = new ConcurrentHashMap<>();
-        this.nicknameToUuidCache = new ConcurrentHashMap<>();
+        this.nicknameUuidCache = Maps.synchronizedBiMap(HashBiMap.create());
+        this.playersHiddenFromLeaderBoard = new ArrayList<>();
 
         startCacheMaintenanceTask();
     }
@@ -52,40 +57,53 @@ public class DBUsersManager {
     private void startCacheMaintenanceTask() {
         long clearInterval = 6 * 60 * 60 * 20; //Clear every 6 hours (in ticks)
         plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, () -> {
-            clearCaches();
-            updateTopPlayersFromDB();
+            updateTopPlayersFromDB();// DB work stays async
+
+            Bukkit.getScheduler().runTask(plugin, this::clearCaches);
         }, clearInterval, clearInterval);
     }
 
     public void getUserFromNicknameAsync(String nickname, Consumer<DBUser> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            // Get UUID from DB (runs in async thread)
-            String uuid = db.getPlayerDAO().getUUIDFromNickname(nickname);
 
-            if (uuid == null) {
-                // Player not found
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
-                return;
-            }
+        if(nonExistentUsers.contains(nickname.toLowerCase())){
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
+            return;
+        }else{
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                // Get UUID from DB (runs in async thread)
+                String uuid = db.getPlayerDAO().getUUIDFromNickname(nickname);
 
-            // Once we have the UUID, load the user (async again)
-            getUserFromUUIDAsync(uuid, callback);
-        });
+                if (uuid == null) {
+                    // Player not found
+                    Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
+                    return;
+                }
+
+                // Once we have the UUID, load the user (async again)
+                getUserFromUUIDAsync(uuid, callback);
+            });
+        }
     }
 
     public void getUserFromNicknameAsyncWithContext(String nickname, String context, Consumer<DBUser> callback) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            // Get UUID from DB
-            String uuid = db.getPlayerDAO().getUUIDFromNickname(nickname);
 
-            if (uuid == null) {
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
-                return;
-            }
+        if(nonExistentUsers.contains(nickname.toLowerCase())) {
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
+            return;
+        }else{
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                // Get UUID from DB
+                String uuid = db.getPlayerDAO().getUUIDFromNickname(nickname);
 
-            // Load user from UUID with context
-            getUserFromUUIDAsyncWithContext(uuid, context, callback);
-        });
+                if (uuid == null) {
+                    Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
+                    return;
+                }
+
+                // Load user from UUID with context
+                getUserFromUUIDAsyncWithContext(uuid, context, callback);
+            });
+        }
     }
 
     public DBUser getUserFromUUIDSync(String uuid) {
@@ -102,12 +120,28 @@ public class DBUsersManager {
     }
 
     public void getUserFromUUIDAsync(String uuid, Consumer<DBUser> callback) {
+        // Fast path: check if player is online
         OnlineUser onlineUser = onlineUsersManager.getOnlineUserByUUID(uuid);
         if (onlineUser != null) {
-            callback.accept(onlineUser);
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(onlineUser));
             return;
         }
 
+        // Fast path: check cache (on main thread before going async)
+        DBUser cached = userCache.get(uuid);
+        if (cached != null) {
+            if (plugin.CACHE_DEBUG) {
+                plugin.getLogger().info("Cache hit for player: " + cached.getNickname() + " from context: unknown");
+            }
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
+            return;
+        }
+
+        if (plugin.CACHE_DEBUG) {
+            plugin.getLogger().info("Cache miss for UUID: " + uuid + " from context: unknown");
+        }
+
+        // Slow path: database query
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             if (!db.getPlayerDAO().playerExists(uuid)) {
                 Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
@@ -115,31 +149,46 @@ public class DBUsersManager {
             }
 
             if (plugin.CACHE_DEBUG) {
-                plugin.getLogger().info("Looking for player: " + db.getPlayerDAO().getNickname(uuid) + " from context: unknown");
-                plugin.getLogger().info("Presence in cache: " + userCache.containsKey(uuid));
-            }
-
-            DBUser cached = userCache.get(uuid);
-            if (cached != null) {
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
-                return;
+                plugin.getLogger().info("Loading player from DB: " + uuid + " from context: unknown");
             }
 
             DBUser.fromUUIDAsync(uuid, user -> {
-                if (user != null) {
-                    userCache.put(uuid, user);
-                    nicknameToUuidCache.put(user.getNickname().toLowerCase(), uuid); // Add index
-                }
-                callback.accept(user);
+                // Update cache on main thread
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (user != null) {
+                        userCache.put(uuid, user);
+                        nicknameUuidCache.put(user.getNickname().toLowerCase(), uuid);
+
+                        if (plugin.CACHE_DEBUG) {
+                            plugin.getLogger().info("Cached player: " + user.getNickname());
+                        }
+                    }
+                    callback.accept(user);
+                });
             });
         });
     }
 
     public void getUserFromUUIDAsyncWithContext(String uuid, String context, Consumer<DBUser> callback) {
+        // Fast path: check if player is online
         OnlineUser onlineUser = onlineUsersManager.getOnlineUserByUUID(uuid);
         if (onlineUser != null) {
-            callback.accept(onlineUser);
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(onlineUser));
             return;
+        }
+
+        // Fast path: check cache (on main thread before going async)
+        DBUser cached = userCache.get(uuid);
+        if (cached != null) {
+            if (plugin.CACHE_DEBUG) {
+                plugin.getLogger().info("Cache hit for player: " + cached.getNickname() + " from context: " + context);
+            }
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
+            return;
+        }
+
+        if (plugin.CACHE_DEBUG) {
+            plugin.getLogger().info("Cache miss for UUID: " + uuid + " from context: " + context);
         }
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -149,22 +198,22 @@ public class DBUsersManager {
             }
 
             if (plugin.CACHE_DEBUG) {
-                plugin.getLogger().info("Looking for player: " + db.getPlayerDAO().getNickname(uuid) + " from context: " + context);
-                plugin.getLogger().info("Presence in cache: " + userCache.containsKey(uuid));
-            }
-
-            DBUser cached = userCache.get(uuid);
-            if (cached != null) {
-                Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
-                return;
+                plugin.getLogger().info("Loading player from DB: " + uuid + " from context: " + context);
             }
 
             DBUser.fromUUIDAsync(uuid, user -> {
-                if (user != null) {
-                    userCache.put(uuid, user);
-                    nicknameToUuidCache.put(user.getNickname().toLowerCase(), uuid); // Add index
-                }
-                callback.accept(user);
+                // Update cache on main thread
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (user != null) {
+                        userCache.put(uuid, user);
+                        nicknameUuidCache.put(user.getNickname().toLowerCase(), uuid);
+
+                        if (plugin.CACHE_DEBUG) {
+                            plugin.getLogger().info("Cached player: " + user.getNickname());
+                        }
+                    }
+                    callback.accept(user);
+                });
             });
         });
     }
@@ -178,18 +227,36 @@ public class DBUsersManager {
      * @return The cached DBUser or null if not in cache
      */
     public DBUser getUserFromCacheSync(String nickname) {
+
+        String lowerNickname = nickname.toLowerCase();
+        if (nonExistentUsers.contains(lowerNickname)) {
+            return null;
+        }
+
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(nickname);
         if (onlineUser != null) {
             return onlineUser;
         }
 
         // Use nickname index for O(1) lookup
-        String uuid = nicknameToUuidCache.get(nickname.toLowerCase());
+        String uuid = nicknameUuidCache.get(nickname.toLowerCase());
         if (uuid == null) {
             return null;
         }
 
         return userCache.get(uuid);
+    }
+
+    public boolean isKnownNonExistent(String nickname) {
+        return nonExistentUsers.contains(nickname.toLowerCase());
+    }
+
+    public void markAsNonExistent(String nickname) {
+        nonExistentUsers.add(nickname.toLowerCase());
+    }
+
+    public void markAsExistent(String nickname) {
+        nonExistentUsers.remove(nickname.toLowerCase());
     }
 
     public void updateTopPlayersFromDB() {
@@ -266,13 +333,13 @@ public class DBUsersManager {
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 synchronized (topPlayers) {
-                    if (!alreadyPresent) {
-                        // Add if leaderboard not full and not already in list
-                        if (topPlayers.size() < TOP_PLAYERS_LIMIT) {
-                            topPlayers.add(user);
-                        }
-                    } else {
-                        // Update existing entry with fresh data
+                    // Re-check if player exists (atomic check-and-act)
+                    boolean exists = topPlayers.stream().anyMatch(p -> p.getUuid().equals(uuid));
+
+                    if (!exists && topPlayers.size() < TOP_PLAYERS_LIMIT) {
+                        topPlayers.add(user);
+                    } else if (exists) {
+                        // Update existing entry
                         for (int i = 0; i < topPlayers.size(); i++) {
                             if (topPlayers.get(i).getUuid().equals(uuid)) {
                                 topPlayers.set(i, user);
@@ -330,13 +397,15 @@ public class DBUsersManager {
      * @param newNickname The new nickname to add to index
      */
     public void updateNicknameInCache(String uuid, String oldNickname, String newNickname) {
+        // Remove old nickname mapping (this also removes the reverse uuid → oldNickname)
         if (oldNickname != null) {
-            nicknameToUuidCache.remove(oldNickname.toLowerCase());
+            nicknameUuidCache.remove(oldNickname.toLowerCase());
         }
 
+        // Add new nickname mapping
         DBUser cachedUser = userCache.get(uuid);
         if (cachedUser != null) {
-            nicknameToUuidCache.put(newNickname.toLowerCase(), uuid);
+            nicknameUuidCache.put(newNickname.toLowerCase(), uuid);
         }
 
         if (plugin.CACHE_DEBUG) {
@@ -353,12 +422,17 @@ public class DBUsersManager {
      * @param nickname The player's nickname
      */
     public void updateUUIDInCache(String oldUUID, String newUUID, String nickname) {
+        // Move user in cache
         DBUser user = userCache.remove(oldUUID);
         if (user != null) {
             userCache.put(newUUID, user);
         }
 
-        nicknameToUuidCache.put(nickname.toLowerCase(), newUUID);
+        // Remove old UUID mapping using inverse (removes both directions)
+        nicknameUuidCache.inverse().remove(oldUUID);
+
+        // Add new mapping
+        nicknameUuidCache.put(nickname.toLowerCase(), newUUID);
 
         if (plugin.CACHE_DEBUG) {
             plugin.getLogger().info("Updated UUID in cache: " + oldUUID + " -> " + newUUID + " for nickname: " + nickname);
@@ -382,13 +456,13 @@ public class DBUsersManager {
     public void removeUserFromCache(String uuid) {
         DBUser user = userCache.remove(uuid);
         if (user != null) {
-            nicknameToUuidCache.remove(user.getNickname().toLowerCase());
+            nicknameUuidCache.remove(user.getNickname().toLowerCase());
         }
     }
 
     public void clearCaches() {
         userCache.clear();
-        nicknameToUuidCache.clear(); // Add this
+        nicknameUuidCache.clear(); // Add this
         commandsConfiguration.clearCache();
         configuration.clearCache();
         guIsConfiguration.clearCache();

@@ -14,8 +14,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class JoinStreaksManager {
-    private PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private DatabaseHandler db = DatabaseHandler.getInstance();
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final DatabaseHandler db = DatabaseHandler.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private RewardRegistry rewardRegistry;
@@ -59,18 +59,17 @@ public class JoinStreaksManager {
         }
     }
 
-    public void processPlayerLogin(Player player) {
-        OnlineUser user = onlineUsersManager.getOnlineUser(player.getName());
+    public void processPlayerLogin(OnlineUser onlineUser) {
 
-        if (cycleScheduler.isEligibleForStreak(user)) {
+        if (cycleScheduler.isEligibleForStreak(onlineUser)) {
             // Always increment absolute streak
-            streakTracker.incrementAbsoluteStreak(user);
-            cycleScheduler.markPlayerJoinedInCurrentCycle(user.getUuid());
+            streakTracker.incrementAbsoluteStreak(onlineUser);
+            cycleScheduler.markPlayerJoinedInCurrentCycle(onlineUser.getUuid());
 
             // Only increment relative streak and check rewards if schedule is active AND rewards exist
             if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation") && !rewardRegistry.isEmpty()) {
-                streakTracker.incrementRelativeStreak(user);
-                rewardProcessor.processEligibleRewards(user, player);
+                streakTracker.incrementRelativeStreak(onlineUser);
+                rewardProcessor.processEligibleRewards(onlineUser);
             }
         }
     }
@@ -107,7 +106,7 @@ public class JoinStreaksManager {
             streakTracker.incrementRelativeStreak(onlineUser);
             Player player = onlineUser.getPlayerInstance();
             if (player != null) {
-                rewardProcessor.processEligibleRewards(onlineUser, player);
+                rewardProcessor.processEligibleRewards(onlineUser);
             }
         }
     }

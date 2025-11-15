@@ -74,7 +74,7 @@ public class GoalsDAO {
     public void addCompletedGoal(String uuid, String nickname, String goalName, boolean received) {
         String insertQuery = "INSERT INTO completed_goals " +
                 "(goal_name, user_uuid, nickname, completed_at, received, received_at) " +
-                "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?)";
+                "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)";
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(insertQuery)) {
@@ -86,7 +86,7 @@ public class GoalsDAO {
 
             // If received is true, set received_at to CURRENT_TIMESTAMP, otherwise NULL
             if (received) {
-                ps.setTimestamp(5, new java.sql.Timestamp(System.currentTimeMillis()));
+                ps.setTimestamp(5, null); // replaced by CURRENT_TIMESTAMP
             } else {
                 ps.setNull(5, java.sql.Types.TIMESTAMP);
             }

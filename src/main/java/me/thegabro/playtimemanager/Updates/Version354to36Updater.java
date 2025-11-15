@@ -63,7 +63,7 @@ public class Version354to36Updater {
     }
 
     private void migrateRewardData() {
-        plugin.getLogger().info("Starting reward data migration from version 3.5.4 to 3.5.5...");
+        plugin.getLogger().info("Starting reward data migration from version 3.5.4 to 3.6...");
 
         try (Connection connection = database.getConnection()) {
             // First, check if the old columns exist
@@ -124,7 +124,7 @@ public class Version354to36Updater {
     }
 
     private void migrateGoalData() {
-        plugin.getLogger().info("Starting goal data migration from version 3.5.4 to 3.5.5...");
+        plugin.getLogger().info("Starting goal data migration from version 3.5.4 to 3.6...");
 
         try (Connection connection = database.getConnection()) {
             // Get all players with completed goals

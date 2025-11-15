@@ -34,13 +34,13 @@ public class GoalsManager {
 
     public void processPlayerLogin(OnlineUser user){
 
-        List<String> unreceivedgoals = new ArrayList<>(user.getNotReceivedGoals());
+        List<String> notReceivedGoals = new ArrayList<>(user.getNotReceivedGoals());
 
-        for(String unreceivedgoal : unreceivedgoals){
-            user.markGoalAsReceivedAsync(unreceivedgoal, () -> {
+        for(String notReceivedGoal : notReceivedGoals){
+            user.markGoalAsReceivedAsync(notReceivedGoal, () -> {
                 Player player = user.getPlayerInstance();
                 if (player != null && player.isOnline()) {
-                    getGoal(unreceivedgoal).processCompletedGoal(user, player);
+                    getGoal(notReceivedGoal).processCompletedGoal(user, player);
                 }
             });
         }

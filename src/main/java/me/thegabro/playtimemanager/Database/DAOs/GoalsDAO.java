@@ -72,9 +72,19 @@ public class GoalsDAO {
     }
 
     public void addCompletedGoal(String uuid, String nickname, String goalName, boolean received) {
-        String insertQuery = "INSERT INTO completed_goals " +
-                "(goal_name, user_uuid, nickname, completed_at, received, received_at) " +
-                "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)";
+        String insertQuery;
+
+        if (received) {
+            // When received is true, use CURRENT_TIMESTAMP directly
+            insertQuery = "INSERT INTO completed_goals " +
+                    "(goal_name, user_uuid, nickname, completed_at, received, received_at) " +
+                    "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)";
+        } else {
+            // When received is false, set received_at to NULL
+            insertQuery = "INSERT INTO completed_goals " +
+                    "(goal_name, user_uuid, nickname, completed_at, received, received_at) " +
+                    "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, NULL)";
+        }
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(insertQuery)) {
@@ -83,13 +93,6 @@ public class GoalsDAO {
             ps.setString(2, uuid);
             ps.setString(3, nickname);
             ps.setInt(4, received ? 1 : 0);
-
-            // If received is true, set received_at to CURRENT_TIMESTAMP, otherwise NULL
-            if (received) {
-                ps.setTimestamp(5, null); // replaced by CURRENT_TIMESTAMP
-            } else {
-                ps.setNull(5, java.sql.Types.TIMESTAMP);
-            }
 
             ps.executeUpdate();
 
@@ -135,7 +138,7 @@ public class GoalsDAO {
 
     public void markGoalAsReceived(String uuid, String goalName) {
         String updateQuery = "UPDATE completed_goals SET received = 1, received_at = CURRENT_TIMESTAMP " +
-                "WHERE user_uuid = ? AND goal_name = ?";
+                "WHERE user_uuid = ? AND goal_name = ? AND received = 0";
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(updateQuery)) {

@@ -491,7 +491,15 @@ public class Goal {
 
                 long playerTime = user.getPlaytime();
                 if (getRequirements().checkRequirements(player, playerTime)) {
-                    Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    user.markGoalAsCompletedAsync(name, true, () -> {
+                        if (verbose) {
+                            plugin.getLogger().info(String.format(
+                                    "User %s has reached the goal %s",
+                                    user.getNickname(),
+                                    name)
+                            );
+                        }
+
                         processCompletedGoal(user, player);
                     });
                 }
@@ -507,7 +515,15 @@ public class Goal {
                 getRequirements().checkRequirementsOffline(offlinePlayer, playerTime)
                         .thenAcceptAsync(requirementsMet -> {
                             if (requirementsMet) {
-                                processCompletedGoalOffline(user);
+                                user.markGoalAsCompletedAsync(name, false, () -> {
+                                    if (verbose) {
+                                        plugin.getLogger().info(String.format(
+                                                "Offline user %s has reached the goal %s",
+                                                user.getNickname(),
+                                                name)
+                                        );
+                                    }
+                                });
                             }
                         }).exceptionally(ex -> {
                             plugin.getLogger().warning("Error checking offline goal completion for "
@@ -518,30 +534,7 @@ public class Goal {
         });
     }
 
-    private void processCompletedGoalOffline(DBUser user) {
-        user.markGoalAsCompletedAsync(name, false, () -> {
-            if (verbose) {
-                plugin.getLogger().info(String.format(
-                        "Offline user %s has reached the goal %s",
-                        user.getNickname(),
-                        name)
-                );
-            }
-        });
-    }
-
     protected void processCompletedGoal(DBUser onlineUser, Player player) {
-
-        onlineUser.markGoalAsCompletedAsync(name, true, () -> {
-
-            if (verbose) {
-                plugin.getLogger().info(String.format(
-                        "User %s has reached the goal %s",
-                        onlineUser.getNickname(),
-                        name)
-                );
-            }
-
             if (plugin.isPermissionsManagerConfigured()) {
                 assignPermissionsForGoal(onlineUser);
             }
@@ -550,8 +543,6 @@ public class Goal {
             sendGoalMessage(player);
 
             playGoalSound(player);
-        });
-
     }
 
     private void assignPermissionsForGoal(DBUser onlineUser) {

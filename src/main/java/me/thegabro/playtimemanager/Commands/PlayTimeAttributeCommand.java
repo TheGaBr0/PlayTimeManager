@@ -1,6 +1,6 @@
 package me.thegabro.playtimemanager.Commands;
 
-import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -17,21 +17,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PlayTimeAttributeCommand implements CommandExecutor, TabCompleter {
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final PlayTimeDatabase db = plugin.getDatabase();
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
         if (!sender.hasPermission("playtime.others.attributes")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                    " You don't have permission to execute this command"));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                    config.getString("no-permission")));
             return false;
         }
 
         if (args.length < 2 || args.length > 3) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                     " Usage: /playtimeattribute <player> <attribute> [true|false]"));
             return false;
         }
@@ -39,41 +38,43 @@ public class PlayTimeAttributeCommand implements CommandExecutor, TabCompleter {
         String playerName = args[0];
         String attribute = args[1].toLowerCase();
 
-        // Validate attribute
         if (!attribute.equals("hidefromleaderboard")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                     " Invalid attribute. Available: hidefromleaderboard"));
             return false;
         }
 
-        DBUser user = DBUsersManager.getInstance().getUserFromNicknameWithContext(playerName, "set hidefromleaderboard attribute command");
-        if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                    " The player &e" + playerName + "&7 has never joined the server!"));
-            return false;
-        }
-
-        boolean newValue;
-
-        if (args.length == 3) {
-            // Value provided - validate it
-            String value = args[2].toLowerCase();
-            if (!value.equals("true") && !value.equals("false")) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
-                        " Invalid value. Use: true or false"));
-                return false;
+        DBUsersManager.getInstance().getUserFromNicknameAsyncWithContext(playerName, "set hidefromleaderboard attribute command", user -> {
+            if (user == null) {
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                        config.getString("player-never-joined").replace("%PLAYER%", playerName)));
+                return;
             }
-            newValue = Boolean.parseBoolean(value);
-        } else {
-            // No value provided - toggle current value
-            newValue = !getCurrentAttributeValue(user, attribute);
-        }
 
-        // Update the attribute in database
-        updatePlayerAttribute(sender, user, attribute, newValue, playerName);
+            boolean newValue;
+
+            if (args.length == 3) {
+                // Value provided - validate it
+                String value = args[2].toLowerCase();
+                if (!value.equals("true") && !value.equals("false")) {
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                            " Invalid value. Use: true or false"));
+                    return;
+                }
+                newValue = Boolean.parseBoolean(value);
+            } else {
+                // No value provided - toggle current value
+                newValue = !getCurrentAttributeValue(user, attribute);
+            }
+
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                updatePlayerAttribute(sender, user, attribute, newValue, playerName);
+            });
+        });
 
         return true;
     }
+
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd,
@@ -131,7 +132,7 @@ public class PlayTimeAttributeCommand implements CommandExecutor, TabCompleter {
             }
         } catch (Exception e) {
             plugin.getLogger().severe("Error updating player attribute: " + e.getMessage());
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                     " Failed to update player attribute"));
         }
     }
@@ -151,7 +152,7 @@ public class PlayTimeAttributeCommand implements CommandExecutor, TabCompleter {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     try {
                         DBUsersManager.getInstance().updateTopPlayersFromDB();
-                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                                 " Successfully set hidefromleaderboard to " + hide + " for player " + playerName));
                     } catch (Exception e) {
                         plugin.getLogger().severe("Failed to update leaderboard after setting attribute: " + e.getMessage());

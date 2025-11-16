@@ -1,41 +1,49 @@
 package me.thegabro.playtimemanager.Goals;
 
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlaceholderConditionEvaluator;
+import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUser;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class GoalRewardRequirement {
     private List<String> permissions;
     private List<String> placeholderConditions;
     private long time;
     private final PlaceholderConditionEvaluator placeholderConditionEvaluator = PlaceholderConditionEvaluator.getInstance();
-
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private LuckPermsManager luckPermsManager = null;
 
     public GoalRewardRequirement() {
         this.permissions = new ArrayList<>();
         this.placeholderConditions = new ArrayList<>();
         this.time = Long.MAX_VALUE;
+
+        if(plugin.isPermissionsManagerConfigured()){
+            luckPermsManager = LuckPermsManager.getInstance(plugin);
+        }
+
     }
 
-    // Check if a player meets all requirements
     public boolean checkRequirements(Player player, long playerTime) {
 
-        // Check time requirement
         if(time != Long.MAX_VALUE){
             if (playerTime < time) {
                 return false;
             }
         }
 
-        // Check permissions
         for (String permission : permissions) {
             if (!player.hasPermission(permission)) {
                 return false;
             }
         }
 
-        // Check placeholder conditions
         for (String condition : placeholderConditions) {
             if (!placeholderConditionEvaluator.evaluate(player, condition)) {
                 return false;
@@ -45,7 +53,45 @@ public class GoalRewardRequirement {
         return true;
     }
 
-    // Getters and setters
+    public CompletableFuture<Boolean> checkRequirementsOffline(OfflinePlayer player, long playerTime) {
+        UUID uuid = player.getUniqueId();
+
+        if (time != Long.MAX_VALUE && playerTime < time) {
+            return CompletableFuture.completedFuture(false);
+        }
+
+        CompletableFuture<Boolean> permissionChecks;
+
+        if (plugin.isPermissionsManagerConfigured()) {
+            // Run async permission checks
+            permissionChecks = CompletableFuture.completedFuture(true);
+            for (String permission : permissions) {
+                permissionChecks = permissionChecks.thenComposeAsync(prev -> {
+                    if (!prev) return CompletableFuture.completedFuture(false);
+                    return luckPermsManager.hasPermissionAsync(uuid.toString(), permission);
+                });
+            }
+        } else {
+            // Skip permission checks entirely
+            permissionChecks = CompletableFuture.completedFuture(true);
+        }
+
+        return permissionChecks.thenApplyAsync(hasAllPerms -> {
+            if (!hasAllPerms) return false;
+
+            for (String condition : placeholderConditions) {
+                if (!placeholderConditionEvaluator.evaluate(player, condition)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }).exceptionally(ex -> {
+            plugin.getLogger().warning("Failed to check offline requirements for " + player.getName() + ": " + ex.getMessage());
+            return false;
+        });
+    }
+
     public List<String> getPermissions() {
         return permissions;
     }

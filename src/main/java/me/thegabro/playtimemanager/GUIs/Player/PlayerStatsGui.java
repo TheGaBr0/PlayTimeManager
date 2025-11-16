@@ -26,8 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 import java.util.*;
 
 public class PlayerStatsGui extends BaseCustomGUI {
@@ -79,7 +78,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
             initializeItemsAsync(() -> {
                 // Track active GUIs
                 InventoryListener.getInstance().registerGUI(sender.getUniqueId(), this);
-
                 // Open inventory on main thread
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     if (sender.isOnline()) {
@@ -110,19 +108,18 @@ public class PlayerStatsGui extends BaseCustomGUI {
                 inv.clear();
 
                 createBorders();
+                createConfigurableItemsSync();
 
-                createConfigurableItemsAsync(() -> {
-                    // Run callback on main thread
-                    Bukkit.getScheduler().runTask(plugin, callback);
-                });
             } catch (Exception e) {
                 plugin.getLogger().severe("Error initializing PlayerStatsGui items: " + e.getMessage());
                 e.printStackTrace();
-                // Still run callback even if there's an error
+            } finally {
+                // Always run the callback on the main thread after async processing
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
     }
+
 
     /**
      * Determine the view type based on permissions and context
@@ -298,48 +295,18 @@ public class PlayerStatsGui extends BaseCustomGUI {
             // Check if item should be visible for this view
             if (isItemVisibleForView(itemPath, currentView)) {
                 // For online players, we have immediate access to Player instance
-                OnlineUser onlineSubject = (OnlineUser) subject;
-                Player onlinePlayer = onlineSubject.getPlayerInstance();
-
-                processItemWithPlayerData(itemKey, currentView, onlinePlayer);
-            }
-        }
-    }
-
-    private void createConfigurableItemsAsync(Runnable callback) {
-        ViewType currentView = getViewType();
-
-        // Get all configured items
-        Map<String, Object> items = config.getConfigurationSection("player-stats-gui.items").getValues(false);
-
-        List<String> itemsToProcess = new ArrayList<>();
-        for (String itemKey : items.keySet()) {
-            String itemPath = "player-stats-gui.items." + itemKey;
-
-            // Check if item should be visible for this view
-            if (isItemVisibleForView(itemPath, currentView)) {
-                itemsToProcess.add(itemKey);
-            }
-        }
-
-        // Handle offline players with async PlaceholderAPI processing
-        if (plugin.isPlaceholdersAPIConfigured()) {
-            // Get OfflinePlayer instance asynchronously for DBUser
-            subject.getPlayerInstance(offlinePlayer -> {
-                // Process all items with the OfflinePlayer instance
-                for (String itemKey : itemsToProcess) {
-                    processItemWithPlayerData(itemKey, currentView, offlinePlayer);
+                if (subject.isOnline()) {
+                    OnlineUser onlineSubject = (OnlineUser) subject;
+                    Player onlinePlayer = onlineSubject.getPlayerInstance();
+                    processItemWithPlayerData(itemKey, currentView, onlinePlayer);
+                } else {
+                    // For offline players, pass OfflinePlayer if available
+                    processItemWithPlayerData(itemKey, currentView, subject.getPlayerInstance());
                 }
-                callback.run();
-            });
-        } else {
-            // No PlaceholderAPI, process normally
-            for (String itemKey : itemsToProcess) {
-                processItemWithPlayerData(itemKey, currentView, null);
             }
-            callback.run();
         }
     }
+
 
     private void processItemWithPlayerData(String itemKey, ViewType currentView, @Nullable OfflinePlayer offlinePlayer) {
         String itemPath = "player-stats-gui.items." + itemKey;
@@ -497,11 +464,15 @@ public class PlayerStatsGui extends BaseCustomGUI {
      */
     private void createStatItem(int slot, String materialString, String rawName, List<String> loreConfig, String itemType, @Nullable OfflinePlayer offlinePlayer) {
         List<Component> lore = new ArrayList<>();
-
+        List<Component> lineComponents;
         // Process lore with placeholders
         for (String loreLine : loreConfig) {
+
             String processedLine = processPlaceholders(loreLine, itemType, offlinePlayer);
-            lore.add(Utils.parseColors(processedLine));
+
+            lineComponents = Utils.formatLore(processedLine);
+
+            lore.addAll(lineComponents);
         }
 
         // Process name with placeholders
@@ -520,7 +491,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
                 item = Utils.createPlayerHead(processedMaterialString);
             } else {
                 // No specific nickname - use createPlayerHeadWithContext with subject
-                item = Utils.createPlayerHeadWithContext(processedMaterialString, subject.getNickname());
+                item = Utils.createPlayerHeadWithContext(processedMaterialString, subject.getNickname(), offlinePlayer);
             }
 
             // Apply name and lore to the player head
@@ -603,7 +574,6 @@ public class PlayerStatsGui extends BaseCustomGUI {
     private void addCommonPlaceholders(Map<String, String> combinations) {
 
         long playtimeSnapshot;
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
 
         // Player information
         combinations.put("%PLAYER_NAME%", subject.getNickname());
@@ -635,11 +605,11 @@ public class PlayerStatsGui extends BaseCustomGUI {
         combinations.put("%AFK_PLAYTIME%", String.valueOf(afkPlaytime));
 
         // First join information
-        LocalDateTime firstJoin = subject.getFirstJoin();
+        Instant firstJoin = subject.getFirstJoin();
         if (firstJoin != null) {
-            combinations.put("%FIRST_JOIN_DATE%", firstJoin.format(formatter));
+            combinations.put("%FIRST_JOIN_DATE%", Utils.formatInstant(firstJoin, plugin.getConfiguration().getString("datetime-format")));
 
-            Duration accountAge = Duration.between(firstJoin, LocalDateTime.now());
+            Duration accountAge = Duration.between(firstJoin, Instant.now());
             combinations.put("%ACCOUNT_AGE%", Utils.ticksToFormattedPlaytime(accountAge.getSeconds() * 20));
         } else {
             combinations.put("%FIRST_JOIN_DATE%", "Unknown");
@@ -647,16 +617,16 @@ public class PlayerStatsGui extends BaseCustomGUI {
         }
 
         // Last seen information
-        LocalDateTime lastSeen = subject.getLastSeen();
+        Instant lastSeen = subject.getLastSeen();
         boolean isOnline = Bukkit.getPlayer(subject.getUuid()) != null;
 
         if (isOnline) {
             combinations.put("%LAST_SEEN_DATE%", "Currently Online");
             combinations.put("%TIME_SINCE_LAST_SEEN%", "0");
-        } else if (lastSeen != null && !lastSeen.equals(LocalDateTime.of(1970, 1, 1, 0, 0, 0, 0))) {
-            combinations.put("%LAST_SEEN_DATE%", lastSeen.format(formatter));
+        } else if (lastSeen != null) {
+            combinations.put("%LAST_SEEN_DATE%", Utils.formatInstant(lastSeen, plugin.getConfiguration().getString("datetime-format")));
 
-            Duration timeSinceLastSeen = Duration.between(lastSeen, LocalDateTime.now());
+            Duration timeSinceLastSeen = Duration.between(lastSeen, Instant.now());
             combinations.put("%TIME_SINCE_LAST_SEEN%", Utils.ticksToFormattedPlaytime(timeSinceLastSeen.getSeconds() * 20));
         } else {
             combinations.put("%LAST_SEEN_DATE%", "Unknown");
@@ -685,17 +655,31 @@ public class PlayerStatsGui extends BaseCustomGUI {
             case "goals":
                 // Handle goal list placeholders - display in rows of 3
                 ArrayList<String> completedGoals = subject.getCompletedGoals();
+
+                Map<String, Integer> goalsCount = new LinkedHashMap<>();
+
+                for (String name : completedGoals) {
+                    goalsCount.put(name, goalsCount.getOrDefault(name, 0) + 1);
+                }
+
                 StringBuilder goalsList = new StringBuilder();
 
-                for (int i = 0; i < completedGoals.size(); i++) {
+                String goalFormat = config.getOrDefaultString("player-stats-gui.goals-settings.list-format", "&7- &e%GOAL%");
+                int i = 0;
+                for (Map.Entry<String, Integer> entry : goalsCount.entrySet()) {
                     if (i > 0 && i % 3 == 0) {
-                        goalsList.append("\n"); // New line every 3 goals
+                        goalsList.append("/n");
                     } else if (i > 0) {
                         goalsList.append(" "); // Space between goals on same line
                     }
 
-                    String goalFormat = config.getOrDefaultString("player-stats-gui.goals-settings.list-format", "&7- &e%GOAL%");
-                    goalsList.append(goalFormat.replace("%GOAL%", completedGoals.get(i)));
+                    goalsList.append(
+                            goalFormat
+                                    .replace("%GOAL%", entry.getKey())
+                                    .replace("%GOAL_COMPLETED_TIMES%", String.valueOf(entry.getValue()))
+                    );
+
+                    i++;
                 }
 
                 combinations.put("%GOALS_LIST%", goalsList.toString());

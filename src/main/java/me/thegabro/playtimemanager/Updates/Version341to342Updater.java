@@ -5,11 +5,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 
 public class Version341to342Updater {
 
-    private final PlayTimeManager plugin;
-
-    public Version341to342Updater(PlayTimeManager plugin) {
-        this.plugin = plugin;
-    }
+    public Version341to342Updater() {}
 
     public void performUpgrade() {
         recreateConfigFile();

@@ -1,30 +1,78 @@
 package me.thegabro.playtimemanager.Users;
 
-import me.thegabro.playtimemanager.Utils;
+import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
+import org.bukkit.Bukkit;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.Objects;
+import java.util.function.Consumer;
 
 public class OnlineUser extends DBUser {
     protected final Player playerInstance;
-    private long afkStartPlaytime; // Player's PLAY_ONE_MINUTE when AFK started
-    private long currentSessionAFKTime; // AFK time accumulated in current session (in ticks)
-    private boolean afkTimeFinalized; // Flag to prevent double finalization
+    private long afkStartPlaytime;
+    private long currentSessionAFKTime;
+    private boolean afkTimeFinalized;
 
     /**
-     * Constructs a new OnlineUser instance for an active player.
-     * Initializes player statistics and AFK tracking variables.
-     *
-     * @param p the Player object representing the online player
+     * Private constructor - use createAsync instead.
      */
-    public OnlineUser(Player p) {
-        super(p);
+    private OnlineUser(Player p) {
+        super(); // Call protected no-arg constructor
         this.playerInstance = p;
+        this.uuid = p.getUniqueId().toString();
+        this.nickname = p.getName();
         this.fromServerOnJoinPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
         this.afkStartPlaytime = 0;
         this.currentSessionAFKTime = 0;
         this.afkTimeFinalized = false;
+    }
+
+    /**
+     * Asynchronously creates a new OnlineUser instance for an active player.
+     * Handles user mapping, loads existing data from database, and initializes AFK tracking.
+     *
+     * @param p the Player object representing the online player
+     * @param callback Called when user is fully loaded with the OnlineUser instance
+     */
+    public static void createOnlineUserAsync(Player p, Consumer<OnlineUser> callback) {
+        OnlineUser user = new OnlineUser(p);
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            // Perform user mapping and load data
+            user.userMappingSync();
+            user.loadUserDataSync();
+
+            // Handle legacy null first_join values
+            if(user.firstJoin == null){
+                user.firstJoin = Instant.now();
+                db.getPlayerDAO().updateFirstJoin(user.uuid, user.firstJoin);
+            }
+
+            // Return to main thread with loaded user
+            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(user));
+        });
+    }
+
+    /**
+     * Synchronous version of user mapping for internal use.
+     * Must be called from async context.
+     */
+    private void userMappingSync() {
+        boolean uuidExists = db.getPlayerDAO().playerExists(uuid);
+        String existingNickname = uuidExists ? db.getPlayerDAO().getNickname(uuid) : null;
+        String existingUUID = db.getPlayerDAO().getUUIDFromNickname(nickname);
+
+        if (uuidExists) {
+            if (!nickname.equals(existingNickname)) {
+                db.getPlayerDAO().updateNickname(uuid, nickname);
+            }
+        } else if (existingUUID != null) {
+            db.getPlayerDAO().updateUUID(uuid, nickname);
+        } else {
+            db.getPlayerDAO().addNewPlayer(uuid, nickname, fromServerOnJoinPlayTime);
+        }
     }
 
     /**
@@ -38,30 +86,59 @@ public class OnlineUser extends DBUser {
     }
 
     /**
-     * Updates playtime using a specific snapshot value instead of current statistic.
+     * Updates playtime asynchronously using a specific snapshot value.
      * This ensures consistency when called from asynchronous contexts after quit events.
      *
      * @param playtimeSnapshot The PLAY_ONE_MINUTE statistic value to use for calculations
+     * @param callback Optional callback to run on main thread after update completes
+     */
+    public void updatePlayTimeWithSnapshotAsync(long playtimeSnapshot, Runnable callback) {
+        long currentPlaytime = DBplaytime + (playtimeSnapshot - fromServerOnJoinPlayTime);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getPlayerDAO().updatePlaytime(uuid, currentPlaytime);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
+    }
+
+    /**
+     * Synchronous version - use updatePlayTimeWithSnapshotAsync when possible
      */
     public void updatePlayTimeWithSnapshot(long playtimeSnapshot) {
-        long currentPlaytime = DBplaytime + (playtimeSnapshot - fromServerOnJoinPlayTime);
-        db.updatePlaytime(uuid, currentPlaytime);
+        updatePlayTimeWithSnapshotAsync(playtimeSnapshot, null);
     }
 
     /**
-     * Updates the player's playtime in the database using current cached playtime.
+     * Updates the player's playtime in the database asynchronously using current cached playtime.
      * Uses the current playtime statistics from the server.
+     *
+     * @param callback Optional callback to run on main thread after update completes
+     */
+    public void updatePlayTimeAsync(Runnable callback) {
+        long currentPlaytime = getCachedPlayTime();
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getPlayerDAO().updatePlaytime(uuid, currentPlaytime);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
+    }
+
+    /**
+     * Synchronous version - use updatePlayTimeAsync when possible
      */
     public void updatePlayTime() {
-        long currentPlaytime = getCachedPlayTime();
-        db.updatePlaytime(uuid, currentPlaytime);
+        updatePlayTimeAsync(null);
     }
 
     /**
-     * Updates the player's AFK playtime in the database.
+     * Updates the player's AFK playtime in the database asynchronously.
      * Finalizes the current AFK session if not already done and saves total AFK time.
+     *
+     * @param callback Optional callback to run on main thread after update completes
      */
-    public void updateAFKPlayTime() {
+    public void updateAFKPlayTimeAsync(Runnable callback) {
         // Only finalize if not already done
         if (!afkTimeFinalized) {
             finalizeCurrentAFKSession();
@@ -69,16 +146,74 @@ public class OnlineUser extends DBUser {
 
         long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
 
-        db.updateAFKPlaytime(uuid, totalAFKTime);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
     }
 
     /**
-     * Updates the player's last seen timestamp to the current time.
+     * Synchronous version - use updateAFKPlayTimeAsync when possible
+     */
+    public void updateAFKPlayTime() {
+        updateAFKPlayTimeAsync(null);
+    }
+
+    /**
+     * Updates the player's AFK playtime using a snapshot value.
+     * Finalizes the current AFK session with the snapshot and saves total AFK time.
+     *
+     * @param playtimeSnapshot The PLAY_ONE_MINUTE statistic value to use
+     * @param callback Optional callback to run on main thread after update completes
+     */
+    public void updateAFKPlayTimeWithSnapshotAsync(long playtimeSnapshot, Runnable callback) {
+        // Finalize using snapshot if not already done
+        if (!afkTimeFinalized) {
+            finalizeCurrentAFKSession(playtimeSnapshot);
+        }
+
+        long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
+    }
+
+    /**
+     * Synchronous version with snapshot
+     */
+    public void updateAFKPlayTimeWithSnapshot(long playtimeSnapshot) {
+        updateAFKPlayTimeWithSnapshotAsync(playtimeSnapshot, null);
+    }
+
+    /**
+     * Updates the player's last seen timestamp to the current time asynchronously.
      * Saves the timestamp to the database.
+     *
+     * @param callback Optional callback to run on main thread after update completes
+     */
+    public void updateLastSeenAsync(Runnable callback) {
+        this.lastSeen = Instant.now();
+        final Instant timestampToSave = this.lastSeen;
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getPlayerDAO().updateLastSeen(uuid, timestampToSave);
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
+    }
+
+    /**
+     * Synchronous version - use updateLastSeenAsync when possible
      */
     public void updateLastSeen() {
-        this.lastSeen = LocalDateTime.now();
-        db.updateLastSeen(uuid, this.lastSeen);
+        updateLastSeenAsync(null);
     }
 
     /**
@@ -172,8 +307,8 @@ public class OnlineUser extends DBUser {
      * @return the current LocalDateTime
      */
     @Override
-    public LocalDateTime getLastSeen() {
-        return LocalDateTime.now();
+    public Instant getLastSeen() {
+        return Instant.now();
     }
 
     /**
@@ -234,5 +369,59 @@ public class OnlineUser extends DBUser {
             currentSessionAFKTime += afkDuration;
             afkTimeFinalized = true;
         }
+    }
+
+    /**
+     * Checks if a specific reward subinstance is expired.
+     *
+     * @param subInstance The reward subinstance to check
+     * @return true if the reward is expired, false otherwise
+     */
+    public boolean isExpired(RewardSubInstance subInstance){
+        for(RewardSubInstance subInstance2 : rewardsToBeClaimed){
+            if(Objects.equals(subInstance2.mainInstanceID(), subInstance.mainInstanceID()) &&
+                    Objects.equals(subInstance2.requiredJoins(), subInstance.requiredJoins()))
+                return subInstance2.expired();
+        }
+        return false;
+    }
+
+    /**
+     * Comprehensive async update for all player data on quit.
+     * Updates playtime, AFK time, and last seen in a single operation.
+     * Uses snapshot values for consistency.
+     *
+     * @param playtimeSnapshot The PLAY_ONE_MINUTE statistic snapshot
+     * @param callback Optional callback to run after all updates complete
+     */
+    public void updateAllOnQuitAsync(long playtimeSnapshot, Runnable callback) {
+        // Finalize AFK session if needed
+        if (!afkTimeFinalized) {
+            finalizeCurrentAFKSession(playtimeSnapshot);
+        }
+
+        // Calculate values
+        long currentPlaytime = DBplaytime + (playtimeSnapshot - fromServerOnJoinPlayTime);
+        long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
+        Instant lastSeenTime = Instant.now();
+        this.lastSeen = lastSeenTime;
+
+        // Perform all DB updates asynchronously
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            db.getPlayerDAO().updatePlaytime(uuid, currentPlaytime);
+            db.getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
+            db.getPlayerDAO().updateLastSeen(uuid, lastSeenTime);
+
+            if(callback != null) {
+                Bukkit.getScheduler().runTask(plugin, callback);
+            }
+        });
+    }
+
+    /**
+     * Synchronous version - use updateAllOnQuitAsync when possible
+     */
+    public void updateAllOnQuit(long playtimeSnapshot) {
+        updateAllOnQuitAsync(playtimeSnapshot, null);
     }
 }

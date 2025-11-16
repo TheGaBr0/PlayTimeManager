@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.SQLiteDB;
+package me.thegabro.playtimemanager.Database;
 
 public class Errors {
     public static String sqlConnectionExecute(){

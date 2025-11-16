@@ -48,8 +48,8 @@ public class PlaytimeTop implements TabExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
         if (!sender.hasPermission("playtime.top")) {
-            String noPermMessage = config.getString("playtimetop.messages.no-permission");
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " + noPermMessage));
+            String noPermMessage = config.getString("no-permission");
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " + noPermMessage));
             return false;
         }
 
@@ -61,12 +61,12 @@ public class PlaytimeTop implements TabExecutor {
                 } else {
                     String pageNotExistsMessage = config.getString("playtimetop.messages.page-not-exists")
                             .replace("%PAGE_NUMBER%", args[0].substring(1));
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " + pageNotExistsMessage));
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " + pageNotExistsMessage));
                     return false;
                 }
             } else {
                 String invalidArgMessage = config.getString("playtimetop.messages.invalid-argument");
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " + invalidArgMessage));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " + invalidArgMessage));
                 return false;
             }
         } else {
@@ -85,7 +85,7 @@ public class PlaytimeTop implements TabExecutor {
                 org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
                     if (topPlayers.isEmpty()) {
                         String noPlayersMessage = config.getString("playtimetop.messages.no-players");
-                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " + noPlayersMessage));
+                        sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " + noPlayersMessage));
                         return;
                     }
 
@@ -94,7 +94,7 @@ public class PlaytimeTop implements TabExecutor {
 
                     if (page <= 0 || page > totalPages) {
                         String invalidPageMessage = config.getString("playtimetop.messages.invalid-page");
-                        sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " + invalidPageMessage));
+                        sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " + invalidPageMessage));
                         return;
                     }
 
@@ -200,7 +200,7 @@ public class PlaytimeTop implements TabExecutor {
                 org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
                     String loadingErrorMessage = config.getString("playtimetop.messages.loading-error")
                             .replace("%ERROR%", e.getMessage());
-                    sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " + loadingErrorMessage));
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " + loadingErrorMessage));
                 });
                 plugin.getLogger().severe("Error in PlaytimeTop command: " + e.getMessage());
             }

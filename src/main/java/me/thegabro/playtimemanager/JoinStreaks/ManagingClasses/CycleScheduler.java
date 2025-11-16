@@ -1,34 +1,37 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
+import com.cronutils.descriptor.CronDescriptor;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.quartz.CronExpression;
 
 import java.text.ParseException;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.*;
 
 public class CycleScheduler {
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private CronExpression cronExpression;
     private TimeZone timezone;
     private Date nextIntervalReset;
     private long exactIntervalSeconds;
-    private long currentCycleStartTime;
+    private final DatabaseHandler db = DatabaseHandler.getInstance();
     private BukkitTask intervalTask;
     private final Set<String> playersJoinedDuringCurrentCycle = new HashSet<>();
+    private String checkTimeToText;
 
-    public CycleScheduler(PlayTimeManager plugin) {
-        this.plugin = plugin;
-        this.currentCycleStartTime = System.currentTimeMillis();
-    }
+    public CycleScheduler() {}
 
     public void initialize() {
         validateConfiguration();
@@ -39,8 +42,11 @@ public class CycleScheduler {
 
         long intervalMillis = secondTrigger.getTime() - firstTrigger.getTime();
         exactIntervalSeconds = intervalMillis / 1000;
+        translateCheckTimeToText();
 
-        updateIntervalResetTimes();
+        nextIntervalReset = null;
+
+        scheduleNextReset();
     }
 
     private void validateConfiguration() {
@@ -77,32 +83,39 @@ public class CycleScheduler {
         }
     }
 
-    public void updateIntervalResetTimes() {
-        Date now = new Date();
-        nextIntervalReset = cronExpression.getNextValidTimeAfter(now);
-    }
+    public void translateCheckTimeToText() {
+        try {
+            CronParser parser = new CronParser(
+                    CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ)
+            );
 
-    public void startIntervalTask() {
-        updateIntervalResetTimes();
-        scheduleNextReset();
+            var cron = parser.parse(this.cronExpression.toString());
+            cron.validate();
+
+            CronDescriptor descriptor = CronDescriptor.instance(Locale.ENGLISH);
+            this.checkTimeToText = descriptor.describe(cron);
+
+        } catch (Exception e) {
+            this.checkTimeToText = "Invalid Quartz cron expression";
+        }
     }
 
     private void scheduleNextReset() {
         cancelIntervalTask();
 
+        Date oldSchedule;
+
+        oldSchedule = Objects.requireNonNullElseGet(nextIntervalReset, Date::new);
+
+        nextIntervalReset = cronExpression.getNextValidTimeAfter(oldSchedule);
+
+        long delayInMillis = nextIntervalReset.getTime() - oldSchedule.getTime();
+
+        long delayInTicks = Math.max(20, delayInMillis / 50); // Min 1 second (20 ticks)
+
         if (JoinStreaksManager.getInstance().getRewardRegistry().isEmpty() && plugin.getConfiguration().getBoolean("streak-check-verbose")) {
             plugin.getLogger().info("No active rewards found, but scheduler will continue running to track absolute join streaks.");
         }
-
-        Date now = new Date();
-        // Add a small buffer (e.g., 1 second) to avoid scheduling for a time that's too close
-        if (nextIntervalReset.getTime() - now.getTime() < 1000) {
-            // Get the next interval after the current nextIntervalReset
-            nextIntervalReset = cronExpression.getNextValidTimeAfter(nextIntervalReset);
-        }
-
-        long delayInMillis = nextIntervalReset.getTime() - now.getTime();
-        long delayInTicks = Math.max(20, delayInMillis / 50); // Min 1 second (20 ticks)
 
         if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
             plugin.getLogger().info("Next join streak interval reset scheduled for: " + nextIntervalReset +
@@ -113,20 +126,10 @@ public class CycleScheduler {
             @Override
             public void run() {
                 playersJoinedDuringCurrentCycle.clear();
-                currentCycleStartTime = System.currentTimeMillis();
-
-                JoinStreaksManager.getInstance().resetMissingPlayerStreaks();
-
-                // Calculate the next reset time and reschedule
-                Date oldNextReset = nextIntervalReset;
-                updateIntervalResetTimes();
-
-                // Ensure we don't get stuck in a loop if times are too close
-                if (Math.abs(nextIntervalReset.getTime() - oldNextReset.getTime()) < 1000) {
-                    nextIntervalReset = cronExpression.getNextValidTimeAfter(nextIntervalReset);
-                }
-
-                scheduleNextReset(); // Re-run with the updated time
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    JoinStreaksManager.getInstance().resetMissingPlayerStreaksAsync();
+                });
+                scheduleNextReset();
             }
         }.runTaskLater(plugin, delayInTicks);
     }
@@ -141,14 +144,13 @@ public class CycleScheduler {
     public boolean isEligibleForStreak(OnlineUser user) {
         if (!isCurrentCycle()) {
             playersJoinedDuringCurrentCycle.clear();
-            currentCycleStartTime = System.currentTimeMillis();
         }
 
         if (playersJoinedDuringCurrentCycle.contains(user.getUuid())) {
             return false;
         }
 
-        long secondsBetween = Duration.between(user.getLastSeen(), LocalDateTime.now()).getSeconds();
+        long secondsBetween = Duration.between(user.getLastSeen(), Instant.now()).getSeconds();
         return secondsBetween <= exactIntervalSeconds * plugin.getConfiguration().getInt("reset-joinstreak.missed-joins");
     }
 
@@ -162,7 +164,6 @@ public class CycleScheduler {
     }
 
     public Map<String, Object> getNextSchedule() {
-        updateIntervalResetTimes();
 
         Map<String, Object> scheduleInfo = new HashMap<>();
 
@@ -177,46 +178,41 @@ public class CycleScheduler {
             scheduleInfo.put("nextReset", null);
             scheduleInfo.put("timeRemaining", "-");
         }
-
+        scheduleInfo.put("timeCheckToText", checkTimeToText);
         return scheduleInfo;
     }
 
     public void updateOnReload() {
-        // Update interval reset times first to ensure accurate cycle information
-        updateIntervalResetTimes();
+        // Update interval reset times first
+        Date now = new Date();
+        nextIntervalReset = cronExpression.getNextValidTimeAfter(now);
 
-        // Recalculate if we're in the same cycle as when we last tracked
         if (!isCurrentCycle()) {
             playersJoinedDuringCurrentCycle.clear();
-            currentCycleStartTime = System.currentTimeMillis();
         }
 
-        // If schedule is active, add players to the joined list whose last seen is within the current cycle
-        if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
-            try {
-                Set<String> playersWithStreaks = plugin.getDatabase().getPlayersWithActiveStreaks();
-                Date cycleStartDate = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);
+        if (!plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) return;
 
-                for (String playerUUID : playersWithStreaks) {
-                    DBUser user = DBUsersManager.getInstance().getUserFromUUIDWithContext(playerUUID, "add players to current active cycle time window");
-                    if (user != null) {
-                        LocalDateTime lastSeen = user.getLastSeen();
+        try {
+            Set<String> playersWithStreaks = db.getStreakDAO().getPlayersWithActiveStreaks();
+            Date cycleStartDate = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);
 
-                        if (lastSeen == null) {
-                            continue;
-                        }
+            for (String playerUUID : playersWithStreaks) {
+                DBUsersManager.getInstance().getUserFromUUIDAsyncWithContext(playerUUID,
+                        "add players to current active cycle time window",
+                        dbUser -> {
+                            if (dbUser == null || dbUser.getLastSeen() == null) return;
 
-                        Date lastSeenDate = Date.from(lastSeen.atZone(ZoneId.systemDefault()).toInstant());
-
-                        // Check if the player's last seen time is within the current cycle
-                        if (lastSeenDate.after(cycleStartDate) && lastSeenDate.before(nextIntervalReset)) {
-                            playersJoinedDuringCurrentCycle.add(playerUUID);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                plugin.getLogger().severe("Error processing players during reload: " + e.getMessage());
+                            Date lastSeenDate = Date.from(dbUser.getLastSeen().atZone(ZoneId.systemDefault()).toInstant());
+                            if (lastSeenDate.after(cycleStartDate) && lastSeenDate.before(nextIntervalReset)) {
+                                synchronized (playersJoinedDuringCurrentCycle) {
+                                    playersJoinedDuringCurrentCycle.add(playerUUID);
+                                }
+                            }
+                        });
             }
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error processing players during reload: " + e.getMessage());
         }
     }
 

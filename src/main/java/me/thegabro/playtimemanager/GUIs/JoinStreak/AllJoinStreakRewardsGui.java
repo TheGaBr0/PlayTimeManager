@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.GUIs.JoinStreak;
 
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
+import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
@@ -33,7 +34,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     // Pagination variables
     private int currentPage = 0;
     private List<JoinStreakReward> sortedRewards = new ArrayList<>();
@@ -98,6 +99,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             }
         }
 
+        Map<String, Object> scheduleInfo = rewardsManager.getCycleScheduler().getNextSchedule();
         inv.setItem(INFO, createGuiItem(
                 Material.COMPASS,
                 Utils.parseColors("&e&lSystem Information"),
@@ -116,7 +118,11 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                         (rewardsManager.getRewardRegistry().getLastRewardByJoins() != null ? rewardsManager.getRewardRegistry().getLastRewardByJoins().getId() : "-")),
                 Utils.parseColors("&7which requires &e"+
                         (rewardsManager.getRewardRegistry().getLastRewardByJoins() != null ? rewardsManager.getRewardRegistry().getLastRewardByJoins().getMaxRequiredJoins() : "-")
-                        +" &7consecutive joins to complete")
+                        +" &7consecutive joins to complete"),
+                Utils.parseColors(""),
+                Utils.parseColors("§7Join streak reset time is currently set to: §e"+plugin.getConfiguration().getString("streak-reset-schedule")),
+                Utils.parseColors("§7which means it will occur §e"+scheduleInfo.get("timeCheckToText")),
+                Utils.parseColors("")
         ));
         protectedSlots.add(CREATE_REWARD);
 
@@ -254,7 +260,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         if (slot == TOGGLE_SCHEDULE && (clickedItem.getType() == Material.GREEN_CONCRETE || clickedItem.getType() == Material.RED_CONCRETE)) {
             boolean hasRewards = !rewardsManager.getRewardRegistry().getRewards().isEmpty();
             if (!hasRewards) {
-                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &cCannot enable rewards: No rewards have been created!"));
+                whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " &cCannot enable rewards: No rewards have been created!"));
                 return;
             }
 
@@ -269,8 +275,15 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
         if (slot == CREATE_REWARD && clickedItem.getType() == Material.EMERALD) {
             whoClicked.closeInventory();
-            rewardsManager.getRewardRegistry().addReward(new JoinStreakReward(plugin, rewardsManager.getRewardRegistry().getNextRewardId(), -1));
+            rewardsManager.getRewardRegistry().addReward(new JoinStreakReward(rewardsManager.getRewardRegistry().getNextRewardId(), -1));
             openInventory(whoClicked);
+
+            if(!plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")){
+                whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " &c&l⚠ WARNING &c&l⚠"));
+                whoClicked.sendMessage(Utils.parseColors("&7The join streak rewards schedule is currently &4&lDISABLED&6!"));
+                whoClicked.sendMessage(Utils.parseColors("&7Player join streaks will still be tracked, but &c&nno reward will be granted&r&7."));
+            }
+
             return;
         }
 
@@ -300,7 +313,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                     // Check for middle-click to clone
                     if (event.getClick().isCreativeAction()) {
                         whoClicked.closeInventory();
-                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &7Cloning reward &e" + id + "&7..."));
+                        whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " &7Cloning reward &e" + id + "&7..."));
 
                         // Create a new reward with the next available ID
                         int newId = rewardsManager.getRewardRegistry().getNextRewardId();
@@ -309,20 +322,20 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                         // Add the cloned reward to manager
                         rewardsManager.getRewardRegistry().addReward(clonedReward);
 
-                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &aSuccessfully &7cloned reward &e" + id + " &7to new reward &e" + newId));
+                        whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " &aSuccessfully &7cloned reward &e" + id + " &7to new reward &e" + newId));
                         openInventory(whoClicked);
                         return;
                     }
 
                     // Check for shift-right-click to delete
                     if (event.isShiftClick() && event.isRightClick()) {
-                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &7Deleting reward &e" + id + "&7..."));
+                        whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " &7Deleting reward &e" + id + "&7..."));
                         Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
                             reward.kill();
 
                             // Switch back to main thread for UI updates
                             Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
-                                whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &aSuccessfully &7deleted reward &e" + id));
+                                whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " &aSuccessfully &7deleted reward &e" + id));
                                 openInventory(whoClicked);
                             });
                         });
@@ -341,7 +354,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
     }
 
     private JoinStreakReward cloneReward(int newId, JoinStreakReward reward) {
-        JoinStreakReward clonedReward = new JoinStreakReward(plugin, newId, reward.getMinRequiredJoins());
+        JoinStreakReward clonedReward = new JoinStreakReward(newId, reward.getMinRequiredJoins());
 
         clonedReward.setRequiredJoinsRange(reward.getMinRequiredJoins(), reward.getMaxRequiredJoins());
         clonedReward.setItemIcon(reward.getItemIcon());
@@ -373,17 +386,6 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                 if (e.getAction().equals(InventoryAction.MOVE_TO_OTHER_INVENTORY)) {
                     e.setCancelled(true);
                 }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onInventoryClose(InventoryCloseEvent event) {
-        if (event.getInventory().getHolder() instanceof AllJoinStreakRewardsGui && event.getPlayer() instanceof Player player) {
-            if(!plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")){
-                event.getPlayer().sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &c&l⚠ WARNING &c&l⚠"));
-                event.getPlayer().sendMessage(Utils.parseColors("&7The join streak rewards schedule is currently &4&lDISABLED&6!"));
-                event.getPlayer().sendMessage(Utils.parseColors("&7Player join streaks will still be tracked, but &c&nno reward will be granted&r&7."));
             }
         }
     }

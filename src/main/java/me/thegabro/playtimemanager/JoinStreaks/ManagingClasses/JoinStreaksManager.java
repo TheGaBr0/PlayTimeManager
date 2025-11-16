@@ -1,11 +1,12 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
-import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -13,11 +14,10 @@ import java.util.Map;
 import java.util.Set;
 
 public class JoinStreaksManager {
-    private PlayTimeManager plugin;
-    private static PlayTimeDatabase db;
-    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final DatabaseHandler db = DatabaseHandler.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private RewardRegistry rewardRegistry;
     private StreakTracker streakTracker;
     private CycleScheduler cycleScheduler;
@@ -35,17 +35,14 @@ public class JoinStreaksManager {
         return InstanceHolder.instance;
     }
 
-    public void initialize(PlayTimeManager playTimeManager) {
-        this.plugin = playTimeManager;
-        db = plugin.getDatabase();
+    public void initialize() {
 
-        this.rewardRegistry = new RewardRegistry(plugin);
-        this.cycleScheduler = new CycleScheduler(plugin);
-        this.streakTracker = new StreakTracker(plugin, dbUsersManager);
-        this.rewardExecutor = new RewardExecutor(plugin);
-        this.messageService = new RewardMessageService(plugin);
+        this.rewardRegistry = new RewardRegistry();
+        this.cycleScheduler = new CycleScheduler();
+        this.streakTracker = new StreakTracker();
+        this.rewardExecutor = new RewardExecutor();
+        this.messageService = new RewardMessageService();
         this.rewardProcessor = new RewardProcessor(
-                plugin,
                 rewardRegistry,
                 streakTracker,
                 rewardExecutor,
@@ -58,41 +55,44 @@ public class JoinStreaksManager {
         cycleScheduler.initialize();
 
         if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
-            cycleScheduler.startIntervalTask();
+            cycleScheduler.getNextSchedule();
         }
     }
 
-    public void processPlayerLogin(Player player) {
-        OnlineUser user = onlineUsersManager.getOnlineUser(player.getName());
+    public void processPlayerLogin(OnlineUser onlineUser) {
 
-        if (cycleScheduler.isEligibleForStreak(user)) {
+        if (cycleScheduler.isEligibleForStreak(onlineUser)) {
             // Always increment absolute streak
-            streakTracker.incrementAbsoluteStreak(user);
-            cycleScheduler.markPlayerJoinedInCurrentCycle(user.getUuid());
+            streakTracker.incrementAbsoluteStreak(onlineUser);
+            cycleScheduler.markPlayerJoinedInCurrentCycle(onlineUser.getUuid());
 
             // Only increment relative streak and check rewards if schedule is active AND rewards exist
             if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation") && !rewardRegistry.isEmpty()) {
-                streakTracker.incrementRelativeStreak(user);
-                rewardProcessor.processEligibleRewards(user, player);
+                streakTracker.incrementRelativeStreak(onlineUser);
+                rewardProcessor.processEligibleRewards(onlineUser);
             }
         }
     }
 
-    public void resetMissingPlayerStreaks() {
-        if (plugin.getConfiguration().getBoolean("reset-joinstreak.enabled")) {
-            Set<String> playersWithStreaks = db.getPlayersWithActiveStreaks();
-            int playersReset = streakTracker.resetInactivePlayerStreaks(
+    public void resetMissingPlayerStreaksAsync() {
+        if (!plugin.getConfiguration().getBoolean("reset-joinstreak.enabled")) return;
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            Set<String> playersWithStreaks = db.getStreakDAO().getPlayersWithActiveStreaks();
+
+            streakTracker.resetInactivePlayerStreaksAsync(
                     playersWithStreaks,
                     cycleScheduler.getIntervalSeconds(),
-                    plugin.getConfiguration().getInt("reset-joinstreak.missed-joins")
+                    plugin.getConfiguration().getInt("reset-joinstreak.missed-joins"),
+                    playersReset -> {
+                        if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
+                            plugin.getLogger().info(String.format("Streak reset for %d players", playersReset));
+                        }
+                    }
             );
+        });
 
-            if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
-                plugin.getLogger().info(String.format("Streak reset for %d players", playersReset));
-            }
-        }
-
-        // Process online players
+        // Process online players on main thread if needed
         onlineUsersManager.getOnlineUsersByUUID().values().forEach(this::processOnlineUserForCycleReset);
     }
 
@@ -106,7 +106,7 @@ public class JoinStreaksManager {
             streakTracker.incrementRelativeStreak(onlineUser);
             Player player = onlineUser.getPlayerInstance();
             if (player != null) {
-                rewardProcessor.processEligibleRewards(onlineUser, player);
+                rewardProcessor.processEligibleRewards(onlineUser);
             }
         }
     }
@@ -117,13 +117,13 @@ public class JoinStreaksManager {
 
         if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) {
             if (rewardRegistry.isEmpty()) {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                         " No active rewards found. Join streak check schedule not started."));
                 plugin.getConfiguration().set("rewards-check-schedule-activation", false);
                 return false;
             }
 
-            cycleScheduler.startIntervalTask();
+            cycleScheduler.getNextSchedule();
             messageService.sendScheduleActivationMessage(sender, true);
 
             Map<String, Object> scheduleInfo = cycleScheduler.getNextSchedule();

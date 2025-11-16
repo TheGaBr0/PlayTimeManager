@@ -15,11 +15,9 @@ import java.util.stream.Stream;
 
 public class Version342to35Updater {
 
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final CommandsConfiguration commandsConfiguration = CommandsConfiguration.getInstance();
-    public Version342to35Updater(PlayTimeManager plugin) {
-        this.plugin = plugin;
-    }
+    public Version342to35Updater() {}
 
     public void performUpgrade() {
         renameCustomizationsFolder();

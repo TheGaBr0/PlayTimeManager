@@ -1,7 +1,7 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms;
 
 import me.thegabro.playtimemanager.Goals.Goal;
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
+import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
@@ -78,7 +78,7 @@ public class LuckPermsManager {
         try {
             Group group = luckPermsApi.getGroupManager().getGroup(groupName);
             if (group == null) {
-                plugin.getLogger().warning("Group not found: " + groupName);
+                plugin.getLogger().warning("LuckPerms group not found: " + groupName);
                 return;
             }
 
@@ -135,6 +135,28 @@ public class LuckPermsManager {
             plugin.getLogger().warning("Failed to check permission " + permission + " for UUID " + uuid + ": " + e.getMessage());
             return false;
         }
+    }
+
+    public CompletableFuture<Boolean> isInGroupAsync(String uuid, String groupName) {
+        return luckPermsApi.getUserManager().loadUser(UUID.fromString(uuid))
+                .thenApply(user -> user.getInheritedGroups(user.getQueryOptions()).stream()
+                        .anyMatch(group -> group.getName().equalsIgnoreCase(groupName)))
+                .exceptionally(ex -> {
+                    plugin.getLogger().warning("Failed to check group " + groupName + " for UUID " + uuid + ": " + ex.getMessage());
+                    return false;
+                });
+    }
+
+    public CompletableFuture<Boolean> hasPermissionAsync(String uuid, String permission) {
+        return luckPermsApi.getUserManager().loadUser(UUID.fromString(uuid))
+                .thenApply(user -> user.getCachedData()
+                        .getPermissionData()
+                        .checkPermission(permission)
+                        .asBoolean())
+                .exceptionally(ex -> {
+                    plugin.getLogger().warning("Failed to check permission " + permission + " for UUID " + uuid + ": " + ex.getMessage());
+                    return false;
+                });
     }
 
     public boolean isInGroup(String uuid, String groupName) {

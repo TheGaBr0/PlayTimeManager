@@ -3,9 +3,10 @@ package me.thegabro.playtimemanager.GUIs.Player;
 import me.thegabro.playtimemanager.GUIs.BaseCustomGUI;
 import me.thegabro.playtimemanager.GUIs.InventoryListener;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
+import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
+import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
@@ -30,11 +31,11 @@ import java.util.*;
 
 public class RewardsInfoGui extends BaseCustomGUI {
 
+    //TODO: refactor how internal placeholders are handled
     private final Inventory inv;
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
-    private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final GUIsConfiguration config;
     private final boolean isOwner;
     private final DBUser subject;
@@ -95,52 +96,25 @@ public class RewardsInfoGui extends BaseCustomGUI {
 
     public static class RewardDisplayItem implements Comparable<RewardDisplayItem> {
         private final JoinStreakReward reward;
-        private final String instance;
         private final RewardStatus status;
-        private final int specificJoinCount;
-        private final int instanceNumber;
-        private final int subInstanceNumber;
+        private final RewardSubInstance subInstance;
 
-        public RewardDisplayItem(JoinStreakReward reward, String instance, RewardStatus status, int specificJoinCount) {
-            int subInstanceNumber1;
-            int instanceNumber1;
+        public RewardDisplayItem(JoinStreakReward reward, RewardSubInstance subInstance, RewardStatus status) {
             this.reward = reward;
-            this.instance = instance;
             this.status = status;
-            this.specificJoinCount = specificJoinCount;
-
-            // Parse instance numbers (e.g., "1.2" -> instanceNumber=1, subInstanceNumber=2)
-            String[] parts = instance.split("\\.");
-            if (parts.length >= 2) {
-                try {
-                    instanceNumber1 = Integer.parseInt(parts[0]);
-                    subInstanceNumber1 = Integer.parseInt(parts[1]);
-                } catch (NumberFormatException e) {
-                    instanceNumber1 = 0;
-                    subInstanceNumber1 = 0;
-                }
-            } else {
-                instanceNumber1 = 0;
-                subInstanceNumber1 = 0;
-            }
-            this.subInstanceNumber = subInstanceNumber1;
-            this.instanceNumber = instanceNumber1;
+            this.subInstance = subInstance;
         }
 
         public JoinStreakReward getReward() {
             return reward;
         }
 
-        public String getInstance() {
-            return instance;
-        }
-
         public RewardStatus getStatus() {
             return status;
         }
 
-        public int getSpecificJoinCount() {
-            return specificJoinCount;
+        public RewardSubInstance getSubInstance() {
+            return subInstance;
         }
 
         @Override
@@ -151,17 +125,18 @@ public class RewardsInfoGui extends BaseCustomGUI {
             }
 
             // Then sort by required joins
-            if (this.specificJoinCount != other.specificJoinCount && this.specificJoinCount != -1 && other.specificJoinCount != -1) {
-                return Integer.compare(this.specificJoinCount, other.specificJoinCount);
+            if (this.subInstance.requiredJoins() != other.subInstance.requiredJoins() &&
+                    this.subInstance.requiredJoins() != -1 && other.subInstance.requiredJoins() != -1) {
+                return Integer.compare(this.subInstance.requiredJoins(), other.subInstance.requiredJoins());
             }
 
             // If same required joins, sort by instance number (1.x)
-            if (this.instanceNumber != other.instanceNumber) {
-                return Integer.compare(this.instanceNumber, other.instanceNumber);
+            if (this.reward.getId() != other.reward.getId()) {
+                return Integer.compare(this.reward.getId(), other.reward.getId());
             }
 
             // Finally, sort by sub-instance number (x.1)
-            return Integer.compare(this.subInstanceNumber, other.subInstanceNumber);
+            return Integer.compare(this.subInstance.requiredJoins(), other.subInstance.requiredJoins());
         }
     }
 
@@ -193,50 +168,45 @@ public class RewardsInfoGui extends BaseCustomGUI {
 
     private void loadRewards() {
         allDisplayItems.clear();
-        Map<Integer, LinkedHashSet<String>> joinRewardsMap = rewardsManager.getRewardRegistry().getJoinRewardsMap();
-        Set<String> rewardsReceived = subject.getReceivedRewards();
-        Set<String> rewardsToBeClaimed = subject.getRewardsToBeClaimed();
 
-        for (Map.Entry<Integer, LinkedHashSet<String>> entry : joinRewardsMap.entrySet()) {
-            Integer rewardId = entry.getKey();
-            LinkedHashSet<String> instances = entry.getValue();
+        ArrayList<RewardSubInstance> joinRewardsMap = rewardsManager.getRewardRegistry().getJoinRewardsMap();
+        ArrayList<RewardSubInstance> rewardsReceived = subject.getReceivedRewards();
+        ArrayList<RewardSubInstance> rewardsToBeClaimed = subject.getRewardsToBeClaimed();
+        RewardStatus status;
 
-            JoinStreakReward reward = rewardsManager.getRewardRegistry().getMainInstance(String.valueOf(rewardId));
+        for (RewardSubInstance subInstance : joinRewardsMap) {
+            Integer rewardId = subInstance.mainInstanceID();
+
+            JoinStreakReward reward = rewardsManager.getRewardRegistry().getReward(rewardId);
             if (reward == null) continue;
 
-            for (String instance : instances) {
-                RewardStatus status;
-
-                if (rewardsReceived.contains(instance)) {
-                    status = RewardStatus.CLAIMED;
-                } else if (rewardsToBeClaimed.contains(instance)) {
-                    status = RewardStatus.AVAILABLE;
-                } else {
-                    status = RewardStatus.LOCKED;
-                }
-
-                // Calculate specific join count for this instance
-                int specificJoinCount = calculateSpecificJoinCount(reward, instance);
-
-                allDisplayItems.add(new RewardDisplayItem(reward, instance, status, specificJoinCount));
+            if (rewardsReceived.contains(subInstance)) {
+                status = RewardStatus.CLAIMED;
+            } else if (rewardsToBeClaimed.contains(subInstance)) {
+                status = RewardStatus.AVAILABLE;
+            } else {
+                status = RewardStatus.LOCKED;
             }
+
+
+            allDisplayItems.add(new RewardDisplayItem(reward, subInstance, status));
+
         }
 
-        for (String instance : subject.getRewardsToBeClaimed()) {
+        for (RewardSubInstance subInstance : subject.getRewardsToBeClaimed()) {
 
-            if (!instance.endsWith("R"))
+            if (!subInstance.expired())
                 continue;
 
-            JoinStreakReward reward = rewardsManager.getRewardRegistry().getMainInstance(instance);
-            if (reward == null) continue;
+            Integer rewardId = subInstance.mainInstanceID();
+            JoinStreakReward reward = rewardsManager.getRewardRegistry().getReward(rewardId);
 
-            RewardStatus status;
+            if (reward == null) continue;
 
             status = RewardStatus.AVAILABLE_OLD;
 
-            int specificJoinCount = calculateSpecificJoinCount(reward, instance.replace(".R", ""));
 
-            allDisplayItems.add(new RewardDisplayItem(reward, instance, status, specificJoinCount));
+            allDisplayItems.add(new RewardDisplayItem(reward, subInstance, status));
         }
         // Sort the display items using the natural ordering (defined by Comparable)
         Collections.sort(allDisplayItems);
@@ -306,7 +276,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
                 if (slot >= 45) break;
 
                 JoinStreakReward reward = displayItem.getReward();
-                int specificJoins = displayItem.getSpecificJoinCount();
+                int specificJoins = displayItem.getSubInstance().requiredJoins();
                 int currentStreak = subject.getRelativeJoinStreak();
 
                 Material material = Material.valueOf(reward.getItemIcon());
@@ -332,9 +302,10 @@ public class RewardsInfoGui extends BaseCustomGUI {
                         rewardType = "LOCKED";
                         break;
                 }
+                String requiredJoins = specificJoins == -1 ? "-" : String.valueOf(specificJoins);
+                globalPlaceholders.put("%REQUIRED_JOINS%", requiredJoins);
 
                 String requiredJoinsText = translateDynamic(config.getString("rewards-gui.reward-items.info-lore.required-joins"));
-                requiredJoinsText = quickTranslate(requiredJoinsText, "%REQUIRED_JOINS%", specificJoins == -1 ? "-" : String.valueOf(specificJoins));
                 lore.add(requiredJoinsText);
 
                 if (!(displayItem.getStatus() == RewardStatus.AVAILABLE_OLD) && !(displayItem.getStatus() == RewardStatus.AVAILABLE)) {
@@ -352,18 +323,19 @@ public class RewardsInfoGui extends BaseCustomGUI {
                     lore.add(translateDynamic(config.getString("rewards-gui.reward-items.info-lore.description-separator")));
                     String descTemplate = config.getString("rewards-gui.reward-items.info-lore.description");
                     for (String line : reward.getDescription().split("/n")) {
-                        String translatedLine = translateDynamic(descTemplate);
-                        translatedLine = quickTranslate(translatedLine, "%DESCRIPTION%", line);
+                        String filled = quickTranslate(descTemplate, "%DESCRIPTION%", line);
+                        String translatedLine = translateDynamic(filled);
                         lore.add(translatedLine);
                     }
                 }
+
 
                 if (!reward.getRewardDescription().isEmpty()) {
                     lore.add(translateDynamic(config.getString("rewards-gui.reward-items.info-lore.reward-description-separator")));
                     String rewardDescTemplate = config.getString("rewards-gui.reward-items.info-lore.reward-description");
                     for (String line : reward.getRewardDescription().split("/n")) {
-                        String translatedLine = translateDynamic(rewardDescTemplate);
-                        translatedLine = quickTranslate(translatedLine, "%REWARD_DESCRIPTION%", line);
+                        String filled = quickTranslate(rewardDescTemplate, "%REWARD_DESCRIPTION%", line);
+                        String translatedLine = translateDynamic(filled);
                         lore.add(translatedLine);
                     }
                 }
@@ -381,7 +353,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
 
                 NamespacedKey idKey = new NamespacedKey(plugin, "reward_id");
                 NamespacedKey typeKey = new NamespacedKey(plugin, "reward_type");
-                meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, displayItem.getInstance());
+                meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, displayItem.reward.getId()+"."+displayItem.getSubInstance().requiredJoins());
                 meta.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, rewardType);
 
                 item.setItemMeta(meta);
@@ -443,59 +415,6 @@ public class RewardsInfoGui extends BaseCustomGUI {
         protectedSlots.add(SHOW_LOCKED_BUTTON_SLOT);
     }
 
-    private int calculateSpecificJoinCount(JoinStreakReward reward, String instance) {
-
-        int min = reward.getMinRequiredJoins();
-        int max = reward.getMaxRequiredJoins();
-
-        // Special case for rewards with join count of -1 (special reward)
-        if (min == -1) return -1;
-
-        // If it's a single-value join requirement
-        if (min == max) return min;
-
-        // Get the instances for this reward
-        Map<Integer, LinkedHashSet<String>> joinRewardsMap = rewardsManager.getRewardRegistry().getJoinRewardsMap();
-        LinkedHashSet<String> instances = joinRewardsMap.get(reward.getId());
-
-        if (instances == null || instances.isEmpty()) return min;
-
-        // Sort instances for consistent ordering
-        List<String> sortedInstances = new ArrayList<>(instances);
-        Collections.sort(sortedInstances, new Comparator<String>() {
-            @Override
-            public int compare(String a, String b) {
-                try {
-                    // Split the instance strings at the decimal point
-                    String[] aParts = a.split("\\.");
-                    String[] bParts = b.split("\\.");
-
-                    // Compare the integer parts first
-                    int aIntPart = Integer.parseInt(aParts[0]);
-                    int bIntPart = Integer.parseInt(bParts[0]);
-
-                    if (aIntPart != bIntPart) {
-                        return Integer.compare(aIntPart, bIntPart);
-                    }
-
-                    // If integer parts are equal, compare the decimal parts
-                    int aDecimalPart = Integer.parseInt(aParts[1]);
-                    int bDecimalPart = Integer.parseInt(bParts[1]);
-
-                    return Integer.compare(aDecimalPart, bDecimalPart);
-                } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-                    return a.compareTo(b);
-                }
-            }
-        });
-
-        // Find index of current instance (0-based)
-        int index = sortedInstances.indexOf(instance);
-        if (index == -1) return min; // Fallback if instance not found
-
-        // Calculate specific join count based on position in the sorted list
-        return min + index;
-    }
 
     private ItemStack createGuiItem(Material material, @Nullable Component name, @Nullable Component... lore) {
         ItemStack item = new ItemStack(material, 1);
@@ -586,7 +505,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
                         String instance = container.get(idKey, PersistentDataType.STRING);
                         claimReward(instance);
                     } else {
-                        whoClicked.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+                        whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                                 config.getString("rewards-gui.messages.not-available")));
                         whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
                     }
@@ -596,40 +515,61 @@ public class RewardsInfoGui extends BaseCustomGUI {
     }
 
     private void claimReward(String instance) {
+        String[] parts = instance.split("\\.");
+
         if (!validateSession()) {
             handleInvalidSession();
             return;
         }
 
-        if (!sender.hasPermission("playtime.joinstreak.claim")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
-                    config.getString("rewards-gui.messages.no-permission")));
-            sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
-            return;
-        }
-
-        JoinStreakReward reward = rewardsManager.getRewardRegistry().getMainInstance(instance);
-        if (reward == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
-                    config.getString("rewards-gui.messages.reward-not-found")));
-            sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+        if (parts.length != 2) {
+            // Handle invalid format
+            System.err.println("Invalid instance format: " + instance);
             return;
         }
 
         try {
-            rewardsManager.getRewardExecutor().processCompletedReward(sender, reward, instance);
+            int rewardId = Integer.parseInt(parts[0]);
+            int specificJoinCount = Integer.parseInt(parts[1]);
 
-            loadRewards();
-            applyFilters();
-            initializeItems();
-            sender.updateInventory();
-        } catch (Exception e) {
-            plugin.getLogger().severe("Error processing reward for player " + sender.getName() + ": " + e.getMessage());
+            if (!sender.hasPermission("playtime.joinstreak.claim")) {
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+                        config.getString("rewards-gui.messages.no-permission")));
+                sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                return;
+            }
+
+            JoinStreakReward reward = rewardsManager.getRewardRegistry().getReward(rewardId);
+            if (reward == null) {
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+                        config.getString("rewards-gui.messages.reward-not-found")));
+                sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                return;
+            }
+
+            try {
+
+                rewardsManager.getRewardExecutor().processCompletedReward(sender,
+                        JoinStreaksManager.getInstance().getRewardRegistry().getSubInstance(rewardId, specificJoinCount));
+
+                loadRewards();
+                applyFilters();
+                initializeItems();
+                sender.updateInventory();
+            } catch (Exception e) {
+                plugin.getLogger().severe("Error processing reward for player " + sender.getName() + ": " + e.getMessage());
+                e.printStackTrace();
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+                        config.getString("rewards-gui.messages.error-processing")));
+                sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            }
+
+        } catch (NumberFormatException e) {
+            System.err.println("Failed to parse numbers from instance: " + instance);
             e.printStackTrace();
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
-                    config.getString("rewards-gui.messages.error-processing")));
-            sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
         }
+
+
     }
 
     private void claimAllRewards() {
@@ -640,29 +580,22 @@ public class RewardsInfoGui extends BaseCustomGUI {
         }
 
         if (!sender.hasPermission("playtime.joinstreak.claim")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                     config.getString("rewards-gui.messages.no-permission")));
             sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
             return;
         }
 
-        Set<String> claimableRewards = new HashSet<>(subject.getRewardsToBeClaimed());
+        ArrayList<RewardSubInstance> claimableRewards = subject.getRewardsToBeClaimed();
 
         if (claimableRewards.isEmpty()) {
             return;
         }
 
         int claimedCount = 0;
-        for (String instance : claimableRewards) {
-            JoinStreakReward reward = rewardsManager.getRewardRegistry().getMainInstance(instance);
-            if (reward != null) {
-                try {
-                    rewardsManager.getRewardExecutor().processCompletedReward(sender, reward, instance);
-                    claimedCount++;
-                } catch (Exception e) {
-                    plugin.getLogger().severe("Error processing reward for player " + sender.getName() + ": " + e.getMessage());
-                }
-            }
+        for (RewardSubInstance subInstance : claimableRewards) {
+            rewardsManager.getRewardExecutor().processCompletedReward(sender, subInstance);
+            claimedCount++;
         }
 
         if (claimedCount > 0) {
@@ -672,7 +605,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
                     "%COUNT%", String.valueOf(claimedCount)
             );
 
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " + message));
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " + message));
             sender.playSound(sender.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
 
             // Reload the rewards to refresh the GUI
@@ -680,7 +613,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
             applyFilters();
             initializeItems();
         } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " " +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                     config.getString("rewards-gui.messages.error-processing")));
             sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
         }

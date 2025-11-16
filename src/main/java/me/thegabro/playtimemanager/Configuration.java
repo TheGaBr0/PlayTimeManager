@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Configuration {
 
     private static Configuration instance;
-    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final PlayTimeManager plugin;
 
     // File related fields
     private final boolean createIfNotExist, resource;
@@ -28,7 +28,8 @@ public class Configuration {
     /**
      * Private constructor to prevent direct instantiation
      */
-    private Configuration(File path, String name, boolean createIfNotExist, boolean resource) {
+    private Configuration(PlayTimeManager plugin, File path, String name, boolean createIfNotExist, boolean resource) {
+        this.plugin = plugin;
         this.path = path;
         this.name = name + ".yml";
         this.createIfNotExist = createIfNotExist;
@@ -45,11 +46,11 @@ public class Configuration {
      * @param resource Whether this is a resource file from the plugin jar
      * @return The singleton Configuration instance
      */
-    public static Configuration getInstance(File path, String name, boolean createIfNotExist, boolean resource) {
+    public static Configuration getInstance(PlayTimeManager plugin, File path, String name, boolean createIfNotExist, boolean resource) {
         if (instance == null) {
             synchronized (Configuration.class) {
                 if (instance == null) {
-                    instance = new Configuration(path, name, createIfNotExist, resource);
+                    instance = new Configuration(plugin,path, name, createIfNotExist, resource);
                 }
             }
         }
@@ -68,14 +69,6 @@ public class Configuration {
         return instance;
     }
 
-    /**
-     * Resets the singleton instance (useful for testing or plugin reloads)
-     */
-    public static void resetInstance() {
-        synchronized (Configuration.class) {
-            instance = null;
-        }
-    }
 
     //-------------------------------------------------------------------------
     // File operations

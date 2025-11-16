@@ -13,11 +13,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Version34to341Updater {
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
 
-    public Version34to341Updater(PlayTimeManager plugin) {
-        this.plugin = plugin;
-    }
+    public Version34to341Updater() {}
 
     public void performUpgrade() {
         recreateGoalsConfigFiles();

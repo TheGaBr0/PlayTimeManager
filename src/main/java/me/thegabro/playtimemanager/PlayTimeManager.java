@@ -2,6 +2,8 @@ package me.thegabro.playtimemanager;
 
 import me.thegabro.playtimemanager.Commands.PlayTimeStats;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
+import me.thegabro.playtimemanager.ExternalPluginSupport.AntiAFKPlus.AntiAFKPlusAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
 import me.thegabro.playtimemanager.GUIs.Goals.*;
@@ -16,9 +18,8 @@ import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeComma
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.Events.JoinEventManager;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
-import me.thegabro.playtimemanager.SQLiteDB.PlayTimeDatabase;
-import me.thegabro.playtimemanager.SQLiteDB.LogFilter;
-import me.thegabro.playtimemanager.SQLiteDB.SQLite;
+import me.thegabro.playtimemanager.Database.LogFilter;
+import me.thegabro.playtimemanager.Database.SQLiteDatabase;
 import me.thegabro.playtimemanager.Events.QuitEventManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlayTimePlaceHolders;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -39,7 +40,7 @@ public class PlayTimeManager extends JavaPlugin{
 
     private static PlayTimeManager instance;
     private Configuration config;
-    private PlayTimeDatabase db;
+    private DatabaseHandler databaseHandler;
     private boolean permissionsManagerConfigured;
     private boolean afkDetectionConfigured;
     private boolean placeholdersapiConfigured;
@@ -48,7 +49,7 @@ public class PlayTimeManager extends JavaPlugin{
     private JoinStreaksManager joinStreaksManager;
     private SessionManager sessionManager;
 
-    public final String CURRENT_CONFIG_VERSION = "3.9";
+    public final String CURRENT_CONFIG_VERSION = "4.0";
     public final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
     public final boolean CACHE_DEBUG = false;
     @Override
@@ -65,16 +66,20 @@ public class PlayTimeManager extends JavaPlugin{
 
         LogFilter.registerFilter();
 
-        this.db = new SQLite(this);
-        this.db.load();
+        this.databaseHandler = DatabaseHandler.getInstance();
 
-        UpdateManager updateManager = UpdateManager.getInstance(this);
+        UpdateManager updateManager = UpdateManager.getInstance();
 
-        config = Configuration.getInstance(this.getDataFolder(), "config", true, true);
+        config = Configuration.getInstance(this, this.getDataFolder(), "config", true, true);
 
         // Check config version and perform updates if needed
         if (!config.getString("config-version").equals(CURRENT_CONFIG_VERSION)) {
-            updateManager.performVersionUpdate(config.getString("config-version"), CURRENT_CONFIG_VERSION);
+            boolean success = updateManager.performVersionUpdate(config.getString("config-version"), CURRENT_CONFIG_VERSION);
+
+            if(!success){
+                Bukkit.getPluginManager().disablePlugin(this);
+                return;
+            }
         }
 
         updateManager.initialize();
@@ -90,17 +95,17 @@ public class PlayTimeManager extends JavaPlugin{
         CommandsConfiguration commandsConfig = CommandsConfiguration.getInstance();
         commandsConfig.initialize(this);
 
-        GoalsManager goalsManager = GoalsManager.getInstance();
-        goalsManager.initialize(this);
-
         permissionsManagerConfigured = checkPermissionsPlugin();
         afkDetectionConfigured = checkAFKPlugin();
+
+        GoalsManager goalsManager = GoalsManager.getInstance();
+        goalsManager.initialize(this);
 
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
 
         joinStreaksManager = JoinStreaksManager.getInstance();
-        joinStreaksManager.initialize(this);
+        joinStreaksManager.initialize();
         joinStreaksManager.onServerReload();
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -157,15 +162,21 @@ public class PlayTimeManager extends JavaPlugin{
 
     @Override
     public void onDisable() {
-        onlineUsersManager.stopSchedules();
-        for(Player p : Bukkit.getOnlinePlayers()){
-            onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
+
+        databaseHandler.close();
+        HandlerList.unregisterAll(this);
+
+        if(joinStreaksManager != null){
+            onlineUsersManager.stopSchedules();
+            for(Player p : Bukkit.getOnlinePlayers()){
+                onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
+            }
+
+            dbUsersManager.clearCaches();
+            joinStreaksManager.cleanUp();
         }
 
-        db.close();
-        HandlerList.unregisterAll(this);
-        dbUsersManager.clearCaches();
-        joinStreaksManager.cleanUp();
+
 
         getLogger().info("has been disabled!");
     }
@@ -181,8 +192,6 @@ public class PlayTimeManager extends JavaPlugin{
     public void setConfiguration(Configuration config) {
         this.config = config;
     }
-
-    public PlayTimeDatabase getDatabase() { return this.db; }
 
     public LuckPerms getLuckPermsApi() {
         return LuckPermsManager.getInstance(this).getLuckPermsApi();
@@ -219,7 +228,6 @@ public class PlayTimeManager extends JavaPlugin{
             }
         }
         else if ("purpur".equals(configuredPlugin)) {
-            // Check if server is running Purpur
             try {
                 Class.forName("org.purpurmc.purpur.event.PlayerAFKEvent");
                 PurpurAFKHook afkHook = PurpurAFKHook.getInstance();
@@ -234,6 +242,26 @@ public class PlayTimeManager extends JavaPlugin{
                 return false;
             } catch (Exception e) {
                 getLogger().severe("ERROR: Failed to initialize Purpur AFK detection: " + e.getMessage());
+                return false;
+            }
+        }
+        else if ("antiafkplus".equals(configuredPlugin)) {
+            Plugin antiAFKPlus = Bukkit.getPluginManager().getPlugin("AntiAFKPlus");
+            if(antiAFKPlus != null && antiAFKPlus.isEnabled()){
+                try{
+                    AntiAFKPlusAFKHook afkHook = AntiAFKPlusAFKHook.getInstance();
+                    afkHook.register();
+                    getLogger().info("AntiAFKPlus detected! Launching related functions");
+                    return true;
+                } catch (Exception e) {
+                    getLogger().severe("ERROR: Failed to initialize AntiAFKPlus API: " + e.getMessage());
+                    return false;
+                }
+            }else{
+                getLogger().warning(
+                        "Failed to initialize afk detection: AntiAFKPlus plugin configured but not found! " +
+                                "\nUntil this is resolved, PlayTimeManager will not be able to detect afk playtime"
+                );
                 return false;
             }
         }

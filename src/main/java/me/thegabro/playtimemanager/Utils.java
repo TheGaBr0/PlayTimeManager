@@ -9,9 +9,17 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.jetbrains.annotations.Nullable;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class Utils {
@@ -21,6 +29,16 @@ public class Utils {
     private static final long TICKS_PER_HOUR = TICKS_PER_MINUTE * 60;
     private static final long TICKS_PER_DAY = TICKS_PER_HOUR * 24;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
+
+    /**
+     * Uses a regex to check if an input nickname is valid or not
+     *
+     * @param username The input string containing the nickname to check
+     * @return whether it's valid or not
+     */
+    public static boolean isValidMinecraftUsername(String username) {
+        return username != null && username.matches("^[a-zA-Z0-9_]{3,16}$");
+    }
 
     /**
      * Parses color codes and formatting from a string and converts it to a Component
@@ -41,7 +59,7 @@ public class Utils {
         for (int i = 0; i < input.length(); i++) {
             if (input.charAt(i) == '&' && i + 1 < input.length()) {
                 // If we have accumulated text, append it with current style
-                if (currentText.length() > 0) {
+                if (!currentText.isEmpty()) {
                     message = message.append(Component.text(currentText.toString(), currentStyle));
                     currentText.setLength(0);
                 }
@@ -268,6 +286,7 @@ public class Utils {
     /**
      * Converts ticks to a formatted playtime string using a specific format
      * Handles negative values and formats time units according to the provided format configuration
+     * Can redistribute time from omitted units to displayed units based on format settings
      *
      * @param ticks The time in ticks to convert
      * @param format The PlaytimeFormat to use for formatting
@@ -285,18 +304,60 @@ public class Utils {
         final long SECONDS_PER_HOUR = 60 * 60;
         final long SECONDS_PER_MINUTE = 60;
 
-        // Calculate time units safely
-        long years = seconds / SECONDS_PER_YEAR;
-        seconds %= SECONDS_PER_YEAR;
+        // Get the formatting string to determine which units are included
+        String formatting = format.getFormatting();
+        boolean hasYears = formatting.contains("%y%");
+        boolean hasDays = formatting.contains("%d%");
+        boolean hasHours = formatting.contains("%h%");
+        boolean hasMinutes = formatting.contains("%m%");
+        boolean hasSeconds = formatting.contains("%s%");
 
-        long days = seconds / SECONDS_PER_DAY;
-        seconds %= SECONDS_PER_DAY;
+        long years, days, hours, minutes;
 
-        long hours = seconds / SECONDS_PER_HOUR;
-        seconds %= SECONDS_PER_HOUR;
+        // Calculate time units based on redistribution setting
+        if (format.shouldDistributeRemovedTime()) {
+            // Redistribution mode: only break down time for units that are in the format
+            if (hasYears) {
+                years = seconds / SECONDS_PER_YEAR;
+                seconds %= SECONDS_PER_YEAR;
+            } else {
+                years = 0;
+            }
 
-        long minutes = seconds / SECONDS_PER_MINUTE;
-        seconds %= SECONDS_PER_MINUTE;
+            if (hasDays) {
+                days = seconds / SECONDS_PER_DAY;
+                seconds %= SECONDS_PER_DAY;
+            } else {
+                days = 0;
+            }
+
+            if (hasHours) {
+                hours = seconds / SECONDS_PER_HOUR;
+                seconds %= SECONDS_PER_HOUR;
+            } else {
+                hours = 0;
+            }
+
+            if (hasMinutes) {
+                minutes = seconds / SECONDS_PER_MINUTE;
+                seconds %= SECONDS_PER_MINUTE;
+            } else {
+                minutes = 0;
+            }
+        } else {
+            // Standard mode: calculate all units normally
+            years = seconds / SECONDS_PER_YEAR;
+            seconds %= SECONDS_PER_YEAR;
+
+            days = seconds / SECONDS_PER_DAY;
+            seconds %= SECONDS_PER_DAY;
+
+            hours = seconds / SECONDS_PER_HOUR;
+            seconds %= SECONDS_PER_HOUR;
+
+            minutes = seconds / SECONDS_PER_MINUTE;
+            seconds %= SECONDS_PER_MINUTE;
+        }
 
         // Use the format's formatting string as template
         String result = format.getFormatting();
@@ -383,26 +444,24 @@ public class Utils {
     }
 
     /**
-     * Replaces internal placeholders in a message string with their corresponding values
+     * Replaces playtime-specific placeholders in a message string with their corresponding values
      * Handles special playtime placeholders with optional custom formatting:
      * - %PLAYTIME% / %PLAYTIME:format%
      * - %ACTUAL_PLAYTIME% / %ACTUAL_PLAYTIME:format%
      * - %ARTIFICIAL_PLAYTIME% / %ARTIFICIAL_PLAYTIME:format%
-     * Also replaces any other placeholders provided in the combinations map
+     * - %AFK_PLAYTIME% / %AFK_PLAYTIME:format%
      *
-     * @param message The message containing placeholders to replace
-     * @param combinations Map of placeholder-value pairs for replacement
-     * @return The message with all placeholders replaced and normalized spacing
+     * @param message The message containing playtime placeholders to replace
+     * @param combinations Map of placeholder-value pairs (should contain playtime values in ticks)
+     * @return The message with playtime placeholders replaced
      */
-    public static String placeholdersReplacer(String message, Map<String, String> combinations){
-
-        //Apply %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME%, %AFK_PLAYTIME% special placeholder with custom format
+    public static String playtimePlaceholdersReplacer(String message, Map<String, String> combinations){
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("%((?:AFK_|ACTUAL_|ARTIFICIAL_)?PLAYTIME)(?::(\\w+))?%");
         java.util.regex.Matcher matcher = pattern.matcher(message);
         StringBuffer result = new StringBuffer();
 
         while (matcher.find()) {
-            String playtimeType = matcher.group(1);  // PLAYTIME, ACTUAL_PLAYTIME, or ARTIFICIAL_PLAYTIME
+            String playtimeType = matcher.group(1);  // PLAYTIME, ACTUAL_PLAYTIME, ARTIFICIAL_PLAYTIME, or AFK_PLAYTIME
             String formatName = matcher.group(2);    // Optional format name after colon
 
             // Get the PlaytimeFormat for this placeholder, or default if not found
@@ -433,8 +492,18 @@ public class Utils {
         }
 
         matcher.appendTail(result);
-        message = result.toString();
+        return result.toString();
+    }
 
+    /**
+     * Replaces standard placeholders in a message string with their corresponding values
+     * Does NOT handle playtime placeholders - use playtimePlaceholdersReplacer for those
+     *
+     * @param message The message containing placeholders to replace
+     * @param combinations Map of placeholder-value pairs for replacement
+     * @return The message with all standard placeholders replaced and normalized spacing
+     */
+    public static String standardPlaceholdersReplacer(String message, Map<String, String> combinations){
         // Apply passed placeholders
         for (Map.Entry<String, String> entry : combinations.entrySet()) {
             message = message.replace(entry.getKey(), entry.getValue());
@@ -446,16 +515,57 @@ public class Utils {
         return message;
     }
 
+    /**
+     * Replaces all placeholders (both playtime and standard) in a message string
+     * This is a convenience method that combines both playtimePlaceholdersReplacer and standardPlaceholdersReplacer
+     *
+     * @param message The message containing placeholders to replace
+     * @param combinations Map of placeholder-value pairs for replacement
+     * @return The message with all placeholders replaced and normalized spacing
+     */
+    public static String placeholdersReplacer(String message, Map<String, String> combinations){
+        // First replace playtime placeholders (with custom formatting support)
+        message = playtimePlaceholdersReplacer(message, combinations);
+
+        // Then replace standard placeholders
+        message = standardPlaceholdersReplacer(message, combinations);
+
+        return message;
+    }
+
+
+    /**
+     * Formats a raw lore string into a list of colored lines for Minecraft item lore.
+     * Splits the input string by /n characters and applies color formatting to each line.
+     *
+     * @param rawLore The raw lore string containing /n separators and color codes
+     * @return A list of formatted strings ready to be used with ItemMeta.setLore()
+     */
+    public static List<Component> formatLore(String rawLore) {
+        if (rawLore == null || rawLore.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String[] lines = rawLore.split("/n");
+        List<Component> formattedLore = new ArrayList<>();
+
+        for (String line : lines) {
+            formattedLore.add(parseColors(line));
+        }
+
+        return formattedLore;
+    }
+
 
     /**
      * Creates a player head ItemStack from input format "PLAYER_HEAD:playername"
      * If no player name is specified or the format is invalid, defaults to Steve's head
+     * Handles both Java and Bedrock Edition players (Bedrock players via Geyser/Floodgate)
      *
      * @param input The input string in format "PLAYER_HEAD:playername" or just "PLAYER_HEAD"
      * @return ItemStack of a player head with the specified player's skin, or Steve by default
      */
     public static ItemStack createPlayerHead(String input) {
-
         ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
 
         if (input == null || input.trim().isEmpty()) {
@@ -463,7 +573,6 @@ public class Utils {
         }
 
         String[] parts = input.split(":", 2);
-
 
         // Check if it's a player head request
         if (!parts[0].equalsIgnoreCase("PLAYER_HEAD")) {
@@ -474,27 +583,37 @@ public class Utils {
 
         if (skullMeta != null) {
             try {
-            String playerName = (parts.length > 1 && !parts[1].trim().isEmpty()) ? parts[1].trim() : "Steve";
-            PlayerProfile profile = Bukkit.createProfile(playerName);
-            skullMeta.setPlayerProfile(profile);
-            skull.setItemMeta(skullMeta);
-            } catch (Exception ignored) {}
+                String playerName = (parts.length > 1 && !parts[1].trim().isEmpty()) ? parts[1].trim() : "Steve";
+
+                // Try to get the player if they're online (works for both Java and Bedrock)
+                Player onlinePlayer = Bukkit.getPlayerExact(playerName);
+                if (onlinePlayer != null) {
+                    skullMeta.setOwningPlayer(onlinePlayer);
+                } else {
+                    // For offline players, try to create profile
+                    // This will work for Java players but may fail for Bedrock players
+                    PlayerProfile profile = Bukkit.createProfile(playerName);
+                    skullMeta.setPlayerProfile(profile);
+                }
+                skull.setItemMeta(skullMeta);
+            } catch (Exception e) {
+                // If profile creation fails (e.g., Bedrock player), skull remains as default (Steve)
+                // This is intentional - we silently fall back to Steve's head
+            }
         }
 
         return skull;
     }
 
     /**
-     * Creates a player head ItemStack from input format "PLAYER_HEAD:playername" with context player fallback
-     * Uses Paper's Profile API to properly fetch skin data for players who may not have joined the server
-     * If no player name is specified, uses the context player's name instead of defaulting to Steve
-     * If the format is invalid, still defaults to Steve's head
+     * Creates a player head ItemStack with proper handling for online/offline and Java/Bedrock players
      *
      * @param input The input string in format "PLAYER_HEAD:playername" or just "PLAYER_HEAD"
      * @param contextPlayerName The player name to use when no specific player is specified
-     * @return ItemStack of a player head with the specified or context player's skin, or Steve by default
+     * @param offlinePlayer Optional OfflinePlayer instance (can be null)
+     * @return ItemStack of a player head with the specified or context player's skin
      */
-    public static ItemStack createPlayerHeadWithContext(String input, String contextPlayerName) {
+    public static ItemStack createPlayerHeadWithContext(String input, String contextPlayerName, @Nullable OfflinePlayer offlinePlayer) {
         ItemStack skull = new ItemStack(Material.PLAYER_HEAD);
 
         if (input == null || input.trim().isEmpty()) return skull;
@@ -514,14 +633,51 @@ public class Utils {
         SkullMeta meta = (SkullMeta) skull.getItemMeta();
         if (meta != null) {
             try {
-                PlayerProfile profile = Bukkit.createProfile(playerName);
-                meta.setPlayerProfile(profile);
-                skull.setItemMeta(meta);
-            } catch (Exception ignored) {}
+                // If we have an OfflinePlayer instance and it matches our target, use it directly
+                if (offlinePlayer != null && offlinePlayer.getName() != null &&
+                        offlinePlayer.getName().equalsIgnoreCase(playerName)) {
+                    meta.setOwningPlayer(offlinePlayer);
+                    skull.setItemMeta(meta);
+                    return skull;
+                }
+
+                // For offline Java players only - Bedrock player names start with special chars
+                if (isValidMinecraftUsername(playerName)) {
+                    PlayerProfile profile = Bukkit.createProfile(playerName);
+                    meta.setPlayerProfile(profile);
+                    skull.setItemMeta(meta);
+                }
+                // For Bedrock players, skull remains as Steve (default)
+
+            } catch (Exception e) {
+                // Silently fall back to Steve's head
+            }
         }
 
         return skull;
     }
 
+    public static String formatInstant(Instant instant, String pattern) {
+        if (instant == null) {
+            return "Never";
+        }
+
+        DateTimeFormatter formatter;
+        try {
+            formatter = DateTimeFormatter
+                    .ofPattern(pattern)
+                    .withZone(ZoneId.systemDefault());
+        } catch (IllegalArgumentException e) {
+            PlayTimeManager.getInstance().getLogger().warning(
+                    "Invalid datetime-format pattern '" + pattern + "': " + e.getMessage() +
+                            ". Using default format 'MMM dd, yyyy HH:mm:ss'"
+            );
+            formatter = DateTimeFormatter
+                    .ofPattern("MMM dd, yyyy HH:mm:ss")
+                    .withZone(ZoneId.systemDefault());
+        }
+
+        return formatter.format(instant);
+    }
 
 }

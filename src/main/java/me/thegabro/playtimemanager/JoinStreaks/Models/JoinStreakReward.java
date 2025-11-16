@@ -1,5 +1,6 @@
-package me.thegabro.playtimemanager.JoinStreaks;
+package me.thegabro.playtimemanager.JoinStreaks.Models;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -15,8 +16,9 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public class JoinStreakReward {
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private final int id;
     private int[] requiredJoinsRange;
     private final File rewardFile;
@@ -28,14 +30,12 @@ public class JoinStreakReward {
     private String description;
     private String rewardDescription;
 
-    public JoinStreakReward(PlayTimeManager plugin, int id, int requiredJoins) {
-        this.plugin = plugin;
+    public JoinStreakReward(int id, int requiredJoins) {
         this.id = id;
         this.requiredJoinsRange = new int[]{requiredJoins, requiredJoins}; // Initialize as single value
         this.rewardFile = new File(plugin.getDataFolder() + File.separator + "Rewards" + File.separator + id + ".yml");
         loadFromFile();
         saveToFile();
-        rewardsManager.getRewardRegistry().addReward(this);
     }
 
 
@@ -90,6 +90,9 @@ public class JoinStreakReward {
             config.options().setHeader(Arrays.asList(
                     "GUIDE OF AVAILABLE OPTIONS:",
                     "---------------------------",
+                    "Available placeholders for reward-message, description and reward-description:",
+                    "%REQUIRED_JOINS%, %PLAYER_NAME%, %JOIN_STREAK%",
+                    "---------------------------",
                     "required-joins-range specifies the range of joins for which this reward is active.",
                     "Format: 'min-max' (e.g., '5-10' means the reward is active for 5th through 10th joins)",
                     "For a single join count, use the same number twice (e.g., '5-5' for just the 5th join)",
@@ -97,9 +100,10 @@ public class JoinStreakReward {
                     "reward-sound is played to a player if it reaches the join streak specified in this config.",
                     "A list of available sounds can be found here: https://jd.papermc.io/paper/<VERSION>/org/bukkit/Sound.html",
                     "Replace '<VERSION>' in the link with your current minecraft version.",
+                    "N.B. If your current version doesn’t work, use the latest patch of the same major version. ",
+                    "E.g. '1.19' doesn't work, use '1.19.4'.",
                     "---------------------------",
                     "reward-message is showed to a player if it reaches the join streak specified in this config.",
-                    "Available placeholders: %REQUIRED_JOINS%, %PLAYER_NAME%",
                     "---------------------------",
                     "description provides a short text description of the reward.",
                     "---------------------------",
@@ -111,7 +115,7 @@ public class JoinStreakReward {
                     "You can specify multiple permissions and groups that will all be granted.",
                     "---------------------------",
                     "commands defines a list of commands that will be executed when a player reaches this reward",
-                    "Available placeholders: PLAYER_NAME",
+                    "Available placeholders for commands only: PLAYER_NAME",
                     "Example commands:",
                     "- '/give PLAYER_NAME diamond 64'",
                     "- '/broadcast PLAYER_NAME has reached an amazing join streak!'"
@@ -134,12 +138,13 @@ public class JoinStreakReward {
         }
     }
 
+
     private String getDefaultRewardSound() {
         return "ENTITY_PLAYER_LEVELUP";
     }
 
     private String getDefaultRewardMessage() {
-        return plugin.getConfiguration().getString("prefix")+" Congratulations &e%PLAYER_NAME%&7, you have redeemed your reward successfully!";
+        return config.getString("prefix")+" Congratulations &e%PLAYER_NAME%&7, you have redeemed your reward successfully!";
     }
 
     public ItemStack getDefaultIcon(){
@@ -304,7 +309,7 @@ public class JoinStreakReward {
 
     public void kill() {
         rewardsManager.getRewardRegistry().removeReward(this);
-        DBUsersManager.getInstance().removeRewardFromAllUsers(String.valueOf(id));
+        DBUsersManager.getInstance().removeRewardFromAllUsers(id);
         deleteFile();
     }
 

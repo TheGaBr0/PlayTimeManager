@@ -1,6 +1,10 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
+import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUser;
+import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -14,30 +18,28 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class RewardMessageService {
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
+    public RewardMessageService() {}
 
-    public RewardMessageService(PlayTimeManager plugin) {
-        this.plugin = plugin;
-    }
-
-    public void sendRewardRelatedMessage(Player player, String instance, String message, int delaySeconds) {
+    public void sendRewardRelatedMessage(OnlineUser user, RewardSubInstance subInstance, String message, int delaySeconds) {
         Map<String, String> replacements = new HashMap<>();
-        replacements.put("%PLAYER_NAME%", player.getName());
-        replacements.put("%REQUIRED_JOINS%", instance.matches("^\\d+\\.\\d+.*") ?
-                instance.replaceAll("^\\d+\\.(\\d+).*", "$1") : "");
+        replacements.put("%PLAYER_NAME%", user.getNickname());
+        replacements.put("%REQUIRED_JOINS%", String.valueOf(subInstance.requiredJoins()));
+        replacements.put("%JOIN_STREAK%", String.valueOf(subInstance.requiredJoins()));
 
         final Component finalMessage = Utils.parseColors(replacePlaceholders(message, replacements));
         Bukkit.getScheduler().runTaskLater(this.plugin, () -> {
-            player.sendMessage(finalMessage);
+            user.getPlayerInstance().sendMessage(finalMessage);
         }, delaySeconds * 20L); // Convert seconds to ticks (20 ticks = 1 second)
     }
 
     public void sendScheduleActivationMessage(CommandSender sender, boolean activated) {
         if (activated) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                     " The join streak check schedule has been activated"));
         } else {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                     " The join streak check schedule has been deactivated"));
         }
     }
@@ -49,7 +51,7 @@ public class RewardMessageService {
             Date nextReset = (Date) scheduleInfo.get("nextReset");
             String timeRemaining = (String) scheduleInfo.get("timeRemaining");
 
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") +
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
                     " Next join streak interval reset scheduled for: &e" + formatter.format(
                     nextReset.toInstant()
                             .atZone(ZoneId.systemDefault())

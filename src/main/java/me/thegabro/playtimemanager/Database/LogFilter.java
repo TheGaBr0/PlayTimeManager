@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.SQLiteDB;
+package me.thegabro.playtimemanager.Database;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;

@@ -1,7 +1,8 @@
 package me.thegabro.playtimemanager.GUIs.JoinStreak;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
-import me.thegabro.playtimemanager.JoinStreaks.JoinStreakReward;
+import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
@@ -33,7 +34,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
     private AllJoinStreakRewardsGui parentGui;
     private PlayTimeManager plugin;
     private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private static final class Slots {
         static final int REQUIRED_JOINS = 10;
         static final int REWARD_PRIZES = 13;
@@ -596,13 +597,13 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         ConfirmationGui confirmationGui = new ConfirmationGui(rewardItem, (confirmed) -> {
             if (confirmed) {
                 // Run deletion async
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &7Deleting reward &e" + reward.getId() + "&7..."));
+                player.sendMessage(Utils.parseColors(config.getString("prefix") + " &7Deleting reward &e" + reward.getId() + "&7..."));
                 Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
                     reward.kill();
 
                     // Switch back to main thread for UI updates
                     Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
-                        player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &aSuccessfully &7deleted reward &e" + reward.getId()));
+                        player.sendMessage(Utils.parseColors(config.getString("prefix") + " &aSuccessfully &7deleted reward &e" + reward.getId()));
                         if (parentGui != null) {
                             parentGui.openInventory(player);
                         }

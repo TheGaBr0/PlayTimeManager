@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
@@ -25,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public class AllGoalsGui implements InventoryHolder, Listener {
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private final Inventory inv;
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
@@ -81,11 +82,17 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 ItemMeta meta = item.getItemMeta();
                 meta.displayName(Utils.parseColors("&e" + goal.getName()).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = Arrays.asList(
-                        Utils.parseColors("§7Required Time: " + (goal.getRequirements().getTime() == Long.MAX_VALUE
-                                ? "-" : Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime()))),
                         Utils.parseColors("§7Active: ")
                                 .append(Component.text(goal.isActive() ? "true" : "false")
                                         .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
+                                .decoration(TextDecoration.ITALIC, false),
+                        Utils.parseColors("§7Repeatable: ")
+                                .append(Component.text(goal.isRepeatable() ? "true" : "false")
+                                        .color(goal.isRepeatable() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
+                                .decoration(TextDecoration.ITALIC, false),
+                        Utils.parseColors("§7Offline rewards: ")
+                                .append(Component.text(goal.areOfflineRewardsEnabled() ? "true" : "false")
+                                        .color(goal.areOfflineRewardsEnabled() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
                                 .decoration(TextDecoration.ITALIC, false),
                         Utils.parseColors("§e" + goal.getRewardPermissions().size() + "§7 " + (goal.getRewardPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
                         Utils.parseColors("§e" + goal.getRewardCommands().size() + "§7 " + (goal.getRewardCommands().size() != 1 ? "commands loaded" : "command loaded")),
@@ -163,13 +170,13 @@ public class AllGoalsGui implements InventoryHolder, Listener {
     }
 
     private void handleDeleteGoal(Player player, Goal goal) {
-        player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &7Deleting goal &e" + goal.getName() + "&7..."));
+        player.sendMessage(Utils.parseColors(config.getString("prefix") + " &7Deleting goal &e" + goal.getName() + "&7..."));
         Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
-            goal.kill();
+            goal.kill(false);
 
             // Switch back to main thread for UI updates
             Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &aSuccessfully &7deleted goal &e" + goal.getName()));
+                player.sendMessage(Utils.parseColors(config.getString("prefix") + " &aSuccessfully &7deleted goal &e" + goal.getName()));
                 initializeItems();
                 player.updateInventory();
             });
@@ -205,7 +212,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
         chatEventManager.startChatInput(player, (p, message) -> {
             if (!message.equalsIgnoreCase("cancel")) {
                 if(!message.isEmpty()){
-                    new Goal(plugin, message, false);
+                    goalsManager.addGoal(new Goal(plugin, message, false));
                 }
                 player.sendMessage(Utils.parseColors("&aGoal §e" + message + " &ahas been created"));
             } else {

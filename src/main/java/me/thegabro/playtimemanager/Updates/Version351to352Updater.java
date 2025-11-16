@@ -1,8 +1,9 @@
 package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.SQLiteDB.SQLite;
+import me.thegabro.playtimemanager.Database.SQLiteDatabase;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -13,9 +14,9 @@ import java.util.Map;
 
 public class Version351to352Updater {
 
-    private final PlayTimeManager plugin;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
-    private final SQLite database;
+    private final DatabaseHandler database = DatabaseHandler.getInstance();
 
     // Placeholder mapping from old format to new format
     private static final Map<String, String> PLACEHOLDER_MAPPINGS = new HashMap<>();
@@ -31,10 +32,7 @@ public class Version351to352Updater {
         PLACEHOLDER_MAPPINGS.put("{color}", "%JOIN_STREAK_COLOR%");
     }
 
-    public Version351to352Updater(PlayTimeManager plugin){
-        this.plugin = plugin;
-        this.database = (SQLite) plugin.getDatabase();
-    }
+    public Version351to352Updater(){}
 
     public void performUpgrade() {
         addAFKPlaytimeColumn();
@@ -43,7 +41,7 @@ public class Version351to352Updater {
     }
 
     public void addAFKPlaytimeColumn(){
-        try (Connection connection = database.getSQLConnection()) {
+        try (Connection connection = database.getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {
@@ -64,7 +62,7 @@ public class Version351to352Updater {
     public void recreateConfigFile(){
         guIsConfiguration.initialize(plugin);
         guIsConfiguration.updateConfig();
-        plugin.getConfiguration().updateConfig(false);
+        plugin.getConfiguration().updateConfig(true);
     }
 
     /**

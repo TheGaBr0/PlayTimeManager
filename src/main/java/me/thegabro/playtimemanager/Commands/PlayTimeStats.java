@@ -1,11 +1,14 @@
 package me.thegabro.playtimemanager.Commands;
 
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Utils;
 import me.thegabro.playtimemanager.GUIs.Player.PlayerStatsGui;
+import org.bukkit.Bukkit;
 import org.bukkit.Statistic;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -15,23 +18,21 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.time.Instant;
+import java.util.*;
 
 public class PlayTimeStats implements CommandExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private static final Map<UUID, Long> lastGuiOpenTime = new HashMap<>();
     private static final long GUI_OPEN_COOLDOWN = 1000;
-
+    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!sender.hasPermission("playtime.stats")) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You don't have permission to use this command!"));
-            return true;
+            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+                    GUIsConfiguration.getInstance().getString("player-stats-gui.messages.no-permission")));
+            return false;
         }
 
         String targetPlayerName;
@@ -40,28 +41,34 @@ public class PlayTimeStats implements CommandExecutor {
             if (sender instanceof Player) {
                 targetPlayerName = sender.getName();
             } else {
-                sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " You must specify a player name!"));
-                return true;
+                sender.sendMessage("§cOnly players can use this command.");
+                return false;
             }
         } else {
+            if (!sender.hasPermission("playtime.others.stats")) {
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+                        GUIsConfiguration.getInstance().getString("player-stats-gui.messages.no-permission-others")));
+                return false;
+            }
             targetPlayerName = args[0];
         }
 
-        DBUser user = dbUsersManager.getUserFromNicknameWithContext(targetPlayerName, "ptstats command");
+        dbUsersManager.getUserFromNicknameAsyncWithContext(targetPlayerName, "ptstats command", user -> {
+            if (user == null) {
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+                        GUIsConfiguration.getInstance().getString("player-stats-gui.messages.player-not-found")));
+                return;
+            }
 
-        if (user == null) {
-            sender.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &cPlayer not found!"));
-            return true;
-        }
-
-        if (sender instanceof ConsoleCommandSender) {
-            sendTextStats(sender, user);
-        } else if (sender instanceof Player player) {
-            openStatsGui(player, user);
-        } else {
-            // Fallback
-            sendTextStats(sender, user);
-        }
+            if (sender instanceof ConsoleCommandSender) {
+                sendTextStats(sender, user);
+            } else if (sender instanceof Player player) {
+                // Schedule GUI opening on main thread
+                Bukkit.getScheduler().runTask(plugin, () -> openStatsGui(player, user));
+            } else {
+                sendTextStats(sender, user);
+            }
+        });
 
         return true;
     }
@@ -80,10 +87,8 @@ public class PlayTimeStats implements CommandExecutor {
             playtimeSnapshot = 0L;
         }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
-
-        LocalDateTime lastSeen = user.getLastSeen();
-        LocalDateTime firstJoin = user.getFirstJoin();
+        Instant lastSeen = user.getLastSeen();
+        Instant firstJoin = user.getFirstJoin();
         long totalPlaytime = user.getPlaytimeWithSnapshot(playtimeSnapshot);
         long afkPlaytime = user.getAFKPlaytimeWithSnapshot(playtimeSnapshot);
         long artificialPlaytime = user.getArtificialPlaytime();
@@ -107,15 +112,15 @@ public class PlayTimeStats implements CommandExecutor {
 
         if (firstJoin != null) {
             sender.sendMessage(Utils.parseColors("\n&6&lFirst Join:"));
-            sender.sendMessage(Utils.parseColors("&7Date: &e" + firstJoin.format(formatter)));
-            Duration accountAge = Duration.between(firstJoin, LocalDateTime.now());
+            sender.sendMessage(Utils.parseColors("&7Date: &e" + Utils.formatInstant(firstJoin, plugin.getConfiguration().getString("datetime-format"))));
+            Duration accountAge = Duration.between(firstJoin, Instant.now());
             sender.sendMessage(Utils.parseColors("&7Account Age: &e" + Utils.ticksToFormattedPlaytime(accountAge.getSeconds() * 20)));
         }
 
-        if (lastSeen != null && !lastSeen.equals(LocalDateTime.of(1970, 1, 1, 0, 0, 0, 0))) {
+        if (lastSeen != null) {
             sender.sendMessage(Utils.parseColors("\n&6&lLast Seen:"));
-            sender.sendMessage(Utils.parseColors("&7Date: &e" + lastSeen.format(formatter)));
-            Duration timeSinceLastSeen = Duration.between(lastSeen, LocalDateTime.now());
+            sender.sendMessage(Utils.parseColors("&7Date: &e" + Utils.formatInstant(lastSeen, plugin.getConfiguration().getString("datetime-format"))));
+            Duration timeSinceLastSeen = Duration.between(lastSeen, Instant.now());
             sender.sendMessage(Utils.parseColors("&7Time Elapsed: &e" + Utils.ticksToFormattedPlaytime(timeSinceLastSeen.getSeconds() * 20)));
         }
 
@@ -127,8 +132,15 @@ public class PlayTimeStats implements CommandExecutor {
         if (user.getCompletedGoals().isEmpty()) {
             sender.sendMessage(Utils.parseColors("&7No goals completed yet"));
         } else {
-            for (String goal : user.getCompletedGoals()) {
-                sender.sendMessage(Utils.parseColors("&7- &e" + goal));
+
+            ArrayList<String> completedGoals = user.getCompletedGoals();
+            Map<String, Integer> goalsCount = new LinkedHashMap<>();
+            for (String name : completedGoals) {
+                goalsCount.put(name, goalsCount.getOrDefault(name, 0) + 1);
+            }
+
+            for (Map.Entry<String, Integer> entry : goalsCount.entrySet()) {
+                sender.sendMessage(Utils.parseColors("&7- &e" + entry.getKey() + "&7(&e" + entry.getValue() + "&7)"));
             }
         }
 
@@ -142,7 +154,8 @@ public class PlayTimeStats implements CommandExecutor {
         if (lastGuiOpenTime.containsKey(playerId)) {
             long lastTime = lastGuiOpenTime.get(playerId);
             if (currentTime - lastTime < GUI_OPEN_COOLDOWN) {
-                player.sendMessage(Utils.parseColors(plugin.getConfiguration().getString("prefix") + " &cPlease wait before using this command again."));
+                player.sendMessage(Utils.parseColors(config.getString("prefix") + " "+
+                        GUIsConfiguration.getInstance().getString("player-stats-gui.messages.command-spam")));
                 return;
             }
         }

@@ -82,12 +82,12 @@ rewards-gui:
       reward-description: "&7%REWARD_DESCRIPTION%"
 
   messages:
-    no-permission: "&cYou don't have permission to claim rewards!"
-    not-available: "&cThis reward is not available to claim!"
-    reward-not-found: "&cCouldn't find the reward details!"
-    error-processing: "&cAn error occurred while processing your reward."
+    no-permission: "&cYou don't have permission to claim rewards"
+    not-available: "&cThis reward is not available to claim"
+    reward-not-found: "&cCouldn't find the reward details"
+    error-processing: "&cAn error occurred while processing your reward"
     claimed-rewards: "&aClaimed %COUNT% rewards!"
-
+    command-spam: "&cPlease wait before using this command again"
 
 #=================================================================
 #                      PLAYER STATS GUI
@@ -122,7 +122,7 @@ player-stats-gui:
 
   goals-settings:
     # This setting controls how goals are formatted when using the %GOALS_LIST% placeholder
-    list-format: "&7• &e%GOAL%"
+    list-format: "&7• &e%GOAL% &7(&e%GOAL_COMPLETED_TIMES%)"
 
   leaderboard-settings:
     # Fallback message shown when %POSITION% placeholder is used for unranked players
@@ -328,3 +328,8 @@ player-stats-gui:
           name: "&b&lAccount Overview"
           lore:
             - "&7UUID: &e%UUID%"
+  messages:
+    no-permission: "&cYou don't have permission to use this command"
+    no-permission-others: "&cYou don't have permission to see stats of other players"
+    player-not-found: "&cPlayer not found"
+    command-spam: "&cPlease wait before using this command again"

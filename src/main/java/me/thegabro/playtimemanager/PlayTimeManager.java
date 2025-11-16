@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager;
 import me.thegabro.playtimemanager.Commands.PlayTimeStats;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
+import me.thegabro.playtimemanager.Database.LogFilter;
 import me.thegabro.playtimemanager.ExternalPluginSupport.AntiAFKPlus.AntiAFKPlusAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
@@ -18,8 +19,6 @@ import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeComma
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.Events.JoinEventManager;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
-import me.thegabro.playtimemanager.Database.LogFilter;
-import me.thegabro.playtimemanager.Database.SQLiteDatabase;
 import me.thegabro.playtimemanager.Events.QuitEventManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlayTimePlaceHolders;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -34,6 +33,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class PlayTimeManager extends JavaPlugin{

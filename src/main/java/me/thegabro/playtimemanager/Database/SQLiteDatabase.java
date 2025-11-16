@@ -70,6 +70,7 @@ public class SQLiteDatabase implements Database {
         initialize();
     }
 
+
     @Override
     public void initialize() {
         File dataFolder = new File(plugin.getDataFolder(), dbName + ".db");
@@ -82,6 +83,8 @@ public class SQLiteDatabase implements Database {
         }
 
         HikariConfig config = new HikariConfig();
+
+        config.setLeakDetectionThreshold(0);
         config.setJdbcUrl("jdbc:sqlite:" + dataFolder.getAbsolutePath());
         config.setDriverClassName("org.sqlite.JDBC");
         config.setMaximumPoolSize(20);

@@ -34,6 +34,7 @@ public class Version354to36Updater {
         migrateTimestampsToInstant();
     }
 
+
     private void recreateConfigFile() {
         Configuration config = Configuration.getInstance();
 

@@ -25,7 +25,7 @@
 # Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
 
 #Leave this untouched
-config-version: 4.0
+config-version: 4.1
 
 #Choose your permissions management plugin
 #Available options: "luckperms"
@@ -44,6 +44,62 @@ datetime-format: "MMM dd, yyyy HH:mm:ss"
 #
 # You need to restart the server for this action to take effect.
 check-for-updates: true
+
+#=================================================================
+#                            DATABASE
+#=================================================================
+
+# Database type to use for storing player data
+# Available options: "sqlite", "mysql", "postgresql"
+# SQLite is recommended for small to medium servers (uses local file storage)
+# MySQL/MariaDB and PostgreSQL are recommended for larger servers or networked setups
+database-type: "sqlite"
+
+# SQLite specific settings
+sqlite:
+  # Path to the database file (relative to plugin folder)
+  # The .db extension will be added automatically if not specified
+  file-name: "playtime_data"
+
+# MySQL/MariaDB specific settings
+mysql:
+  # Database connection details
+  host: "localhost"
+  port: 3306
+  database: "playtime_manager"
+  username: "root"
+  password: "your_password_here"
+
+  # Use SSL/TLS for secure connection
+  use-ssl: false
+
+  # Additional connection properties (optional)
+  # These will be appended to the JDBC connection URL
+  # Example: "useUnicode=true&characterEncoding=utf8"
+  connection-properties: ""
+
+# PostgreSQL specific settings
+postgresql:
+  # Database connection details
+  host: "localhost"
+  port: 5432
+  database: "playtime_manager"
+  username: "postgres"
+  password: "your_password_here"
+
+  # Schema to use (optional, defaults to 'public')
+  schema: "public"
+
+  # Use SSL/TLS for secure connection
+  use-ssl: false
+
+  # Additional connection properties (optional)
+  connection-properties: ""
+
+# Enable debug logging for database operations
+# Shows SQL queries and connection information in console
+# Recommended for troubleshooting connection issues
+database-debug: false
 
 #=================================================================
 #                          AFK DETECTION

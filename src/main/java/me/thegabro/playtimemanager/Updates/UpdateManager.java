@@ -146,6 +146,12 @@ public class UpdateManager {
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version354to36Updater().performUpgrade();
                 break;
+            case "4.0":
+                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 4.0 config version detected, starting the update process...");
+                backupUtility.createBackup(generateReadmeContent("3.6", plugin_version));
+                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
+                new Version36to361Updater().performUpgrade();
+                break;
             default:
                 plugin.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown config version detected! Something may break!");
                 return false;

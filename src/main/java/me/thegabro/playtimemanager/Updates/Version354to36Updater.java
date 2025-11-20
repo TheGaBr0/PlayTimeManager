@@ -45,7 +45,7 @@ public class Version354to36Updater {
         if(prefix == null)
             prefix = "[&6PlayTime&eManager&f]&7 ";
 
-        config.updateConfig(false);
+        config.updateConfig(true);
 
         commandsConfiguration.initialize(plugin);
 

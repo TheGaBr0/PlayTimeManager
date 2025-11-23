@@ -105,10 +105,6 @@
             <url>https://repo.codemc.io/repository/maven-snapshots/</url>
         </repository>
         <repository>
-            <id>jeff-media-public</id>
-            <url>https://repo.jeff-media.com/public/</url>
-        </repository>
-        <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
@@ -160,14 +156,6 @@
             <artifactId>api</artifactId>
             <version>5.5</version>
             <scope>provided</scope>
-        </dependency>
-
-        <!-- Update Checker -->
-        <dependency>
-            <groupId>com.jeff_media</groupId>
-            <artifactId>SpigotUpdateChecker</artifactId>
-            <version>3.0.4</version>
-            <scope>compile</scope>
         </dependency>
 
         <!-- bStats -->

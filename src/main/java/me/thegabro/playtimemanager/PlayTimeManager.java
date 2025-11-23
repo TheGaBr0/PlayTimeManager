@@ -33,8 +33,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 
 import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class PlayTimeManager extends JavaPlugin{

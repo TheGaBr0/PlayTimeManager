@@ -15,8 +15,6 @@
 #                       GENERAL INFORMATION
 #=================================================================
 #If you are looking for goals settings, please head to the "Goals" folder
-#To make such folder appear you need to create at least one goal -> /playtimegoal set <goalname> time:<time>
-
 #If you are looking for rewards settings, please head to the "Rewards" folder
 
 # Hex colors are supported with the following format: &#rrggbb

@@ -1,8 +1,5 @@
 package me.thegabro.playtimemanager.Updates;
 
-import com.jeff_media.updatechecker.UpdateCheckSource;
-import com.jeff_media.updatechecker.UpdateChecker;
-import com.jeff_media.updatechecker.UserAgentBuilder;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 
@@ -12,7 +9,6 @@ import java.util.Date;
 public class UpdateManager {
     private static UpdateManager instance;
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private UpdateChecker updateChecker;
     private final DatabaseBackupUtility backupUtility = DatabaseBackupUtility.getInstance();
     private UpdateManager() {}
     private String plugin_version;
@@ -25,32 +21,29 @@ public class UpdateManager {
     }
 
     public void initialize() {
+
+        try {
+            plugin_version = plugin.getPluginMeta().getVersion();
+        } catch (NoSuchMethodError e) {
+            plugin_version = plugin.getDescription().getVersion(); //for <=1.19.4 servers
+        }
+
         if (plugin.getConfiguration().getBoolean("check-for-updates")) {
             setupUpdateChecker();
         } else {
             plugin.getLogger().info("Update checking is disabled in configuration.");
         }
-
-        try {
-            plugin_version = plugin.getPluginMeta().getVersion();
-        } catch (NoSuchMethodError e) {
-            plugin_version = plugin.getDescription().getVersion(); //for <1.19.4 servers
-        }
     }
 
     private void setupUpdateChecker() {
-        updateChecker = new UpdateChecker(plugin, UpdateCheckSource.HANGAR, "TheGaBr0/PlayTimeManager/Release")
-                .setUserAgent(new UserAgentBuilder().addPluginNameAndVersion())
-                .checkEveryXHours(24)
-                .onSuccess((commandSenders, latestVersion) -> {
-                    updateChecker.setDownloadLink("https://modrinth.com/plugin/playtimemanager/version/" + latestVersion);
-                    updateChecker.setChangelogLink("https://modrinth.com/plugin/playtimemanager/version/" + latestVersion);
-                })
-                .onFail((commandSenders, exception) -> {
-                    plugin.getLogger().warning("hangar.papermc.io seems offline, update check has failed");
-                })
-                .setNotifyOpsOnJoin(true)
-                .checkNow();
+        UpdateChecker updateChecker = new UpdateChecker(
+                plugin,
+                "playtimemanager",
+                plugin_version
+        );
+
+        // Start checking for updates
+        updateChecker.start();
     }
 
     public boolean performVersionUpdate(String currentVersion, String targetVersion) {

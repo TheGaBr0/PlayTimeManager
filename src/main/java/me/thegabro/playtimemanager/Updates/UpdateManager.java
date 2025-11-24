@@ -39,6 +39,8 @@ public class UpdateManager {
         UpdateChecker updateChecker = new UpdateChecker(
                 plugin,
                 "playtimemanager",
+                "TheGaBr0",
+                "PlayTimeManager",
                 plugin_version
         );
 

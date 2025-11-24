@@ -26,7 +26,9 @@ import java.util.concurrent.TimeUnit;
 public class UpdateChecker implements Listener {
 
     private final Plugin plugin;
-    private final String projectId;
+    private final String modrinthProjectId;
+    private final String githubOwner;
+    private final String githubRepo;
     private final String currentVersion;
 
     private String latestVersion = null;
@@ -34,15 +36,20 @@ public class UpdateChecker implements Listener {
     private final Set<String> notifiedPlayers = new HashSet<>();
     private static final long CHECK_INTERVAL = TimeUnit.DAYS.toMillis(1);
 
+
     /**
-     * Creates a new update checker for Modrinth
+     * Creates a new update checker with Modrinth as primary and GitHub as fallback
      * @param plugin plugin instance
-     * @param projectId Modrinth project ID
+     * @param modrinthProjectId Modrinth project ID
+     * @param githubOwner GitHub repository owner
+     * @param githubRepo GitHub repository name
      * @param currentVersion current plugin version
      */
-    public UpdateChecker(Plugin plugin, String projectId, String currentVersion) {
+    public UpdateChecker(Plugin plugin, String modrinthProjectId, String githubOwner, String githubRepo, String currentVersion) {
         this.plugin = plugin;
-        this.projectId = projectId;
+        this.modrinthProjectId = modrinthProjectId;
+        this.githubOwner = githubOwner;
+        this.githubRepo = githubRepo;
         this.currentVersion = currentVersion;
     }
 
@@ -60,7 +67,7 @@ public class UpdateChecker implements Listener {
     }
 
     /**
-     * Checks for updates on Modrinth
+     * Checks for updates on GitHub Releases
      */
     public void checkForUpdates() {
         long currentTime = System.currentTimeMillis();
@@ -71,49 +78,102 @@ public class UpdateChecker implements Listener {
         }
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            try {
-                String apiUrl = "https://api.modrinth.com/v2/project/" + projectId + "/version";
-                URL url = new URL(apiUrl);
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-                connection.setRequestProperty("User-Agent", plugin.getName() + "/" + currentVersion);
-                connection.setConnectTimeout(5000);
-                connection.setReadTimeout(5000);
+            checkModrinth();
 
-                int responseCode = connection.getResponseCode();
-                if (responseCode == 200) {
-                    BufferedReader reader = new BufferedReader(
-                            new InputStreamReader(connection.getInputStream()));
-                    StringBuilder response = new StringBuilder();
-                    String line;
+            lastCheckTime = currentTime;
 
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-                    reader.close();
-
-                    JsonArray versions = JsonParser.parseString(response.toString()).getAsJsonArray();
-
-                    if (!versions.isEmpty()) {
-                        JsonObject latestVersionObj = versions.get(0).getAsJsonObject();
-                        latestVersion = latestVersionObj.get("version_number").getAsString();
-                        lastCheckTime = currentTime;
-
-                        // Log to console if update available
-                        if (isNewerVersion(latestVersion, currentVersion)) {
-                            Bukkit.getScheduler().runTask(plugin, () -> {
-                                logUpdateAvailable();
-                                notifiedPlayers.clear(); // Reset notifications for new version
-                            });
-                        }
-                    }
-                }
-                connection.disconnect();
-
-            } catch (Exception e) {
-                plugin.getLogger().warning("Failed to check for updates");
+            // Log to console if update available
+            if (isNewerVersion(latestVersion, currentVersion)) {
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    logUpdateAvailable();
+                    notifiedPlayers.clear(); // Reset notifications for new version
+                });
             }
         });
+    }
+
+    /**
+     * Checks Modrinth for updates
+     */
+    private void checkModrinth() {
+        try {
+            String apiUrl = "https://api.modrinth.com/v2/project/" + modrinthProjectId + "/version";
+            URL url = new URL(apiUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("User-Agent", plugin.getName() + "/" + currentVersion);
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == 200) {
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
+
+                JsonArray versions = JsonParser.parseString(response.toString()).getAsJsonArray();
+
+                if (!versions.isEmpty()) {
+                    JsonObject latestVersionObj = versions.get(0).getAsJsonObject();
+                    latestVersion = latestVersionObj.get("version_number").getAsString();
+                    connection.disconnect();
+                }
+            }
+            connection.disconnect();
+
+        } catch (Exception e) {
+            checkGitHub();
+        }
+    }
+
+    /**
+     * Checks GitHub for updates
+     */
+    private void checkGitHub() {
+        try {
+            String apiUrl = "https://api.github.com/repos/" + githubOwner + "/" + githubRepo + "/releases/latest";
+            URL url = new URL(apiUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("User-Agent", plugin.getName() + "/" + currentVersion);
+            connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == 200) {
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(connection.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                reader.close();
+
+                // Parse JSON response
+                JsonObject release = JsonParser.parseString(response.toString()).getAsJsonObject();
+
+                // Get version from tag_name (remove 'v' prefix if present)
+                String tagName = release.get("tag_name").getAsString();
+                latestVersion = tagName.replaceFirst("^v", "");
+
+                // Get download URL from html_url
+                connection.disconnect();
+                return;
+            }
+            connection.disconnect();
+
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to check for updates");
+        }
     }
 
     /**
@@ -163,7 +223,7 @@ public class UpdateChecker implements Listener {
         plugin.getLogger().warning("A new PlayTimeManager update is available!");
         plugin.getLogger().warning("Current version: " + currentVersion);
         plugin.getLogger().warning("Latest version: " + latestVersion);
-        plugin.getLogger().warning("Download: https://modrinth.com/plugin/" + projectId + "/version/" + latestVersion);
+        plugin.getLogger().warning("Download: https://modrinth.com/plugin/" + modrinthProjectId + "/version/" + latestVersion);
         plugin.getLogger().warning("========================================");
     }
 
@@ -190,15 +250,43 @@ public class UpdateChecker implements Listener {
 
             // Delay message slightly so it doesn't get lost in join spam
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                player.sendMessage(Utils.parseColors("&e&l[" + plugin.getName() + "]&r &aA new update is available!"));
-                player.sendMessage(Utils.parseColors("&eCurrent: &f" + currentVersion + " &e-> Latest: &f" + latestVersion));
-                player.sendMessage(Utils.parseColors("&eDownload: &bhttps://modrinth.com/plugin/" + projectId + "/version/" + latestVersion)
-                        .color(NamedTextColor.AQUA)
-                        .clickEvent(ClickEvent.openUrl("https://modrinth.com/plugin/" + projectId + "/version/" + latestVersion))
-                        .hoverEvent(HoverEvent.showText(Component.text("Click to open!"))));
+                // Decorative top border
+                player.sendMessage(Utils.parseColors(""));
+                player.sendMessage(Utils.parseColors("&#FFD700▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
+
+                // "[PlayTimeManager]" gradient FFAA00 -> FFFF55 with glow effect
+                player.sendMessage(Utils.parseColors(
+                        "&#FF9100&l[&#FF9E0AP&#FFAC15l&#FFBA1Fa&#FFC82Ay&#FFD535T&#FFE33Fi&#FFF14Am&#FFFF55e&#FFF14AM&#FFE33Fa&#FFD535n&#FFC82Aa&#FFBA1Fg&#FFAC15e&#FF9E0Ar&#FF9100]"
+                ));
+
+                player.sendMessage(Utils.parseColors(""));
+
+                // Main announcement with icon
+                player.sendMessage(Utils.parseColors(
+                        "&#00FF00✦ &#55FF55&lA NEW UPDATE IS AVAILABLE! &#00FF00✦"
+                ));
+
+                player.sendMessage(Utils.parseColors(""));
+
+                // Version comparison with better visual separation
+                player.sendMessage(Utils.parseColors(
+                        "&#AAAAAACurrent: &#FF5555&l"+ currentVersion+" &r&#FFAA00➤ &#AAAAAALatest: &#00FF00&l"+latestVersion
+                ));
+                player.sendMessage(Utils.parseColors(""));
+
+                // Download link with better styling
+                player.sendMessage(
+                        Utils.parseColors("&#FFD700▶ &#55FFFFClick here to download &#FFD700◀")
+                                .clickEvent(ClickEvent.openUrl("https://modrinth.com/plugin/" + modrinthProjectId + "/version/" + latestVersion))
+                                .hoverEvent(HoverEvent.showText(Component.text("§6§lClick to open Modrinth!")))
+                );
+
+                // Decorative bottom border
+                player.sendMessage(Utils.parseColors("&#FFD700▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
+                player.sendMessage(Utils.parseColors(""));
+
             }, 40L); // 2 second delay
+
         }
     }
-
-
 }

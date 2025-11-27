@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.Database;
+package me.thegabro.playtimemanager.Database.DatabaseTypes;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +10,7 @@ import java.util.logging.Level;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import me.thegabro.playtimemanager.Database.Database;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
 
@@ -74,28 +75,49 @@ public class SQLiteDatabase implements Database {
     @Override
     public void initialize() {
         File dataFolder = new File(plugin.getDataFolder(), dbName + ".db");
+
+        if (!plugin.getDataFolder().exists()) {
+            plugin.getDataFolder().mkdirs();
+        }
+
         if (!dataFolder.exists()) {
             try {
                 dataFolder.createNewFile();
+                plugin.getLogger().info("Created new SQLite database file: " + dbName + ".db");
             } catch (IOException e) {
-                plugin.getLogger().log(Level.SEVERE, "File write error: " + dbName + ".db");
+                plugin.getLogger().log(Level.SEVERE, "Failed to create database file: " + dbName + ".db", e);
+                throw new RuntimeException("Failed to create SQLite database file", e);
             }
         }
 
         HikariConfig config = new HikariConfig();
 
-        config.setLeakDetectionThreshold(0);
+        config.setLeakDetectionThreshold(60000);
         config.setJdbcUrl("jdbc:sqlite:" + dataFolder.getAbsolutePath());
         config.setDriverClassName("org.sqlite.JDBC");
-        config.setMaximumPoolSize(20);
+        config.setMaximumPoolSize(1); // SQLite only supports single connection writes
+        config.setConnectionTimeout(30000);
         config.setConnectionTestQuery("SELECT 1");
+
+        // SQLite specific optimizations
         config.addDataSourceProperty("journal_mode", "WAL");
         config.addDataSourceProperty("busy_timeout", "30000");
+        config.addDataSourceProperty("synchronous", "NORMAL");
+        config.addDataSourceProperty("cache_size", "10000");
+        config.addDataSourceProperty("temp_store", "MEMORY");
 
-        dataSource = new HikariDataSource(config);
+        if (plugin.getConfig().getBoolean("database-debug", false)) {
+            plugin.getLogger().info("SQLite database path: " + dataFolder.getAbsolutePath());
+        }
 
-        // Create tables after initializing connection
-        createTables();
+        try {
+            dataSource = new HikariDataSource(config);
+            plugin.getLogger().info("Successfully connected to SQLite database");
+            createTables();
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to initialize SQLite connection", e);
+            throw new RuntimeException("SQLite initialization failed", e);
+        }
     }
 
     @Override
@@ -108,9 +130,10 @@ public class SQLiteDatabase implements Database {
 
     @Override
     public void close() {
-        if (dataSource != null) {
+        if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
             dataSource = null;
+            plugin.getLogger().info("SQLite connection closed");
         }
     }
 
@@ -124,8 +147,12 @@ public class SQLiteDatabase implements Database {
             s.executeUpdate(RECEIVED_REWARDS_TABLE);
             s.executeUpdate(REWARDS_TO_BE_CLAIMED_TABLE);
 
+
+            plugin.getLogger().info("SQLite tables and indexes created successfully");
+
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to create SQLite tables", e);
+            throw new RuntimeException("Failed to create SQLite tables", e);
         }
     }
 

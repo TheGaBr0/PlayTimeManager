@@ -53,12 +53,6 @@ check-for-updates: true
 # MySQL/MariaDB and PostgreSQL are recommended for larger servers or networked setups
 database-type: "sqlite"
 
-# SQLite specific settings
-sqlite:
-  # Path to the database file (relative to plugin folder)
-  # The .db extension will be added automatically if not specified
-  file-name: "playtime_data"
-
 # MySQL/MariaDB specific settings
 mysql:
   # Database connection details

@@ -3,7 +3,6 @@ package me.thegabro.playtimemanager.Updates;
 import me.thegabro.playtimemanager.Configuration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.Database.SQLiteDatabase;
 
 import java.sql.*;
 import java.util.*;

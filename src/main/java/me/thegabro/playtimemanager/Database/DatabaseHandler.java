@@ -56,8 +56,4 @@ public class DatabaseHandler {
     public StatisticsDAO getStatisticsDAO() {
         return statisticsDAO;
     }
-
-    public String getDatabaseType() {
-        return database.getDatabaseType();
-    }
 }

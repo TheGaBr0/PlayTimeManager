@@ -65,14 +65,13 @@ public class PlayTimeManager extends JavaPlugin{
 
         LogFilter.registerFilter();
 
-        this.databaseHandler = DatabaseHandler.getInstance();
-
         UpdateManager updateManager = UpdateManager.getInstance();
 
         config = Configuration.getInstance(this, this.getDataFolder(), "config", true, true);
 
         // Check config version and perform updates if needed
         if (!config.getString("config-version").equals(CURRENT_CONFIG_VERSION)) {
+            this.databaseHandler = DatabaseHandler.getInstance();
             boolean success = updateManager.performVersionUpdate(config.getString("config-version"), CURRENT_CONFIG_VERSION);
 
             if(!success){
@@ -80,6 +79,8 @@ public class PlayTimeManager extends JavaPlugin{
                 return;
             }
         }
+
+        this.databaseHandler = DatabaseHandler.getInstance();
 
         updateManager.initialize();
 

@@ -294,7 +294,7 @@ public class PlayerDAO {
             ps1.executeUpdate();
 
             // Update completed_goals table
-            ps3 = conn.prepareStatement("UPDATE completed_goals SET nickname = ? WHERE uuid = ?;");
+            ps3 = conn.prepareStatement("UPDATE completed_goals SET nickname = ? WHERE user_uuid = ?;");
             ps3.setString(1, newNickname);
             ps3.setString(2, uuid);
             ps3.executeUpdate();

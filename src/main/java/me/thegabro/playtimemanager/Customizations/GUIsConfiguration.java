@@ -1,14 +1,12 @@
 package me.thegabro.playtimemanager.Customizations;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class GUIsConfiguration {
@@ -20,7 +18,6 @@ public class GUIsConfiguration {
 
     // Cache to store all configuration values in memory
     private final Map<String, Object> configCache = new ConcurrentHashMap<>();
-
 
     private static final String CONFIG_FILENAME = "GUIs-config.yml";
     private static final String CONFIG_PATH = "Customizations/GUIs/";
@@ -93,13 +90,12 @@ public class GUIsConfiguration {
             Object value = config.get(key);
             configCache.put(key, value);
         }
-
     }
 
     public void reload() {
         reloadFile();
         reloadConfig();
-        loadCache(); // Load cache after reloading config
+        loadCache();
     }
 
     public FileConfiguration getConfig() {
@@ -164,27 +160,17 @@ public class GUIsConfiguration {
      */
     public void set(String path, Object value) {
         config.set(path, value);
-
         configCache.put(path, value);
-
         save();
     }
 
     // ==================== GET OR DEFAULT OVERWRITE METHODS ====================
 
-    /**
-     * Gets a value from config/cache, or sets and returns the default if not present
-     * @param path The configuration path
-     * @param defaultValue The default value to set if path doesn't exist
-     * @return The existing value or the default value that was set
-     */
     public Object getOrDefault(String path, Object defaultValue) {
-        // Check if value exists in cache first
         if (configCache.containsKey(path)) {
             return configCache.get(path);
         }
 
-        // Check if value exists in config
         if (config.contains(path)) {
             Object value = config.get(path);
             if (value != null) {
@@ -193,22 +179,15 @@ public class GUIsConfiguration {
             }
         }
 
-        // Value doesn't exist, set the default and return it
         set(path, defaultValue);
         return defaultValue;
     }
 
-    /**
-     * Gets a String value or sets and returns the default if not present
-     */
     public String getOrDefaultString(String path, String defaultValue) {
         Object value = getOrDefault(path, defaultValue);
         return value != null ? value.toString() : defaultValue;
     }
 
-    /**
-     * Gets an Integer value or sets and returns the default if not present
-     */
     public Integer getOrDefaultInt(String path, Integer defaultValue) {
         Object value = getOrDefault(path, defaultValue);
         if (value instanceof Number) {
@@ -217,9 +196,6 @@ public class GUIsConfiguration {
         return defaultValue;
     }
 
-    /**
-     * Gets a Boolean value or sets and returns the default if not present
-     */
     public Boolean getOrDefaultBoolean(String path, Boolean defaultValue) {
         Object value = getOrDefault(path, defaultValue);
         if (value instanceof Boolean) {
@@ -228,9 +204,6 @@ public class GUIsConfiguration {
         return defaultValue;
     }
 
-    /**
-     * Gets a Double value or sets and returns the default if not present
-     */
     public Double getOrDefaultDouble(String path, Double defaultValue) {
         Object value = getOrDefault(path, defaultValue);
         if (value instanceof Number) {
@@ -239,9 +212,6 @@ public class GUIsConfiguration {
         return defaultValue;
     }
 
-    /**
-     * Gets a String List value or sets and returns the default if not present
-     */
     @SuppressWarnings("unchecked")
     public List<String> getOrDefaultStringList(String path, List<String> defaultValue) {
         Object value = getOrDefault(path, defaultValue);
@@ -251,7 +221,7 @@ public class GUIsConfiguration {
         return defaultValue;
     }
 
-    // ==================== CONFIG UPDATE SYSTEM ====================
+    // ==================== CONFIG UPDATE SYSTEM WITH SECTION REMOVAL DETECTION ====================
 
     /**
      * Creates a backup of all current configuration values
@@ -260,7 +230,6 @@ public class GUIsConfiguration {
     public Map<String, Object> createConfigBackup() {
         Map<String, Object> backup = new HashMap<>();
 
-        // Read all keys from current config
         Set<String> keys = config.getKeys(true);
         for (String key : keys) {
             Object value = config.get(key);
@@ -273,8 +242,45 @@ public class GUIsConfiguration {
     }
 
     /**
-     * Restores values from a backup, preserving user customizations
-     * Only restores leaf values (not entire sections) to preserve new keys
+     * Detects sections that were intentionally removed by the user
+     * @param backup The backup configuration
+     * @param defaultConfig The new default configuration
+     * @return Set of paths that should be removed from the new config
+     */
+    private Set<String> detectRemovedSections(Map<String, Object> backup, FileConfiguration defaultConfig) {
+        Set<String> removedPaths = new HashSet<>();
+
+        // Check for removed view sections under items
+        ConfigurationSection itemsSection = defaultConfig.getConfigurationSection("player-stats-gui.items");
+        if (itemsSection != null) {
+            for (String itemName : itemsSection.getKeys(false)) {
+                String viewsPath = "player-stats-gui.items." + itemName + ".views";
+
+                // Check if views section exists in default
+                ConfigurationSection defaultViews = defaultConfig.getConfigurationSection(viewsPath);
+                if (defaultViews != null) {
+                    // Check each view type (owner, player, staff)
+                    for (String viewType : defaultViews.getKeys(false)) {
+                        String fullViewPath = viewsPath + "." + viewType;
+
+                        // If this view existed in default but doesn't exist in backup (user removed it)
+                        boolean existedInBackup = backup.keySet().stream()
+                                .anyMatch(key -> key.startsWith(fullViewPath));
+
+                        if (!existedInBackup) {
+                            removedPaths.add(fullViewPath);
+                            plugin.getLogger().info("Detected removed section: " + fullViewPath);
+                        }
+                    }
+                }
+            }
+        }
+
+        return removedPaths;
+    }
+
+    /**
+     * Restores values from a backup, preserving user customizations and removals
      * @param backup Map containing the backed up values
      */
     public void restoreFromBackup(Map<String, Object> backup) {
@@ -283,48 +289,64 @@ public class GUIsConfiguration {
             return;
         }
 
+        // Detect sections that were intentionally removed
+        Set<String> removedSections = detectRemovedSections(backup, config);
+
+        int restoredCount = 0;
+        int skippedCount = 0;
+
         for (Map.Entry<String, Object> entry : backup.entrySet()) {
             String key = entry.getKey();
             Object backupValue = entry.getValue();
 
             // Check if the key exists in the new config structure
             if (!config.contains(key)) {
+                skippedCount++;
                 continue;
             }
 
-            // CRITICAL: Skip MemorySection objects (nested sections)
-            // These contain multiple keys and restoring them would overwrite entire sections
+            // Skip MemorySection objects (nested sections)
             if (backupValue instanceof org.bukkit.configuration.MemorySection) {
                 continue;
             }
 
-            // Get the current value from the new config (this is the default from the new file)
+            // Get the current value from the new config
             Object currentValue = config.get(key);
 
-            // Only restore leaf values (strings, numbers, booleans, lists, etc.)
-            // Only restore if:
-            // 1. The backup has a non-null value
-            // 2. The backup value is different from the current default
-            // 3. The backup value is not empty for strings
+            // Only restore if the backup value differs from the default
             if (backupValue != null && !backupValue.equals(currentValue)) {
-                // Additional check for strings - don't restore empty strings
+                // Skip empty strings
                 if (backupValue instanceof String && ((String) backupValue).trim().isEmpty()) {
                     continue;
                 }
 
                 config.set(key, backupValue);
                 configCache.put(key, backupValue);
+                restoredCount++;
+            }
+        }
 
+        // Remove sections that were intentionally deleted by the user
+        for (String removedPath : removedSections) {
+            config.set(removedPath, null);
+
+            // Remove all related cache entries
+            Iterator<String> cacheIterator = configCache.keySet().iterator();
+            while (cacheIterator.hasNext()) {
+                String cacheKey = cacheIterator.next();
+                if (cacheKey.startsWith(removedPath)) {
+                    cacheIterator.remove();
+                }
             }
         }
     }
 
     /**
-     * Updates the configuration file while preserving user values
+     * Updates the configuration file while preserving user values and removals
      */
     public void updateConfig() {
         try {
-            // Step 1: Create backup of current values (only if config exists)
+            // Step 1: Create backup of current values
             Map<String, Object> backup = new HashMap<>();
             if (config != null) {
                 backup = createConfigBackup();
@@ -343,15 +365,14 @@ public class GUIsConfiguration {
             reloadFile();
             reloadConfig();
 
-            // Step 4: Restore user values (only if we have a backup)
+            // Step 5: Restore user values and remove intentionally deleted sections
             if (!backup.isEmpty()) {
                 restoreFromBackup(backup);
             }
 
-            // Step 5: Save the updated config and refresh cache
+            // Step 6: Save the updated config and refresh cache
             save();
             loadCache();
-
         } catch (Exception e) {
             plugin.getLogger().severe("Failed to update config: " + e.getMessage());
             e.printStackTrace();
@@ -363,26 +384,24 @@ public class GUIsConfiguration {
      * @param path The path to the configuration section
      * @return ConfigurationSection or null if not found
      */
-    public org.bukkit.configuration.ConfigurationSection getConfigurationSection(String path) {
+    public ConfigurationSection getConfigurationSection(String path) {
         if (config == null) {
             return null;
         }
         return config.getConfigurationSection(path);
     }
-
     /**
      * Gets a String List value from cache
      */
-    public java.util.List<String> getStringList(String path) {
+    public List<String> getStringList(String path) {
         Object value = get(path);
-        if (value instanceof java.util.List) {
+        if (value instanceof List) {
             @SuppressWarnings("unchecked")
-            java.util.List<String> list = (java.util.List<String>) value;
+            List<String> list = (List<String>) value;
             return list;
         }
         return null;
     }
-
     /**
      * Gets a String value from cache
      */
@@ -390,7 +409,6 @@ public class GUIsConfiguration {
         Object value = get(path);
         return value != null ? value.toString() : null;
     }
-
     /**
      * Gets an Integer value from cache
      */
@@ -401,7 +419,6 @@ public class GUIsConfiguration {
         }
         return null;
     }
-
     /**
      * Gets a Boolean value from cache
      */
@@ -412,7 +429,6 @@ public class GUIsConfiguration {
         }
         return null;
     }
-
     /**
      * Gets a Double value from cache
      */
@@ -423,13 +439,10 @@ public class GUIsConfiguration {
         }
         return null;
     }
-
-
     /**
      * Clears the cache
      */
     public void clearCache() {
         configCache.clear();
     }
-
 }

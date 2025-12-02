@@ -21,9 +21,6 @@ I thought this could be useful to other server administrators as well, so I deci
 
 ---
 
-> PlayTimeManager is optimized for Paper due to its superior performance, flexibility, and additional features not available on Spigot. These enhancements allow PlayTimeManager to run more efficiently and provide a better  experience for both server administrators and players. As a result, **Spigot is no longer supported**.
-
-
 ![alt text](https://i.imgur.com/sHpOZkL.png "Landing page")
 
 ## Examples of usage

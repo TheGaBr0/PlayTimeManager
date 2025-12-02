@@ -17,35 +17,6 @@ public class AFKSyncManager {
     }
 
     /**
-     * Called when player quit event occurs
-     * Ensures proper cleanup without interfering with playtime calculations
-     */
-    public void handlePlayerQuit(OnlineUser onlineUser, Runnable quitCleanup) {
-        if (onlineUser == null) {
-            return;
-        }
-
-        try {
-            // Reset AFK status to prevent issues
-            if (onlineUser.isAFK()) {
-                onlineUser.setAFK(false);
-            }
-
-            // Execute cleanup
-            quitCleanup.run();
-        } catch (Exception e) {
-            plugin.getLogger().severe("Error in handlePlayerQuit for " +
-                    onlineUser.getNickname() + ": " + e.getMessage());
-            // Still try to run cleanup even if there was an error
-            try {
-                quitCleanup.run();
-            } catch (Exception cleanupError) {
-                plugin.getLogger().severe("Critical error during quit cleanup: " + cleanupError.getMessage());
-            }
-        }
-    }
-
-    /**
      * Called when AFK return event occurs (only for online players)
      * Updates AFK time and sets status to false
      */
@@ -54,6 +25,7 @@ public class AFKSyncManager {
             // This can happen if player disconnects while AFK and EssentialsX fires the return event
             return;
         }
+        plugin.getLogger().warning("not anymore AFK status detected for " + user.getNickname());
 
         try {
             if (user.isAFK()) {
@@ -73,6 +45,7 @@ public class AFKSyncManager {
         if (user == null) {
             return;
         }
+        plugin.getLogger().warning("AFK status detected for " + user.getNickname());
 
         try {
             if (!user.isAFK()) {

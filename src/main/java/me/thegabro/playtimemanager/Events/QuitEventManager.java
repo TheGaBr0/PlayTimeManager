@@ -43,11 +43,7 @@ public class QuitEventManager implements Listener {
 
                     onlineUser.updateLastSeen();
 
-                    if (plugin.isAfkDetectionConfigured()) {
-                        afkSyncManager.handlePlayerQuit(onlineUser, () -> executeCleanup(onlineUser));
-                    } else {
-                        executeCleanup(onlineUser);
-                    }
+                    executeCleanup(onlineUser);
                 } catch (Exception e) {
                     plugin.getLogger().severe("Error updating database for " + onlineUser.getNickname() + ": " + e.getMessage());
                 }

@@ -71,7 +71,15 @@ public class PlayTimeManager extends JavaPlugin{
 
         // Check config version and perform updates if needed
         if (!config.getString("config-version").equals(CURRENT_CONFIG_VERSION)) {
-            this.databaseHandler = DatabaseHandler.getInstance();
+
+            try {
+                this.databaseHandler = DatabaseHandler.getInstance();
+            } catch (Exception e) {
+                getLogger().severe("Failed to initialize database for version update: " + e.getMessage());
+                Bukkit.getPluginManager().disablePlugin(this);
+                return;
+            }
+
             boolean success = updateManager.performVersionUpdate(config.getString("config-version"), CURRENT_CONFIG_VERSION);
 
             if(!success){
@@ -80,7 +88,16 @@ public class PlayTimeManager extends JavaPlugin{
             }
         }
 
-        this.databaseHandler = DatabaseHandler.getInstance();
+        try {
+            this.databaseHandler = DatabaseHandler.getInstance();
+            getLogger().info("Database initialized successfully");
+        } catch (Exception e) {
+            getLogger().severe("CRITICAL: Failed to initialize database connection!");
+            getLogger().severe("Error: " + e.getMessage());
+            getLogger().severe("Plugin will now disable. Please check your database configuration.");
+            Bukkit.getPluginManager().disablePlugin(this);
+            return;
+        }
 
         updateManager.initialize();
 
@@ -163,7 +180,9 @@ public class PlayTimeManager extends JavaPlugin{
     @Override
     public void onDisable() {
 
-        databaseHandler.close();
+        if(databaseHandler != null) {
+            databaseHandler.close();
+        }
         HandlerList.unregisterAll(this);
 
         if(joinStreaksManager != null){
@@ -176,6 +195,7 @@ public class PlayTimeManager extends JavaPlugin{
             joinStreaksManager.cleanUp();
         }
 
+        DatabaseHandler.resetInstance();
 
 
         getLogger().info("has been disabled!");

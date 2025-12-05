@@ -450,8 +450,8 @@ public class PlayerDAO {
             ps.setLong(3, playtime);
             ps.setLong(4, 0);
             ps.setLong(5, 0);
-            LocalDateTime truncated = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-            ps.setTimestamp(6, Timestamp.valueOf(truncated));
+            ps.setLong(6, System.currentTimeMillis());
+
             ps.executeUpdate();
         } catch (SQLException ex) {
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);

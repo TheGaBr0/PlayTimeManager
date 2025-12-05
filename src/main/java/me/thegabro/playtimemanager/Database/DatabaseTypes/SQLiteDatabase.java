@@ -12,6 +12,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import me.thegabro.playtimemanager.Database.Database;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import org.bukkit.Bukkit;
 
 
 public class SQLiteDatabase implements Database {
@@ -21,8 +22,8 @@ public class SQLiteDatabase implements Database {
 
     // Table creation statements
     private static final String PLAY_TIME_TABLE = "CREATE TABLE IF NOT EXISTS play_time (" +
-            "uuid VARCHAR(32) NOT NULL UNIQUE," +
-            "nickname VARCHAR(32) NOT NULL UNIQUE," +
+            "uuid VARCHAR(36) NOT NULL UNIQUE," +
+            "nickname VARCHAR(36) NOT NULL UNIQUE," +
             "playtime BIGINT NOT NULL," +
             "artificial_playtime BIGINT NOT NULL," +
             "afk_playtime BIGINT NOT NULL," +
@@ -35,8 +36,8 @@ public class SQLiteDatabase implements Database {
 
     private static final String RECEIVED_REWARDS_TABLE = "CREATE TABLE IF NOT EXISTS received_rewards (" +
             "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-            "user_uuid VARCHAR(32) NOT NULL," +
-            "nickname VARCHAR(32) NOT NULL," +
+            "user_uuid VARCHAR(36) NOT NULL," +
+            "nickname VARCHAR(36) NOT NULL," +
             "main_instance_ID INT NOT NULL," +
             "required_joins INT NOT NULL," +
             "received_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
@@ -45,9 +46,9 @@ public class SQLiteDatabase implements Database {
 
     private static final String COMPLETED_GOALS_TABLE = "CREATE TABLE IF NOT EXISTS completed_goals (" +
             "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-            "goal_name VARCHAR(32) NOT NULL," +
-            "user_uuid VARCHAR(32) NOT NULL," +
-            "nickname VARCHAR(32) NOT NULL," +
+            "goal_name VARCHAR(36) NOT NULL," +
+            "user_uuid VARCHAR(36) NOT NULL," +
+            "nickname VARCHAR(36) NOT NULL," +
             "completed_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
             "received INTEGER NOT NULL DEFAULT 0," +
             "received_at DATETIME DEFAULT NULL," +
@@ -56,8 +57,8 @@ public class SQLiteDatabase implements Database {
 
     private static final String REWARDS_TO_BE_CLAIMED_TABLE = "CREATE TABLE IF NOT EXISTS rewards_to_be_claimed (" +
             "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-            "user_uuid VARCHAR(32) NOT NULL," +
-            "nickname VARCHAR(32) NOT NULL," +
+            "user_uuid VARCHAR(36) NOT NULL," +
+            "nickname VARCHAR(36) NOT NULL," +
             "main_instance_ID INT NOT NULL," +
             "required_joins INT NOT NULL," +
             "created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
@@ -86,6 +87,7 @@ public class SQLiteDatabase implements Database {
                 plugin.getLogger().info("Created new SQLite database file: " + dbName + ".db");
             } catch (IOException e) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to create database file: " + dbName + ".db", e);
+                Bukkit.getPluginManager().disablePlugin(plugin);
                 throw new RuntimeException("Failed to create SQLite database file", e);
             }
         }
@@ -116,6 +118,7 @@ public class SQLiteDatabase implements Database {
             createTables();
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to initialize SQLite connection", e);
+            Bukkit.getPluginManager().disablePlugin(plugin);
             throw new RuntimeException("SQLite initialization failed", e);
         }
     }
@@ -152,6 +155,7 @@ public class SQLiteDatabase implements Database {
 
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to create SQLite tables", e);
+            Bukkit.getPluginManager().disablePlugin(plugin);
             throw new RuntimeException("Failed to create SQLite tables", e);
         }
     }

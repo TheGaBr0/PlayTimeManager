@@ -27,6 +27,10 @@ public class DatabaseHandler {
 
         this.database = DatabaseFactory.createDatabase();
 
+        // If we reach here, database was created successfully
+        // Now initialize it (this will create tables, etc.)
+        this.database.initialize();
+
         this.playerDAO = new PlayerDAO(this);
         this.goalsDAO = new GoalsDAO(this);
         this.streakDAO = new JoinstreakDAO(this);
@@ -35,6 +39,13 @@ public class DatabaseHandler {
 
     public Connection getConnection() throws SQLException {
         return database.getConnection();
+    }
+
+    public static synchronized void resetInstance() {
+        if (instance != null) {
+            instance.close();
+            instance = null;
+        }
     }
 
     public void close() {

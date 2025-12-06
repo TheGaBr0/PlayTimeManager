@@ -134,17 +134,11 @@ public class OnlineUser extends DBUser {
 
     /**
      * Updates the player's AFK playtime in the database asynchronously.
-     * Finalizes the current AFK session if not already done and saves total AFK time.
      *
      * @param callback Optional callback to run on main thread after update completes
      */
     public void updateAFKPlayTimeAsync(Runnable callback) {
-        // Only finalize if not already done
-        if (!afkTimeFinalized) {
-            finalizeCurrentAFKSession();
-        }
-
-        long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
+        long totalAFKTime = getAFKPlaytime();
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             db.getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
@@ -163,18 +157,12 @@ public class OnlineUser extends DBUser {
 
     /**
      * Updates the player's AFK playtime using a snapshot value.
-     * Finalizes the current AFK session with the snapshot and saves total AFK time.
      *
      * @param playtimeSnapshot The PLAY_ONE_MINUTE statistic value to use
      * @param callback Optional callback to run on main thread after update completes
      */
     public void updateAFKPlayTimeWithSnapshotAsync(long playtimeSnapshot, Runnable callback) {
-        // Finalize using snapshot if not already done
-        if (!afkTimeFinalized) {
-            finalizeCurrentAFKSession(playtimeSnapshot);
-        }
-
-        long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
+        long totalAFKTime = getAFKPlaytimeWithSnapshot(playtimeSnapshot);
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             db.getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);

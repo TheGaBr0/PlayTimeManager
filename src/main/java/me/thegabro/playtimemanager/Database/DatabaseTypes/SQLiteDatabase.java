@@ -149,10 +149,7 @@ public class SQLiteDatabase implements Database {
             s.executeUpdate(COMPLETED_GOALS_TABLE);
             s.executeUpdate(RECEIVED_REWARDS_TABLE);
             s.executeUpdate(REWARDS_TO_BE_CLAIMED_TABLE);
-
-
-            plugin.getLogger().info("SQLite tables and indexes created successfully");
-
+            
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to create SQLite tables", e);
             Bukkit.getPluginManager().disablePlugin(plugin);

@@ -29,8 +29,10 @@ public class AFKSyncManager {
 
         try {
             if (user.isAFK()) {
-                user.setAFK(false);
+                user.finalizeCurrentAFKSession();
                 user.updateAFKPlayTime();
+                user.setAFK(false);
+
             }
         } catch (Exception e) {
             plugin.getLogger().warning("Error updating AFK return for player " + user.getNickname() + ": " + e.getMessage());

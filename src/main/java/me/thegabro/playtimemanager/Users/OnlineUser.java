@@ -134,17 +134,11 @@ public class OnlineUser extends DBUser {
 
     /**
      * Updates the player's AFK playtime in the database asynchronously.
-     * Finalizes the current AFK session if not already done and saves total AFK time.
      *
      * @param callback Optional callback to run on main thread after update completes
      */
     public void updateAFKPlayTimeAsync(Runnable callback) {
-        // Only finalize if not already done
-        if (!afkTimeFinalized) {
-            finalizeCurrentAFKSession();
-        }
-
-        long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
+        long totalAFKTime = getAFKPlaytime();
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             db.getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
@@ -163,18 +157,12 @@ public class OnlineUser extends DBUser {
 
     /**
      * Updates the player's AFK playtime using a snapshot value.
-     * Finalizes the current AFK session with the snapshot and saves total AFK time.
      *
      * @param playtimeSnapshot The PLAY_ONE_MINUTE statistic value to use
      * @param callback Optional callback to run on main thread after update completes
      */
     public void updateAFKPlayTimeWithSnapshotAsync(long playtimeSnapshot, Runnable callback) {
-        // Finalize using snapshot if not already done
-        if (!afkTimeFinalized) {
-            finalizeCurrentAFKSession(playtimeSnapshot);
-        }
-
-        long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
+        long totalAFKTime = getAFKPlaytimeWithSnapshot(playtimeSnapshot);
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             db.getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
@@ -233,13 +221,17 @@ public class OnlineUser extends DBUser {
      */
     @Override
     public long getPlaytime() {
-        long totalPlaytime = getCachedPlayTime() + artificialPlaytime;
+        long cachedPlaytime = getCachedPlayTime();
+        long totalPlaytime = cachedPlaytime + artificialPlaytime;
+        long afkPlaytime = 0;
 
         if (plugin.getConfiguration().getBoolean("ignore-afk-time")) {
-            totalPlaytime -= getAFKPlaytime();
+            afkPlaytime = getAFKPlaytime();
+            totalPlaytime -= afkPlaytime;
         }
 
-        return Math.max(0, totalPlaytime);
+        long result = Math.max(0, totalPlaytime);
+        return result;
     }
 
     /**
@@ -276,7 +268,6 @@ public class OnlineUser extends DBUser {
             long ongoingAFKTime = currentPlaytime - afkStartPlaytime;
             totalAFK += ongoingAFKTime;
         }
-
         return Math.max(0, totalAFK);
     }
 
@@ -326,6 +317,7 @@ public class OnlineUser extends DBUser {
      * @param isAFK true if the player should be marked as AFK, false otherwise
      */
     public void setAFK(boolean isAFK) {
+
         if (isAFK && !this.afk) {
             // Player is going AFK - record current playtime
             this.afk = true;
@@ -337,6 +329,7 @@ public class OnlineUser extends DBUser {
                 long currentPlaytime = playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE);
                 long afkDuration = currentPlaytime - this.afkStartPlaytime;
                 this.currentSessionAFKTime += afkDuration;
+
             }
             this.afk = false;
             this.afkStartPlaytime = 0;

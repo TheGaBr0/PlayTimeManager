@@ -25,7 +25,7 @@ public class AFKSyncManager {
             // This can happen if player disconnects while AFK and EssentialsX fires the return event
             return;
         }
-        plugin.getLogger().warning("not anymore AFK status detected for " + user.getNickname());
+        //plugin.getLogger().warning("not anymore AFK status detected for " + user.getNickname());
 
         try {
             if (user.isAFK()) {
@@ -47,7 +47,7 @@ public class AFKSyncManager {
         if (user == null) {
             return;
         }
-        plugin.getLogger().warning("AFK status detected for " + user.getNickname());
+        //plugin.getLogger().warning("AFK status detected for " + user.getNickname());
 
         try {
             if (!user.isAFK()) {

@@ -60,6 +60,9 @@ commands:
     description: Command to claim join streak rewards
     permission: playtime.joinstreak.claim
     permission-message: You don't have the permission to execute this command!
+  playtimemigration:
+    description:  Command to migrate the database
+    aliases: [ptmigration]
 permissions:
   playtime.*:
     default: op

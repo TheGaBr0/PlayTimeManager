@@ -18,7 +18,7 @@ import org.bukkit.Bukkit;
 public class SQLiteDatabase implements Database {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private HikariDataSource dataSource;
-    private final String dbName;
+    private final String DBNAME = "play_time";
 
     // Table creation statements
     private static final String PLAY_TIME_TABLE = "CREATE TABLE IF NOT EXISTS play_time (" +
@@ -67,15 +67,10 @@ public class SQLiteDatabase implements Database {
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid)" +
             ");";
 
-    public SQLiteDatabase() {
-        this.dbName = "play_time";
-        initialize();
-    }
-
 
     @Override
     public void initialize() {
-        File dataFolder = new File(plugin.getDataFolder(), dbName + ".db");
+        File dataFolder = new File(plugin.getDataFolder(), DBNAME + ".db");
 
         if (!plugin.getDataFolder().exists()) {
             plugin.getDataFolder().mkdirs();
@@ -84,9 +79,9 @@ public class SQLiteDatabase implements Database {
         if (!dataFolder.exists()) {
             try {
                 dataFolder.createNewFile();
-                plugin.getLogger().info("Created new SQLite database file: " + dbName + ".db");
+                plugin.getLogger().info("Created new SQLite database file: " + DBNAME + ".db");
             } catch (IOException e) {
-                plugin.getLogger().log(Level.SEVERE, "Failed to create database file: " + dbName + ".db", e);
+                plugin.getLogger().log(Level.SEVERE, "Failed to create database file: " + DBNAME + ".db", e);
                 Bukkit.getPluginManager().disablePlugin(plugin);
                 throw new RuntimeException("Failed to create SQLite database file", e);
             }

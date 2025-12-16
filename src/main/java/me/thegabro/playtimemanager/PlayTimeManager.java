@@ -48,7 +48,7 @@ public class PlayTimeManager extends JavaPlugin{
     private JoinStreaksManager joinStreaksManager;
     private SessionManager sessionManager;
 
-    public final String CURRENT_CONFIG_VERSION = "4.1";
+    public final String CURRENT_CONFIG_VERSION = "4.2";
     public final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
     public final boolean CACHE_DEBUG = false;
     @Override
@@ -168,6 +168,8 @@ public class PlayTimeManager extends JavaPlugin{
         Objects.requireNonNull(getCommand("playtimeattribute")).setExecutor(new PlayTimeAttributeCommand() {
         });
         Objects.requireNonNull(getCommand("playtimestats")).setExecutor(new PlayTimeStats() {
+        });
+        Objects.requireNonNull(getCommand("playtimemigration")).setExecutor(new PlayTimeMigration() {
         });
         onlineUsersManager.initialize();
         dbUsersManager.updateTopPlayersFromDB();

@@ -35,6 +35,9 @@ no-permission-check-others: "&cYou don't have permission to check other players'
 no-permission-modify: "&cYou don't have permission to modify other players' playtime."
 no-permission-wildcard-reset: "&cYou don't have permission to use wildcards with the reset command."
 
+# Console only commands
+console-only-command: "&cThis command can only be used from console!"
+
 # Argument validation
 too-few-arguments: "&cToo few arguments!"
 invalid-time-format: "&cInvalid time format: &e%TIME%"

@@ -17,7 +17,7 @@ public class Version36to361Updater {
     }
 
     public void recreateConfigFile(){
-        Configuration.getInstance().updateConfig(false);
+        Configuration.getInstance().updateConfig(true);
     }
 
     private void fix_tables() {

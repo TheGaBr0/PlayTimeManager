@@ -16,7 +16,6 @@ public class MySQLDatabase implements Database {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private HikariDataSource dataSource;
 
-    // Table creation statements
     private static final String PLAY_TIME_TABLE = "CREATE TABLE IF NOT EXISTS play_time (" +
             "uuid VARCHAR(36) NOT NULL," +
             "nickname VARCHAR(36) NOT NULL," +
@@ -38,8 +37,7 @@ public class MySQLDatabase implements Database {
             "main_instance_ID INT NOT NULL," +
             "required_joins INT NOT NULL," +
             "received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-            "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE," +
-            "INDEX idx_user_uuid (user_uuid)" +
+            "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
     private static final String COMPLETED_GOALS_TABLE = "CREATE TABLE IF NOT EXISTS completed_goals (" +
@@ -50,9 +48,7 @@ public class MySQLDatabase implements Database {
             "completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
             "received TINYINT(1) NOT NULL DEFAULT 0," +
             "received_at TIMESTAMP NULL DEFAULT NULL," +
-            "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE," +
-            "INDEX idx_user_uuid (user_uuid)," +
-            "INDEX idx_goal_name (goal_name)" +
+            "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
     private static final String REWARDS_TO_BE_CLAIMED_TABLE = "CREATE TABLE IF NOT EXISTS rewards_to_be_claimed (" +
@@ -64,8 +60,7 @@ public class MySQLDatabase implements Database {
             "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
             "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
             "expired BOOLEAN DEFAULT FALSE," +
-            "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE," +
-            "INDEX idx_user_uuid (user_uuid)" +
+            "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
     @Override
@@ -82,7 +77,6 @@ public class MySQLDatabase implements Database {
 
         HikariConfig hikariConfig = new HikariConfig();
 
-        // Build JDBC URL
         StringBuilder jdbcUrl = new StringBuilder("jdbc:mysql://")
                 .append(host).append(":").append(port).append("/").append(database)
                 .append("?useSSL=").append(useSSL)
@@ -100,7 +94,6 @@ public class MySQLDatabase implements Database {
         hikariConfig.setPassword(password);
         hikariConfig.setDriverClassName("com.mysql.cj.jdbc.Driver");
 
-        // Connection pool settings
         hikariConfig.setMaximumPoolSize(10);
         hikariConfig.setMinimumIdle(2);
         hikariConfig.setConnectionTimeout(30000);
@@ -109,7 +102,6 @@ public class MySQLDatabase implements Database {
         hikariConfig.setLeakDetectionThreshold(60000);
         hikariConfig.setConnectionTestQuery("SELECT 1");
 
-        // Additional performance settings
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
@@ -156,8 +148,6 @@ public class MySQLDatabase implements Database {
             s.executeUpdate(COMPLETED_GOALS_TABLE);
             s.executeUpdate(RECEIVED_REWARDS_TABLE);
             s.executeUpdate(REWARDS_TO_BE_CLAIMED_TABLE);
-
-            plugin.getLogger().info("MySQL tables created successfully");
 
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to create MySQL tables", e);

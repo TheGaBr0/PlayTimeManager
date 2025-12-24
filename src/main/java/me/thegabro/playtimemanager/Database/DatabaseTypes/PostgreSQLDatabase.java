@@ -153,8 +153,6 @@ public class PostgreSQLDatabase implements Database {
             s.executeUpdate(RECEIVED_REWARDS_TABLE);
             s.executeUpdate(REWARDS_TO_BE_CLAIMED_TABLE);
 
-            plugin.getLogger().info("PostgreSQL tables and indexes created successfully");
-
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to create PostgreSQL tables", e);
             Bukkit.getPluginManager().disablePlugin(plugin);

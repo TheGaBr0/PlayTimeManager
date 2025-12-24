@@ -79,7 +79,7 @@ public class PlayTimeMigration implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        String currentDbType = config.getString("database.type");
+        String currentDbType = config.getString("database-type");
         if (currentDbType == null) {
             currentDbType = "sqlite";
         }
@@ -106,7 +106,8 @@ public class PlayTimeMigration implements CommandExecutor, TabCompleter {
         sender.sendMessage(Utils.parseColors("&7Target database: &e" + targetDbType));
         sender.sendMessage(Utils.parseColors(""));
         sender.sendMessage(Utils.parseColors("&6⚠ &eThe migration will start on the next server reload/restart"));
-        sender.sendMessage(Utils.parseColors("&6⚠ &ePlease make sure to backup your data before reloading!"));
+        sender.sendMessage(Utils.parseColors("&6⚠ &ePlease make sure to correctly setup "+targetDbType));
+        sender.sendMessage(Utils.parseColors("&6⚠ &edata fields in the config.yml before booting the server."));
         sender.sendMessage(Utils.parseColors(""));
         sender.sendMessage(Utils.parseColors("&7To cancel this migration, use:"));
         sender.sendMessage(Utils.parseColors("&f/playtimemigration cancel"));
@@ -145,7 +146,7 @@ public class PlayTimeMigration implements CommandExecutor, TabCompleter {
      * Shows the current migration status
      */
     private boolean handleMigrationStatus(CommandSender sender) {
-        String currentDbType = config.getString("database.type");
+        String currentDbType = config.getString("database-type");
         if (currentDbType == null) {
             currentDbType = "sqlite";
         }

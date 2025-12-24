@@ -4,6 +4,7 @@ import me.thegabro.playtimemanager.Commands.PlayTimeStats;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.Database.LogFilter;
+import me.thegabro.playtimemanager.Database.Migration.DatabaseMigration;
 import me.thegabro.playtimemanager.ExternalPluginSupport.AntiAFKPlus.AntiAFKPlusAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
@@ -65,9 +66,13 @@ public class PlayTimeManager extends JavaPlugin{
 
         LogFilter.registerFilter();
 
-        UpdateManager updateManager = UpdateManager.getInstance();
-
         config = Configuration.getInstance(this, this.getDataFolder(), "config", true, true);
+
+        DatabaseMigration migration = new DatabaseMigration(this);
+        if (!migration.checkAndExecuteMigration())
+            getLogger().warning("Migration failed but continuing with source database");
+
+        UpdateManager updateManager = UpdateManager.getInstance();
 
         // Check config version and perform updates if needed
         if (!config.getString("config-version").equals(CURRENT_CONFIG_VERSION)) {

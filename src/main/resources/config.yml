@@ -23,7 +23,7 @@
 # Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
 
 #Leave this untouched
-config-version: 4.1
+config-version: 4.2
 
 #Choose your permissions management plugin
 #Available options: "luckperms"
@@ -89,6 +89,8 @@ postgresql:
   use-ssl: false
 
   # Additional connection properties (optional)
+  # These will be appended to the JDBC connection URL
+  # Example: "useUnicode=true&characterEncoding=utf8"
   connection-properties: ""
 
 # Enable debug logging for database operations

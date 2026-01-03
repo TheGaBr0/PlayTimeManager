@@ -472,9 +472,9 @@ public class PlayerDAO {
              PreparedStatement ps = connection.prepareStatement("UPDATE play_time SET last_seen = ? WHERE uuid = ?")) {
 
             if (lastSeen != null) {
-                ps.setLong(1, lastSeen.toEpochMilli());
+                ps.setTimestamp(1, Timestamp.from(lastSeen));
             } else {
-                ps.setNull(1, Types.BIGINT);
+                ps.setNull(1, Types.TIMESTAMP);
             }
 
             ps.setString(2, uuid);
@@ -484,7 +484,6 @@ public class PlayerDAO {
         }
     }
 
-
     public Instant getLastSeen(String uuid) {
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement("SELECT last_seen FROM play_time WHERE uuid = ?")) {
@@ -493,9 +492,9 @@ public class PlayerDAO {
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                long millis = rs.getLong("last_seen");
-                if (!rs.wasNull()) {
-                    return Instant.ofEpochMilli(millis);
+                Timestamp timestamp = rs.getTimestamp("last_seen");
+                if (timestamp != null) {
+                    return timestamp.toInstant();
                 }
             }
         } catch (SQLException e) {
@@ -509,9 +508,9 @@ public class PlayerDAO {
              PreparedStatement ps = connection.prepareStatement("UPDATE play_time SET first_join = ? WHERE uuid = ?")) {
 
             if (firstJoin != null) {
-                ps.setLong(1, firstJoin.toEpochMilli());
+                ps.setTimestamp(1, Timestamp.from(firstJoin));
             } else {
-                ps.setNull(1, Types.BIGINT);
+                ps.setNull(1, Types.TIMESTAMP);
             }
 
             ps.setString(2, uuid);
@@ -528,9 +527,9 @@ public class PlayerDAO {
             ps.setString(1, uuid);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                long millis = rs.getLong("first_join");
-                if (!rs.wasNull()) {
-                    return Instant.ofEpochMilli(millis);
+                Timestamp timestamp = rs.getTimestamp("first_join");
+                if (timestamp != null) {
+                    return timestamp.toInstant();
                 }
             }
         } catch (SQLException e) {

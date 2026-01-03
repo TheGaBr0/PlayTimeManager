@@ -347,13 +347,7 @@ public class DatabaseMigration {
                 int batchSize = 0;
                 for (Object[] row : rows) {
                     for (int i = 0; i < columnCount; i++) {
-                        Object value = convertValue(
-                                row[i],
-                                columnTypes.get(i),
-                                targetColumnTypes.get(i),
-                                columnNames.get(i)
-                        );
-                        pstmt.setObject(i + 1, value);
+                        pstmt.setObject(i + 1, row[i]);
                     }
                     pstmt.addBatch();
                     batchSize++;
@@ -382,111 +376,6 @@ public class DatabaseMigration {
         return rows.size();
     }
 
-    /**
-     * Converts values between different database type systems.
-     * Handles critical type incompatibilities:
-     * - Unix timestamps (BIGINT) ↔ TIMESTAMP objects
-     * - BOOLEAN ↔ TINYINT/SMALLINT/INTEGER
-     * - String format timestamps → proper TIMESTAMP objects
-     */
-    private Object convertValue(Object value, int sourceType, int targetType, String columnName) throws SQLException {
-        if (value == null) {
-            return value;
-        }
-
-        String lowerColumnName = columnName.toLowerCase();
-
-        // TIMESTAMP CONVERSIONS
-        // Convert Unix timestamps (BIGINT from SQLite) to TIMESTAMP objects for MySQL/PostgreSQL
-        if ((targetType == Types.TIMESTAMP || targetType == Types.DATE) &&
-                (value instanceof Long || value instanceof Integer)) {
-            long timestamp = ((Number) value).longValue();
-            return new Timestamp(timestamp);
-        }
-
-        // Convert TIMESTAMP to Unix timestamp (BIGINT) for SQLite's last_seen and first_join
-        if ((sourceType == Types.TIMESTAMP || sourceType == Types.DATE) &&
-                (targetType == Types.BIGINT) &&
-                (lowerColumnName.equals("last_seen") || lowerColumnName.equals("first_join"))) {
-            if (value instanceof Timestamp) {
-                return ((Timestamp) value).getTime();
-            } else if (value instanceof java.util.Date) {
-                return ((java.util.Date) value).getTime();
-            }
-        }
-
-        // Handle DATETIME string format to TIMESTAMP
-        if ((targetType == Types.TIMESTAMP) && (value instanceof String)) {
-            try {
-                return Timestamp.valueOf((String) value);
-            } catch (Exception e) {
-                logger.warning("Could not parse timestamp string: " + value + " for column: " + columnName);
-                return value;
-            }
-        }
-
-        // INTEGER/SMALLINT/TINYINT/BOOLEAN CONVERSIONS
-        // Convert to SMALLINT (PostgreSQL for 'received' field)
-        if (targetType == Types.SMALLINT) {
-            if (value instanceof Boolean) {
-                return ((Boolean) value) ? (short) 1 : (short) 0;
-            } else if (value instanceof Number) {
-                return ((Number) value).shortValue();
-            }
-        }
-
-        // Convert to TINYINT (MySQL for 'received' and 'expired' fields)
-        if (targetType == Types.TINYINT) {
-            if (value instanceof Boolean) {
-                return ((Boolean) value) ? (byte) 1 : (byte) 0;
-            } else if (value instanceof Number) {
-                return ((Number) value).byteValue();
-            }
-        }
-
-        // Convert to native BOOLEAN (PostgreSQL for 'expired' field)
-        if (targetType == Types.BOOLEAN || targetType == Types.BIT) {
-            if (value instanceof Number) {
-                return ((Number) value).intValue() != 0;
-            } else if (value instanceof String) {
-                String str = ((String) value).toLowerCase();
-                return str.equals("true") || str.equals("1") || str.equals("t");
-            } else if (!(value instanceof Boolean)) {
-                return Boolean.parseBoolean(value.toString());
-            }
-        }
-
-        // Convert to INTEGER for SQLite (from BOOLEAN, TINYINT, or SMALLINT)
-        if (targetType == Types.INTEGER &&
-                (sourceType == Types.BOOLEAN || sourceType == Types.TINYINT ||
-                        sourceType == Types.SMALLINT || sourceType == Types.BIT)) {
-            if (value instanceof Boolean) {
-                return ((Boolean) value) ? 1 : 0;
-            } else if (value instanceof Number) {
-                return ((Number) value).intValue();
-            }
-        }
-
-        // STRING/VARCHAR CONVERSIONS
-        if (targetType == Types.VARCHAR || targetType == Types.CHAR) {
-            if (!(value instanceof String)) {
-                return value.toString();
-            }
-        }
-
-        return value;
-    }
-
-    private ResultSetMetaData getTargetTableMetadata(String tableName) {
-        try (Statement stmt = targetConnection.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName + " LIMIT 0")) {
-            return rs.getMetaData();
-        } catch (SQLException e) {
-            logger.warning("Could not get target table metadata for " + tableName + ": " + e.getMessage());
-            return null;
-        }
-    }
-
     private List<String> getRequiredTables() {
         List<String> tables = new ArrayList<>();
         tables.add("play_time");
@@ -508,8 +397,8 @@ public class DatabaseMigration {
                                 "playtime BIGINT NOT NULL, " +
                                 "artificial_playtime BIGINT NOT NULL, " +
                                 "afk_playtime BIGINT NOT NULL, " +
-                                "last_seen BIGINT DEFAULT NULL, " +
-                                "first_join BIGINT DEFAULT NULL, " +
+                                "last_seen TIMESTAMP DEFAULT NULL, " +
+                                "first_join TIMESTAMP DEFAULT NULL, " +
                                 "relative_join_streak INT DEFAULT 0, " +
                                 "absolute_join_streak INT DEFAULT 0, " +
                                 "PRIMARY KEY (uuid))"
@@ -520,19 +409,9 @@ public class DatabaseMigration {
                                 "goal_name VARCHAR(36) NOT NULL, " +
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
-                                "completed_at DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                                "completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                                 "received INTEGER NOT NULL DEFAULT 0, " +
-                                "received_at DATETIME DEFAULT NULL, " +
-                                "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid))"
-                );
-                statements.add(
-                        "CREATE TABLE received_rewards (" +
-                                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                                "user_uuid VARCHAR(36) NOT NULL, " +
-                                "nickname VARCHAR(36) NOT NULL, " +
-                                "main_instance_ID INT NOT NULL, " +
-                                "required_joins INT NOT NULL, " +
-                                "received_at DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                                "received_at TIMESTAMP DEFAULT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid))"
                 );
                 statements.add(
@@ -542,11 +421,22 @@ public class DatabaseMigration {
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "main_instance_ID INT NOT NULL, " +
                                 "required_joins INT NOT NULL, " +
-                                "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                                "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                                "expired BOOLEAN DEFAULT FALSE, " +
+                                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                                "expired INTEGER DEFAULT 0, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid))"
                 );
+                statements.add(
+                        "CREATE TABLE IF NOT EXISTS received_rewards (" +
+                                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                                "user_uuid VARCHAR(36) NOT NULL," +
+                                "nickname VARCHAR(36) NOT NULL," +
+                                "main_instance_ID INT NOT NULL," +
+                                "required_joins INT NOT NULL," +
+                                "received_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                                "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid))"
+                );
+
                 break;
 
             case "mysql":
@@ -558,8 +448,8 @@ public class DatabaseMigration {
                                 "playtime BIGINT NOT NULL, " +
                                 "artificial_playtime BIGINT NOT NULL, " +
                                 "afk_playtime BIGINT NOT NULL, " +
-                                "last_seen BIGINT DEFAULT NULL, " +
-                                "first_join BIGINT DEFAULT NULL, " +
+                                "last_seen TIMESTAMP NULL DEFAULT NULL, " +
+                                "first_join TIMESTAMP NULL DEFAULT NULL, " +
                                 "relative_join_streak INT DEFAULT 0, " +
                                 "absolute_join_streak INT DEFAULT 0, " +
                                 "PRIMARY KEY (uuid), " +
@@ -573,19 +463,8 @@ public class DatabaseMigration {
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                                "received TINYINT(1) NOT NULL DEFAULT 0, " +
+                                "received INTEGER NOT NULL DEFAULT 0, " +
                                 "received_at TIMESTAMP NULL DEFAULT NULL, " +
-                                "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
-                                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-                );
-                statements.add(
-                        "CREATE TABLE received_rewards (" +
-                                "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                                "user_uuid VARCHAR(36) NOT NULL, " +
-                                "nickname VARCHAR(36) NOT NULL, " +
-                                "main_instance_ID INT NOT NULL, " +
-                                "required_joins INT NOT NULL, " +
-                                "received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
                 );
@@ -598,7 +477,18 @@ public class DatabaseMigration {
                                 "required_joins INT NOT NULL, " +
                                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                                 "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, " +
-                                "expired BOOLEAN DEFAULT FALSE, " +
+                                "expired INTEGER DEFAULT 0, " +
+                                "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
+                                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+                );
+                statements.add(
+                        "CREATE TABLE IF NOT EXISTS received_rewards (" +
+                                "id INT AUTO_INCREMENT PRIMARY KEY," +
+                                "user_uuid VARCHAR(36) NOT NULL," +
+                                "nickname VARCHAR(36) NOT NULL," +
+                                "main_instance_ID INT NOT NULL," +
+                                "required_joins INT NOT NULL," +
+                                "received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
                 );
@@ -612,8 +502,8 @@ public class DatabaseMigration {
                                 "playtime BIGINT NOT NULL, " +
                                 "artificial_playtime BIGINT NOT NULL, " +
                                 "afk_playtime BIGINT NOT NULL, " +
-                                "last_seen BIGINT DEFAULT NULL, " +
-                                "first_join BIGINT DEFAULT NULL, " +
+                                "last_seen TIMESTAMP DEFAULT NULL, " +
+                                "first_join TIMESTAMP DEFAULT NULL, " +
                                 "relative_join_streak INT DEFAULT 0, " +
                                 "absolute_join_streak INT DEFAULT 0, " +
                                 "PRIMARY KEY (uuid), " +
@@ -626,18 +516,8 @@ public class DatabaseMigration {
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                                "received SMALLINT NOT NULL DEFAULT 0, " +
+                                "received INTEGER NOT NULL DEFAULT 0, " +
                                 "received_at TIMESTAMP DEFAULT NULL, " +
-                                "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
-                );
-                statements.add(
-                        "CREATE TABLE received_rewards (" +
-                                "id SERIAL PRIMARY KEY, " +
-                                "user_uuid VARCHAR(36) NOT NULL, " +
-                                "nickname VARCHAR(36) NOT NULL, " +
-                                "main_instance_ID INT NOT NULL, " +
-                                "required_joins INT NOT NULL, " +
-                                "received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
                 );
                 statements.add(
@@ -649,8 +529,18 @@ public class DatabaseMigration {
                                 "required_joins INT NOT NULL, " +
                                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                                 "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                                "expired BOOLEAN DEFAULT FALSE, " +
+                                "expired INTEGER DEFAULT 0, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
+                );
+                statements.add(
+                        "CREATE TABLE IF NOT EXISTS received_rewards (" +
+                            "id SERIAL PRIMARY KEY," +
+                            "user_uuid VARCHAR(36) NOT NULL," +
+                            "nickname VARCHAR(36) NOT NULL," +
+                            "main_instance_ID INT NOT NULL," +
+                            "required_joins INT NOT NULL," +
+                            "received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                            "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
                 );
                 break;
         }

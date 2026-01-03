@@ -22,8 +22,8 @@ public class MySQLDatabase implements Database {
             "playtime BIGINT NOT NULL," +
             "artificial_playtime BIGINT NOT NULL," +
             "afk_playtime BIGINT NOT NULL," +
-            "last_seen BIGINT DEFAULT NULL," +
-            "first_join BIGINT DEFAULT NULL," +
+            "last_seen TIMESTAMP DEFAULT NULL," +
+            "first_join TIMESTAMP DEFAULT NULL," +
             "relative_join_streak INT DEFAULT 0," +
             "absolute_join_streak INT DEFAULT 0," +
             "PRIMARY KEY (uuid)," +
@@ -46,7 +46,7 @@ public class MySQLDatabase implements Database {
             "user_uuid VARCHAR(36) NOT NULL," +
             "nickname VARCHAR(36) NOT NULL," +
             "completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-            "received TINYINT(1) NOT NULL DEFAULT 0," +
+            "received INTEGER NOT NULL DEFAULT 0," +
             "received_at TIMESTAMP NULL DEFAULT NULL," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";

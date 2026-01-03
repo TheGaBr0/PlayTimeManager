@@ -68,10 +68,6 @@ public class PlayTimeManager extends JavaPlugin{
 
         config = Configuration.getInstance(this, this.getDataFolder(), "config", true, true);
 
-        DatabaseMigration migration = new DatabaseMigration(this);
-        if (!migration.checkAndExecuteMigration())
-            getLogger().warning("Migration failed but continuing with source database");
-
         UpdateManager updateManager = UpdateManager.getInstance();
 
         // Check config version and perform updates if needed
@@ -93,7 +89,12 @@ public class PlayTimeManager extends JavaPlugin{
             }
         }
 
+        DatabaseMigration migration = new DatabaseMigration(this);
+        if (!migration.checkAndExecuteMigration())
+            getLogger().warning("Migration failed but continuing with source database");
+
         try {
+            DatabaseHandler.resetInstance();
             this.databaseHandler = DatabaseHandler.getInstance();
             getLogger().info("Database initialized successfully");
         } catch (Exception e) {

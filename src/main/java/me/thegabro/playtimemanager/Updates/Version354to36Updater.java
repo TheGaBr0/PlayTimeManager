@@ -19,9 +19,9 @@ import java.util.stream.Collectors;
 public class Version354to36Updater {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final DatabaseHandler database = DatabaseHandler.getInstance();
     private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
     private final CommandsConfiguration commandsConfiguration = CommandsConfiguration.getInstance();
+    private final GoalsManager goalsManager = GoalsManager.getInstance();
     private long goals_old_check_schedule;
     public Version354to36Updater() {}
 
@@ -66,7 +66,7 @@ public class Version354to36Updater {
     private void migrateRewardData() {
         plugin.getLogger().info("Starting reward data migration from version 3.5.4 to 3.6...");
 
-        try (Connection connection = database.getConnection()) {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
             // First, check if the old columns exist
             if (!columnsExist(connection)) {
                 plugin.getLogger().info("Old reward columns not found, migration not needed.");
@@ -127,7 +127,7 @@ public class Version354to36Updater {
     private void migrateGoalData() {
         plugin.getLogger().info("Starting goal data migration from version 3.5.4 to 3.6...");
 
-        try (Connection connection = database.getConnection()) {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
             // Get all players with completed goals
             String selectQuery = "SELECT uuid, nickname, completed_goals FROM play_time " +
                     "WHERE completed_goals IS NOT NULL AND completed_goals != ''";
@@ -336,9 +336,8 @@ public class Version354to36Updater {
     }
 
     private void removeOldColumns() {
-        try {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
             // Clean up in case a failed migration left a stale table
-            Connection connection = database.getConnection();
             PreparedStatement dropNewIfExists = connection.prepareStatement("DROP TABLE IF EXISTS play_time_new");
             dropNewIfExists.executeUpdate();
             dropNewIfExists.close();
@@ -392,7 +391,6 @@ public class Version354to36Updater {
 
         updatePlaytimeFormatsData(playtimeFormatsConfiguration);
 
-        GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(plugin);
         goalsManager.goalsUpdater();
 
@@ -401,6 +399,8 @@ public class Version354to36Updater {
         for(Goal g : goalsManager.getGoals()){
             g.setCheckTime(String.valueOf(goals_old_check_schedule));
         }
+
+        GoalsManager.resetInstance();
     }
 
     public void updatePlaytimeFormatsData(PlaytimeFormatsConfiguration playtimeFormatsConfiguration){
@@ -413,7 +413,7 @@ public class Version354to36Updater {
     private void migrateTimestampsToInstant() {
         plugin.getLogger().info("Starting timestamp migration to Instant format (DATETIME -> BIGINT)...");
 
-        try (Connection connection = database.getConnection()) {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
 
             connection.setAutoCommit(false);
 

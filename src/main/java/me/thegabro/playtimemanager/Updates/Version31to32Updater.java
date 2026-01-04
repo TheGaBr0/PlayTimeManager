@@ -10,7 +10,6 @@ import java.util.logging.Level;
 
 public class Version31to32Updater {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final DatabaseHandler database = DatabaseHandler.getInstance();
 
     public Version31to32Updater() {}
 
@@ -38,7 +37,7 @@ public class Version31to32Updater {
     }
 
     private void handleDuplicates() {
-        try (Connection connection = database.getConnection()) {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {
@@ -153,7 +152,7 @@ public class Version31to32Updater {
     }
 
     public void updateUniqueDBEntries() {
-        try (Connection connection = database.getConnection()) {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {
@@ -186,7 +185,7 @@ public class Version31to32Updater {
     }
 
     public void addLastSeenColumn() {
-        try (Connection connection = database.getConnection()) {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {

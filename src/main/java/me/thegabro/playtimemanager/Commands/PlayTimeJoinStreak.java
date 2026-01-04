@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
-    private final DatabaseHandler db = DatabaseHandler.getInstance();
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
@@ -155,7 +154,7 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
                 " Starting to set all players' join streaks to &e" + newValue + "&7, this will take some time..."));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<String> allNicknames = db.getPlayerDAO().getAllNicknames();
+            List<String> allNicknames = DatabaseHandler.getInstance().getPlayerDAO().getAllNicknames();
             AtomicInteger totalPlayersModified = new AtomicInteger();
             AtomicInteger processedPlayers = new AtomicInteger();
 

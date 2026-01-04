@@ -18,7 +18,6 @@ public class PlaytimePercentage implements CommandExecutor {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
-    private final DatabaseHandler db = DatabaseHandler.getInstance();
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
@@ -42,7 +41,7 @@ public class PlaytimePercentage implements CommandExecutor {
                         // Now that updates are complete, get the percentage
                         DecimalFormat df = new DecimalFormat("#.##");
                         df.setRoundingMode(RoundingMode.HALF_UP);
-                        Object[] result = db.getStatisticsDAO().getPercentageOfPlayers(timeToTicks);
+                        Object[] result = DatabaseHandler.getInstance().getStatisticsDAO().getPercentageOfPlayers(timeToTicks);
                         String formattedNumber = df.format(result[0]);
 
                         // Send the message on the main thread

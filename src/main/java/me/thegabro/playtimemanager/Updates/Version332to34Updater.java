@@ -8,7 +8,6 @@ import java.sql.*;
 
 public class Version332to34Updater {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final DatabaseHandler database = DatabaseHandler.getInstance();
 
     public Version332to34Updater() {}
 
@@ -22,7 +21,7 @@ public class Version332to34Updater {
 
     public void addRelativeJoinStreakColumn() {
 
-        try (Connection connection = database.getConnection()) {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {
@@ -43,7 +42,7 @@ public class Version332to34Updater {
 
     public void addAbsoluteJoinStreakColumn() {
 
-        try (Connection connection = database.getConnection()) {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {
@@ -64,7 +63,7 @@ public class Version332to34Updater {
 
     public void addReceivedRewardsColumn() {
 
-        try (Connection connection = database.getConnection()) {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {
@@ -86,7 +85,7 @@ public class Version332to34Updater {
 
     public void addRewardsToBeClaimedColumn() {
 
-        try (Connection connection = database.getConnection()) {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {

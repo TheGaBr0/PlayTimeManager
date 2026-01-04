@@ -397,8 +397,8 @@ public class DatabaseMigration {
                                 "playtime BIGINT NOT NULL, " +
                                 "artificial_playtime BIGINT NOT NULL, " +
                                 "afk_playtime BIGINT NOT NULL, " +
-                                "last_seen TIMESTAMP DEFAULT NULL, " +
-                                "first_join TIMESTAMP DEFAULT NULL, " +
+                                "last_seen BIGINT DEFAULT NULL, " +
+                                "first_join BIGINT DEFAULT NULL, " +
                                 "relative_join_streak INT DEFAULT 0, " +
                                 "absolute_join_streak INT DEFAULT 0, " +
                                 "PRIMARY KEY (uuid))"
@@ -409,9 +409,9 @@ public class DatabaseMigration {
                                 "goal_name VARCHAR(36) NOT NULL, " +
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
-                                "completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                                "completed_at BIGINT DEFAULT NULL, " +
                                 "received INTEGER NOT NULL DEFAULT 0, " +
-                                "received_at TIMESTAMP DEFAULT NULL, " +
+                                "received_at BIGINT DEFAULT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid))"
                 );
                 statements.add(
@@ -421,8 +421,8 @@ public class DatabaseMigration {
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "main_instance_ID INT NOT NULL, " +
                                 "required_joins INT NOT NULL, " +
-                                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                                "created_at BIGINT DEFAULT NULL, " +
+                                "updated_at BIGINT DEFAULT NULL, " +
                                 "expired INTEGER DEFAULT 0, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid))"
                 );
@@ -433,7 +433,7 @@ public class DatabaseMigration {
                                 "nickname VARCHAR(36) NOT NULL," +
                                 "main_instance_ID INT NOT NULL," +
                                 "required_joins INT NOT NULL," +
-                                "received_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+                                "received_at BIGINT DEFAULT NULL," +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid))"
                 );
 
@@ -448,8 +448,8 @@ public class DatabaseMigration {
                                 "playtime BIGINT NOT NULL, " +
                                 "artificial_playtime BIGINT NOT NULL, " +
                                 "afk_playtime BIGINT NOT NULL, " +
-                                "last_seen TIMESTAMP NULL DEFAULT NULL, " +
-                                "first_join TIMESTAMP NULL DEFAULT NULL, " +
+                                "last_seen BIGINT DEFAULT NULL, " +
+                                "first_join BIGINT DEFAULT NULL, " +
                                 "relative_join_streak INT DEFAULT 0, " +
                                 "absolute_join_streak INT DEFAULT 0, " +
                                 "PRIMARY KEY (uuid), " +
@@ -462,9 +462,9 @@ public class DatabaseMigration {
                                 "goal_name VARCHAR(36) NOT NULL, " +
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
-                                "completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                                "completed_at BIGINT DEFAULT NULL, " +
                                 "received INTEGER NOT NULL DEFAULT 0, " +
-                                "received_at TIMESTAMP NULL DEFAULT NULL, " +
+                                "received_at BIGINT DEFAULT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
                 );
@@ -475,8 +475,8 @@ public class DatabaseMigration {
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "main_instance_ID INT NOT NULL, " +
                                 "required_joins INT NOT NULL, " +
-                                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, " +
+                                "created_at BIGINT DEFAULT NULL, " +
+                                "updated_at BIGINT DEFAULT NULL, " +
                                 "expired INTEGER DEFAULT 0, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
@@ -488,7 +488,7 @@ public class DatabaseMigration {
                                 "nickname VARCHAR(36) NOT NULL," +
                                 "main_instance_ID INT NOT NULL," +
                                 "required_joins INT NOT NULL," +
-                                "received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                                "received_at BIGINT DEFAULT NULL," +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
                 );
@@ -502,8 +502,8 @@ public class DatabaseMigration {
                                 "playtime BIGINT NOT NULL, " +
                                 "artificial_playtime BIGINT NOT NULL, " +
                                 "afk_playtime BIGINT NOT NULL, " +
-                                "last_seen TIMESTAMP DEFAULT NULL, " +
-                                "first_join TIMESTAMP DEFAULT NULL, " +
+                                "last_seen BIGINT DEFAULT NULL, " +
+                                "first_join BIGINT DEFAULT NULL, " +
                                 "relative_join_streak INT DEFAULT 0, " +
                                 "absolute_join_streak INT DEFAULT 0, " +
                                 "PRIMARY KEY (uuid), " +
@@ -515,9 +515,9 @@ public class DatabaseMigration {
                                 "goal_name VARCHAR(36) NOT NULL, " +
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
-                                "completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                                "completed_at BIGINT DEFAULT NULL, " +
                                 "received INTEGER NOT NULL DEFAULT 0, " +
-                                "received_at TIMESTAMP DEFAULT NULL, " +
+                                "received_at BIGINT DEFAULT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
                 );
                 statements.add(
@@ -527,20 +527,20 @@ public class DatabaseMigration {
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "main_instance_ID INT NOT NULL, " +
                                 "required_joins INT NOT NULL, " +
-                                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
-                                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                                "created_at BIGINT DEFAULT NULL, " +
+                                "updated_at BIGINT DEFAULT NULL, " +
                                 "expired INTEGER DEFAULT 0, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
                 );
                 statements.add(
                         "CREATE TABLE IF NOT EXISTS received_rewards (" +
-                            "id SERIAL PRIMARY KEY," +
-                            "user_uuid VARCHAR(36) NOT NULL," +
-                            "nickname VARCHAR(36) NOT NULL," +
-                            "main_instance_ID INT NOT NULL," +
-                            "required_joins INT NOT NULL," +
-                            "received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                            "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
+                                "id SERIAL PRIMARY KEY," +
+                                "user_uuid VARCHAR(36) NOT NULL," +
+                                "nickname VARCHAR(36) NOT NULL," +
+                                "main_instance_ID INT NOT NULL," +
+                                "required_joins INT NOT NULL," +
+                                "received_at BIGINT DEFAULT NULL," +
+                                "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
                 );
                 break;
         }

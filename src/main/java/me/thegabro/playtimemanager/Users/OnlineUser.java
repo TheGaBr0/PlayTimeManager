@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Users;
 
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import org.bukkit.Bukkit;
 import org.bukkit.Statistic;
@@ -47,7 +48,7 @@ public class OnlineUser extends DBUser {
             // Handle legacy null first_join values
             if(user.firstJoin == null){
                 user.firstJoin = Instant.now();
-                db.getPlayerDAO().updateFirstJoin(user.uuid, user.firstJoin);
+                DatabaseHandler.getInstance().getPlayerDAO().updateFirstJoin(user.uuid, user.firstJoin);
             }
 
             // Return to main thread with loaded user
@@ -60,18 +61,18 @@ public class OnlineUser extends DBUser {
      * Must be called from async context.
      */
     private void userMappingSync() {
-        boolean uuidExists = db.getPlayerDAO().playerExists(uuid);
-        String existingNickname = uuidExists ? db.getPlayerDAO().getNickname(uuid) : null;
-        String existingUUID = db.getPlayerDAO().getUUIDFromNickname(nickname);
+        boolean uuidExists = DatabaseHandler.getInstance().getPlayerDAO().playerExists(uuid);
+        String existingNickname = uuidExists ? DatabaseHandler.getInstance().getPlayerDAO().getNickname(uuid) : null;
+        String existingUUID = DatabaseHandler.getInstance().getPlayerDAO().getUUIDFromNickname(nickname);
 
         if (uuidExists) {
             if (!nickname.equals(existingNickname)) {
-                db.getPlayerDAO().updateNickname(uuid, nickname);
+                DatabaseHandler.getInstance().getPlayerDAO().updateNickname(uuid, nickname);
             }
         } else if (existingUUID != null) {
-            db.getPlayerDAO().updateUUID(uuid, nickname);
+            DatabaseHandler.getInstance().getPlayerDAO().updateUUID(uuid, nickname);
         } else {
-            db.getPlayerDAO().addNewPlayer(uuid, nickname, fromServerOnJoinPlayTime);
+            DatabaseHandler.getInstance().getPlayerDAO().addNewPlayer(uuid, nickname, fromServerOnJoinPlayTime);
         }
     }
 
@@ -95,7 +96,7 @@ public class OnlineUser extends DBUser {
     public void updatePlayTimeWithSnapshotAsync(long playtimeSnapshot, Runnable callback) {
         long currentPlaytime = DBplaytime + (playtimeSnapshot - fromServerOnJoinPlayTime);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            db.getPlayerDAO().updatePlaytime(uuid, currentPlaytime);
+            DatabaseHandler.getInstance().getPlayerDAO().updatePlaytime(uuid, currentPlaytime);
             if(callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
@@ -118,7 +119,7 @@ public class OnlineUser extends DBUser {
     public void updatePlayTimeAsync(Runnable callback) {
         long currentPlaytime = getCachedPlayTime();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            db.getPlayerDAO().updatePlaytime(uuid, currentPlaytime);
+            DatabaseHandler.getInstance().getPlayerDAO().updatePlaytime(uuid, currentPlaytime);
             if(callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
@@ -141,7 +142,7 @@ public class OnlineUser extends DBUser {
         long totalAFKTime = getAFKPlaytime();
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            db.getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
+            DatabaseHandler.getInstance().getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
             if(callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
@@ -165,7 +166,7 @@ public class OnlineUser extends DBUser {
         long totalAFKTime = getAFKPlaytimeWithSnapshot(playtimeSnapshot);
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            db.getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
+            DatabaseHandler.getInstance().getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
             if(callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
@@ -190,7 +191,7 @@ public class OnlineUser extends DBUser {
         final Instant timestampToSave = this.lastSeen;
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            db.getPlayerDAO().updateLastSeen(uuid, timestampToSave);
+            DatabaseHandler.getInstance().getPlayerDAO().updateLastSeen(uuid, timestampToSave);
             if(callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
@@ -401,9 +402,9 @@ public class OnlineUser extends DBUser {
 
         // Perform all DB updates asynchronously
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            db.getPlayerDAO().updatePlaytime(uuid, currentPlaytime);
-            db.getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
-            db.getPlayerDAO().updateLastSeen(uuid, lastSeenTime);
+            DatabaseHandler.getInstance().getPlayerDAO().updatePlaytime(uuid, currentPlaytime);
+            DatabaseHandler.getInstance().getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
+            DatabaseHandler.getInstance().getPlayerDAO().updateLastSeen(uuid, lastSeenTime);
 
             if(callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);

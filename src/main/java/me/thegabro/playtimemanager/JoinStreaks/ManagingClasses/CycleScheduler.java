@@ -26,7 +26,6 @@ public class CycleScheduler {
     private TimeZone timezone;
     private Date nextIntervalReset;
     private long exactIntervalSeconds;
-    private final DatabaseHandler db = DatabaseHandler.getInstance();
     private BukkitTask intervalTask;
     private final Set<String> playersJoinedDuringCurrentCycle = new HashSet<>();
     private String checkTimeToText;
@@ -194,7 +193,7 @@ public class CycleScheduler {
         if (!plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")) return;
 
         try {
-            Set<String> playersWithStreaks = db.getStreakDAO().getPlayersWithActiveStreaks();
+            Set<String> playersWithStreaks = DatabaseHandler.getInstance().getStreakDAO().getPlayersWithActiveStreaks();
             Date cycleStartDate = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);
 
             for (String playerUUID : playersWithStreaks) {

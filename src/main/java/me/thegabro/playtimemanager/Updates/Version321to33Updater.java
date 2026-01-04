@@ -9,7 +9,6 @@ import java.sql.*;
 
 public class Version321to33Updater {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final DatabaseHandler database = DatabaseHandler.getInstance();
 
     public Version321to33Updater() {}
 
@@ -19,7 +18,7 @@ public class Version321to33Updater {
     }
 
     public void addFirstJoinColumn() {
-        try (Connection connection = database.getConnection()) {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {

@@ -31,7 +31,6 @@ public class PlayTimeReset {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
-    private final DatabaseHandler db = DatabaseHandler.getInstance();
     // Map to store pending confirmations with a timestamp
     private static final Map<UUID, PendingReset> pendingResets = new HashMap<>();
     // Timeout for confirmation (60 seconds)
@@ -365,7 +364,7 @@ public class PlayTimeReset {
                 " Starting reset of all players' " + displayName + ", this will take some time..."));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<String> allNicknames = db.getPlayerDAO().getAllNicknames(); // safe to fetch sync
+            List<String> allNicknames = DatabaseHandler.getInstance().getPlayerDAO().getAllNicknames(); // safe to fetch sync
             AtomicInteger totalPlayersReset = new AtomicInteger();
             AtomicLong totalDataReset = new AtomicLong();
             AtomicInteger processedPlayers = new AtomicInteger();

@@ -18,7 +18,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class DBUsersManager {
-    private final DatabaseHandler db = DatabaseHandler.getInstance();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private static volatile DBUsersManager instance;
     private final List<DBUser> topPlayers;
@@ -71,7 +70,7 @@ public class DBUsersManager {
         }else{
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 // Get UUID from DB (runs in async thread)
-                String uuid = db.getPlayerDAO().getUUIDFromNickname(nickname);
+                String uuid = DatabaseHandler.getInstance().getPlayerDAO().getUUIDFromNickname(nickname);
 
                 if (uuid == null) {
                     // Player not found
@@ -93,7 +92,7 @@ public class DBUsersManager {
         }else{
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 // Get UUID from DB
-                String uuid = db.getPlayerDAO().getUUIDFromNickname(nickname);
+                String uuid = DatabaseHandler.getInstance().getPlayerDAO().getUUIDFromNickname(nickname);
 
                 if (uuid == null) {
                     Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
@@ -143,7 +142,7 @@ public class DBUsersManager {
 
         // Slow path: database query
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            if (!db.getPlayerDAO().playerExists(uuid)) {
+            if (!DatabaseHandler.getInstance().getPlayerDAO().playerExists(uuid)) {
                 Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
                 return;
             }
@@ -192,7 +191,7 @@ public class DBUsersManager {
         }
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            if (!db.getPlayerDAO().playerExists(uuid)) {
+            if (!DatabaseHandler.getInstance().getPlayerDAO().playerExists(uuid)) {
                 Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
                 return;
             }
@@ -268,7 +267,7 @@ public class DBUsersManager {
                 playersHiddenFromLeaderBoard = plugin.getConfiguration().getStringList("placeholders.playtime-leaderboard-blacklist");
 
                 // Fetch more players from DB to account for blacklisted ones
-                Map<String, String> dbTopPlayers = db.getStatisticsDAO()
+                Map<String, String> dbTopPlayers = DatabaseHandler.getInstance().getStatisticsDAO()
                         .getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersHiddenFromLeaderBoard.size());
 
                 // Load all DBUsers asynchronously
@@ -377,7 +376,7 @@ public class DBUsersManager {
         for(OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()){
             user.unmarkGoalAsCompleted(goalName);
         }
-        db.getGoalsDAO().removeGoalFromAllUsers(goalName);
+        DatabaseHandler.getInstance().getGoalsDAO().removeGoalFromAllUsers(goalName);
     }
 
     public void removeRewardFromAllUsers(Integer mainInstanceID){
@@ -385,7 +384,7 @@ public class DBUsersManager {
             user.wipeReceivedRewards(mainInstanceID);
             user.wipeRewardsToBeClaimed(mainInstanceID);
         }
-        db.getStreakDAO().removeRewardFromAllUsers(mainInstanceID);
+        DatabaseHandler.getInstance().getStreakDAO().removeRewardFromAllUsers(mainInstanceID);
     }
 
     /**

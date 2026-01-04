@@ -23,8 +23,8 @@ public class PostgreSQLDatabase implements Database {
             "playtime BIGINT NOT NULL," +
             "artificial_playtime BIGINT NOT NULL," +
             "afk_playtime BIGINT NOT NULL," +
-            "last_seen TIMESTAMP DEFAULT NULL," +
-            "first_join TIMESTAMP DEFAULT NULL," +
+            "last_seen BIGINT DEFAULT NULL," +
+            "first_join BIGINT DEFAULT NULL," +
             "relative_join_streak INT DEFAULT 0," +
             "absolute_join_streak INT DEFAULT 0," +
             "PRIMARY KEY (uuid)," +

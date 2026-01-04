@@ -51,7 +51,6 @@ public class Goal {
     private CronExpression cronExpression;
     private String checkTimeToText;
     private TimeZone timezone;
-    private final DatabaseHandler db = DatabaseHandler.getInstance();
     private BukkitTask completionCheckTask;
     private Date nextIntervalCheckCron;
     private final Map<String, String> goalMessageReplacements;
@@ -103,7 +102,7 @@ public class Goal {
                     since = Instant.now().minusSeconds(intervalSeconds);
                 }
 
-                List<String> playersUuids = db.getPlayerDAO().getPlayersSeenSince(since);
+                List<String> playersUuids = DatabaseHandler.getInstance().getPlayerDAO().getPlayersSeenSince(since);
 
                 List<DBUser> loadedUsers = new ArrayList<>();
                 for (String uuid : playersUuids) {
@@ -666,7 +665,7 @@ public class Goal {
             saveToFile();
 
             // Update the name in the database for all users
-            db.getGoalsDAO().updateGoalName(oldFile.getName().replace(".yml", ""), newName);
+            DatabaseHandler.getInstance().getGoalsDAO().updateGoalName(oldFile.getName().replace(".yml", ""), newName);
 
             oldFile.delete();
 

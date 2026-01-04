@@ -1,7 +1,6 @@
 package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Configuration;
-import me.thegabro.playtimemanager.Database.Database;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
@@ -21,9 +20,8 @@ public class Version36to361Updater {
     }
 
     private void fix_tables() {
-        DatabaseHandler db = DatabaseHandler.getInstance();
 
-        try (Connection conn = db.getConnection()) {
+        try (Connection conn = DatabaseHandler.getInstance().getConnection()) {
             // Fix completed_goals table
             fixCompletedGoals(conn);
 

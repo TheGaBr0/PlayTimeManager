@@ -15,7 +15,6 @@ public class Version351to352Updater {
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final GUIsConfiguration guIsConfiguration = GUIsConfiguration.getInstance();
-    private final DatabaseHandler database = DatabaseHandler.getInstance();
 
     // Placeholder mapping from old format to new format
     private static final Map<String, String> PLACEHOLDER_MAPPINGS = new HashMap<>();
@@ -40,7 +39,7 @@ public class Version351to352Updater {
     }
 
     public void addAFKPlaytimeColumn(){
-        try (Connection connection = database.getConnection()) {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
             connection.setAutoCommit(false);
 
             try (Statement s = connection.createStatement()) {

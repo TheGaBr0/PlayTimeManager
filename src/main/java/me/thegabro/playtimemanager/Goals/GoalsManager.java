@@ -1,8 +1,6 @@
 package me.thegabro.playtimemanager.Goals;
 
-import com.cronutils.model.field.expression.On;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -176,6 +174,18 @@ public class GoalsManager {
             restoreFromBackup(backup, config);
 
             g.saveToFile();
+        }
+    }
+
+    public synchronized void stop() {
+        clearGoals();
+        this.plugin = null;
+    }
+
+    public static synchronized void resetInstance() {
+        if (instance != null) {
+            instance.stop();
+            instance = null;
         }
     }
 }

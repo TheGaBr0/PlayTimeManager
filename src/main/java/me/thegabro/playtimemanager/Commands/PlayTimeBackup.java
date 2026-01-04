@@ -2,7 +2,7 @@ package me.thegabro.playtimemanager.Commands;
 
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.Updates.DatabaseBackupUtility;
+import me.thegabro.playtimemanager.Database.DatabaseBackupUtility;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

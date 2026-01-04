@@ -450,7 +450,7 @@ public class PlayerDAO {
             ps.setLong(3, playtime);
             ps.setLong(4, 0);
             ps.setLong(5, 0);
-            ps.setLong(6, System.currentTimeMillis());
+            ps.setLong(6, Instant.now().toEpochMilli());
 
             ps.executeUpdate();
         } catch (SQLException ex) {
@@ -472,9 +472,9 @@ public class PlayerDAO {
              PreparedStatement ps = connection.prepareStatement("UPDATE play_time SET last_seen = ? WHERE uuid = ?")) {
 
             if (lastSeen != null) {
-                ps.setTimestamp(1, Timestamp.from(lastSeen));
+                ps.setLong(1, lastSeen.toEpochMilli());
             } else {
-                ps.setNull(1, Types.TIMESTAMP);
+                ps.setNull(1, Types.BIGINT);
             }
 
             ps.setString(2, uuid);
@@ -492,9 +492,9 @@ public class PlayerDAO {
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                Timestamp timestamp = rs.getTimestamp("last_seen");
-                if (timestamp != null) {
-                    return timestamp.toInstant();
+                long millis = rs.getLong("last_seen");
+                if (!rs.wasNull()) {
+                    return Instant.ofEpochMilli(millis);
                 }
             }
         } catch (SQLException e) {
@@ -508,9 +508,9 @@ public class PlayerDAO {
              PreparedStatement ps = connection.prepareStatement("UPDATE play_time SET first_join = ? WHERE uuid = ?")) {
 
             if (firstJoin != null) {
-                ps.setTimestamp(1, Timestamp.from(firstJoin));
+                ps.setLong(1, firstJoin.toEpochMilli());
             } else {
-                ps.setNull(1, Types.TIMESTAMP);
+                ps.setNull(1, Types.BIGINT);
             }
 
             ps.setString(2, uuid);
@@ -521,15 +521,15 @@ public class PlayerDAO {
     }
 
 
-    public Instant  getFirstJoin(String uuid) {
+    public Instant getFirstJoin(String uuid) {
         try (Connection connection = dbManager.getConnection();
              PreparedStatement ps = connection.prepareStatement("SELECT first_join FROM play_time WHERE uuid = ?")) {
             ps.setString(1, uuid);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                Timestamp timestamp = rs.getTimestamp("first_join");
-                if (timestamp != null) {
-                    return timestamp.toInstant();
+                long millis = rs.getLong("first_join");
+                if (!rs.wasNull()) {
+                    return Instant.ofEpochMilli(millis);
                 }
             }
         } catch (SQLException e) {
@@ -616,9 +616,7 @@ public class PlayerDAO {
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(query)) {
 
-            long sinceMillis = since.toEpochMilli();
-
-            ps.setLong(1, sinceMillis);
+            ps.setLong(1, since.toEpochMilli());
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

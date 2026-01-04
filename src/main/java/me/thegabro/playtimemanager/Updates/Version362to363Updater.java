@@ -6,21 +6,18 @@ import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 
 public class Version362to363Updater {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final DatabaseHandler database = DatabaseHandler.getInstance();
 
     public Version362to363Updater() {}
 
     public void performUpgrade() {
         new Version36to361Updater().performUpgrade(); /*issue in previous update system versions: if updating from prior
-        3.6 versions to 3.6.2, the mid update to 3.6.1 is skipped. let's update again just to be sure.*/
+        3.6 versions to 3.6.2, the mid-update to 3.6.1 is skipped. let's update again just to be sure.*/
 
         try {
             convertBIGINTtoTIMESTAMP();
@@ -33,7 +30,7 @@ public class Version362to363Updater {
 
     private void convertBIGINTtoTIMESTAMP() throws SQLException {
 
-        try (Connection conn = database.getConnection()) {
+        try (Connection conn = DatabaseHandler.getInstance().getConnection()) {
             conn.setAutoCommit(false);
 
             try (Statement stmt = conn.createStatement()) {
@@ -101,7 +98,7 @@ public class Version362to363Updater {
 
     private void validateCompletedGoalsTimestamps() throws SQLException {
 
-        try (Connection conn = database.getConnection()) {
+        try (Connection conn = DatabaseHandler.getInstance().getConnection()) {
             conn.setAutoCommit(false);
 
             try (Statement stmt = conn.createStatement()) {

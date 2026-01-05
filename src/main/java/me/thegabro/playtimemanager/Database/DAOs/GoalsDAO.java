@@ -8,13 +8,17 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.logging.Level;
 
 public class GoalsDAO {
     private final DatabaseHandler dbManager;
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final GoalsManager goalsManager = GoalsManager.getInstance();
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     public GoalsDAO(DatabaseHandler dbManager) {
         this.dbManager = dbManager;
     }
@@ -34,7 +38,7 @@ public class GoalsDAO {
     }
 
     public void removeAllGoalsFromUser(String uuid) {
-        String deleteQuery = "DELETE FROM completed_goals WHERE uuid = ?";
+        String deleteQuery = "DELETE FROM completed_goals WHERE user_uuid = ?";
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(deleteQuery)) {
@@ -48,7 +52,7 @@ public class GoalsDAO {
     }
 
     public ArrayList<String> getCompletedGoals(String uuid) {
-        String query = "SELECT goal_name FROM completed_goals WHERE user_uuid = ? ORDER BY received_at ASC";
+        String query = "SELECT goal_name FROM completed_goals WHERE user_uuid = ? ORDER BY completed_at ASC";
         ArrayList<String> goals = new ArrayList<>();
 
         try (Connection conn = dbManager.getConnection();
@@ -73,17 +77,16 @@ public class GoalsDAO {
 
     public void addCompletedGoal(String uuid, String nickname, String goalName, boolean received) {
         String insertQuery;
+        String now = DATE_FORMAT.format(new Date());
 
         if (received) {
-            // When received is true, use CURRENT_TIMESTAMP directly
             insertQuery = "INSERT INTO completed_goals " +
                     "(goal_name, user_uuid, nickname, completed_at, received, received_at) " +
-                    "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)";
+                    "VALUES (?, ?, ?, ?, ?, ?)";
         } else {
-            // When received is false, set received_at to NULL
             insertQuery = "INSERT INTO completed_goals " +
                     "(goal_name, user_uuid, nickname, completed_at, received, received_at) " +
-                    "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, NULL)";
+                    "VALUES (?, ?, ?, ?, ?, NULL)";
         }
 
         try (Connection conn = dbManager.getConnection();
@@ -92,7 +95,12 @@ public class GoalsDAO {
             ps.setString(1, goalName.trim());
             ps.setString(2, uuid);
             ps.setString(3, nickname);
-            ps.setInt(4, received ? 1 : 0);
+            ps.setString(4, now);
+            ps.setInt(5, received ? 1 : 0);
+
+            if (received) {
+                ps.setString(6, now);
+            }
 
             ps.executeUpdate();
 
@@ -137,14 +145,16 @@ public class GoalsDAO {
     }
 
     public void markGoalAsReceived(String uuid, String goalName) {
-        String updateQuery = "UPDATE completed_goals SET received = 1, received_at = CURRENT_TIMESTAMP " +
+        String now = DATE_FORMAT.format(new Date());
+        String updateQuery = "UPDATE completed_goals SET received = 1, received_at = ? " +
                 "WHERE user_uuid = ? AND goal_name = ? AND received = 0";
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(updateQuery)) {
 
-            ps.setString(1, uuid);
-            ps.setString(2, goalName.trim());
+            ps.setString(1, now);
+            ps.setString(2, uuid);
+            ps.setString(3, goalName.trim());
             ps.executeUpdate();
 
         } catch (SQLException e) {

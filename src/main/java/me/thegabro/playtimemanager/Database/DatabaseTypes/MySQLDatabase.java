@@ -36,7 +36,7 @@ public class MySQLDatabase implements Database {
             "nickname VARCHAR(36) NOT NULL," +
             "main_instance_ID INT NOT NULL," +
             "required_joins INT NOT NULL," +
-            "received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+            "received_at TEXT NOT NULL," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
@@ -45,9 +45,9 @@ public class MySQLDatabase implements Database {
             "goal_name VARCHAR(36) NOT NULL," +
             "user_uuid VARCHAR(36) NOT NULL," +
             "nickname VARCHAR(36) NOT NULL," +
-            "completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+            "completed_at TEXT NOT NULL," +
             "received INTEGER NOT NULL DEFAULT 0," +
-            "received_at TIMESTAMP NULL DEFAULT NULL," +
+            "received_at TEXT DEFAULT NULL," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
@@ -57,9 +57,9 @@ public class MySQLDatabase implements Database {
             "nickname VARCHAR(36) NOT NULL," +
             "main_instance_ID INT NOT NULL," +
             "required_joins INT NOT NULL," +
-            "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-            "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
-            "expired BOOLEAN DEFAULT FALSE," +
+            "created_at TEXT NOT NULL," +
+            "updated_at TEXT NOT NULL," +
+            "expired INTEGER DEFAULT 0," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 

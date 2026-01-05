@@ -27,8 +27,8 @@ public class SQLiteDatabase implements Database {
             "playtime BIGINT NOT NULL," +
             "artificial_playtime BIGINT NOT NULL," +
             "afk_playtime BIGINT NOT NULL," +
-            "last_seen TIMESTAMP DEFAULT NULL," +
-            "first_join TIMESTAMP DEFAULT NULL," +
+            "last_seen BIGINT DEFAULT NULL," +
+            "first_join BIGINT DEFAULT NULL," +
             "relative_join_streak INT DEFAULT 0," +
             "absolute_join_streak INT DEFAULT 0," +
             "PRIMARY KEY (uuid)" +
@@ -40,7 +40,7 @@ public class SQLiteDatabase implements Database {
             "nickname VARCHAR(36) NOT NULL," +
             "main_instance_ID INT NOT NULL," +
             "required_joins INT NOT NULL," +
-            "received_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+            "received_at TEXT NOT NULL," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid)" +
             ");";
 
@@ -49,9 +49,9 @@ public class SQLiteDatabase implements Database {
             "goal_name VARCHAR(36) NOT NULL," +
             "user_uuid VARCHAR(36) NOT NULL," +
             "nickname VARCHAR(36) NOT NULL," +
-            "completed_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
+            "completed_at TEXT NOT NULL," +
             "received INTEGER NOT NULL DEFAULT 0," +
-            "received_at DATETIME DEFAULT NULL," +
+            "received_at TEXT DEFAULT NULL," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid)" +
             ");";
 
@@ -61,9 +61,9 @@ public class SQLiteDatabase implements Database {
             "nickname VARCHAR(36) NOT NULL," +
             "main_instance_ID INT NOT NULL," +
             "required_joins INT NOT NULL," +
-            "created_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
-            "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP," +
-            "expired BOOLEAN DEFAULT FALSE," +
+            "created_at TEXT NOT NULL," +
+            "updated_at TEXT NOT NULL," +
+            "expired INTEGER DEFAULT 0," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid)" +
             ");";
 
@@ -144,7 +144,7 @@ public class SQLiteDatabase implements Database {
             s.executeUpdate(COMPLETED_GOALS_TABLE);
             s.executeUpdate(RECEIVED_REWARDS_TABLE);
             s.executeUpdate(REWARDS_TO_BE_CLAIMED_TABLE);
-            
+
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to create SQLite tables", e);
             Bukkit.getPluginManager().disablePlugin(plugin);
@@ -157,4 +157,3 @@ public class SQLiteDatabase implements Database {
         return "SQLite";
     }
 }
-

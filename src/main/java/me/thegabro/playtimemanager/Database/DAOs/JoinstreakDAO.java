@@ -9,7 +9,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -18,6 +20,7 @@ public class JoinstreakDAO {
 
     private final DatabaseHandler dbManager;
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public JoinstreakDAO(DatabaseHandler dbManager) {
         this.dbManager = dbManager;
@@ -165,19 +168,21 @@ public class JoinstreakDAO {
     public void markRewardsAsExpired(String uuid) {
         Connection conn = null;
         PreparedStatement ps = null;
+        String now = DATE_FORMAT.format(new Date());
 
         try {
             conn = dbManager.getConnection();
             ps = conn.prepareStatement(
                     "UPDATE rewards_to_be_claimed " +
-                            "SET expired = ?, updated_at = CURRENT_TIMESTAMP " +
+                            "SET expired = ?, updated_at = ? " +
                             "WHERE user_uuid = ?"
             );
 
-            ps.setBoolean(1, true);
-            ps.setString(2, uuid);
+            ps.setInt(1, 1);
+            ps.setString(2, now);
+            ps.setString(3, uuid);
 
-            ps.executeUpdate(); // no need for batching here
+            ps.executeUpdate();
 
         } catch (SQLException ex) {
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
@@ -211,7 +216,7 @@ public class JoinstreakDAO {
                 rewards.add(new RewardSubInstance(
                         rs.getInt("main_instance_ID"),
                         rs.getInt("required_joins"),
-                        rs.getBoolean("expired")
+                        rs.getInt("expired") == 1
                 ));
             }
         } catch (SQLException ex) {
@@ -275,17 +280,17 @@ public class JoinstreakDAO {
 
         try {
             conn = dbManager.getConnection();
-            conn.setAutoCommit(false); // Use transaction for consistency
+            conn.setAutoCommit(false);
 
 
             deleteReceivedPs = conn.prepareStatement("DELETE FROM received_rewards WHERE main_instance_ID = ?;");
 
-            deleteReceivedPs.setInt(1, mainInstanceID); // Exact match
+            deleteReceivedPs.setInt(1, mainInstanceID);
 
             deleteReceivedPs.executeUpdate();
 
             deleteClaimablePs = conn.prepareStatement("DELETE FROM rewards_to_be_claimed WHERE main_instance_ID = ?;" );
-            deleteClaimablePs.setInt(1, mainInstanceID); // Exact match
+            deleteClaimablePs.setInt(1, mainInstanceID);
 
             deleteClaimablePs.executeUpdate();
 
@@ -313,17 +318,19 @@ public class JoinstreakDAO {
     public void addReceivedReward(String uuid, String nickname, RewardSubInstance reward) {
         Connection conn = null;
         PreparedStatement ps = null;
+        String now = DATE_FORMAT.format(new Date());
 
         try {
             conn = dbManager.getConnection();
             ps = conn.prepareStatement(
                     "INSERT INTO received_rewards (user_uuid, nickname, main_instance_ID, required_joins, received_at) " +
-                            "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP);"
+                            "VALUES (?, ?, ?, ?, ?);"
             );
             ps.setString(1, uuid);
             ps.setString(2, nickname);
             ps.setInt(3, reward.mainInstanceID());
             ps.setInt(4, reward.requiredJoins());
+            ps.setString(5, now);
             ps.executeUpdate();
 
         } catch (SQLException ex) {
@@ -342,18 +349,21 @@ public class JoinstreakDAO {
     public void addRewardToBeClaimed(String uuid, String nickname, RewardSubInstance reward) {
         Connection conn = null;
         PreparedStatement ps = null;
+        String now = DATE_FORMAT.format(new Date());
 
         try {
             conn = dbManager.getConnection();
             ps = conn.prepareStatement(
                     "INSERT INTO rewards_to_be_claimed (user_uuid, nickname, main_instance_ID, required_joins, created_at, updated_at, expired) " +
-                            "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?);"
+                            "VALUES (?, ?, ?, ?, ?, ?, ?);"
             );
             ps.setString(1, uuid);
             ps.setString(2, nickname);
             ps.setInt(3, reward.mainInstanceID());
             ps.setInt(4, reward.requiredJoins());
-            ps.setBoolean(5, reward.expired());
+            ps.setString(5, now);
+            ps.setString(6, now);
+            ps.setInt(7, reward.expired() ? 1 : 0);
             ps.executeUpdate();
 
         } catch (SQLException ex) {
@@ -403,7 +413,7 @@ public class JoinstreakDAO {
 
         try {
             conn = dbManager.getConnection();
-            conn.setAutoCommit(false); // Start transaction
+            conn.setAutoCommit(false);
 
             // Delete all received rewards for this user
             ps1 = conn.prepareStatement("DELETE FROM received_rewards WHERE user_uuid = ?");
@@ -415,11 +425,11 @@ public class JoinstreakDAO {
             ps2.setString(1, uuid);
             ps2.executeUpdate();
 
-            conn.commit(); // Commit transaction
+            conn.commit();
         } catch (SQLException ex) {
             try {
                 if (conn != null) {
-                    conn.rollback(); // Rollback on error
+                    conn.rollback();
                 }
             } catch (SQLException rollbackEx) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to rollback transaction", rollbackEx);
@@ -428,7 +438,7 @@ public class JoinstreakDAO {
         } finally {
             try {
                 if (conn != null) {
-                    conn.setAutoCommit(true); // Reset auto-commit
+                    conn.setAutoCommit(true);
                 }
                 if (ps1 != null) ps1.close();
                 if (ps2 != null) ps2.close();

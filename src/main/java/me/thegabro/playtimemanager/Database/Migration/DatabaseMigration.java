@@ -391,7 +391,7 @@ public class DatabaseMigration {
         switch (dbType.toLowerCase()) {
             case "sqlite":
                 statements.add(
-                        "CREATE TABLE play_time (" +
+                        "CREATE TABLE IF NOT EXISTS play_time (" +
                                 "uuid VARCHAR(36) NOT NULL UNIQUE, " +
                                 "nickname VARCHAR(36) NOT NULL UNIQUE, " +
                                 "playtime BIGINT NOT NULL, " +
@@ -404,45 +404,44 @@ public class DatabaseMigration {
                                 "PRIMARY KEY (uuid))"
                 );
                 statements.add(
-                        "CREATE TABLE completed_goals (" +
+                        "CREATE TABLE IF NOT EXISTS completed_goals (" +
                                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                                 "goal_name VARCHAR(36) NOT NULL, " +
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
-                                "completed_at BIGINT DEFAULT NULL, " +
+                                "completed_at TEXT NOT NULL, " +
                                 "received INTEGER NOT NULL DEFAULT 0, " +
-                                "received_at BIGINT DEFAULT NULL, " +
+                                "received_at TEXT DEFAULT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid))"
                 );
                 statements.add(
-                        "CREATE TABLE rewards_to_be_claimed (" +
+                        "CREATE TABLE IF NOT EXISTS rewards_to_be_claimed (" +
                                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "main_instance_ID INT NOT NULL, " +
                                 "required_joins INT NOT NULL, " +
-                                "created_at BIGINT DEFAULT NULL, " +
-                                "updated_at BIGINT DEFAULT NULL, " +
+                                "created_at TEXT NOT NULL, " +
+                                "updated_at TEXT NOT NULL, " +
                                 "expired INTEGER DEFAULT 0, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid))"
                 );
                 statements.add(
                         "CREATE TABLE IF NOT EXISTS received_rewards (" +
-                                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                                "user_uuid VARCHAR(36) NOT NULL," +
-                                "nickname VARCHAR(36) NOT NULL," +
-                                "main_instance_ID INT NOT NULL," +
-                                "required_joins INT NOT NULL," +
-                                "received_at BIGINT DEFAULT NULL," +
+                                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                                "user_uuid VARCHAR(36) NOT NULL, " +
+                                "nickname VARCHAR(36) NOT NULL, " +
+                                "main_instance_ID INT NOT NULL, " +
+                                "required_joins INT NOT NULL, " +
+                                "received_at TEXT NOT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid))"
                 );
-
                 break;
 
             case "mysql":
             case "mariadb":
                 statements.add(
-                        "CREATE TABLE play_time (" +
+                        "CREATE TABLE IF NOT EXISTS play_time (" +
                                 "uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "playtime BIGINT NOT NULL, " +
@@ -457,38 +456,38 @@ public class DatabaseMigration {
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
                 );
                 statements.add(
-                        "CREATE TABLE completed_goals (" +
+                        "CREATE TABLE IF NOT EXISTS completed_goals (" +
                                 "id INT AUTO_INCREMENT PRIMARY KEY, " +
                                 "goal_name VARCHAR(36) NOT NULL, " +
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
-                                "completed_at BIGINT DEFAULT NULL, " +
+                                "completed_at TEXT NOT NULL, " +
                                 "received INTEGER NOT NULL DEFAULT 0, " +
-                                "received_at BIGINT DEFAULT NULL, " +
+                                "received_at TEXT DEFAULT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
                 );
                 statements.add(
-                        "CREATE TABLE rewards_to_be_claimed (" +
+                        "CREATE TABLE IF NOT EXISTS rewards_to_be_claimed (" +
                                 "id INT AUTO_INCREMENT PRIMARY KEY, " +
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "main_instance_ID INT NOT NULL, " +
                                 "required_joins INT NOT NULL, " +
-                                "created_at BIGINT DEFAULT NULL, " +
-                                "updated_at BIGINT DEFAULT NULL, " +
+                                "created_at TEXT NOT NULL, " +
+                                "updated_at TEXT NOT NULL, " +
                                 "expired INTEGER DEFAULT 0, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
                 );
                 statements.add(
                         "CREATE TABLE IF NOT EXISTS received_rewards (" +
-                                "id INT AUTO_INCREMENT PRIMARY KEY," +
-                                "user_uuid VARCHAR(36) NOT NULL," +
-                                "nickname VARCHAR(36) NOT NULL," +
-                                "main_instance_ID INT NOT NULL," +
-                                "required_joins INT NOT NULL," +
-                                "received_at BIGINT DEFAULT NULL," +
+                                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                                "user_uuid VARCHAR(36) NOT NULL, " +
+                                "nickname VARCHAR(36) NOT NULL, " +
+                                "main_instance_ID INT NOT NULL, " +
+                                "required_joins INT NOT NULL, " +
+                                "received_at TEXT NOT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
                 );
@@ -496,7 +495,7 @@ public class DatabaseMigration {
 
             case "postgresql":
                 statements.add(
-                        "CREATE TABLE play_time (" +
+                        "CREATE TABLE IF NOT EXISTS play_time (" +
                                 "uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "playtime BIGINT NOT NULL, " +
@@ -510,36 +509,36 @@ public class DatabaseMigration {
                                 "UNIQUE (nickname))"
                 );
                 statements.add(
-                        "CREATE TABLE completed_goals (" +
+                        "CREATE TABLE IF NOT EXISTS completed_goals (" +
                                 "id SERIAL PRIMARY KEY, " +
                                 "goal_name VARCHAR(36) NOT NULL, " +
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
-                                "completed_at BIGINT DEFAULT NULL, " +
+                                "completed_at TEXT NOT NULL, " +
                                 "received INTEGER NOT NULL DEFAULT 0, " +
-                                "received_at BIGINT DEFAULT NULL, " +
+                                "received_at TEXT DEFAULT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
                 );
                 statements.add(
-                        "CREATE TABLE rewards_to_be_claimed (" +
+                        "CREATE TABLE IF NOT EXISTS rewards_to_be_claimed (" +
                                 "id SERIAL PRIMARY KEY, " +
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "main_instance_ID INT NOT NULL, " +
                                 "required_joins INT NOT NULL, " +
-                                "created_at BIGINT DEFAULT NULL, " +
-                                "updated_at BIGINT DEFAULT NULL, " +
+                                "created_at TEXT NOT NULL, " +
+                                "updated_at TEXT NOT NULL, " +
                                 "expired INTEGER DEFAULT 0, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
                 );
                 statements.add(
                         "CREATE TABLE IF NOT EXISTS received_rewards (" +
-                                "id SERIAL PRIMARY KEY," +
-                                "user_uuid VARCHAR(36) NOT NULL," +
-                                "nickname VARCHAR(36) NOT NULL," +
-                                "main_instance_ID INT NOT NULL," +
-                                "required_joins INT NOT NULL," +
-                                "received_at BIGINT DEFAULT NULL," +
+                                "id SERIAL PRIMARY KEY, " +
+                                "user_uuid VARCHAR(36) NOT NULL, " +
+                                "nickname VARCHAR(36) NOT NULL, " +
+                                "main_instance_ID INT NOT NULL, " +
+                                "required_joins INT NOT NULL, " +
+                                "received_at TEXT NOT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
                 );
                 break;

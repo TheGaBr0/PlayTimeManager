@@ -68,7 +68,7 @@ public class UpdateManager {
                 return false;
             case "3.2":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.2 config version detected, starting the update process...");
-                backupUtility.createBackup(generateReadmeContent("3.1", plugin_version));
+                backupUtility.createBackup("Update from version 3.1 to " + plugin_version);
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version31to32Updater().performUpgrade();
                 new Version321to33Updater().performUpgrade();
@@ -83,7 +83,7 @@ public class UpdateManager {
                 break;
             case "3.3":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.3 config version detected, starting the update process...");
-                backupUtility.createBackup(generateReadmeContent("3.2.1", plugin_version));
+                backupUtility.createBackup("Update from version 3.2.1 to " + plugin_version);
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version321to33Updater().performUpgrade();
                 new Version332to34Updater().performUpgrade();
@@ -97,7 +97,7 @@ public class UpdateManager {
                 break;
             case "3.4":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.4 config version detected, starting the update process...");
-                backupUtility.createBackup(generateReadmeContent("3.3.2", plugin_version));
+                backupUtility.createBackup("Update from version 3.3.2 to " + plugin_version);
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version332to34Updater().performUpgrade();
                 new Version34to341Updater().performUpgrade();
@@ -110,7 +110,7 @@ public class UpdateManager {
                 break;
             case "3.5":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.5 config version detected, starting the update process...");
-                backupUtility.createBackup(generateReadmeContent("3.4", plugin_version));
+                backupUtility.createBackup("Update from version 3.4 to " + plugin_version);
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version34to341Updater().performUpgrade();
                 new Version341to342Updater().performUpgrade();
@@ -122,7 +122,7 @@ public class UpdateManager {
                 break;
             case "3.6":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.6 config version detected, starting the update process...");
-                backupUtility.createBackup(generateReadmeContent("3.4.1", plugin_version));
+                backupUtility.createBackup("Update from version 3.4.1 to " + plugin_version);
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version341to342Updater().performUpgrade();
                 new Version342to35Updater().performUpgrade();
@@ -133,7 +133,7 @@ public class UpdateManager {
                 break;
             case "3.7":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.7 config version detected, starting the update process...");
-                backupUtility.createBackup(generateReadmeContent("3.4.2", plugin_version));
+                backupUtility.createBackup("Update from version 3.4.2 to " + plugin_version);
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version342to35Updater().performUpgrade();
                 new Version351to352Updater().performUpgrade();
@@ -143,7 +143,7 @@ public class UpdateManager {
                 break;
             case "3.8":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.8 config version detected, starting the update process...");
-                backupUtility.createBackup(generateReadmeContent("3.5", plugin_version));
+                backupUtility.createBackup("Update from version 3.5/3.5.1 to " + plugin_version);
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version351to352Updater().performUpgrade();
                 new Version354to36Updater().performUpgrade();
@@ -152,7 +152,7 @@ public class UpdateManager {
                 break;
             case "3.9":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.9 config version detected, starting the update process...");
-                backupUtility.createBackup(generateReadmeContent("3.5.4", plugin_version));
+                backupUtility.createBackup("Update from version 3.5.4 to " + plugin_version);
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version354to36Updater().performUpgrade();
                 new Version36to361Updater().performUpgrade();
@@ -160,14 +160,14 @@ public class UpdateManager {
                 break;
             case "4.0":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 4.0 config version detected, starting the update process...");
-                backupUtility.createBackup(generateReadmeContent("3.6", plugin_version));
+                backupUtility.createBackup("Update from version 3.6 to " + plugin_version);
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version36to361Updater().performUpgrade();
                 new Version362to363Updater().performUpgrade();
                 break;
             case "4.1":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 4.1 config version detected, starting the update process...");
-                backupUtility.createBackup(generateReadmeContent("3.6.3", plugin_version));
+                backupUtility.createBackup("Update from version 3.6.2 to " + plugin_version);
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version362to363Updater().performUpgrade();
                 break;
@@ -179,33 +179,5 @@ public class UpdateManager {
 
         return true;
 
-    }
-
-    private String generateReadmeContent(String currentVersion, String nextVersion) {
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-        String timestamp = dateFormat.format(new Date());
-
-        return "PlayTimeManager Data Folder Backup\n" +
-                "==================================\n\n" +
-                "!!! IMPORTANT VERSION UPGRADE NOTICE !!!\n" +
-                "========================================\n" +
-                "This backup was automatically created during the upgrade from version " +
-                currentVersion + " to " + nextVersion + ".\n" +
-                "It contains the entire plugin data folder, including configuration and database files.\n" +
-                "Use this backup to restore the plugin to its previous state in case of issues.\n\n" +
-                "Backup Information:\n" +
-                "-------------------\n" +
-                "Backup created: " + timestamp + "\n" +
-                "\nRestore Instructions:\n" +
-                "---------------------\n" +
-                "!!! CRITICAL: This will revert ALL PlayTimeManager data and config to version " +
-                currentVersion + " !!!\n\n" +
-                "Steps to restore:\n" +
-                "1. Stop your Minecraft server.\n" +
-                "2. Navigate to your server's 'plugins/PlayTimeManager' folder.\n" +
-                "4. Delete the entire contents of the 'PlayTimeManager' folder.\n" +
-                "5. Extract all files from this backup zip into the 'PlayTimeManager' folder.\n" +
-                "6. Start your server.\n\n";
     }
 }

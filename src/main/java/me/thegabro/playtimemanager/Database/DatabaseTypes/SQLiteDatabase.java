@@ -153,7 +153,8 @@ public class SQLiteDatabase implements Database {
     }
 
     @Override
-    public String getDatabaseType() {
-        return "SQLite";
+    public DBTYPES getDatabaseType() {
+        return DBTYPES.SQLITE;
     }
+
 }

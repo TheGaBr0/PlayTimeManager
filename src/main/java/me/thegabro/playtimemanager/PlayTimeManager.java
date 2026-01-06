@@ -69,6 +69,7 @@ public class PlayTimeManager extends JavaPlugin{
         config = Configuration.getInstance(this, this.getDataFolder(), "config", true, true);
 
         UpdateManager updateManager = UpdateManager.getInstance();
+        updateManager.initialize();
 
         // Check config version and perform updates if needed
         if (!config.getString("config-version").equals(CURRENT_CONFIG_VERSION)) {
@@ -104,8 +105,6 @@ public class PlayTimeManager extends JavaPlugin{
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
-
-        updateManager.initialize();
 
         // Initialize singleton configurations
 

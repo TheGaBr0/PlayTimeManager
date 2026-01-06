@@ -41,6 +41,10 @@ public class DatabaseHandler {
         return database.getConnection();
     }
 
+    public Database.DBTYPES getDatabaseType(){
+        return database.getDatabaseType();
+    }
+
     public static synchronized void resetInstance() {
         if (instance != null) {
             instance.close();

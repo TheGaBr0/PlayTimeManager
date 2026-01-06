@@ -1,8 +1,11 @@
 package me.thegabro.playtimemanager.Database.Migration;
 
 import me.thegabro.playtimemanager.Configuration;
+import me.thegabro.playtimemanager.Database.DatabaseBackupUtility;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Utils;
 
+import java.io.File;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +16,10 @@ public class DatabaseMigration {
     private final PlayTimeManager plugin;
     private final Configuration config;
     private final Logger logger;
+    private final DatabaseBackupUtility backupUtility = DatabaseBackupUtility.getInstance();
 
     private Connection sourceConnection;
     private Connection targetConnection;
-
-    private String sourceDbType;
-    private String targetDbType;
 
     public DatabaseMigration(PlayTimeManager plugin) {
         this.plugin = plugin;
@@ -44,6 +45,19 @@ public class DatabaseMigration {
         logger.info("Target: " + migratingTo.toUpperCase());
         logger.info("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
+
+        logger.info("Creating backup of the current PlayTimeManager instance...");
+        File backupSuccess = backupUtility.createBackup("Database migration from "+ currentDbType.toUpperCase() + " to "+ migratingTo.toUpperCase());
+        if (backupSuccess != null) {
+            logger.info("✓ Backup created successfully!");
+        } else {
+            logger.severe("✗ Migration FAILED!");
+            logger.severe("✗ The plugin will continue using the source database");
+            config.set("migrating-to", "none");
+            logger.info("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+            return false;
+        }
+
         boolean success = executeMigration(currentDbType, migratingTo);
 
         if (success) {
@@ -62,8 +76,6 @@ public class DatabaseMigration {
     }
 
     private boolean executeMigration(String sourceType, String targetType) {
-        this.sourceDbType = sourceType.toLowerCase();
-        this.targetDbType = targetType.toLowerCase();
 
         try {
             logger.info("Step 1/5: Connecting to source database (" + sourceType + ")...");

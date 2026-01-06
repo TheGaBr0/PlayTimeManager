@@ -161,7 +161,7 @@ public class PostgreSQLDatabase implements Database {
     }
 
     @Override
-    public String getDatabaseType() {
-        return "PostgreSQL";
+    public DBTYPES getDatabaseType() {
+        return DBTYPES.POSTGRESQL;
     }
 }

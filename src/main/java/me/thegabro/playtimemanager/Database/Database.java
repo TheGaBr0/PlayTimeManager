@@ -4,6 +4,13 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 public interface Database {
+
+    enum DBTYPES {
+        SQLITE,
+        POSTGRESQL,
+        MYSQL
+    }
+
     /**
      * Initialize the database connection
      */
@@ -27,8 +34,8 @@ public interface Database {
     void createTables();
 
     /**
-     * Get the database type (for logging/debugging purposes)
-     * @return String representing the database type
+     * Get the database type
+     * @return DBTYPES enum representing the database type
      */
-    String getDatabaseType();
+    DBTYPES getDatabaseType();
 }

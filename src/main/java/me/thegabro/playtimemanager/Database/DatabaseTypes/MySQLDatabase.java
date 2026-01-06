@@ -157,7 +157,7 @@ public class MySQLDatabase implements Database {
     }
 
     @Override
-    public String getDatabaseType() {
-        return "MySQL";
+    public DBTYPES getDatabaseType() {
+        return DBTYPES.MYSQL;
     }
 }

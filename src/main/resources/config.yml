@@ -51,7 +51,7 @@ check-for-updates: true
 migrating-to: "none"
 
 # Database type to use for storing player data
-# Available options: "sqlite", "mysql", "postgresql"
+# Available options: "sqlite", "mysql", "mariadb", "postgresql"
 # SQLite is recommended for small to medium servers (uses local file storage)
 # MySQL/MariaDB and PostgreSQL are recommended for larger servers or networked setups
 database-type: "sqlite"

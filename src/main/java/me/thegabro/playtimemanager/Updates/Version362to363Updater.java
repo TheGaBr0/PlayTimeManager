@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager.Updates;
 
 import me.thegabro.playtimemanager.Configuration;
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
@@ -9,6 +10,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Version362to363Updater {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
@@ -24,7 +27,21 @@ public class Version362to363Updater {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
+        PlaytimeFormatsConfiguration playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
+        playtimeFormatsConfiguration.initialize(plugin);
+
+        updatePlaytimeFormatsData(playtimeFormatsConfiguration);
+
         recreateConfigFile();
+    }
+
+    public void updatePlaytimeFormatsData(PlaytimeFormatsConfiguration playtimeFormatsConfiguration){
+        Map<String, Object> newFields = new HashMap<>();
+        newFields.put("weeks-singular", "w");
+        newFields.put("weeks-plural", "w");
+
+        playtimeFormatsConfiguration.formatsUpdater(newFields);
     }
 
 

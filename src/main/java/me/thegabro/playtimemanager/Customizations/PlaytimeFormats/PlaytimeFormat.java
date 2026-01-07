@@ -7,6 +7,8 @@ public class PlaytimeFormat {
     private String name;
     private final String yearsSingular;
     private final String yearsPlural;
+    private final String weeksSingular;
+    private final String weeksPlural;
     private final String daysSingular;
     private final String daysPlural;
     private final String hoursSingular;
@@ -18,7 +20,8 @@ public class PlaytimeFormat {
     private final String formatting;
     private final File formatFile;
     private final boolean distributeRemovedTime;
-    public PlaytimeFormat(File formatFile, String name, String yearsSingular, String yearsPlural, String daysSingular,
+    public PlaytimeFormat(File formatFile, String name, String yearsSingular, String yearsPlural,
+                          String weeksSingular, String weeksPlural, String daysSingular,
                           String daysPlural, String hoursSingular, String hoursPlural,
                           String minutesSingular, String minutesPlural, String secondsSingular,
                           String secondsPlural, String formatting, boolean distributeRemovedTime) {
@@ -26,6 +29,8 @@ public class PlaytimeFormat {
         this.name = name;
         this.yearsSingular = yearsSingular;
         this.yearsPlural = yearsPlural;
+        this.weeksSingular = weeksSingular;
+        this.weeksPlural = weeksPlural;
         this.daysSingular = daysSingular;
         this.daysPlural = daysPlural;
         this.hoursSingular = hoursSingular;
@@ -50,6 +55,10 @@ public class PlaytimeFormat {
     public String getYearsPlural() {
         return yearsPlural;
     }
+
+    public String getWeeksSingular() { return weeksSingular; }
+
+    public String getWeeksPlural() { return weeksPlural; }
 
     public String getDaysSingular() {
         return daysSingular;
@@ -98,6 +107,8 @@ public class PlaytimeFormat {
     public String getYearsLabel(int years) {
         return years == 1 ? yearsSingular : yearsPlural;
     }
+
+    public String getWeeksLabel(int weeks) { return weeks == 1 ? weeksSingular : weeksPlural; }
 
     public String getDaysLabel(int days) {
         return days == 1 ? daysSingular : daysPlural;

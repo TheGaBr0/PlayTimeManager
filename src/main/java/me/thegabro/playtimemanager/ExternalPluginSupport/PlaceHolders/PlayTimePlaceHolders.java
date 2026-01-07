@@ -17,7 +17,7 @@ import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 
 public class PlayTimePlaceHolders extends PlaceholderExpansion {
-    private static final String[] TIME_UNITS = {"s", "m", "h", "d", "y"};
+    private static final String[] TIME_UNITS = {"s", "m", "h", "d", "w","y"};
 
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();

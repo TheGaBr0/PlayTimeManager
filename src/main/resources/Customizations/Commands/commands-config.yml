@@ -18,7 +18,7 @@ prefix: "[&6PlayTime&eManager&f]&7 "
 #=================================================================
 
 #This messaged is showed each time /playtime is executed
-#Available placeholders: %PLAYTIME%, %PLAYER_NAME%, %PREFIX%
+#Available placeholders: %PLAYTIME%, %PLAYER_NAME%, %PREFIX% (luckperms prefix of %PLAYER_NAME%)
 playtime:
   self-message: "&7Your playtime is &6%PLAYTIME%"
   others-message: "&7The playtime of &e%PLAYER_NAME%&7 is &6%PLAYTIME%"

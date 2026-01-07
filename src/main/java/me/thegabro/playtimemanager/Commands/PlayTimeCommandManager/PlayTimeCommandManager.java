@@ -73,7 +73,8 @@ public class PlayTimeCommandManager implements TabExecutor {
             String subCommand = args[1];
 
             if (!subCommands.contains(subCommand)) {
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("unknown-subcommand")));
+                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
+                        config.getString("unknown-subcommand").replace("%SUBCOMMAND%", args[1])));
                 return false;
             }
 

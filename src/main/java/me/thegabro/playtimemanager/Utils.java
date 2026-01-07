@@ -28,6 +28,7 @@ public class Utils {
     private static final long TICKS_PER_MINUTE = TICKS_PER_SECOND * 60;
     private static final long TICKS_PER_HOUR = TICKS_PER_MINUTE * 60;
     private static final long TICKS_PER_DAY = TICKS_PER_HOUR * 24;
+    private static final long TICKS_PER_WEEK = TICKS_PER_DAY * 7;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
 
     /**
@@ -193,10 +194,10 @@ public class Utils {
 
     /**
      * Converts a formatted playtime string to ticks
-     * Accepts formats like "1y,2d,3h,4m,5s" or combinations thereof
+     * Accepts formats like "1y,2w,3d,4h,5m,6s" or combinations thereof
      * Each time unit can only appear once in the input
      *
-     * @param input The formatted playtime string (e.g., "1y,2d,3h")
+     * @param input The formatted playtime string (e.g., "1y,2w,3d")
      * @return The equivalent time in ticks, or -1L if input is invalid
      */
     public static long formattedPlaytimeToTicks(String input) {
@@ -206,14 +207,15 @@ public class Utils {
 
         String[] timeParts = input.split("\\s*,\\s*");
         long timeToTicks = 0;
-        boolean hasYear = false, hasDay = false, hasHour = false, hasMinute = false, hasSecond = false;
+        boolean hasYear = false, hasWeek = false, hasDay = false, hasHour = false, hasMinute = false, hasSecond = false;
 
         for (String part : timeParts) {
             try {
                 int time = Integer.parseInt(part.replaceAll("[^\\d-]", ""));
                 if (time < 0) return -1L; // Prevent negative values
 
-                String format = part.replaceAll("\\d", "");
+                String format = part.replaceAll("[\\d\\s]", "").toLowerCase();
+
                 long partTicks;
 
                 switch(format) {
@@ -224,6 +226,15 @@ public class Utils {
                             timeToTicks = safeAdd(timeToTicks, partTicks);
                             if (timeToTicks == -1L) return -1L;
                             hasYear = true;
+                        }
+                        break;
+                    case "w":
+                        if (!hasWeek) {
+                            partTicks = safeMultiply(time, TICKS_PER_WEEK);
+                            if (partTicks == -1L) return -1L;
+                            timeToTicks = safeAdd(timeToTicks, partTicks);
+                            if (timeToTicks == -1L) return -1L;
+                            hasWeek = true;
                         }
                         break;
                     case "d":
@@ -290,7 +301,7 @@ public class Utils {
      *
      * @param ticks The time in ticks to convert
      * @param format The PlaytimeFormat to use for formatting
-     * @return Formatted playtime string (e.g., "1 year, 2 days, 3 hours")
+     * @return Formatted playtime string (e.g., "1 year, 2 weeks, 3 days, 4 hours")
      */
     public static String ticksToFormattedPlaytime(long ticks, PlaytimeFormat format) {
 
@@ -300,6 +311,7 @@ public class Utils {
         long seconds = ticks / TICKS_PER_SECOND;
 
         final long SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
+        final long SECONDS_PER_WEEK = 7 * 24 * 60 * 60;
         final long SECONDS_PER_DAY = 24 * 60 * 60;
         final long SECONDS_PER_HOUR = 60 * 60;
         final long SECONDS_PER_MINUTE = 60;
@@ -307,12 +319,13 @@ public class Utils {
         // Get the formatting string to determine which units are included
         String formatting = format.getFormatting();
         boolean hasYears = formatting.contains("%y%");
+        boolean hasWeeks = formatting.contains("%w%");
         boolean hasDays = formatting.contains("%d%");
         boolean hasHours = formatting.contains("%h%");
         boolean hasMinutes = formatting.contains("%m%");
         boolean hasSeconds = formatting.contains("%s%");
 
-        long years, days, hours, minutes;
+        long years, weeks, days, hours, minutes;
 
         // Calculate time units based on redistribution setting
         if (format.shouldDistributeRemovedTime()) {
@@ -322,6 +335,13 @@ public class Utils {
                 seconds %= SECONDS_PER_YEAR;
             } else {
                 years = 0;
+            }
+
+            if (hasWeeks) {
+                weeks = seconds / SECONDS_PER_WEEK;
+                seconds %= SECONDS_PER_WEEK;
+            } else {
+                weeks = 0;
             }
 
             if (hasDays) {
@@ -349,6 +369,9 @@ public class Utils {
             years = seconds / SECONDS_PER_YEAR;
             seconds %= SECONDS_PER_YEAR;
 
+            weeks = seconds / SECONDS_PER_WEEK;
+            seconds %= SECONDS_PER_WEEK;
+
             days = seconds / SECONDS_PER_DAY;
             seconds %= SECONDS_PER_DAY;
 
@@ -369,6 +392,14 @@ public class Utils {
         } else {
             // Remove years section if zero - match pattern like "%y%{years}, " or "%y%{years}"
             result = result.replaceAll("%y%\\{years\\}(?:,\\s*)?", "");
+        }
+
+        if (weeks > 0) {
+            result = result.replace("%w%", String.valueOf(weeks));
+            result = result.replace("{weeks}", format.getWeeksLabel((int) weeks));
+        } else {
+            // Remove weeks section if zero
+            result = result.replaceAll("%w%\\{weeks\\}(?:,\\s*)?", "");
         }
 
         if (days > 0) {
@@ -396,7 +427,7 @@ public class Utils {
         }
 
         // Always show seconds if it's > 0, OR if everything else is 0 (including when ticks was originally 0)
-        if (seconds > 0 || (years == 0 && days == 0 && hours == 0 && minutes == 0)) {
+        if (seconds > 0 || (years == 0 && weeks == 0 && days == 0 && hours == 0 && minutes == 0)) {
             result = result.replace("%s%", String.valueOf(seconds));
             result = result.replace("{seconds}", format.getSecondsLabel((int) seconds));
         } else {
@@ -405,12 +436,12 @@ public class Utils {
         }
 
         // Special case: if everything is 0, ensure we show "0{seconds}" with plural form
-        if (years == 0 && days == 0 && hours == 0 && minutes == 0 && seconds == 0) {
+        if (years == 0 && weeks == 0 && days == 0 && hours == 0 && minutes == 0 && seconds == 0) {
             result = "0" + format.getSecondsLabel(0); // Use plural form for 0
         }
 
         // Clean up any remaining placeholders and extra commas/spaces
-        result = result.replaceAll("%[ydhms]%", "");
+        result = result.replaceAll("%[ywdhms]%", "");
         result = result.replaceAll("\\{\\w+\\}", "");
         result = result.replaceAll(",\\s*,", ",");
         result = result.replaceAll("^,\\s*|,\\s*$", "");
@@ -423,7 +454,7 @@ public class Utils {
      * Converts ticks to a specific time unit
      *
      * @param ticks The time in ticks to convert
-     * @param unit The target time unit ("y", "d", "h", "m", "s")
+     * @param unit The target time unit ("y", "w", "d", "h", "m", "s")
      * @return The equivalent time in the specified unit, or 0 if invalid
      */
     public static long ticksToTimeUnit(long ticks, String unit) {
@@ -435,6 +466,7 @@ public class Utils {
 
         return switch (unit.toLowerCase()) {
             case "y" -> seconds / (365 * 24 * 60 * 60);
+            case "w" -> seconds / (7 * 24 * 60 * 60);
             case "d" -> seconds / (24 * 60 * 60);
             case "h" -> seconds / (60 * 60);
             case "m" -> seconds / 60;

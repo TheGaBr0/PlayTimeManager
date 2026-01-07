@@ -13,8 +13,8 @@
 # messages like "Your playtime is %PLAYTIME:short%" or "Player time: %PLAYTIME:compact%".
 
 # FORMATTING SYSTEM:
-# Use %y%, %d%, %h%, %m%, %s% as time value placeholders (these cannot be modified) and
-# {years}, {days}, {hours}, {minutes}, {seconds} for unit labels. Zero values are automatically
+# Use %y%, %w%, %d%, %h%, %m%, %s% as time value placeholders (these cannot be modified) and
+# {years}, {weeks}, {days}, {hours}, {minutes}, {seconds} for unit labels. Zero values are automatically
 # hidden (e.g., 0 years won't display), and singular/plural forms are automatically selected
 # based on the time value.
 
@@ -25,6 +25,8 @@
 
 years-singular: "y"
 years-plural: "y"
+weeks-singular: "w"
+weeks-plural: "w"
 days-singular: "d"
 days-plural: "d"
 hours-singular: "h"
@@ -43,5 +45,5 @@ formatting: "%y%{years}, %d%{days}, %h%{hours}, %m%{minutes}, %s%{seconds}"
 # Example with time of 1d, 12h, 1m and formatting "%h%{hours}, %m%{minutes}":
 # - If true: displays "36h, 1m" (1 day converted to 24 hours, added to 12h = 36h)
 # - If false: displays "12h, 1m" (1 day is hidden, only original 12h shown)
-distribute-removed-time: false
+distribute-removed-time: true
 

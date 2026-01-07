@@ -26,6 +26,7 @@ import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
 import org.bstats.bukkit.Metrics;
+import org.bstats.charts.SimplePie;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -182,6 +183,16 @@ public class PlayTimeManager extends JavaPlugin{
         sessionManager = new SessionManager();
 
         getLogger().info("has been enabled!");
+
+        metrics.addCustomChart(new SimplePie("database_type_pie_chart", () -> {
+            String dbType = config.getString("database-type").toLowerCase();
+
+            return switch (dbType) {
+                case "mysql", "mariadb", "postgresql", "sqlite" -> dbType;
+                default -> "sqlite";
+            };
+        }));
+
     }
 
     @Override

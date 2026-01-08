@@ -38,12 +38,9 @@ public class Version354to36Updater {
     private void recreateConfigFile() {
         Configuration config = Configuration.getInstance();
 
-        goals_old_check_schedule = config.getLong("goal-check-rate");
+        goals_old_check_schedule = config.getLong("goal-check-rate", 900L);
 
-        String prefix = config.getString("prefix");
-
-        if(prefix == null)
-            prefix = "[&6PlayTime&eManager&f]&7 ";
+        String prefix = config.getString("prefix", "[&6PlayTime&eManager&f]&7 ");
 
         config.updateConfig(true);
 

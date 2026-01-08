@@ -79,10 +79,8 @@ public class PlayTimeMigration implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        String currentDbType = config.getString("database-type");
-        if (currentDbType == null) {
-            currentDbType = "sqlite";
-        }
+        String currentDbType = config.getString("database-type", "sqlite");
+
 
         if (currentDbType.equalsIgnoreCase(targetDbType)) {
             sender.sendMessage(Utils.parseColors("&cYou are already using &e" + targetDbType + "&c as your database type!"));
@@ -90,8 +88,8 @@ public class PlayTimeMigration implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        String pendingMigration = config.getString("migrating-to");
-        if (pendingMigration != null && !pendingMigration.equalsIgnoreCase("none")) {
+        String pendingMigration = config.getString("migrating-to", "none");
+        if (!pendingMigration.equalsIgnoreCase("none")) {
             sender.sendMessage(Utils.parseColors("&cThere is already a pending migration to &e" + pendingMigration));
             sender.sendMessage(Utils.parseColors("&cPlease cancel it first or wait for the server to restart."));
             return true;
@@ -122,9 +120,9 @@ public class PlayTimeMigration implements CommandExecutor, TabCompleter {
      * Cancels a pending migration
      */
     private boolean handleMigrationCancel(CommandSender sender) {
-        String pendingMigration = config.getString("migrating-to");
+        String pendingMigration = config.getString("migrating-to", "none");
 
-        if (pendingMigration == null || pendingMigration.equalsIgnoreCase("none")) {
+        if (pendingMigration.equalsIgnoreCase("none")) {
             sender.sendMessage(Utils.parseColors("&cThere is no pending migration to cancel."));
             return true;
         }
@@ -146,15 +144,9 @@ public class PlayTimeMigration implements CommandExecutor, TabCompleter {
      * Shows the current migration status
      */
     private boolean handleMigrationStatus(CommandSender sender) {
-        String currentDbType = config.getString("database-type");
-        if (currentDbType == null) {
-            currentDbType = "sqlite";
-        }
+        String currentDbType = config.getString("database-type", "sqlite");
 
-        String pendingMigration = config.getString("migrating-to");
-        if (pendingMigration == null) {
-            pendingMigration = "none";
-        }
+        String pendingMigration = config.getString("migrating-to", "none");
 
         sender.sendMessage(Utils.parseColors("&a&l▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
         sender.sendMessage(Utils.parseColors("&a&lMigration Status"));

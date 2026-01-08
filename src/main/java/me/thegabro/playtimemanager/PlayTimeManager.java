@@ -73,7 +73,7 @@ public class PlayTimeManager extends JavaPlugin{
         updateManager.initialize();
 
         // Check config version and perform updates if needed
-        if (!config.getString("config-version").equals(CURRENT_CONFIG_VERSION)) {
+        if (!config.getString("config-version", null).equals(CURRENT_CONFIG_VERSION)) {
 
             try {
                 this.databaseHandler = DatabaseHandler.getInstance();
@@ -83,7 +83,7 @@ public class PlayTimeManager extends JavaPlugin{
                 return;
             }
 
-            boolean success = updateManager.performVersionUpdate(config.getString("config-version"), CURRENT_CONFIG_VERSION);
+            boolean success = updateManager.performVersionUpdate(config.getString("config-version", null), CURRENT_CONFIG_VERSION);
 
             if(!success){
                 Bukkit.getPluginManager().disablePlugin(this);
@@ -182,10 +182,8 @@ public class PlayTimeManager extends JavaPlugin{
 
         sessionManager = new SessionManager();
 
-        getLogger().info("has been enabled!");
-
         metrics.addCustomChart(new SimplePie("database_type_pie_chart", () -> {
-            String dbType = config.getString("database-type").toLowerCase();
+            String dbType = config.getString("database-type", "sqlite").toLowerCase();
 
             return switch (dbType) {
                 case "mysql", "mariadb", "postgresql", "sqlite" -> dbType;
@@ -193,6 +191,7 @@ public class PlayTimeManager extends JavaPlugin{
             };
         }));
 
+        getLogger().info("has been enabled!");
     }
 
     @Override
@@ -244,7 +243,7 @@ public class PlayTimeManager extends JavaPlugin{
     public SessionManager getSessionManager() { return sessionManager; }
 
     private boolean checkAFKPlugin(){
-        String configuredPlugin = config.getString("afk-detection-plugin").toLowerCase();
+        String configuredPlugin = config.getString("afk-detection-plugin", "none").toLowerCase();
         if ("essentials".equals(configuredPlugin)) {
             Plugin essentials = Bukkit.getPluginManager().getPlugin("Essentials");
             if(essentials != null && essentials.isEnabled()){
@@ -307,7 +306,7 @@ public class PlayTimeManager extends JavaPlugin{
     }
 
     private boolean checkPermissionsPlugin() {
-        String configuredPlugin = config.getString("permissions-manager-plugin").toLowerCase();
+        String configuredPlugin = config.getString("permissions-manager-plugin", "luckperms").toLowerCase();
 
         if ("luckperms".equals(configuredPlugin)) {
             Plugin luckPerms = Bukkit.getPluginManager().getPlugin("LuckPerms");

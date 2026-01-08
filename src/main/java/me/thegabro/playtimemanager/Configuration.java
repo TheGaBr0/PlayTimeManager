@@ -176,72 +176,75 @@ public class Configuration {
         save();
     }
 
+
     /**
-     * Gets a String List value from cache
+     * Gets a String List value from cache with default fallback
      */
-    public List<String> getStringList(String path) {
+    public List<String> getStringList(String path, List<String> defaultValue) {
         Object value = get(path);
         if (value instanceof List) {
             @SuppressWarnings("unchecked")
             List<String> list = (List<String>) value;
-
             return list;
         }
-        return new ArrayList<>();
+        return defaultValue;
     }
 
+
     /**
-     * Gets a String value from cache
+     * Gets a String value from cache with default fallback
      */
-    public String getString(String path) {
+    public String getString(String path, String defaultValue) {
         Object value = get(path);
-        return value != null ? value.toString() : null;
+        return value != null ? value.toString() : defaultValue;
     }
 
 
     /**
-     * Gets an Integer value from cache
+     * Gets an Integer value from cache with default fallback
      */
-    public Integer getInt(String path) {
+    public Integer getInt(String path, Integer defaultValue) {
         Object value = get(path);
         if (value instanceof Number) {
             return ((Number) value).intValue();
         }
-        return null;
+        return defaultValue;
     }
 
+
     /**
-     * Gets a Long value from cache
+     * Gets a Long value from cache with default fallback
      */
-    public Long getLong(String path) {
+    public Long getLong(String path, Long defaultValue) {
         Object value = get(path);
         if (value instanceof Number) {
             return ((Number) value).longValue();
         }
-        return null;
+        return defaultValue;
     }
 
+
     /**
-     * Gets a Boolean value from cache
+     * Gets a Boolean value from cache with default fallback
      */
-    public Boolean getBoolean(String path) {
+    public Boolean getBoolean(String path, Boolean defaultValue) {
         Object value = get(path);
         if (value instanceof Boolean) {
             return (Boolean) value;
         }
-        return null;
+        return defaultValue;
     }
 
 
     /**
-     * Gets a Double value from cache
+     * Gets a Double value from cache with default fallback
      */
-    public Double getDouble(String path) {
+    public Double getDouble(String path, Double defaultValue) {
         Object value = get(path);
         if (value instanceof Number) {
             return ((Number) value).doubleValue();
         }
-        return null;
+        return defaultValue;
     }
 
 
@@ -409,7 +412,7 @@ public class Configuration {
     }
 
     private void fixEmptyPlayersHiddenFromLeaderBoard(){
-        if(getStringList("placeholders.playtime-leaderboard-blacklist") == null){
+        if(getStringList("placeholders.playtime-leaderboard-blacklist", null) == null){
             set("placeholders.playtime-leaderboard-blacklist", new ArrayList<String>());
         }
     }

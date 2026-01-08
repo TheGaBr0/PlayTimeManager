@@ -28,16 +28,13 @@ public class DatabaseMigration {
     }
 
     public boolean checkAndExecuteMigration() {
-        String migratingTo = config.getString("migrating-to");
+        String migratingTo = config.getString("migrating-to", "none");
 
-        if (migratingTo == null || migratingTo.equalsIgnoreCase("none")) {
+        if (migratingTo.equalsIgnoreCase("none")) {
             return true;
         }
 
-        String currentDbType = config.getString("database-type");
-        if (currentDbType == null) {
-            currentDbType = "sqlite";
-        }
+        String currentDbType = config.getString("database-type", "sqlite");
 
         logger.info("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
         logger.info("MIGRATION IN PROGRESS");
@@ -175,13 +172,13 @@ public class DatabaseMigration {
     }
 
     private Connection createMySQLConnection() throws SQLException {
-        String host = config.getString("mysql.host");
-        int port = config.getInt("mysql.port");
-        String database = config.getString("mysql.database");
-        String username = config.getString("mysql.username");
-        String password = config.getString("mysql.password");
-        boolean useSSL = config.getBoolean("mysql.use-ssl");
-        String properties = config.getString("mysql.connection-properties");
+        String host = config.getString("mysql.host", "localhost");
+        int port = config.getInt("mysql.port", 3306);
+        String database = config.getString("mysql.database", "playtime_manager");
+        String username = config.getString("mysql.username", null);
+        String password = config.getString("mysql.password", null);
+        boolean useSSL = config.getBoolean("mysql.use-ssl", false);
+        String properties = config.getString("mysql.connection-properties", "");
 
         String url = String.format("jdbc:mysql://%s:%d/%s?useSSL=%b&allowPublicKeyRetrieval=true",
                 host, port, database, useSSL);
@@ -194,17 +191,17 @@ public class DatabaseMigration {
     }
 
     private Connection createPostgreSQLConnection() throws SQLException {
-        String host = config.getString("postgresql.host");
-        int port = config.getInt("postgresql.port");
-        String database = config.getString("postgresql.database");
-        String username = config.getString("postgresql.username");
-        String password = config.getString("postgresql.password");
-        String schema = config.getString("postgresql.schema");
+        String host = config.getString("postgresql.host", "localhost");
+        int port = config.getInt("postgresql.port", 5432);
+        String database = config.getString("postgresql.database", "playtime_manager");
+        String username = config.getString("postgresql.username", null);
+        String password = config.getString("postgresql.password", null);
+        String schema = config.getString("postgresql.schema", "public");
         if (schema == null || schema.isEmpty()) {
             schema = "public";
         }
-        boolean useSSL = config.getBoolean("postgresql.use-ssl");
-        String properties = config.getString("postgresql.connection-properties");
+        boolean useSSL = config.getBoolean("postgresql.use-ssl", false);
+        String properties = config.getString("postgresql.connection-properties", "");
 
         StringBuilder url = new StringBuilder("jdbc:postgresql://")
                 .append(host).append(":").append(port).append("/").append(database)

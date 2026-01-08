@@ -96,7 +96,7 @@ public class PlayTimeStats implements CommandExecutor {
         int absoluteJoinStreak = user.getAbsoluteJoinStreak();
 
         long realPlaytime;
-        if (plugin.getConfiguration().getBoolean("ignore-afk-time"))
+        if (plugin.getConfiguration().getBoolean("ignore-afk-time", false))
             realPlaytime = totalPlaytime - artificialPlaytime + afkPlaytime;
         else
             realPlaytime = totalPlaytime - artificialPlaytime;
@@ -112,14 +112,14 @@ public class PlayTimeStats implements CommandExecutor {
 
         if (firstJoin != null) {
             sender.sendMessage(Utils.parseColors("\n&6&lFirst Join:"));
-            sender.sendMessage(Utils.parseColors("&7Date: &e" + Utils.formatInstant(firstJoin, plugin.getConfiguration().getString("datetime-format"))));
+            sender.sendMessage(Utils.parseColors("&7Date: &e" + Utils.formatInstant(firstJoin, plugin.getConfiguration().getString("datetime-format", "MMM dd, yyyy HH:mm:ss"))));
             Duration accountAge = Duration.between(firstJoin, Instant.now());
             sender.sendMessage(Utils.parseColors("&7Account Age: &e" + Utils.ticksToFormattedPlaytime(accountAge.getSeconds() * 20)));
         }
 
         if (lastSeen != null) {
             sender.sendMessage(Utils.parseColors("\n&6&lLast Seen:"));
-            sender.sendMessage(Utils.parseColors("&7Date: &e" + Utils.formatInstant(lastSeen, plugin.getConfiguration().getString("datetime-format"))));
+            sender.sendMessage(Utils.parseColors("&7Date: &e" + Utils.formatInstant(lastSeen, plugin.getConfiguration().getString("datetime-format", "MMM dd, yyyy HH:mm:ss"))));
             Duration timeSinceLastSeen = Duration.between(lastSeen, Instant.now());
             sender.sendMessage(Utils.parseColors("&7Time Elapsed: &e" + Utils.ticksToFormattedPlaytime(timeSinceLastSeen.getSeconds() * 20)));
         }

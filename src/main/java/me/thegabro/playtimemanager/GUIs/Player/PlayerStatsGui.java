@@ -594,7 +594,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
         long afkPlaytime = subject.getAFKPlaytimeWithSnapshot(playtimeSnapshot);
         long artificialPlaytime = subject.getArtificialPlaytime();
         long realPlaytime;
-        if(plugin.getConfiguration().getBoolean("ignore-afk-time"))
+        if(plugin.getConfiguration().getBoolean("ignore-afk-time", false))
             realPlaytime = totalPlaytime - artificialPlaytime + afkPlaytime;
         else
             realPlaytime = totalPlaytime - artificialPlaytime;
@@ -607,7 +607,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
         // First join information
         Instant firstJoin = subject.getFirstJoin();
         if (firstJoin != null) {
-            combinations.put("%FIRST_JOIN_DATE%", Utils.formatInstant(firstJoin, plugin.getConfiguration().getString("datetime-format")));
+            combinations.put("%FIRST_JOIN_DATE%", Utils.formatInstant(firstJoin, plugin.getConfiguration().getString("datetime-format", "MMM dd, yyyy HH:mm:ss")));
 
             Duration accountAge = Duration.between(firstJoin, Instant.now());
             combinations.put("%ACCOUNT_AGE%", Utils.ticksToFormattedPlaytime(accountAge.getSeconds() * 20));
@@ -624,7 +624,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
             combinations.put("%LAST_SEEN_DATE%", "Currently Online");
             combinations.put("%TIME_SINCE_LAST_SEEN%", "0");
         } else if (lastSeen != null) {
-            combinations.put("%LAST_SEEN_DATE%", Utils.formatInstant(lastSeen, plugin.getConfiguration().getString("datetime-format")));
+            combinations.put("%LAST_SEEN_DATE%", Utils.formatInstant(lastSeen, plugin.getConfiguration().getString("datetime-format", "MMM dd, yyyy HH:mm:ss")));
 
             Duration timeSinceLastSeen = Duration.between(lastSeen, Instant.now());
             combinations.put("%TIME_SINCE_LAST_SEEN%", Utils.ticksToFormattedPlaytime(timeSinceLastSeen.getSeconds() * 20));

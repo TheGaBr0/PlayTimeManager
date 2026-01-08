@@ -29,7 +29,7 @@ public class UpdateManager {
             plugin_version = plugin.getDescription().getVersion(); //for <=1.19.4 servers
         }
 
-        if (plugin.getConfiguration().getBoolean("check-for-updates")) {
+        if (plugin.getConfiguration().getBoolean("check-for-updates", true)) {
             setupUpdateChecker();
         } else {
             plugin.getLogger().info("Update checking is disabled in configuration.");

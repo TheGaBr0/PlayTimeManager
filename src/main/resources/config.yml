@@ -34,6 +34,9 @@ permissions-manager-plugin: "luckperms"
 # Want a different format? You can create your own here: http://www.sdfonlinetester.info/
 datetime-format: "MMM dd, yyyy HH:mm:ss"
 
+# Define how many days a month is equal to. This field is used by all playtime formats that include months.
+month-value-in-days: 30
+
 # Check for plugin updates on server startup
 # Leaving this to true is recommended, keeping the plugin updated ensures you have
 # the latest bug fixes and performance improvements.

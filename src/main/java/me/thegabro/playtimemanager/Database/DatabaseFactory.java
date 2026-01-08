@@ -15,7 +15,7 @@ public class DatabaseFactory {
      * @return Database implementation
      */
     public static Database createDatabase() {
-        String databaseType = plugin.getConfiguration().getString("database-type");
+        String databaseType = plugin.getConfiguration().getString("database-type", "sqlite");
 
         if(databaseType == null){
             databaseType = "sqlite";

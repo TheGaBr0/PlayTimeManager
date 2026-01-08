@@ -13,8 +13,8 @@
 # messages like "Your playtime is %PLAYTIME:short%" or "Player time: %PLAYTIME:compact%".
 
 # FORMATTING SYSTEM:
-# Use %y%, %w%, %d%, %h%, %m%, %s% as time value placeholders (these cannot be modified) and
-# {years}, {weeks}, {days}, {hours}, {minutes}, {seconds} for unit labels. Zero values are automatically
+# Use %y%, %mo%, %w%, %d%, %h%, %m%, %s% as time value placeholders (these cannot be modified) and
+# {years}, {months}, {weeks}, {days}, {hours}, {minutes}, {seconds} for unit labels. Zero values are automatically
 # hidden (e.g., 0 years won't display), and singular/plural forms are automatically selected
 # based on the time value.
 
@@ -25,6 +25,8 @@
 
 years-singular: "y"
 years-plural: "y"
+months-singular: "mo"
+months-plural: "mo"
 weeks-singular: "w"
 weeks-plural: "w"
 days-singular: "d"

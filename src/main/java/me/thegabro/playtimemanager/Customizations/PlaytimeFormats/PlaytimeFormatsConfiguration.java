@@ -85,8 +85,10 @@ public class PlaytimeFormatsConfiguration {
         // Load all the configuration values with defaults and pass them to constructor
         String yearsSingular = config.getString("years-singular", "y");
         String yearsPlural = config.getString("years-plural", "y");
-        String weeksSingular = config.getString("weeks-singular", "y");
-        String weeksPlural = config.getString("weeks-plural", "y");
+        String monthsSingular = config.getString("months-singular", "mo");
+        String monthsPlural = config.getString("months-plural", "mo");
+        String weeksSingular = config.getString("weeks-singular", "w");
+        String weeksPlural = config.getString("weeks-plural", "w");
         String daysSingular = config.getString("days-singular", "d");
         String daysPlural = config.getString("days-plural", "d");
         String hoursSingular = config.getString("hours-singular", "h");
@@ -96,10 +98,10 @@ public class PlaytimeFormatsConfiguration {
         String secondsSingular = config.getString("seconds-singular", "s");
         String secondsPlural = config.getString("seconds-plural", "s");
         String formatting = config.getString("formatting", "%y%{years}, %d%{days}, %h%{hours}, %m%{minutes}, %s%{seconds}");
-        boolean distributeRemovedTime = config.getBoolean("distribute-removed-time", false);
+        boolean distributeRemovedTime = config.getBoolean("distribute-removed-time", true);
         // Create format instance with all values from YAML
         PlaytimeFormat format = new PlaytimeFormat(file, formatName, yearsSingular, yearsPlural,
-                weeksSingular, weeksPlural, daysSingular,
+                monthsSingular, monthsPlural, weeksSingular, weeksPlural, daysSingular,
                 daysPlural, hoursSingular, hoursPlural, minutesSingular,
                 minutesPlural, secondsSingular, secondsPlural, formatting, distributeRemovedTime);
 

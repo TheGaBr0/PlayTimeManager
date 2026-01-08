@@ -264,7 +264,7 @@ public class DBUsersManager {
                 // Wait for online users' playtime update to finish
                 onlineUsersManager.updateAllOnlineUsersPlaytime().get();
 
-                playersHiddenFromLeaderBoard = plugin.getConfiguration().getStringList("placeholders.playtime-leaderboard-blacklist");
+                playersHiddenFromLeaderBoard = plugin.getConfiguration().getStringList("placeholders.playtime-leaderboard-blacklist", new ArrayList<>());
 
                 // Fetch more players from DB to account for blacklisted ones
                 Map<String, String> dbTopPlayers = DatabaseHandler.getInstance().getStatisticsDAO()

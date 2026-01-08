@@ -226,7 +226,7 @@ public class OnlineUser extends DBUser {
         long totalPlaytime = cachedPlaytime + artificialPlaytime;
         long afkPlaytime = 0;
 
-        if (plugin.getConfiguration().getBoolean("ignore-afk-time")) {
+        if (plugin.getConfiguration().getBoolean("ignore-afk-time", false)) {
             afkPlaytime = getAFKPlaytime();
             totalPlaytime -= afkPlaytime;
         }
@@ -246,7 +246,7 @@ public class OnlineUser extends DBUser {
     public long getPlaytimeWithSnapshot(long playtimeSnapshot) {
         long totalPlaytime = DBplaytime + (playtimeSnapshot - fromServerOnJoinPlayTime) + artificialPlaytime;
 
-        if (plugin.getConfiguration().getBoolean("ignore-afk-time")) {
+        if (plugin.getConfiguration().getBoolean("ignore-afk-time", false)) {
             totalPlaytime -= getAFKPlaytimeWithSnapshot(playtimeSnapshot);
         }
 

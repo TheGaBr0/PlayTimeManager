@@ -66,7 +66,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
     public void initializeItems() {
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format", "MMM dd, yyyy HH:mm:ss"));
 
         Map<String, Object> nextSchedule = rewardsManager.getNextSchedule();
         int leftIndex = 9;
@@ -120,7 +120,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                         (rewardsManager.getRewardRegistry().getLastRewardByJoins() != null ? rewardsManager.getRewardRegistry().getLastRewardByJoins().getMaxRequiredJoins() : "-")
                         +" &7consecutive joins to complete"),
                 Utils.parseColors(""),
-                Utils.parseColors("§7Join streak reset time is currently set to: §e"+plugin.getConfiguration().getString("streak-reset-schedule")),
+                Utils.parseColors("§7Join streak reset time is currently set to: §e"+plugin.getConfiguration().getString("streak-reset-schedule", "0 0 0 * * ?")),
                 Utils.parseColors("§7which means it will occur §e"+scheduleInfo.get("timeCheckToText")),
                 Utils.parseColors("")
         ));
@@ -133,7 +133,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
         ));
         protectedSlots.add(CREATE_REWARD);
 
-        boolean isActive = plugin.getConfiguration().getBoolean("rewards-check-schedule-activation");
+        boolean isActive = plugin.getConfiguration().getBoolean("rewards-check-schedule-activation", true);
         boolean hasRewards = !rewardsManager.getRewardRegistry().getRewards().isEmpty();
 
         inv.setItem(TOGGLE_SCHEDULE, createGuiItem(
@@ -278,7 +278,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
             rewardsManager.getRewardRegistry().addReward(new JoinStreakReward(rewardsManager.getRewardRegistry().getNextRewardId(), -1));
             openInventory(whoClicked);
 
-            if(!plugin.getConfiguration().getBoolean("rewards-check-schedule-activation")){
+            if(!plugin.getConfiguration().getBoolean("rewards-check-schedule-activation", true)){
                 whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " &c&l⚠ WARNING &c&l⚠"));
                 whoClicked.sendMessage(Utils.parseColors("&7The join streak rewards schedule is currently &4&lDISABLED&6!"));
                 whoClicked.sendMessage(Utils.parseColors("&7Player join streaks will still be tracked, but &c&nno reward will be granted&r&7."));

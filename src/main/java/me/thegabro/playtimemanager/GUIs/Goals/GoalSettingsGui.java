@@ -477,11 +477,8 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
             // Simple direct field access - most efficient when the name matches exactly
             try {
                 sound = (Sound) Sound.class.getField(soundName).get(null);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                // Log the actual error for debugging if verbose is enabled
-                if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
-                    plugin.getLogger().info("Could not find sound directly, attempting fallback: " + e.getMessage());
-                }
+            } catch (NoSuchFieldException | IllegalAccessException ignored) {
+                //fails silently
             }
 
             if (sound != null) {

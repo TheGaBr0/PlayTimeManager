@@ -79,11 +79,11 @@ public class DatabaseBackupUtility {
 
     private void backupMySQL(ZipOutputStream zos) throws SQLException, IOException {
 
-        String host = config.getString("mysql.host");
-        String port = String.valueOf(config.getInt("mysql.port"));
-        String database = config.getString("mysql.database");
-        String username = config.getString("mysql.username");
-        String password = config.getString("mysql.password");
+        String host = config.getString("mysql.host", "localhost");
+        String port = String.valueOf(config.getInt("mysql.port", 3306));
+        String database = config.getString("mysql.database", "playtime_manager");
+        String username = config.getString("mysql.username", null);
+        String password = config.getString("mysql.password", null);
 
         File tempDump = new File(plugin.getDataFolder(), "temp_mysql_dump.sql");
 
@@ -147,11 +147,11 @@ public class DatabaseBackupUtility {
 
     private void backupPostgreSQL(ZipOutputStream zos) throws SQLException, IOException {
 
-        String host = config.getString("postgresql.host");
-        String port = String.valueOf(config.getInt("postgresql.port"));
-        String database = config.getString("postgresql.database");
-        String username = config.getString("postgresql.username");
-        String password = config.getString("postgresql.password");
+        String host = config.getString("postgresql.host", "localhost");
+        String port = String.valueOf(config.getInt("postgresql.port", 5432));
+        String database = config.getString("postgresql.database", "playtime_manager");
+        String username = config.getString("postgresql.username", null);
+        String password = config.getString("postgresql.password", null);
 
         File tempDump = new File(plugin.getDataFolder(), "temp_pg_dump.sql");
 
@@ -278,16 +278,16 @@ public class DatabaseBackupUtility {
                 readme.append("- Location: plugins/PlayTimeManager/\n");
                 break;
             case MYSQL:
-                readme.append("- Host: ").append(config.getString("mysql.host")).append("\n");
-                readme.append("- Port: ").append(config.getInt("mysql.port")).append("\n");
-                readme.append("- Database: ").append(config.getString("mysql.database")).append("\n");
-                readme.append("- Username: ").append(config.getString("mysql.username")).append("\n");
+                readme.append("- Host: ").append(config.getString("mysql.host", "localhost")).append("\n");
+                readme.append("- Port: ").append(config.getInt("mysql.port", 3306)).append("\n");
+                readme.append("- Database: ").append(config.getString("mysql.database", null)).append("\n");
+                readme.append("- Username: ").append(config.getString("mysql.username", null)).append("\n");
                 break;
             case POSTGRESQL:
-                readme.append("- Host: ").append(config.getString("postgresql.host")).append("\n");
-                readme.append("- Port: ").append(config.getInt("postgresql.port")).append("\n");
-                readme.append("- Database: ").append(config.getString("postgresql.database")).append("\n");
-                readme.append("- Username: ").append(config.getString("postgresql.username")).append("\n");
+                readme.append("- Host: ").append(config.getString("postgresql.host", "localhost")).append("\n");
+                readme.append("- Port: ").append(config.getInt("postgresql.port", 5432)).append("\n");
+                readme.append("- Database: ").append(config.getString("postgresql.database", null)).append("\n");
+                readme.append("- Username: ").append(config.getString("postgresql.username", null)).append("\n");
                 break;
         }
 
@@ -322,19 +322,19 @@ public class DatabaseBackupUtility {
 
             case MYSQL:
                 readme.append("MySQL/MariaDB Quick restore command:\n");
-                readme.append("mysql -h ").append(config.getString("mysql.host"))
-                        .append(" -P ").append(config.getInt("mysql.port"))
-                        .append(" -u ").append(config.getString("mysql.username"))
-                        .append(" -p ").append(config.getString("mysql.database"))
+                readme.append("mysql -h ").append(config.getString("mysql.host", "localhost"))
+                        .append(" -P ").append(config.getInt("mysql.port", 3306))
+                        .append(" -u ").append(config.getString("mysql.username", null))
+                        .append(" -p ").append(config.getString("mysql.database", null))
                         .append(" < mysql_dump.sql\n");
                 break;
 
             case POSTGRESQL:
                 readme.append("PostgreSQL Quick restore command:\n");
-                readme.append("psql -h ").append(config.getString("postgresql.host"))
-                        .append(" -p ").append(config.getInt("postgresql.port"))
-                        .append(" -U ").append(config.getString("postgresql.username"))
-                        .append(" -d ").append(config.getString("postgresql.database"))
+                readme.append("psql -h ").append(config.getString("postgresql.host", "localhost"))
+                        .append(" -p ").append(config.getInt("postgresql.port", 5432))
+                        .append(" -U ").append(config.getString("postgresql.username", null))
+                        .append(" -d ").append(config.getString("postgresql.database", null))
                         .append(" -f postgresql_dump.sql\n");
                 break;
         }

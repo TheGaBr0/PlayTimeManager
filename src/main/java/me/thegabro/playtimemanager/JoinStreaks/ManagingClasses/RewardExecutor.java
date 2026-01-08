@@ -96,7 +96,7 @@ public class RewardExecutor {
             try {
                 sound = (Sound) Sound.class.getField(soundName).get(null);
             } catch (NoSuchFieldException | IllegalAccessException e) {
-                if (plugin.getConfiguration().getBoolean("streak-check-verbose")) {
+                if (plugin.getConfiguration().getBoolean("streak-check-verbose", false)) {
                     plugin.getLogger().info("Could not find sound directly, attempting fallback: " + e.getMessage());
                 }
             }

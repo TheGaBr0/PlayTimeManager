@@ -7,6 +7,8 @@ public class PlaytimeFormat {
     private String name;
     private final String yearsSingular;
     private final String yearsPlural;
+    private final String monthsSingular;
+    private final String monthsPlural;
     private final String weeksSingular;
     private final String weeksPlural;
     private final String daysSingular;
@@ -21,6 +23,7 @@ public class PlaytimeFormat {
     private final File formatFile;
     private final boolean distributeRemovedTime;
     public PlaytimeFormat(File formatFile, String name, String yearsSingular, String yearsPlural,
+                          String monthsSingular, String monthsPlural,
                           String weeksSingular, String weeksPlural, String daysSingular,
                           String daysPlural, String hoursSingular, String hoursPlural,
                           String minutesSingular, String minutesPlural, String secondsSingular,
@@ -29,6 +32,8 @@ public class PlaytimeFormat {
         this.name = name;
         this.yearsSingular = yearsSingular;
         this.yearsPlural = yearsPlural;
+        this.monthsSingular = monthsSingular;
+        this.monthsPlural = monthsPlural;
         this.weeksSingular = weeksSingular;
         this.weeksPlural = weeksPlural;
         this.daysSingular = daysSingular;
@@ -55,6 +60,10 @@ public class PlaytimeFormat {
     public String getYearsPlural() {
         return yearsPlural;
     }
+
+    public String getMonthsSingular() { return monthsSingular; }
+
+    public String getMonthsPlural() { return monthsPlural; }
 
     public String getWeeksSingular() { return weeksSingular; }
 
@@ -106,6 +115,10 @@ public class PlaytimeFormat {
     // Utility methods
     public String getYearsLabel(int years) {
         return years == 1 ? yearsSingular : yearsPlural;
+    }
+
+    public String getMonthsLabel(int months) {
+        return months == 1 ? monthsSingular : monthsPlural;
     }
 
     public String getWeeksLabel(int weeks) { return weeks == 1 ? weeksSingular : weeksPlural; }

@@ -37,7 +37,11 @@ public class RewardProcessor {
             JoinStreakReward mainInstance = rewardRegistry.getReward(subInstance.mainInstanceID());
 
             if (onlineUser.isExpired(subInstance)) {
-                messageService.sendRewardRelatedMessage(onlineUser, subInstance, plugin.getConfiguration().getString("join-unclaimed-previous-message"), 0);
+                messageService.sendRewardRelatedMessage(onlineUser, subInstance,
+                        plugin.getConfiguration().getString("join-unclaimed-previous-message",
+                                "[&6PlayTime&eManager&f]&7 &e%PLAYER_NAME%&7, you've joined &6%REQUIRED_JOINS%&7 " +
+                                        "consecutive times, but you didn't claim your previous reward! Please use &e/claimrewards&7 " +
+                                        "to collect your pending rewards before new ones can be granted."), 0);
                 continue;
             }
 
@@ -57,7 +61,10 @@ public class RewardProcessor {
         Player player = onlineUser.getPlayerInstance();
         if (player.hasPermission("playtime.joinstreak.claim.automatic")) {
 
-            messageService.sendRewardRelatedMessage(onlineUser, subInstance, plugin.getConfiguration().getString("join-warn-autoclaim-message"), 1);
+            messageService.sendRewardRelatedMessage(onlineUser, subInstance,
+                    plugin.getConfiguration().getString("join-warn-autoclaim-message", "[&6PlayTime&eManager&f]&7 " +
+                            "Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times and " +
+                            "unlocked a new reward! We have automatically claimed it for you!"), 1);
 
             rewardExecutor.processCompletedReward(player, subInstance);
         } else {
@@ -65,7 +72,10 @@ public class RewardProcessor {
                 onlineUser.addRewardToBeClaimed(subInstance);
             }
 
-            messageService.sendRewardRelatedMessage(onlineUser, subInstance, plugin.getConfiguration().getString("join-warn-claim-message"), 1);
+            messageService.sendRewardRelatedMessage(onlineUser, subInstance,
+                    plugin.getConfiguration().getString("join-warn-claim-message", "[&6PlayTime&eManager&f]&7 " +
+                            "Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times and " +
+                            "unlocked a new reward! Use &e/claimrewards&7 to collect it!"), 1);
         }
     }
 }

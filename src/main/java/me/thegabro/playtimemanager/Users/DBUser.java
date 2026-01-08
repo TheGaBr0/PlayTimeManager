@@ -210,7 +210,7 @@ public class DBUser {
 
     public long getPlaytime() {
         long totalPlaytime = DBplaytime + artificialPlaytime;
-        if (plugin.getConfiguration().getBoolean("ignore-afk-time")) {
+        if (plugin.getConfiguration().getBoolean("ignore-afk-time", false)) {
             totalPlaytime -= DBAFKplaytime;
         }
         return totalPlaytime;

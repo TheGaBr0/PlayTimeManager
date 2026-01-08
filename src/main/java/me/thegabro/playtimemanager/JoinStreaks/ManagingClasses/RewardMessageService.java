@@ -45,7 +45,7 @@ public class RewardMessageService {
     }
 
     public void sendNextResetMessage(CommandSender sender, Map<String, Object> scheduleInfo) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format"));
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(plugin.getConfiguration().getString("datetime-format", "MMM dd, yyyy HH:mm:ss"));
 
         if (scheduleInfo.get("nextReset") != null) {
             Date nextReset = (Date) scheduleInfo.get("nextReset");

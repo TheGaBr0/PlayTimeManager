@@ -222,6 +222,16 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
             }
         }
 
+        // Handle Minecraft days placeholder
+        if (params.equalsIgnoreCase("playtime_minecraft_days")) {
+            try {
+                long playtime = onlineUsersManager.getOnlineUser(player.getName()).getPlaytime();
+                return String.valueOf(playtime / 24000);
+            } catch (Exception e) {
+                return getErrorMessage("couldn't get playtime");
+            }
+        }
+
         String paramLower = params.toLowerCase();
 
         // Handle rank placeholders
@@ -296,6 +306,11 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
         if (paramLower.startsWith("afk_playtime_")) {
             return handleAFKPlayTime(params.substring(13));
+        }
+
+        // Handle playtime minecraft days with nickname
+        if (paramLower.startsWith("playtime_minecraft_days_")) {
+            return handlePlayTimeMinecraftDays(params.substring(24));
         }
 
         // Handle playtime with units and nickname
@@ -439,6 +454,14 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         else if (user == DBUser.NOT_FOUND) return getErrorMessage("Player not found in db");
         else return Utils.ticksToFormattedPlaytime(user.getPlaytime(), playtimeFormat);
 
+    }
+
+    private String handlePlayTimeMinecraftDays(String nickname) {
+        DBUser user = getUserFromCache(nickname);
+
+        if (user == DBUser.LOADING) return getErrorMessage("Loading...");
+        else if (user == DBUser.NOT_FOUND) return getErrorMessage("Player not found in db");
+        else return String.valueOf(user.getPlaytime() / 24000);
     }
 
     private String handleLastSeenTop(String posStr) {

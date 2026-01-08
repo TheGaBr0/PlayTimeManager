@@ -17,10 +17,6 @@ public class DatabaseFactory {
     public static Database createDatabase() {
         String databaseType = plugin.getConfiguration().getString("database-type", "sqlite");
 
-        if(databaseType == null){
-            databaseType = "sqlite";
-        }
-
         try {
             return switch (databaseType) {
                 case "mysql", "mariadb" -> new MySQLDatabase();

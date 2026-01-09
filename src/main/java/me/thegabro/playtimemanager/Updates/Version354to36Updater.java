@@ -401,10 +401,7 @@ public class Version354to36Updater {
     }
 
     public void updatePlaytimeFormatsData(PlaytimeFormatsConfiguration playtimeFormatsConfiguration){
-        Map<String, Object> newFields = new HashMap<>();
-        newFields.put("distribute-removed-time", false);
-
-        playtimeFormatsConfiguration.formatsUpdater(newFields);
+        playtimeFormatsConfiguration.formatsUpdater();
     }
 
     private void migrateTimestampsToInstant() {

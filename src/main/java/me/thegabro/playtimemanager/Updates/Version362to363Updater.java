@@ -37,13 +37,7 @@ public class Version362to363Updater {
     }
 
     public void updatePlaytimeFormatsData(PlaytimeFormatsConfiguration playtimeFormatsConfiguration){
-        Map<String, Object> newFields = new HashMap<>();
-        newFields.put("weeks-singular", "w");
-        newFields.put("weeks-plural", "w");
-        newFields.put("months-singular", "mo");
-        newFields.put("months-plural", "mo");
-
-        playtimeFormatsConfiguration.formatsUpdater(newFields);
+        playtimeFormatsConfiguration.formatsUpdater();
     }
 
 

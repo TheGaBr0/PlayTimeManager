@@ -488,7 +488,7 @@ public class Utils {
      * Converts ticks to a specific time unit
      *
      * @param ticks The time in ticks to convert
-     * @param unit The target time unit ("y", "mo", "w", "d", "h", "m", "s")
+     * @param unit The target time unit ("mc", "y", "mo", "w", "d", "h", "m", "s")
      * @return The equivalent time in the specified unit, or 0 if invalid
      */
     public static long ticksToTimeUnit(long ticks, String unit) {
@@ -502,6 +502,7 @@ public class Utils {
         long SECONDS_PER_MONTH = (long) month_value_in_days * 24 * 60 * 60;
 
         return switch (unit.toLowerCase()) {
+            case "mc" -> ticks / 24000;
             case "y" -> seconds / (365 * 24 * 60 * 60);
             case "mo" -> seconds / SECONDS_PER_MONTH;
             case "w" -> seconds / (7 * 24 * 60 * 60);

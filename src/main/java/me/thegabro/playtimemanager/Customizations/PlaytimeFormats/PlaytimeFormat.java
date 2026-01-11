@@ -1,5 +1,4 @@
 package me.thegabro.playtimemanager.Customizations.PlaytimeFormats;
-
 import java.io.File;
 
 public class PlaytimeFormat {
@@ -21,7 +20,8 @@ public class PlaytimeFormat {
     private final String secondsPlural;
     private final String formatting;
     private final File formatFile;
-    private final boolean distributeRemovedTime;
+    private boolean distributeRemovedTime;
+
     public PlaytimeFormat(File formatFile, String name, String yearsSingular, String yearsPlural,
                           String monthsSingular, String monthsPlural,
                           String weeksSingular, String weeksPlural, String daysSingular,
@@ -107,11 +107,6 @@ public class PlaytimeFormat {
 
     public boolean shouldDistributeRemovedTime(){ return distributeRemovedTime; }
 
-    // Setters
-    public void setName(String name) {
-        this.name = name;
-    }
-
     // Utility methods
     public String getYearsLabel(int years) {
         return years == 1 ? yearsSingular : yearsPlural;
@@ -123,9 +118,7 @@ public class PlaytimeFormat {
 
     public String getWeeksLabel(int weeks) { return weeks == 1 ? weeksSingular : weeksPlural; }
 
-    public String getDaysLabel(int days) {
-        return days == 1 ? daysSingular : daysPlural;
-    }
+    public String getDaysLabel(int days) { return days == 1 ? daysSingular : daysPlural; }
 
     public String getHoursLabel(int hours) {
         return hours == 1 ? hoursSingular : hoursPlural;

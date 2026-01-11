@@ -255,8 +255,8 @@ public class Version354to36Updater {
         }
 
         try {
-            String insertQuery = "INSERT INTO rewards_to_be_claimed (user_uuid, nickname, main_instance_ID, required_joins, created_at, expired) " +
-                    "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)";
+            String insertQuery = "INSERT INTO rewards_to_be_claimed (user_uuid, nickname, main_instance_ID, required_joins, created_at, updated_at, expired) " +
+                    "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?)";
             PreparedStatement stmt = connection.prepareStatement(insertQuery);
 
             for (String rewardValue : rewardValues) {
@@ -401,7 +401,7 @@ public class Version354to36Updater {
     }
 
     public void updatePlaytimeFormatsData(PlaytimeFormatsConfiguration playtimeFormatsConfiguration){
-        playtimeFormatsConfiguration.formatsUpdater();
+        playtimeFormatsConfiguration.formatsUpdater(null);
     }
 
     private void migrateTimestampsToInstant() {

@@ -4,6 +4,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -190,7 +191,7 @@ public class PlaytimeFormatsConfiguration {
     }
 
 
-    public void formatsUpdater(){
+    public void formatsUpdater(@Nullable HashMap<String, Object> overridedFields){
         Set<PlaytimeFormat> formatsClone = new HashSet<>(playtimeFormats);
         playtimeFormats.clear();
 
@@ -225,6 +226,15 @@ public class PlaytimeFormatsConfiguration {
             // Load the new file and restore the backup
             FileConfiguration updatedConfig = YamlConfiguration.loadConfiguration(file);
             restoreFromBackup(backup, updatedConfig);
+
+            // Apply overridden fields if provided
+            if (overridedFields != null && !overridedFields.isEmpty()) {
+                for (Map.Entry<String, Object> entry : overridedFields.entrySet()) {
+                    String path = entry.getKey();
+                    Object value = entry.getValue();
+                    updatedConfig.set(path, value);
+                }
+            }
 
             try {
                 updatedConfig.save(file);

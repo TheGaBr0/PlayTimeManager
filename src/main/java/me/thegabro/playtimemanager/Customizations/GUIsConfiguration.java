@@ -269,7 +269,7 @@ public class GUIsConfiguration {
 
                         if (!existedInBackup) {
                             removedPaths.add(fullViewPath);
-                            plugin.getLogger().info("Detected removed section: " + fullViewPath);
+                            //plugin.getLogger().info("Detected removed section: " + fullViewPath);
                         }
                     }
                 }

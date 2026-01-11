@@ -7,11 +7,11 @@ import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
+
 
 public class Version362to363Updater {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
@@ -37,7 +37,12 @@ public class Version362to363Updater {
     }
 
     public void updatePlaytimeFormatsData(PlaytimeFormatsConfiguration playtimeFormatsConfiguration){
-        playtimeFormatsConfiguration.formatsUpdater();
+
+        HashMap<String, Object> overridedFields = new HashMap<String, Object>();
+        overridedFields.put("distribute-removed-time", true);
+
+
+        playtimeFormatsConfiguration.formatsUpdater(overridedFields);
     }
 
 

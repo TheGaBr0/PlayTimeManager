@@ -20,7 +20,7 @@ public class PlaytimeFormat {
     private final String secondsPlural;
     private final String formatting;
     private final File formatFile;
-    private boolean distributeRemovedTime;
+    private final boolean distributeRemovedTime;
 
     public PlaytimeFormat(File formatFile, String name, String yearsSingular, String yearsPlural,
                           String monthsSingular, String monthsPlural,

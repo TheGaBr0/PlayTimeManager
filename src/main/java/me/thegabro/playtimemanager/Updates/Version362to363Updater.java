@@ -52,27 +52,29 @@ public class Version362to363Updater {
             conn.setAutoCommit(false);
 
             try (Statement stmt = conn.createStatement()) {
-                plugin.getLogger().info("  Converting completed_goals millisecond timestamps to TEXT datetime format...");
+                plugin.getLogger().info("  Converting completed_goals millisecond timestamps to ISO datetime format (UTC)...");
 
-                // Update completed_at values from milliseconds to TEXT datetime format
+                // Update completed_at values from milliseconds to ISO datetime format (UTC)
                 stmt.execute(
                         "UPDATE completed_goals " +
-                                "SET completed_at = datetime(CAST(completed_at AS BIGINT)/1000, 'unixepoch') " +
+                                "SET completed_at = strftime('%Y-%m-%d %H:%M:%S', CAST(completed_at AS BIGINT)/1000, 'unixepoch') " +
                                 "WHERE typeof(completed_at) != 'text' OR completed_at NOT LIKE '____-__-__ __:__:__'"
                 );
 
-                // Update received_at values from milliseconds to TEXT datetime format
+                // Update received_at values from milliseconds to ISO datetime format (UTC)
                 // Only update non-NULL values
                 stmt.execute(
                         "UPDATE completed_goals " +
-                                "SET received_at = datetime(CAST(received_at AS BIGINT)/1000, 'unixepoch') " +
+                                "SET received_at = strftime('%Y-%m-%d %H:%M:%S', CAST(received_at AS BIGINT)/1000, 'unixepoch') " +
                                 "WHERE received_at IS NOT NULL " +
                                 "AND (typeof(received_at) != 'text' OR received_at NOT LIKE '____-__-__ __:__:__')"
                 );
 
                 conn.commit();
+                plugin.getLogger().info("  ✓ Completed goals timestamps converted successfully to UTC ISO format");
             } catch (SQLException e) {
                 conn.rollback();
+                plugin.getLogger().severe("  ✗ Failed to convert completed goals timestamps: " + e.getMessage());
                 throw e;
             } finally {
                 conn.setAutoCommit(true);

@@ -3,10 +3,14 @@ package me.thegabro.playtimemanager.Database.Migration;
 import me.thegabro.playtimemanager.Configuration;
 import me.thegabro.playtimemanager.Database.DatabaseBackupUtility;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.Utils;
 
 import java.io.File;
 import java.sql.*;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -20,6 +24,10 @@ public class DatabaseMigration {
 
     private Connection sourceConnection;
     private Connection targetConnection;
+
+    // Standard ISO format for all databases
+    private static final DateTimeFormatter STANDARD_ISO_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public DatabaseMigration(PlayTimeManager plugin) {
         this.plugin = plugin;
@@ -41,7 +49,6 @@ public class DatabaseMigration {
         logger.info("Source: " + currentDbType.toUpperCase());
         logger.info("Target: " + migratingTo.toUpperCase());
         logger.info("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
-
 
         logger.info("Creating backup of the current PlayTimeManager instance...");
         File backupSuccess = backupUtility.createBackup("Database migration from "+ currentDbType.toUpperCase() + " to "+ migratingTo.toUpperCase());
@@ -215,7 +222,7 @@ public class DatabaseMigration {
             url.append("&").append(properties);
         }
 
-        logger.info("PostgreSQL Connection URL: " + url.toString());
+        logger.info("PostgreSQL Connection URL: " + url);
         logger.info("PostgreSQL Username: " + username);
 
         return DriverManager.getConnection(url.toString(), username, password);
@@ -225,7 +232,6 @@ public class DatabaseMigration {
         List<String> tables = getRequiredTables();
 
         try (Statement stmt = targetConnection.createStatement()) {
-            // Drop in reverse order to respect foreign key constraints
             for (int i = tables.size() - 1; i >= 0; i--) {
                 String tableName = tables.get(i);
                 try {
@@ -284,7 +290,6 @@ public class DatabaseMigration {
     }
 
     private int migrateTable(String tableName) throws SQLException {
-        // Check if table exists in source (case-insensitive)
         DatabaseMetaData metaData = sourceConnection.getMetaData();
         ResultSet rs = metaData.getTables(null, null, tableName, null);
         if (!rs.next()) {
@@ -302,7 +307,6 @@ public class DatabaseMigration {
         List<Integer> columnTypes = new ArrayList<>();
         int columnCount = 0;
 
-        // Read all data from source table
         try (Statement stmt = sourceConnection.createStatement();
              ResultSet resultSet = stmt.executeQuery(selectQuery)) {
 
@@ -323,7 +327,6 @@ public class DatabaseMigration {
             }
         }
 
-        // Get target column types for proper type conversion
         List<Integer> targetColumnTypes = new ArrayList<>();
         try (Statement stmt = targetConnection.createStatement();
              ResultSet rs2 = stmt.executeQuery("SELECT * FROM " + tableName + " LIMIT 0")) {
@@ -356,12 +359,56 @@ public class DatabaseMigration {
                 int batchSize = 0;
                 for (Object[] row : rows) {
                     for (int i = 0; i < columnCount; i++) {
-                        pstmt.setObject(i + 1, row[i]);
+                        Object value = row[i];
+                        String columnName = columnNames.get(i);
+                        int targetType = targetColumnTypes.get(i);  // Keep for non-datetime types
+
+                        // Convert datetime fields to space-separated ISO string for all targets
+                        boolean isDateTimeColumn = columnName.equals("completed_at") ||
+                                columnName.equals("received_at") ||
+                                columnName.equals("created_at") ||
+                                columnName.equals("updated_at");
+
+                        if (isDateTimeColumn) {
+                            Timestamp ts = null;
+
+                            if (value != null) {
+                                try {
+                                    if (value instanceof String strValue) {
+                                        ts = parseISOToTimestamp(strValue);
+                                    } else if (value instanceof Timestamp tsValue) {
+                                        ts = tsValue;
+                                    } else if (value instanceof java.util.Date dateValue) {
+                                        ts = new Timestamp(dateValue.getTime());
+                                    } else if (value instanceof java.time.LocalDateTime ldtValue) {
+                                        ts = Timestamp.valueOf(ldtValue);
+                                    } else if (value instanceof java.time.Instant instantValue) {
+                                        ts = Timestamp.from(instantValue);
+                                    } else {
+                                        throw new SQLException("Unsupported datetime type: " + value.getClass());
+                                    }
+                                } catch (Exception e) {
+                                    logger.warning("Failed to parse datetime in " + columnName + ": " + value + " -> " + e.getMessage());
+                                    // don't set ts = null - use current time as fallback for not null attributes
+                                    ts = new Timestamp(System.currentTimeMillis());
+                                }
+                            } else {
+                                // value is null but attribute is not null → use current time
+                                ts = new Timestamp(System.currentTimeMillis());
+                            }
+
+                            if (targetType == Types.TIMESTAMP || targetType == Types.DATE || targetType == Types.TIME) {
+                                pstmt.setTimestamp(i + 1, ts);
+                            } else {
+                                pstmt.setString(i + 1, formatTimestampToISO(ts));  // Always space format
+                            }
+                        } else {
+                            pstmt.setObject(i + 1, value);
+                        }
                     }
                     pstmt.addBatch();
                     batchSize++;
 
-                    // Execute batch every 1000 records for performance
                     if (batchSize % 1000 == 0) {
                         pstmt.executeBatch();
                         targetConnection.commit();
@@ -383,6 +430,35 @@ public class DatabaseMigration {
         }
 
         return rows.size();
+    }
+
+    private Timestamp parseISOToTimestamp(String text) throws SQLException {
+        if (text == null || text.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            // Normalize the input by replacing 'T' with space if present
+            String normalized = text.replace('T', ' ');
+
+            LocalDateTime ldt = LocalDateTime.parse(normalized, STANDARD_ISO_FORMAT);
+            Instant instant = ldt.atZone(ZoneId.of("UTC")).toInstant();
+            return Timestamp.from(instant);
+        } catch (DateTimeParseException e) {
+            throw new SQLException(
+                    "Invalid datetime format: '" + text +
+                            "'. Expected yyyy-MM-dd HH:mm:ss or yyyy-MM-dd'T'HH:mm:ss (UTC)",
+                    e
+            );
+        }
+    }
+
+    private String formatTimestampToISO(Timestamp timestamp) {
+        return timestamp
+                .toInstant()
+                .atZone(ZoneId.of("UTC"))
+                .toLocalDateTime()
+                .format(STANDARD_ISO_FORMAT);
     }
 
     private List<String> getRequiredTables() {
@@ -470,9 +546,9 @@ public class DatabaseMigration {
                                 "goal_name VARCHAR(36) NOT NULL, " +
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
-                                "completed_at TEXT NOT NULL, " +
+                                "completed_at DATETIME NOT NULL, " +
                                 "received INTEGER NOT NULL DEFAULT 0, " +
-                                "received_at TEXT DEFAULT NULL, " +
+                                "received_at DATETIME DEFAULT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
                 );
@@ -483,8 +559,8 @@ public class DatabaseMigration {
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "main_instance_ID INT NOT NULL, " +
                                 "required_joins INT NOT NULL, " +
-                                "created_at TEXT NOT NULL, " +
-                                "updated_at TEXT NOT NULL, " +
+                                "created_at DATETIME NOT NULL, " +
+                                "updated_at DATETIME NOT NULL, " +
                                 "expired INTEGER DEFAULT 0, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
@@ -496,7 +572,7 @@ public class DatabaseMigration {
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "main_instance_ID INT NOT NULL, " +
                                 "required_joins INT NOT NULL, " +
-                                "received_at TEXT NOT NULL, " +
+                                "received_at DATETIME NOT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
                 );
@@ -523,9 +599,9 @@ public class DatabaseMigration {
                                 "goal_name VARCHAR(36) NOT NULL, " +
                                 "user_uuid VARCHAR(36) NOT NULL, " +
                                 "nickname VARCHAR(36) NOT NULL, " +
-                                "completed_at TEXT NOT NULL, " +
+                                "completed_at TIMESTAMP NOT NULL, " +
                                 "received INTEGER NOT NULL DEFAULT 0, " +
-                                "received_at TEXT DEFAULT NULL, " +
+                                "received_at TIMESTAMP DEFAULT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
                 );
                 statements.add(
@@ -535,8 +611,8 @@ public class DatabaseMigration {
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "main_instance_ID INT NOT NULL, " +
                                 "required_joins INT NOT NULL, " +
-                                "created_at TEXT NOT NULL, " +
-                                "updated_at TEXT NOT NULL, " +
+                                "created_at TIMESTAMP NOT NULL, " +
+                                "updated_at TIMESTAMP NOT NULL, " +
                                 "expired INTEGER DEFAULT 0, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
                 );
@@ -547,7 +623,7 @@ public class DatabaseMigration {
                                 "nickname VARCHAR(36) NOT NULL, " +
                                 "main_instance_ID INT NOT NULL, " +
                                 "required_joins INT NOT NULL, " +
-                                "received_at TEXT NOT NULL, " +
+                                "received_at TIMESTAMP NOT NULL, " +
                                 "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE)"
                 );
                 break;

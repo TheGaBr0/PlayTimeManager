@@ -1,26 +1,56 @@
 package me.thegabro.playtimemanager.Database.DAOs;
 
+import me.thegabro.playtimemanager.Database.Database;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
+import java.sql.*;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.logging.Level;
 
 public class GoalsDAO {
     private final DatabaseHandler dbManager;
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final GoalsManager goalsManager = GoalsManager.getInstance();
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public GoalsDAO(DatabaseHandler dbManager) {
         this.dbManager = dbManager;
+    }
+
+    private static final DateTimeFormatter SQLITE_ISO =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private Object nowForDatabase() {
+        Database.DBTYPES dbType = DatabaseHandler.getInstance().getDatabaseType();
+
+        Instant now = Instant.now();
+
+        if (dbType == Database.DBTYPES.SQLITE) {
+            return now
+                    .atZone(ZoneId.of("UTC"))
+                    .toLocalDateTime()
+                    .format(SQLITE_ISO); // TEXT
+        }
+
+        // MySQL / PostgreSQL
+        return Timestamp.from(now);
+    }
+
+    private Object instantForDatabase(Instant instant) {
+        Database.DBTYPES dbType = DatabaseHandler.getInstance().getDatabaseType();
+
+        if (dbType == Database.DBTYPES.SQLITE) {
+            return instant
+                    .atZone(ZoneId.of("UTC"))
+                    .toLocalDateTime()
+                    .format(SQLITE_ISO);
+        }
+
+        return Timestamp.from(instant);
     }
 
     public void removeGoalFromAllUsers(String goalToRemove) {
@@ -77,7 +107,6 @@ public class GoalsDAO {
 
     public void addCompletedGoal(String uuid, String nickname, String goalName, boolean received) {
         String insertQuery;
-        String now = DATE_FORMAT.format(new Date());
 
         if (received) {
             insertQuery = "INSERT INTO completed_goals " +
@@ -95,11 +124,12 @@ public class GoalsDAO {
             ps.setString(1, goalName.trim());
             ps.setString(2, uuid);
             ps.setString(3, nickname);
-            ps.setString(4, now);
+
+            ps.setObject(4, nowForDatabase());
             ps.setInt(5, received ? 1 : 0);
 
             if (received) {
-                ps.setString(6, now);
+                ps.setObject(6, nowForDatabase());
             }
 
             ps.executeUpdate();
@@ -145,14 +175,13 @@ public class GoalsDAO {
     }
 
     public void markGoalAsReceived(String uuid, String goalName) {
-        String now = DATE_FORMAT.format(new Date());
         String updateQuery = "UPDATE completed_goals SET received = 1, received_at = ? " +
                 "WHERE user_uuid = ? AND goal_name = ? AND received = 0";
 
         try (Connection conn = dbManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(updateQuery)) {
 
-            ps.setString(1, now);
+            ps.setObject(1, nowForDatabase());
             ps.setString(2, uuid);
             ps.setString(3, goalName.trim());
             ps.executeUpdate();

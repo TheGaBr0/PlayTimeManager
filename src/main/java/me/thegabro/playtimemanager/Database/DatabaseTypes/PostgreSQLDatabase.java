@@ -37,7 +37,7 @@ public class PostgreSQLDatabase implements Database {
             "nickname VARCHAR(36) NOT NULL," +
             "main_instance_ID INT NOT NULL," +
             "required_joins INT NOT NULL," +
-            "received_at TEXT NOT NULL," +
+            "received_at TIMESTAMP NOT NULL," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ");";
 
@@ -46,9 +46,9 @@ public class PostgreSQLDatabase implements Database {
             "goal_name VARCHAR(36) NOT NULL," +
             "user_uuid VARCHAR(36) NOT NULL," +
             "nickname VARCHAR(36) NOT NULL," +
-            "completed_at TEXT NOT NULL," +
+            "completed_at TIMESTAMP NOT NULL," +
             "received INTEGER NOT NULL DEFAULT 0," +
-            "received_at TEXT DEFAULT NULL," +
+            "received_at TIMESTAMP DEFAULT NULL," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ");";
 
@@ -58,11 +58,81 @@ public class PostgreSQLDatabase implements Database {
             "nickname VARCHAR(36) NOT NULL," +
             "main_instance_ID INT NOT NULL," +
             "required_joins INT NOT NULL," +
-            "created_at TEXT NOT NULL," +
-            "updated_at TEXT NOT NULL," +
+            "created_at TIMESTAMP NOT NULL," +
+            "updated_at TIMESTAMP NOT NULL," +
             "expired INTEGER DEFAULT 0," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ");";
+
+    private void createDatabaseAndSchemaIfNotExists(
+            String host,
+            int port,
+            String database,
+            String schema,
+            String username,
+            String password,
+            boolean useSSL
+    ) {
+        // Explicitly load the PostgreSQL JDBC driver
+        try {
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException e) {
+            plugin.getLogger().log(Level.SEVERE, "PostgreSQL JDBC driver not found", e);
+            Bukkit.getPluginManager().disablePlugin(plugin);
+            throw new RuntimeException("PostgreSQL JDBC driver not found", e);
+        }
+
+        String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + "/postgres";
+
+        if (useSSL) {
+            jdbcUrl += "?ssl=true&sslmode=require";
+        }
+
+        try (Connection conn = java.sql.DriverManager.getConnection(jdbcUrl, username, password);
+             Statement stmt = conn.createStatement()) {
+
+            // PostgreSQL does NOT allow CREATE DATABASE in a transaction
+            conn.setAutoCommit(true);
+
+            // Check if database exists
+            try (var rs = stmt.executeQuery(
+                    "SELECT 1 FROM pg_database WHERE datname = '" + database + "'")) {
+
+                if (!rs.next()) {
+                    // Database doesn't exist, create it
+                    stmt.execute("CREATE DATABASE \"" + database + "\"");
+                    plugin.getLogger().info("PostgreSQL database '" + database + "' created");
+                }
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE,
+                    "Failed to create PostgreSQL database '" + database + "'", e);
+            Bukkit.getPluginManager().disablePlugin(plugin);
+            throw new RuntimeException("PostgreSQL database creation failed", e);
+        }
+
+        // Schema creation
+        String dbJdbcUrl = "jdbc:postgresql://" + host + ":" + port + "/" + database;
+
+        if (useSSL) {
+            dbJdbcUrl += "?ssl=true&sslmode=require";
+        }
+
+        try (Connection conn = java.sql.DriverManager.getConnection(dbJdbcUrl, username, password);
+             Statement stmt = conn.createStatement()) {
+
+            conn.setAutoCommit(true);
+
+            stmt.execute("CREATE SCHEMA IF NOT EXISTS \"" + schema + "\"");
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE,
+                    "Failed to create PostgreSQL schema '" + schema + "'", e);
+            Bukkit.getPluginManager().disablePlugin(plugin);
+            throw new RuntimeException("PostgreSQL schema creation failed", e);
+        }
+    }
 
     @Override
     public void initialize() {
@@ -76,6 +146,8 @@ public class PostgreSQLDatabase implements Database {
         String schema = config.getString("postgresql.schema", "public");
         boolean useSSL = config.getBoolean("postgresql.use-ssl", false);
         String connectionProperties = config.getString("postgresql.connection-properties", "");
+
+        createDatabaseAndSchemaIfNotExists(host, port, database, schema, username, password, useSSL);
 
         HikariConfig hikariConfig = new HikariConfig();
 

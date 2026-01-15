@@ -6,6 +6,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import java.io.*;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -23,7 +24,6 @@ public class DatabaseBackupUtility {
         }
         return instance;
     }
-
     public File createBackup(String reason) {
         Database.DBTYPES dbType = DatabaseHandler.getInstance().getDatabaseType();
 

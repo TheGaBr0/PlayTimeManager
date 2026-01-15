@@ -1,17 +1,16 @@
 package me.thegabro.playtimemanager.Database.DAOs;
 
+import me.thegabro.playtimemanager.Database.Database;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.Database.Errors;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
+import java.sql.*;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -20,10 +19,41 @@ public class JoinstreakDAO {
 
     private final DatabaseHandler dbManager;
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public JoinstreakDAO(DatabaseHandler dbManager) {
         this.dbManager = dbManager;
+    }
+
+    private static final DateTimeFormatter SQLITE_ISO =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private Object nowForDatabase() {
+        Database.DBTYPES dbType = DatabaseHandler.getInstance().getDatabaseType();
+
+        Instant now = Instant.now();
+
+        if (dbType == Database.DBTYPES.SQLITE) {
+            return now
+                    .atZone(ZoneId.of("UTC"))
+                    .toLocalDateTime()
+                    .format(SQLITE_ISO); // TEXT
+        }
+
+        // MySQL / PostgreSQL
+        return Timestamp.from(now);
+    }
+
+    private Object instantForDatabase(Instant instant) {
+        Database.DBTYPES dbType = DatabaseHandler.getInstance().getDatabaseType();
+
+        if (dbType == Database.DBTYPES.SQLITE) {
+            return instant
+                    .atZone(ZoneId.of("UTC"))
+                    .toLocalDateTime()
+                    .format(SQLITE_ISO);
+        }
+
+        return Timestamp.from(instant);
     }
 
     public Set<String> getPlayersWithActiveStreaks() {
@@ -168,7 +198,6 @@ public class JoinstreakDAO {
     public void markRewardsAsExpired(String uuid) {
         Connection conn = null;
         PreparedStatement ps = null;
-        String now = DATE_FORMAT.format(new Date());
 
         try {
             conn = dbManager.getConnection();
@@ -179,7 +208,7 @@ public class JoinstreakDAO {
             );
 
             ps.setInt(1, 1);
-            ps.setString(2, now);
+            ps.setObject(2, nowForDatabase());
             ps.setString(3, uuid);
 
             ps.executeUpdate();
@@ -318,7 +347,6 @@ public class JoinstreakDAO {
     public void addReceivedReward(String uuid, String nickname, RewardSubInstance reward) {
         Connection conn = null;
         PreparedStatement ps = null;
-        String now = DATE_FORMAT.format(new Date());
 
         try {
             conn = dbManager.getConnection();
@@ -330,7 +358,7 @@ public class JoinstreakDAO {
             ps.setString(2, nickname);
             ps.setInt(3, reward.mainInstanceID());
             ps.setInt(4, reward.requiredJoins());
-            ps.setString(5, now);
+            ps.setObject(5, nowForDatabase());
             ps.executeUpdate();
 
         } catch (SQLException ex) {
@@ -346,10 +374,10 @@ public class JoinstreakDAO {
     }
 
 
+
     public void addRewardToBeClaimed(String uuid, String nickname, RewardSubInstance reward) {
         Connection conn = null;
         PreparedStatement ps = null;
-        String now = DATE_FORMAT.format(new Date());
 
         try {
             conn = dbManager.getConnection();
@@ -357,12 +385,14 @@ public class JoinstreakDAO {
                     "INSERT INTO rewards_to_be_claimed (user_uuid, nickname, main_instance_ID, required_joins, created_at, updated_at, expired) " +
                             "VALUES (?, ?, ?, ?, ?, ?, ?);"
             );
+            Object now = nowForDatabase();
+
             ps.setString(1, uuid);
             ps.setString(2, nickname);
             ps.setInt(3, reward.mainInstanceID());
             ps.setInt(4, reward.requiredJoins());
-            ps.setString(5, now);
-            ps.setString(6, now);
+            ps.setObject(5, now);
+            ps.setObject(6, now);
             ps.setInt(7, reward.expired() ? 1 : 0);
             ps.executeUpdate();
 
@@ -448,5 +478,6 @@ public class JoinstreakDAO {
             }
         }
     }
+
 
 }

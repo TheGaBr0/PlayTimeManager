@@ -36,7 +36,7 @@ public class MySQLDatabase implements Database {
             "nickname VARCHAR(36) NOT NULL," +
             "main_instance_ID INT NOT NULL," +
             "required_joins INT NOT NULL," +
-            "received_at TEXT NOT NULL," +
+            "received_at DATETIME NOT NULL," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
@@ -45,9 +45,9 @@ public class MySQLDatabase implements Database {
             "goal_name VARCHAR(36) NOT NULL," +
             "user_uuid VARCHAR(36) NOT NULL," +
             "nickname VARCHAR(36) NOT NULL," +
-            "completed_at TEXT NOT NULL," +
+            "completed_at DATETIME NOT NULL," +
             "received INTEGER NOT NULL DEFAULT 0," +
-            "received_at TEXT DEFAULT NULL," +
+            "received_at DATETIME DEFAULT NULL," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
@@ -57,11 +57,40 @@ public class MySQLDatabase implements Database {
             "nickname VARCHAR(36) NOT NULL," +
             "main_instance_ID INT NOT NULL," +
             "required_joins INT NOT NULL," +
-            "created_at TEXT NOT NULL," +
-            "updated_at TEXT NOT NULL," +
+            "created_at DATETIME NOT NULL," +
+            "updated_at DATETIME NOT NULL," +
             "expired INTEGER DEFAULT 0," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid) ON DELETE CASCADE" +
             ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+    private void createDatabaseIfNotExists(
+            String host,
+            int port,
+            String database,
+            String username,
+            String password,
+            boolean useSSL
+    ) {
+        String jdbcUrl = "jdbc:mysql://" + host + ":" + port +
+                "/?useSSL=" + useSSL +
+                "&allowPublicKeyRetrieval=true" +
+                "&serverTimezone=UTC";
+
+        try (Connection conn = java.sql.DriverManager.getConnection(jdbcUrl, username, password);
+             Statement stmt = conn.createStatement()) {
+
+            stmt.executeUpdate(
+                    "CREATE DATABASE IF NOT EXISTS `" + database + "` " +
+                            "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            );
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE,
+                    "Failed to create MySQL database '" + database + "'", e);
+            Bukkit.getPluginManager().disablePlugin(plugin);
+            throw new RuntimeException("Database creation failed", e);
+        }
+    }
 
     @Override
     public void initialize() {
@@ -74,6 +103,8 @@ public class MySQLDatabase implements Database {
         String password = config.getString("mysql.password", "");
         boolean useSSL = config.getBoolean("mysql.use-ssl", false);
         String connectionProperties = config.getString("mysql.connection-properties", "");
+
+        createDatabaseIfNotExists(host, port, database, username, password, useSSL);
 
         HikariConfig hikariConfig = new HikariConfig();
 

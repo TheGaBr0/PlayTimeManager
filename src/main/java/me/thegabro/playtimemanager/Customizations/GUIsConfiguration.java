@@ -224,21 +224,48 @@ public class GUIsConfiguration {
     // ==================== CONFIG UPDATE SYSTEM WITH SECTION REMOVAL DETECTION ====================
 
     /**
-     * Creates a backup of all current configuration values
+     * Creates a backup of all current configuration values AND tracks section structure
      * @return Map containing all current config values with their paths
      */
     public Map<String, Object> createConfigBackup() {
         Map<String, Object> backup = new HashMap<>();
 
-        Set<String> keys = config.getKeys(true);
-        for (String key : keys) {
+        for (String key : config.getKeys(true)) {
             Object value = config.get(key);
             if (value != null) {
                 backup.put(key, value);
             }
         }
 
+        trackExistingSections(backup, "player-stats-gui.items");
         return backup;
+    }
+
+    /**
+     * Tracks whether specific configuration sections existed,
+     * even if they were empty.
+     * This is critical to distinguish between "missing by default"
+     * and "intentionally removed by the user".
+     * @param backup The backup configuration
+     * @param basePath The new default configuration
+     */
+    private void trackExistingSections(Map<String, Object> backup, String basePath) {
+        ConfigurationSection section = config.getConfigurationSection(basePath);
+        if (section == null) return;
+
+        for (String itemName : section.getKeys(false)) {
+            String viewsPath = basePath + "." + itemName + ".views";
+            ConfigurationSection viewsSection = config.getConfigurationSection(viewsPath);
+
+            if (viewsSection != null) {
+                backup.put(viewsPath + ".__EXISTS__", true);
+                for (String viewType : viewsSection.getKeys(false)) {
+                    backup.put(viewsPath + "." + viewType + ".__EXISTS__", true);
+                }
+            } else {
+                backup.put(viewsPath + ".__MISSING__", true);
+            }
+        }
     }
 
     /**
@@ -250,28 +277,22 @@ public class GUIsConfiguration {
     private Set<String> detectRemovedSections(Map<String, Object> backup, FileConfiguration defaultConfig) {
         Set<String> removedPaths = new HashSet<>();
 
-        // Check for removed view sections under items
-        ConfigurationSection itemsSection = defaultConfig.getConfigurationSection("player-stats-gui.items");
-        if (itemsSection != null) {
-            for (String itemName : itemsSection.getKeys(false)) {
-                String viewsPath = "player-stats-gui.items." + itemName + ".views";
+        ConfigurationSection items = defaultConfig.getConfigurationSection("player-stats-gui.items");
+        if (items == null) return removedPaths;
 
-                // Check if views section exists in default
-                ConfigurationSection defaultViews = defaultConfig.getConfigurationSection(viewsPath);
-                if (defaultViews != null) {
-                    // Check each view type (owner, player, staff)
-                    for (String viewType : defaultViews.getKeys(false)) {
-                        String fullViewPath = viewsPath + "." + viewType;
+        for (String itemName : items.getKeys(false)) {
+            String viewsPath = "player-stats-gui.items." + itemName + ".views";
+            ConfigurationSection defaultViews = defaultConfig.getConfigurationSection(viewsPath);
+            if (defaultViews == null) continue;
 
-                        // If this view existed in default but doesn't exist in backup (user removed it)
-                        boolean existedInBackup = backup.keySet().stream()
-                                .anyMatch(key -> key.startsWith(fullViewPath));
+            boolean viewsExisted = backup.containsKey(viewsPath + ".__EXISTS__");
+            boolean viewsMissing = backup.containsKey(viewsPath + ".__MISSING__");
+            if (viewsMissing) continue;
 
-                        if (!existedInBackup) {
-                            removedPaths.add(fullViewPath);
-                            //plugin.getLogger().info("Detected removed section: " + fullViewPath);
-                        }
-                    }
+            for (String viewType : defaultViews.getKeys(false)) {
+                String fullPath = viewsPath + "." + viewType;
+                if (viewsExisted && !backup.containsKey(fullPath + ".__EXISTS__")) {
+                    removedPaths.add(fullPath);
                 }
             }
         }
@@ -284,95 +305,57 @@ public class GUIsConfiguration {
      * @param backup Map containing the backed up values
      */
     public void restoreFromBackup(Map<String, Object> backup) {
-        if (backup == null || backup.isEmpty()) {
-            plugin.getLogger().warning("Backup is null or empty, nothing to restore");
-            return;
-        }
+        if (backup == null || backup.isEmpty()) return;
 
-        // Detect sections that were intentionally removed
         Set<String> removedSections = detectRemovedSections(backup, config);
-
-        int restoredCount = 0;
-        int skippedCount = 0;
 
         for (Map.Entry<String, Object> entry : backup.entrySet()) {
             String key = entry.getKey();
-            Object backupValue = entry.getValue();
+            Object value = entry.getValue();
 
-            // Check if the key exists in the new config structure
-            if (!config.contains(key)) {
-                skippedCount++;
-                continue;
-            }
+            if (key.endsWith(".__EXISTS__") || key.endsWith(".__MISSING__")) continue;
+            if (!config.contains(key)) continue;
+            if (value instanceof org.bukkit.configuration.MemorySection) continue;
+            if (value instanceof String && ((String) value).trim().isEmpty()) continue;
 
-            // Skip MemorySection objects (nested sections)
-            if (backupValue instanceof org.bukkit.configuration.MemorySection) {
-                continue;
-            }
-
-            // Get the current value from the new config
-            Object currentValue = config.get(key);
-
-            // Only restore if the backup value differs from the default
-            if (backupValue != null && !backupValue.equals(currentValue)) {
-                // Skip empty strings
-                if (backupValue instanceof String && ((String) backupValue).trim().isEmpty()) {
-                    continue;
-                }
-
-                config.set(key, backupValue);
-                configCache.put(key, backupValue);
-                restoredCount++;
+            if (!Objects.equals(config.get(key), value)) {
+                config.set(key, value);
+                configCache.put(key, value);
             }
         }
 
-        // Remove sections that were intentionally deleted by the user
+        // Remove sections the user intentionally deleted
         for (String removedPath : removedSections) {
             config.set(removedPath, null);
-
-            // Remove all related cache entries
-            Iterator<String> cacheIterator = configCache.keySet().iterator();
-            while (cacheIterator.hasNext()) {
-                String cacheKey = cacheIterator.next();
-                if (cacheKey.startsWith(removedPath)) {
-                    cacheIterator.remove();
-                }
-            }
+            configCache.keySet().removeIf(k -> k.startsWith(removedPath));
         }
     }
 
     /**
-     * Updates the configuration file while preserving user values and removals
+     * Replaces the config file with the latest default version
+     * while preserving user customizations.
      */
     public void updateConfig() {
         try {
-            // Step 1: Create backup of current values
-            Map<String, Object> backup = new HashMap<>();
-            if (config != null) {
-                backup = createConfigBackup();
-            }
+            Map<String, Object> backup = config != null ? createConfigBackup() : new HashMap<>();
 
-            // Step 2: Replace the config file
             if (file != null && file.exists()) {
                 file.delete();
             }
 
-            // Step 3: Save the new resource file
             plugin.saveResource(CONFIG_PATH + CONFIG_FILENAME, true);
 
-            // Step 4: Clear cache and reload the new config
             configCache.clear();
             reloadFile();
             reloadConfig();
 
-            // Step 5: Restore user values and remove intentionally deleted sections
             if (!backup.isEmpty()) {
                 restoreFromBackup(backup);
             }
 
-            // Step 6: Save the updated config and refresh cache
             save();
             loadCache();
+
         } catch (Exception e) {
             plugin.getLogger().severe("Failed to update config: " + e.getMessage());
             e.printStackTrace();

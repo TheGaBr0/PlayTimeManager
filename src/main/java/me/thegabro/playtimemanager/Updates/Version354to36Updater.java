@@ -26,12 +26,47 @@ public class Version354to36Updater {
     public Version354to36Updater() {}
 
     public void performUpgrade() {
+        addAFKPlaytimeColumn(); //version PTM 3.5.2/3.5.3 didn't correctly add this column in their update
         recreateConfigFile();
         migrateRewardData();
         migrateGoalData();
         removeOldColumns();
         updateGoalData();
         migrateTimestampsToInstant();
+    }
+
+    public void addAFKPlaytimeColumn() {
+        try (Connection connection = DatabaseHandler.getInstance().getConnection()) {
+
+            // Check if column already exists
+            try (Statement stmt = connection.createStatement();
+                 ResultSet rs = stmt.executeQuery("PRAGMA table_info(play_time);")) {
+
+                while (rs.next()) {
+                    if ("afk_playtime".equalsIgnoreCase(rs.getString("name"))) {
+                        return; // Column already exists
+                    }
+                }
+            }
+
+            connection.setAutoCommit(false);
+
+            try (Statement s = connection.createStatement()) {
+                s.executeUpdate(
+                        "ALTER TABLE play_time " +
+                                "ADD COLUMN afk_playtime BIGINT NOT NULL DEFAULT 0;"
+                );
+                connection.commit();
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().severe("Failed to alter table: " + e.getMessage());
+        }
     }
 
 

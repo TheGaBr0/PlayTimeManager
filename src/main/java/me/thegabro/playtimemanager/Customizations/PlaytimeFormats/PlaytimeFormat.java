@@ -3,7 +3,7 @@ import java.io.File;
 
 public class PlaytimeFormat {
 
-    private String name;
+    private final String name;
     private final String yearsSingular;
     private final String yearsPlural;
     private final String monthsSingular;

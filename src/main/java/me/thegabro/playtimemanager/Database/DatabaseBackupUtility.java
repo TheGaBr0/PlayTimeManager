@@ -6,7 +6,6 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import java.io.*;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -117,7 +116,7 @@ public class DatabaseBackupUtility {
                 while ((line = reader.readLine()) != null) {
                     error.append(line).append("\n");
                 }
-                throw new IOException("mysqldump failed with exit code " + exitCode + ": " + error.toString());
+                throw new IOException("mysqldump failed with exit code " + exitCode + ": " + error);
             }
 
             // Add the dump file to zip
@@ -186,7 +185,7 @@ public class DatabaseBackupUtility {
                 while ((line = reader.readLine()) != null) {
                     error.append(line).append("\n");
                 }
-                throw new IOException("pg_dump failed with exit code " + exitCode + ": " + error.toString());
+                throw new IOException("pg_dump failed with exit code " + exitCode + ": " + error);
             }
 
             // Add the dump file to zip

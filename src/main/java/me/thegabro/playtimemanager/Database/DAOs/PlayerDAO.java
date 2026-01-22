@@ -6,14 +6,12 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 
 import java.sql.*;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.logging.Level;
 
 public class PlayerDAO {
     private final DatabaseHandler dbManager;
-    private final PlayTimeManager plugin = PlayTimeManager.getInstance();;
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
 
     public PlayerDAO(DatabaseHandler dbManager) {
         this.dbManager = dbManager;

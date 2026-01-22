@@ -66,7 +66,6 @@ public class DBUsersManager {
 
         if(nonExistentUsers.contains(nickname.toLowerCase())){
             Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
-            return;
         }else{
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 // Get UUID from DB (runs in async thread)
@@ -88,7 +87,6 @@ public class DBUsersManager {
 
         if(nonExistentUsers.contains(nickname.toLowerCase())) {
             Bukkit.getScheduler().runTask(plugin, () -> callback.accept(null));
-            return;
         }else{
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 // Get UUID from DB

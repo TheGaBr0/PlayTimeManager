@@ -119,7 +119,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
     @Override
     public @NotNull String getVersion() {
-        return "3.3.0";
+        return "3.3.1";
     }
 
     @Override

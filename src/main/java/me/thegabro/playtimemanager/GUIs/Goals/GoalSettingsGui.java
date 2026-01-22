@@ -404,7 +404,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     private void openSoundEditor(Player player) {
         player.closeInventory();
 
-        String actualUrl = "https://jd.papermc.io/paper/1.21.5/org/bukkit/Sound.html";
+        String actualUrl = "https://jd.papermc.io/paper/1.21.11/org/bukkit/Sound.html";
 
         // Header with goal name
         Component header = Utils.parseColors("&6&l✎ Sound Editor: &e" + goal.getName());
@@ -425,10 +425,10 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         Component linkText = Utils.parseColors(
                 "&e&l» SOUND LIST «"
         ).clickEvent(ClickEvent.openUrl(actualUrl))
-                .hoverEvent(HoverEvent.showText(Utils.parseColors("&fClick to open sounds documentation for 1.21.5")));
+                .hoverEvent(HoverEvent.showText(Utils.parseColors("&fClick to open sounds documentation for 1.21.11")));
 
         // Link description
-        Component linkInfo = Utils.parseColors("&7&oDocumentation for server version 1.21.5");
+        Component linkInfo = Utils.parseColors("&7&oDocumentation for server version 1.21.11");
 
         Component fullMessage = Component.empty()
                 .append(header)

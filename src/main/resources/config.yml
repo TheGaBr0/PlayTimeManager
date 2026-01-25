@@ -106,7 +106,7 @@ database-debug: false
 #=================================================================
 
 # Choose your afk detection plugin
-# Available options: "none", "essentials", "purpur", "antiafkplus"
+# Available options: "none", "essentials", "purpur", "antiafkplus", "jetsantiafkpro"
 # If you want to use Purpur base afk detection, you need to:
 # - Set player-idle-timeout field greater than 0 (minutes) in server.properties
 # - Set player.idle-timeout.kick-if-idle field to false in purpur.yml

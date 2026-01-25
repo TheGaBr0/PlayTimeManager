@@ -4,7 +4,7 @@ main: me.thegabro.playtimemanager.PlayTimeManager
 api-version: '1.19'
 author: TheGabro
 description: A playtime tracker with customization options and automated rewards for efficient monitoring
-softdepend: [PlaceholderAPI, LuckPerms, Essentials, AntiAFKPlus]
+softdepend: [PlaceholderAPI, LuckPerms, Essentials, AntiAFKPlus, JetsAntiAFKPro]
 
 commands:
   playtime:

@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager;
 
+import me.jet315.antiafkpro.JetsAntiAFKPro;
 import me.thegabro.playtimemanager.Commands.PlayTimeStats;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
@@ -7,6 +8,7 @@ import me.thegabro.playtimemanager.Database.LogFilter;
 import me.thegabro.playtimemanager.Database.Migration.DatabaseMigration;
 import me.thegabro.playtimemanager.ExternalPluginSupport.AntiAFKPlus.AntiAFKPlusAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsAFKHook;
+import me.thegabro.playtimemanager.ExternalPluginSupport.JetsAntiAFKPro.JetsAntiAFKProHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
 import me.thegabro.playtimemanager.GUIs.Goals.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
@@ -49,7 +51,7 @@ public class PlayTimeManager extends JavaPlugin{
     private DBUsersManager dbUsersManager;
     private JoinStreaksManager joinStreaksManager;
     private SessionManager sessionManager;
-
+    private String configuredPlugin;
     public final String CURRENT_CONFIG_VERSION = "4.2";
     public final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
     public final boolean CACHE_DEBUG = false;
@@ -302,11 +304,31 @@ public class PlayTimeManager extends JavaPlugin{
                 return false;
             }
         }
+        else if ("jetsantiafkpro".equals(configuredPlugin)) {
+            Plugin jetsAntiAFKPro = Bukkit.getPluginManager().getPlugin("JetsAntiAFKPro");
+            if(jetsAntiAFKPro != null && jetsAntiAFKPro.isEnabled()){
+                try{
+                    JetsAntiAFKProHook afkHook = JetsAntiAFKProHook.getInstance();
+                    afkHook.init();
+                    getLogger().info("JetsAntiAFKPro detected! Launching related functions");
+                    return true;
+                } catch (Exception e) {
+                    getLogger().severe("ERROR: Failed to initialize JetsAntiAFKPro API: " + e.getMessage());
+                    return false;
+                }
+            }else{
+                getLogger().warning(
+                        "Failed to initialize afk detection: JetsAntiAFKPro plugin configured but not found! " +
+                                "\nUntil this is resolved, PlayTimeManager will not be able to detect afk playtime"
+                );
+                return false;
+            }
+        }
         return false;
     }
 
     private boolean checkPermissionsPlugin() {
-        String configuredPlugin = config.getString("permissions-manager-plugin", "luckperms").toLowerCase();
+        configuredPlugin = config.getString("permissions-manager-plugin", "luckperms").toLowerCase();
 
         if ("luckperms".equals(configuredPlugin)) {
             Plugin luckPerms = Bukkit.getPluginManager().getPlugin("LuckPerms");
@@ -328,5 +350,9 @@ public class PlayTimeManager extends JavaPlugin{
             }
         }
         return false;
+    }
+
+    public String getAFKPlugin(){
+        return configuredPlugin;
     }
 }

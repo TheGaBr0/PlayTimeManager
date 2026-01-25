@@ -61,15 +61,4 @@ public class AntiAFKPlusAFKHook {
             }
         });
     }
-
-    /**
-     * Unregister the listener when plugin disables
-     */
-    public void unregister() {
-        if (afkStateRegistration != null) {
-            AntiAFKPlusAPI api = AntiAFKPlusAPI.getInstance();
-            api.unregisterListener(afkStateRegistration);
-            afkStateRegistration = null;
-        }
-    }
 }

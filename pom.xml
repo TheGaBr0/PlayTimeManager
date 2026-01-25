@@ -200,6 +200,15 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- JetsAntiAFKPro -->
+
+        <dependency>
+            <groupId>jetsantiafk</groupId>
+            <artifactId>jetsantiafk</artifactId>
+            <version>3.2.5</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- AntiAFKPlus -->
         <dependency>
             <groupId>com.github.koyere</groupId>

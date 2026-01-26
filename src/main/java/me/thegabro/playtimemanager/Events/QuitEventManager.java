@@ -1,6 +1,5 @@
 package me.thegabro.playtimemanager.Events;
 
-import me.thegabro.playtimemanager.ExternalPluginSupport.AFKSyncManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.JetsAntiAFKPro.JetsAntiAFKProHook;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
@@ -15,7 +14,6 @@ public class QuitEventManager implements Listener {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
-    private final AFKSyncManager afkSyncManager = AFKSyncManager.getInstance();
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event){

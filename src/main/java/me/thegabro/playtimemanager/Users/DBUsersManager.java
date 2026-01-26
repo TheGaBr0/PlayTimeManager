@@ -317,12 +317,6 @@ public class DBUsersManager {
 
         String uuid = onlineUser.getUuid();
 
-        // Check if player already exists in the leaderboard
-        boolean alreadyPresent;
-        synchronized (topPlayers) {
-            alreadyPresent = topPlayers.stream().anyMatch(player -> player.getUuid().equals(uuid));
-        }
-
         // Load player data asynchronously (non-blocking)
         getUserFromUUIDAsyncWithContext(uuid, "cached leaderboard update", user -> {
             if (user == null)
@@ -335,6 +329,12 @@ public class DBUsersManager {
 
                     if (!exists && topPlayers.size() < TOP_PLAYERS_LIMIT) {
                         topPlayers.add(user);
+                        topPlayers.sort(Comparator.comparing(DBUser::getPlaytime).reversed());
+
+                        //remove players that got kicked out the leaderboard
+                        if (topPlayers.size() > TOP_PLAYERS_LIMIT) {
+                            topPlayers.remove(topPlayers.size() - 1);
+                        }
                     } else if (exists) {
                         // Update existing entry
                         for (int i = 0; i < topPlayers.size(); i++) {
@@ -343,6 +343,7 @@ public class DBUsersManager {
                                 break;
                             }
                         }
+                        topPlayers.sort(Comparator.comparing(DBUser::getPlaytime).reversed());
                     }
                 }
             });
@@ -350,23 +351,17 @@ public class DBUsersManager {
     }
 
     public DBUser getTopPlayerAtPosition(int position) {
-        if (position < 1 || position > topPlayers.size()) {
-            return null;
-        }
-
         synchronized (topPlayers) {
-            List<DBUser> sortedPlayers = topPlayers.stream()
-                    .sorted(Comparator.comparing(DBUser::getPlaytime).reversed())
-                    .toList();
-            return sortedPlayers.get(position - 1);
+            if (position < 1 || position > topPlayers.size()) {
+                return null;
+            }
+            return topPlayers.get(position - 1);
         }
     }
 
     public List<DBUser> getTopPlayers(){
         synchronized (topPlayers) {
-            return topPlayers.stream()
-                    .sorted(Comparator.comparing(DBUser::getPlaytime).reversed())
-                    .collect(Collectors.toList());
+            return List.copyOf(topPlayers);
         }
     }
 

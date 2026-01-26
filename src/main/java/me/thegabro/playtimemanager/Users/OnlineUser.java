@@ -388,34 +388,42 @@ public class OnlineUser extends DBUser {
      * @param playtimeSnapshot The PLAY_ONE_MINUTE statistic snapshot
      * @param callback Optional callback to run after all updates complete
      */
-    public void updateAllOnQuitAsync(long playtimeSnapshot, Runnable callback) {
-        // Finalize AFK session if needed
+    private void updateAllOnQuitInternal(
+            long playtimeSnapshot,
+            boolean async,
+            Runnable callback
+    ) {
         if (!afkTimeFinalized) {
             finalizeCurrentAFKSession(playtimeSnapshot);
         }
 
-        // Calculate values
         long currentPlaytime = DBplaytime + (playtimeSnapshot - fromServerOnJoinPlayTime);
         long totalAFKTime = DBAFKplaytime + currentSessionAFKTime;
         Instant lastSeenTime = Instant.now();
         this.lastSeen = lastSeenTime;
 
-        // Perform all DB updates asynchronously
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+        Runnable dbTask = () -> {
             DatabaseHandler.getInstance().getPlayerDAO().updatePlaytime(uuid, currentPlaytime);
             DatabaseHandler.getInstance().getPlayerDAO().updateAFKPlaytime(uuid, totalAFKTime);
             DatabaseHandler.getInstance().getPlayerDAO().updateLastSeen(uuid, lastSeenTime);
 
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
-        });
+        };
+
+        if (async) {
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, dbTask);
+        } else {
+            dbTask.run(); // BLOCKING
+        }
     }
 
-    /**
-     * Synchronous version - use updateAllOnQuitAsync when possible
-     */
-    public void updateAllOnQuit(long playtimeSnapshot) {
-        updateAllOnQuitAsync(playtimeSnapshot, null);
+    public void updateAllOnQuitAsync(long playtimeSnapshot, Runnable callback) {
+        updateAllOnQuitInternal(playtimeSnapshot, true, callback);
+    }
+
+    public void updateAllOnQuitSync(long playtimeSnapshot) {
+        updateAllOnQuitInternal(playtimeSnapshot, false, null);
     }
 }

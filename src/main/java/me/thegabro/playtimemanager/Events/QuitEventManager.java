@@ -36,16 +36,11 @@ public class QuitEventManager implements Listener {
 
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
-                    // Update database asynchronously
-                    onlineUser.updatePlayTimeWithSnapshot(quitTimePlaytime);
+                    onlineUser.updateAllOnQuitAsync(
+                            quitTimePlaytime,
+                            () -> executeCleanup(onlineUser)
+                    );
 
-                    if (plugin.isAfkDetectionConfigured()) {
-                        onlineUser.updateAFKPlayTime();
-                    }
-
-                    onlineUser.updateLastSeen();
-
-                    executeCleanup(onlineUser);
                 } catch (Exception e) {
                     plugin.getLogger().severe("Error updating database for " + onlineUser.getNickname() + ": " + e.getMessage());
                 }

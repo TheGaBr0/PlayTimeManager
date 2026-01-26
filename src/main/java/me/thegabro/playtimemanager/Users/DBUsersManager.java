@@ -15,7 +15,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class DBUsersManager {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
@@ -260,7 +259,7 @@ public class DBUsersManager {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
                 // Wait for online users' playtime update to finish
-                onlineUsersManager.updateAllOnlineUsersPlaytime().get();
+                onlineUsersManager.updateAllOnlineUsersPlaytimeAsync().get();
 
                 playersHiddenFromLeaderBoard = plugin.getConfiguration().getStringList("placeholders.playtime-leaderboard-blacklist", new ArrayList<>());
 
@@ -324,26 +323,27 @@ public class DBUsersManager {
 
             Bukkit.getScheduler().runTask(plugin, () -> {
                 synchronized (topPlayers) {
-                    // Re-check if player exists (atomic check-and-act)
-                    boolean exists = topPlayers.stream().anyMatch(p -> p.getUuid().equals(uuid));
 
-                    if (!exists && topPlayers.size() < TOP_PLAYERS_LIMIT) {
+                    int index = -1;
+                    for (int i = 0; i < topPlayers.size(); i++) {
+                        if (topPlayers.get(i).getUuid().equals(uuid)) {
+                            index = i;
+                            break;
+                        }
+                    }
+
+                    if (index >= 0) {
+                        // Update existing
+                        topPlayers.set(index, user);
+                    } else {
+                        // Add new (even if full)
                         topPlayers.add(user);
-                        topPlayers.sort(Comparator.comparing(DBUser::getPlaytime).reversed());
+                    }
 
-                        //remove players that got kicked out the leaderboard
-                        if (topPlayers.size() > TOP_PLAYERS_LIMIT) {
-                            topPlayers.remove(topPlayers.size() - 1);
-                        }
-                    } else if (exists) {
-                        // Update existing entry
-                        for (int i = 0; i < topPlayers.size(); i++) {
-                            if (topPlayers.get(i).getUuid().equals(uuid)) {
-                                topPlayers.set(i, user);
-                                break;
-                            }
-                        }
-                        topPlayers.sort(Comparator.comparing(DBUser::getPlaytime).reversed());
+                    topPlayers.sort(Comparator.comparing(DBUser::getPlaytime).reversed());
+
+                    if (topPlayers.size() > TOP_PLAYERS_LIMIT) {
+                        topPlayers.remove(topPlayers.size() - 1);
                     }
                 }
             });

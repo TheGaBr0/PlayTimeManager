@@ -36,7 +36,7 @@ public class PlaytimePercentage implements CommandExecutor {
                 org.bukkit.Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                     try {
                         // Wait for the update to complete
-                        onlineUsersManager.updateAllOnlineUsersPlaytime().get();
+                        onlineUsersManager.updateAllOnlineUsersPlaytimeAsync().get();
 
                         // Now that updates are complete, get the percentage
                         DecimalFormat df = new DecimalFormat("#.##");

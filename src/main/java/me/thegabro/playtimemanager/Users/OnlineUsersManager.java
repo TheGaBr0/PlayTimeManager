@@ -91,12 +91,12 @@ public class OnlineUsersManager {
         dbUpdateSchedule = new BukkitRunnable() {
             @Override
             public void run() {
-                updateAllOnlineUsersPlaytime();
+                updateAllOnlineUsersPlaytimeAsync();
             }
         }.runTaskTimer(plugin, 0, DB_UPDATE_INTERVAL);
     }
 
-    public CompletableFuture<Void> updateAllOnlineUsersPlaytime() {
+    public CompletableFuture<Void> updateAllOnlineUsersPlaytimeAsync() {
         CompletableFuture<Void> future = new CompletableFuture<>();
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {

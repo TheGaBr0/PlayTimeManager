@@ -1,6 +1,5 @@
 package me.thegabro.playtimemanager.Commands;
 
-import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Users.DBUser;
@@ -77,7 +76,7 @@ public class PlaytimeTop implements TabExecutor {
         org.bukkit.Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
                 // Wait for update to complete
-                onlineUsersManager.updateAllOnlineUsersPlaytime().get();
+                onlineUsersManager.updateAllOnlineUsersPlaytimeAsync().get();
 
                 // Now get top players
                 List<DBUser> topPlayers = dbUsersManager.getTopPlayers();

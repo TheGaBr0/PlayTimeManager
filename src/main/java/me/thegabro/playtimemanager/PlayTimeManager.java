@@ -1,6 +1,5 @@
 package me.thegabro.playtimemanager;
 
-import me.jet315.antiafkpro.JetsAntiAFKPro;
 import me.thegabro.playtimemanager.Commands.PlayTimeStats;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
@@ -25,11 +24,13 @@ import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.Events.QuitEventManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlayTimePlaceHolders;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import net.luckperms.api.LuckPerms;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bukkit.Bukkit;
+import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
@@ -199,23 +200,40 @@ public class PlayTimeManager extends JavaPlugin{
     @Override
     public void onDisable() {
 
-        if(databaseHandler != null) {
-            databaseHandler.close();
-        }
-        HandlerList.unregisterAll(this);
+        getLogger().info("Saving player data...");
 
-        if(joinStreaksManager != null){
-            onlineUsersManager.stopSchedules();
-            for(Player p : Bukkit.getOnlinePlayers()){
-                onlineUsersManager.removeOnlineUser(onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName()));
+        Bukkit.getScheduler().cancelTasks(this);
+
+        if (onlineUsersManager != null) {
+            // Persist each online user
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                OnlineUser user = onlineUsersManager.getOnlineUser(player.getName());
+                if (user != null) {
+                    user.updateAllOnQuitSync(
+                            user.getPlayerInstance().getStatistic(Statistic.PLAY_ONE_MINUTE)
+                    );
+                    onlineUsersManager.removeOnlineUser(user);
+                }
             }
 
-            dbUsersManager.clearCaches();
+            onlineUsersManager.stopSchedules();
+        }
+
+
+        if (joinStreaksManager != null) {
             joinStreaksManager.cleanUp();
         }
 
-        DatabaseHandler.resetInstance();
+        if (dbUsersManager != null) {
+            dbUsersManager.clearCaches();
+        }
 
+        HandlerList.unregisterAll(this);
+
+        if (databaseHandler != null) {
+            databaseHandler.close();
+        }
+        DatabaseHandler.resetInstance();
 
         getLogger().info("has been disabled!");
     }

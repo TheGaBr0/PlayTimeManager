@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class PlayTimePlaceHolders extends PlaceholderExpansion {
@@ -485,9 +486,18 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
     private String handleRank(String nickname) {
         try {
-            int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(nickname));
-            return position != -1 ?
-                    String.valueOf(position + 1) : plugin.getConfiguration().getString("placeholders.not-in-leaderboard-message", "-");
+
+            DBUser user = getUserFromCache(nickname);
+
+            List<DBUser> topPlayers = dbUsersManager.getTopPlayers();
+
+            for (int i = 0; i < topPlayers.size(); i++) {
+                if (topPlayers.get(i).getUuid().equals(user.getUuid())) {
+                    return String.valueOf(i + 1);
+                }
+            }
+
+            return plugin.getConfiguration().getString("placeholders.not-in-leaderboard-message", "-");
         } catch (Exception e) {
             return e.getMessage();
         }

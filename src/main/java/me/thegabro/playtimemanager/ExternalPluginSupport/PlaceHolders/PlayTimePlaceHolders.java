@@ -487,12 +487,10 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private String handleRank(String nickname) {
         try {
 
-            DBUser user = getUserFromCache(nickname);
-
             List<DBUser> topPlayers = dbUsersManager.getTopPlayers();
 
             for (int i = 0; i < topPlayers.size(); i++) {
-                if (topPlayers.get(i).getUuid().equals(user.getUuid())) {
+                if (topPlayers.get(i).getNickname().equals(nickname)) {
                     return String.valueOf(i + 1);
                 }
             }

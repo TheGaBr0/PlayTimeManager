@@ -642,7 +642,16 @@ public class PlayerStatsGui extends BaseCustomGUI {
         combinations.put("%GOALS_COUNT%", String.valueOf(completedGoals.size()));
 
         //Playtime Leaderboard
-        int position = DBUsersManager.getInstance().getTopPlayers().indexOf(OnlineUsersManager.getInstance().getOnlineUser(subject.getNickname()));
+
+        List<DBUser> topPlayers = DBUsersManager.getInstance().getTopPlayers();
+        int position = -1;
+        for (int i = 0; i < topPlayers.size(); i++) {
+            if (topPlayers.get(i).getNickname().equals(subject.getNickname())) {
+                position = i + 1;
+                break;
+            }
+        }
+
         if(position != -1)
             combinations.put("%POSITION%", String.valueOf(position + 1));
         else

@@ -21,7 +21,7 @@ I thought this could be useful to other server administrators as well, so I deci
 
 ---
 
-![alt text](https://i.imgur.com/sHpOZkL.png "Landing page")
+![alt text](https://i.imgur.com/NwhTysY.png "Landing page")
 
 ## Examples of usage
 
@@ -50,6 +50,8 @@ Ready to get started? The comprehensive [PlayTimeManager Wiki](https://github.co
 - **Dynamic Leaderboards** - Real-time player ranking system based on playtime
 - **AFK Detection Support** - Accurate playtime tracking that excludes idle time
 - **Multi-language Support** - Player-facing messages can all be localized
+- **Multiple database backend support** - Choose between SQLite, PostgreSQL, MySQL, and MariaDB with seamless data migration between database types
+- **Flexible time format system** - Track and display playtime in years, months, weeks, days, hours, minutes, seconds, and Minecraft days (20-minute cycles)
 
 ## Use Cases
 - **Automatic Staff Promotions** - Promote players to staff ranks after specific playtime

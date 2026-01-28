@@ -653,7 +653,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
         }
 
         if(position != -1)
-            combinations.put("%POSITION%", String.valueOf(position + 1));
+            combinations.put("%POSITION%", String.valueOf(position));
         else
             combinations.put("%POSITION%", config.getOrDefaultString("player-stats-gui.leaderboard-settings.not-in-leaderboard-position", "-"));
 

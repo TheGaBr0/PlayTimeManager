@@ -200,15 +200,6 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- JetsAntiAFKPro -->
-
-        <dependency>
-            <groupId>jetsantiafk</groupId>
-            <artifactId>jetsantiafk</artifactId>
-            <version>3.2.5</version>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- AntiAFKPlus -->
         <dependency>
             <groupId>com.github.koyere</groupId>
@@ -234,4 +225,46 @@
         </dependency>
 
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>jetsantiafk</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.6.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-source</id>
+                                <phase>generate-sources</phase>
+                                <goals><goal>add-source</goal></goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/jetsantiafk/java</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>jetsantiafk</groupId>
+                    <artifactId>jetsantiafk</artifactId>
+                    <version>3.2.5</version>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+            <repositories>
+                <repository>
+                    <id>local-repo</id>
+                    <url>file://${project.basedir}/local-repo</url>
+                </repository>
+            </repositories>
+        </profile>
+    </profiles>
+
 </project>

@@ -7,7 +7,6 @@ import me.thegabro.playtimemanager.Database.LogFilter;
 import me.thegabro.playtimemanager.Database.Migration.DatabaseMigration;
 import me.thegabro.playtimemanager.ExternalPluginSupport.AntiAFKPlus.AntiAFKPlusAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsAFKHook;
-import me.thegabro.playtimemanager.ExternalPluginSupport.JetsAntiAFKPro.JetsAntiAFKProHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
 import me.thegabro.playtimemanager.GUIs.Goals.*;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
@@ -326,8 +325,9 @@ public class PlayTimeManager extends JavaPlugin{
             Plugin jetsAntiAFKPro = Bukkit.getPluginManager().getPlugin("JetsAntiAFKPro");
             if(jetsAntiAFKPro != null && jetsAntiAFKPro.isEnabled()){
                 try{
-                    JetsAntiAFKProHook afkHook = JetsAntiAFKProHook.getInstance();
-                    afkHook.init();
+                    Class<?> hookClass = Class.forName("me.thegabro.playtimemanager.ExternalPluginSupport.JetsAntiAFKPro.JetsAntiAFKProHook");
+                    Object afkHook = hookClass.getMethod("getInstance").invoke(null);
+                    hookClass.getMethod("init").invoke(afkHook);
                     getLogger().info("JetsAntiAFKPro detected! Launching related functions");
                     return true;
                 } catch (Exception e) {

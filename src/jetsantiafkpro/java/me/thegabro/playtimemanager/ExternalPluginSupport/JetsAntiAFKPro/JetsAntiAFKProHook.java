@@ -1,6 +1,5 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport.JetsAntiAFKPro;
 
-import me.jet315.antiafkpro.listeners.LeaveJoinListeners;
 import me.jet315.antiafkpro.AntiAFKProAPI;
 import me.jet315.antiafkpro.JetsAntiAFKPro;
 import me.jet315.antiafkpro.manager.AFKPlayer;

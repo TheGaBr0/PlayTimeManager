@@ -254,16 +254,10 @@
                 <dependency>
                     <groupId>jetsantiafk</groupId>
                     <artifactId>jetsantiafk</artifactId>
-                    <version>3.2.5</version>
+                    <version>3.8.8</version>
                     <scope>provided</scope>
                 </dependency>
             </dependencies>
-            <repositories>
-                <repository>
-                    <id>local-repo</id>
-                    <url>file://${project.basedir}/local-repo</url>
-                </repository>
-            </repositories>
         </profile>
     </profiles>
 

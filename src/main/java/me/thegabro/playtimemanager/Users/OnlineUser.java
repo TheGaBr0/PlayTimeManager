@@ -197,6 +197,11 @@ public class OnlineUser extends DBUser {
         });
     }
 
+    @Override
+    public Instant getLastSeen() {
+        return Instant.now();
+    }
+
     /**
      * Returns the last seen timestamp from the previous session, loaded from the database
      * on login and never mutated during the current session. Use this instead of getLastSeen()

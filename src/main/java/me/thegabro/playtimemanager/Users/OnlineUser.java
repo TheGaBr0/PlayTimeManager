@@ -15,7 +15,6 @@ public class OnlineUser extends DBUser {
     private long afkStartPlaytime;
     private long currentSessionAFKTime;
     private boolean afkTimeFinalized;
-
     /**
      * Private constructor - use createAsync instead.
      */
@@ -199,6 +198,17 @@ public class OnlineUser extends DBUser {
     }
 
     /**
+     * Returns the last seen timestamp from the previous session, loaded from the database
+     * on login and never mutated during the current session. Use this instead of getLastSeen()
+     * when you need to measure how long a player has been absent, e.g. for streak eligibility checks.
+     *
+     * @return the last seen timestamp of the previous session, or null if the player has never joined before
+     */
+    public Instant getPreviousSessionLastSeen() {
+        return previousSessionLastSeen; // set once during loadUserDataSync, never changed
+    }
+
+    /**
      * Synchronous version - use updateLastSeenAsync when possible
      */
     public void updateLastSeen() {
@@ -290,17 +300,6 @@ public class OnlineUser extends DBUser {
         }
 
         return Math.max(0, totalAFK);
-    }
-
-    /**
-     * Returns the current time as the last seen timestamp for online players.
-     * Online players are always considered "just seen".
-     *
-     * @return the current LocalDateTime
-     */
-    @Override
-    public Instant getLastSeen() {
-        return Instant.now();
     }
 
     /**

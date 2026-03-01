@@ -32,6 +32,7 @@ public class DBUser {
     protected boolean afk;
     protected OfflinePlayer playerInstance;
     protected ArrayList<String> notReceivedGoals;
+    protected Instant previousSessionLastSeen;
 
     public static final DBUser LOADING = new DBUser(); // Special instance for loading state
     public static final DBUser NOT_FOUND = new DBUser(); // Special instance for not found
@@ -157,7 +158,8 @@ public class DBUser {
         this.DBAFKplaytime = DatabaseHandler.getInstance().getPlayerDAO().getAFKPlaytime(uuid);
         this.artificialPlaytime = DatabaseHandler.getInstance().getPlayerDAO().getArtificialPlaytime(uuid);
         this.completedGoals = DatabaseHandler.getInstance().getGoalsDAO().getCompletedGoals(uuid);
-        this.lastSeen = DatabaseHandler.getInstance().getPlayerDAO().getLastSeen(uuid);
+        this.previousSessionLastSeen = DatabaseHandler.getInstance().getPlayerDAO().getLastSeen(uuid);
+        this.lastSeen = this.previousSessionLastSeen; // lastSeen in sync for DBUser usage
         this.firstJoin = DatabaseHandler.getInstance().getPlayerDAO().getFirstJoin(uuid);
         this.relativeJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getRelativeJoinStreak(uuid);
         this.absoluteJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getRelativeJoinStreak(uuid);

@@ -149,16 +149,22 @@ public class CycleScheduler {
             return false;
         }
 
-        long secondsBetween = Duration.between(user.getLastSeen(), Instant.now()).getSeconds();
+        // First-time players (no lastSeen) are always eligible
+        if (user.getPreviousSessionLastSeen() == null) {
+            return true;
+        }
+
+        long secondsBetween = Duration.between(user.getPreviousSessionLastSeen(), Instant.now()).getSeconds();
         return secondsBetween <= exactIntervalSeconds * plugin.getConfiguration().getInt("reset-joinstreak.missed-joins", 1);
     }
 
     public boolean isCurrentCycle() {
-        // Get current cycle info based on cronExpression
-        Date now = new Date();
-        Date previousReset = cronExpression.getTimeAfter(new Date(now.getTime() - exactIntervalSeconds * 1000));
+        if (nextIntervalReset == null) return false;
 
-        // We're in a valid cycle if the current time is between the previous reset and the next reset
+        Date now = new Date();
+        // Previous reset is simply one interval before the next reset
+        Date previousReset = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);
+
         return now.after(previousReset) && now.before(nextIntervalReset);
     }
 

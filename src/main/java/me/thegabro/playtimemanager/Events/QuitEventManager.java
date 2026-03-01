@@ -22,6 +22,8 @@ public class QuitEventManager implements Listener {
             return;
         }
 
+        onlineUsersManager.removeOnlineUser(onlineUser);
+
         try {
             // Finalize AFK time first if player was AFK
             final long quitTimePlaytime = event.getPlayer().getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE);
@@ -56,7 +58,6 @@ public class QuitEventManager implements Listener {
     }
     private void executeCleanup(OnlineUser onlineUser) {
         try {
-            onlineUsersManager.removeOnlineUser(onlineUser);
             dbUsersManager.removeUserFromCache(onlineUser.getUuid());
 
             plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {

@@ -61,16 +61,17 @@ public class JoinStreaksManager {
 
     public void processPlayerLogin(OnlineUser onlineUser) {
 
-        if (cycleScheduler.isEligibleForStreak(onlineUser)) {
-            // Always increment absolute streak
-            streakTracker.incrementAbsoluteStreak(onlineUser);
-            cycleScheduler.markPlayerJoinedInCurrentCycle(onlineUser.getUuid());
+        boolean isEligible = cycleScheduler.isEligibleForStreak(onlineUser);
 
-            // Only increment relative streak and check rewards if schedule is active AND rewards exist
-            if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation", true) && !rewardRegistry.isEmpty()) {
-                streakTracker.incrementRelativeStreak(onlineUser);
-                rewardProcessor.processEligibleRewards(onlineUser);
-            }
+        if(!isEligible)
+            onlineUser.resetJoinStreaks();
+
+        streakTracker.incrementAbsoluteStreak(onlineUser);
+        cycleScheduler.markPlayerJoinedInCurrentCycle(onlineUser.getUuid());
+
+        if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation", true) && !rewardRegistry.isEmpty()) {
+            streakTracker.incrementRelativeStreak(onlineUser);
+            rewardProcessor.processEligibleRewards(onlineUser);
         }
     }
 

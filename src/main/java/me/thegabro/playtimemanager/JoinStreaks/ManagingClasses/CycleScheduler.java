@@ -18,6 +18,7 @@ import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class CycleScheduler {
@@ -141,9 +142,6 @@ public class CycleScheduler {
     }
 
     public boolean isEligibleForStreak(OnlineUser user) {
-        if (!isCurrentCycle()) {
-            playersJoinedDuringCurrentCycle.clear();
-        }
 
         if (playersJoinedDuringCurrentCycle.contains(user.getUuid())) {
             return false;
@@ -153,6 +151,7 @@ public class CycleScheduler {
         if (user.getPreviousSessionLastSeen() == null) {
             return true;
         }
+
 
         long secondsBetween = Duration.between(user.getPreviousSessionLastSeen(), Instant.now()).getSeconds();
         return secondsBetween <= exactIntervalSeconds * plugin.getConfiguration().getInt("reset-joinstreak.missed-joins", 1);

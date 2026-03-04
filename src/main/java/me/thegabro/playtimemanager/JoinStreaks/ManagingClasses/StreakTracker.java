@@ -25,10 +25,6 @@ public class StreakTracker {
         user.incrementRelativeJoinStreak();
     }
 
-    public void resetStreaks(OnlineUser user) {
-        user.resetJoinStreaks();
-    }
-
     public void resetInactivePlayerStreaksAsync(Set<String> playersWithStreaks, long intervalSeconds, int missesAllowed, Consumer<Integer> callback) {
         AtomicInteger playersReset = new AtomicInteger();
         AtomicInteger processedCount = new AtomicInteger();

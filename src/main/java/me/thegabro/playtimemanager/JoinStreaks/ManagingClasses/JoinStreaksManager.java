@@ -61,9 +61,13 @@ public class JoinStreaksManager {
 
     public void processPlayerLogin(OnlineUser onlineUser) {
 
+        if (cycleScheduler.playersJoinedDuringCurrentCycle.contains(onlineUser.getUuid())) {
+            return; // Already joined this cycle, do nothing
+        }
+
         boolean isEligible = cycleScheduler.isEligibleForStreak(onlineUser);
 
-        if(!isEligible)
+        if (!isEligible)
             onlineUser.resetJoinStreaks();
 
         streakTracker.incrementAbsoluteStreak(onlineUser);

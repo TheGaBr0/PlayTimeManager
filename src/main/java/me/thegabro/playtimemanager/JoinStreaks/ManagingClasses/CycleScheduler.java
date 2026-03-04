@@ -28,7 +28,7 @@ public class CycleScheduler {
     private Date nextIntervalReset;
     private long exactIntervalSeconds;
     private BukkitTask intervalTask;
-    private final Set<String> playersJoinedDuringCurrentCycle = new HashSet<>();
+    protected final Set<String> playersJoinedDuringCurrentCycle = new HashSet<>();
     private String checkTimeToText;
 
     public CycleScheduler() {}

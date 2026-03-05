@@ -316,6 +316,30 @@ public class OnlineUser extends DBUser {
     }
 
     /**
+     * Resets all player data and re-anchors the server playtime baseline.
+     * Overrides DBUser.resetAsync() because the base implementation sets
+     * fromServerOnJoinPlayTime to 0, which is incorrect for online users.
+     * See getCachedPlayTime() method.
+     * @param callback Optional callback to run on main thread after reset completes
+     */
+    @Override
+    public void resetAsync(Runnable callback) {
+        super.resetAsync(callback);
+        refreshFromServerOnJoinPlayTime(); // reset baseline to current server stat
+    }
+
+    /**
+     * Resets playtime data and re-anchors the server playtime baseline.
+     * Same reasoning as resetAsync()
+     * @param callback Optional callback to run on main thread after reset completes
+     */
+    @Override
+    public void resetPlaytimeAsync(Runnable callback) {
+        super.resetPlaytimeAsync(callback);
+        refreshFromServerOnJoinPlayTime();
+    }
+
+    /**
      * Sets the player's AFK status and manages AFK time tracking.
      * Records start/end times and calculates AFK duration when status changes.
      *

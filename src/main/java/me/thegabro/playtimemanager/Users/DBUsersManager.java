@@ -267,7 +267,7 @@ public class DBUsersManager {
                 Map<String, String> dbTopPlayers = DatabaseHandler.getInstance().getStatisticsDAO()
                         .getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersHiddenFromLeaderBoard.size());
 
-                // Load all DBUsers asynchronously
+                // Load all DBUsers/OnlineUsers asynchronously
                 List<CompletableFuture<DBUser>> futures = dbTopPlayers.keySet().stream()
                         .map(uuid -> {
                             CompletableFuture<DBUser> future = new CompletableFuture<>();

@@ -7,6 +7,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
@@ -207,6 +208,10 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                         Material.valueOf(reward.getItemIcon()),
                         Utils.parseColors("&e&l#ID&r&e " + reward.getId()),
                         Utils.parseColors("&7Required Joins: &e" + (reward.getMinRequiredJoins() == -1 ? "-" : reward.getRequiredJoinsDisplay())),
+                        Utils.parseColors("§7Repeatable: ")
+                                .append(Component.text(reward.isRepeatable() ? "true" : "false")
+                                        .color(reward.isRepeatable() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
+                                .decoration(TextDecoration.ITALIC, false),
                         Utils.parseColors("&e" + reward.getPermissions().size() + "&7 " +
                                 (reward.getPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
                         Utils.parseColors("&e" + reward.getCommands().size() + "&7 " +
@@ -331,7 +336,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                     if (event.isShiftClick() && event.isRightClick()) {
                         whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " &7Deleting reward &e" + id + "&7..."));
                         Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
-                            reward.kill();
+                            reward.kill(false);
 
                             // Switch back to main thread for UI updates
                             Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {

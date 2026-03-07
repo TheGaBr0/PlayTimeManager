@@ -80,6 +80,7 @@ public class UpdateManager {
                 new Version354to36Updater().performUpgrade();
                 new Version36to361Updater().performUpgrade();
                 new Version362to363Updater().performUpgrade();
+                new Version363to364Updater().performUpgrade();
                 break;
             case "3.3":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.3 config version detected, starting the update process...");
@@ -94,6 +95,7 @@ public class UpdateManager {
                 new Version354to36Updater().performUpgrade();
                 new Version36to361Updater().performUpgrade();
                 new Version362to363Updater().performUpgrade();
+                new Version363to364Updater().performUpgrade();
                 break;
             case "3.4":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.4 config version detected, starting the update process...");
@@ -107,6 +109,7 @@ public class UpdateManager {
                 new Version354to36Updater().performUpgrade();
                 new Version36to361Updater().performUpgrade();
                 new Version362to363Updater().performUpgrade();
+                new Version363to364Updater().performUpgrade();
                 break;
             case "3.5":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.5 config version detected, starting the update process...");
@@ -119,6 +122,7 @@ public class UpdateManager {
                 new Version354to36Updater().performUpgrade();
                 new Version36to361Updater().performUpgrade();
                 new Version362to363Updater().performUpgrade();
+                new Version363to364Updater().performUpgrade();
                 break;
             case "3.6":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.6 config version detected, starting the update process...");
@@ -130,6 +134,7 @@ public class UpdateManager {
                 new Version354to36Updater().performUpgrade();
                 new Version36to361Updater().performUpgrade();
                 new Version362to363Updater().performUpgrade();
+                new Version363to364Updater().performUpgrade();
                 break;
             case "3.7":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.7 config version detected, starting the update process...");
@@ -140,6 +145,7 @@ public class UpdateManager {
                 new Version354to36Updater().performUpgrade();
                 new Version36to361Updater().performUpgrade();
                 new Version362to363Updater().performUpgrade();
+                new Version363to364Updater().performUpgrade();
                 break;
             case "3.8":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 3.8 config version detected, starting the update process...");
@@ -157,6 +163,7 @@ public class UpdateManager {
                 new Version354to36Updater().performUpgrade();
                 new Version36to361Updater().performUpgrade();
                 new Version362to363Updater().performUpgrade();
+                new Version363to364Updater().performUpgrade();
                 break;
             case "4.0":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 4.0 config version detected, starting the update process...");
@@ -164,12 +171,20 @@ public class UpdateManager {
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version36to361Updater().performUpgrade();
                 new Version362to363Updater().performUpgrade();
+                new Version363to364Updater().performUpgrade();
                 break;
             case "4.1":
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 4.1 config version detected, starting the update process...");
                 backupUtility.createBackup("Update from version 3.6.2 to " + plugin_version);
                 Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
                 new Version362to363Updater().performUpgrade();
+                new Version363to364Updater().performUpgrade();
+                break;
+            case "4.2":
+                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 4.2 config version detected, starting the update process...");
+                backupUtility.createBackup("Update from version 3.6.3 to " + plugin_version);
+                Bukkit.getServer().getConsoleSender().sendMessage("[§6PlayTime§eManager§f]§7 Current configuration backed up successfully");
+                new Version363to364Updater().performUpgrade();
                 break;
             default:
                 plugin.getLogger().severe("[§6PlayTime§eManager§f]§7 Unknown config version detected! Something may break!");

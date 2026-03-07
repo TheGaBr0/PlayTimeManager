@@ -18,7 +18,7 @@ public class JoinStreaksManager {
     private final DatabaseHandler db = DatabaseHandler.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
-    private RewardRegistry rewardRegistry;
+    private final RewardRegistry rewardRegistry = RewardRegistry.getInstance();
     private StreakTracker streakTracker;
     private CycleScheduler cycleScheduler;
     private RewardProcessor rewardProcessor;
@@ -37,7 +37,6 @@ public class JoinStreaksManager {
 
     public void initialize() {
 
-        this.rewardRegistry = new RewardRegistry();
         this.cycleScheduler = new CycleScheduler();
         this.streakTracker = new StreakTracker();
         this.rewardExecutor = new RewardExecutor();

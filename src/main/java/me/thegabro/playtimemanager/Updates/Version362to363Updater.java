@@ -87,6 +87,6 @@ public class Version362to363Updater {
         commandsConfig.initialize(plugin);
 
         commandsConfig.updateConfig();
-        Configuration.getInstance().updateConfig(false);
+        Configuration.getInstance().updateConfig(true);
     }
 }

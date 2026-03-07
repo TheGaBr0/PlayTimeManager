@@ -29,6 +29,7 @@ public class JoinStreakReward {
     private String itemIcon;
     private String description;
     private String rewardDescription;
+    private boolean repeatable;
 
     public JoinStreakReward(int id, int requiredJoins) {
         this.id = id;
@@ -67,19 +68,21 @@ public class JoinStreakReward {
             rewardDescription = config.getString("reward-description", "");
             permissions = new ArrayList<>(config.getStringList("permissions"));
             commands = new ArrayList<>(config.getStringList("commands"));
+            repeatable = config.getBoolean("repeatable");
             itemIcon = config.getString("item-icon", Material.SUNFLOWER.toString());
         } else {
             rewardMessage = getDefaultRewardMessage();
             rewardSound = getDefaultRewardSound();
             permissions = new ArrayList<>();
             commands = new ArrayList<>();
+            repeatable = true;
             description = "";
             rewardDescription = "";
             itemIcon = Material.SUNFLOWER.toString();
         }
     }
 
-    private void saveToFile() {
+    protected void saveToFile() {
         try {
             if (!rewardFile.exists()) {
                 rewardFile.getParentFile().mkdirs();
@@ -109,6 +112,9 @@ public class JoinStreakReward {
                     "---------------------------",
                     "reward-description provides detailed information about the reward.",
                     "---------------------------",
+                    "---------------------------",
+                    "repeatable specifies whether this reward can be obtained multiple times by a player or only the first one",
+                    "---------------------------",
                     "item-icon represents the visual representation of the reward in GUI.",
                     "---------------------------",
                     "permissions defines what permissions will be granted to a player when they reach this reward",
@@ -130,8 +136,8 @@ public class JoinStreakReward {
             config.set("reward-description", rewardDescription);
             config.set("permissions", permissions);
             config.set("commands", commands);
+            config.set("repeatable", repeatable);
             config.set("item-icon", itemIcon);
-
             config.save(rewardFile);
         } catch (IOException e) {
             plugin.getLogger().severe("Could not save reward file for " + id + ": " + e.getMessage());
@@ -191,8 +197,14 @@ public class JoinStreakReward {
         return commands;
     }
 
+    public boolean isRepeatable(){ return repeatable; }
+
     public ArrayList<String> getPermissions() {
         return permissions;
+    }
+
+    public File getRewardFile(){
+        return rewardFile;
     }
 
     public void setRequiredJoinsRange(int minJoins, int maxJoins) {
@@ -269,6 +281,11 @@ public class JoinStreakReward {
         saveToFile();
     }
 
+    public void setRepeatable(boolean repeatable){
+        this.repeatable = repeatable;
+        saveToFile();
+    }
+
     public void addPermission(String permission) {
         permissions.add(permission);
         saveToFile();
@@ -307,10 +324,13 @@ public class JoinStreakReward {
         saveToFile();
     }
 
-    public void kill() {
+    public void kill(boolean update) {
         rewardsManager.getRewardRegistry().removeReward(this);
-        DBUsersManager.getInstance().removeRewardFromAllUsers(id);
         deleteFile();
+
+        if(!update)
+            DBUsersManager.getInstance().removeRewardFromAllUsers(id);
+
     }
 
     @Override

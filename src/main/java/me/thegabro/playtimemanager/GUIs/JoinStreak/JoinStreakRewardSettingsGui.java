@@ -42,6 +42,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         static final int DESCRIPTION = 29;
         static final int REWARDS_DESCRIPTION = 31;
         static final int REWARD_MESSAGE = 33;
+        static final int REPEATABLE_STATUS = 37;
         static final int REWARD_ICON = 40;
         static final int DELETE_REWARD = 45;
         static final int BACK_BUTTON = 53;
@@ -87,7 +88,8 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 slot == Slots.BACK_BUTTON ||
                 slot == Slots.DESCRIPTION ||
                 slot == Slots.REWARDS_DESCRIPTION ||
-                slot == Slots.REWARD_ICON;
+                slot == Slots.REWARD_ICON ||
+                slot == Slots.REPEATABLE_STATUS;
     }
 
     private void initializeButtons() {
@@ -193,6 +195,13 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                         Component.text(""),
                         Utils.parseColors("&7Click to set an icon"));
         inventory.setItem(Slots.REWARD_ICON, iconItem);
+
+        // Repeatable toggle button
+        inventory.setItem(Slots.REPEATABLE_STATUS, createGuiItem(
+                reward.isRepeatable() ? Material.LIME_DYE : Material.GRAY_DYE,
+                Utils.parseColors(reward.isRepeatable() ? "&a&lReward Repeatable" : "&c&lReward Not Repeatable"),
+                Utils.parseColors("&7Click to make this reward " + (reward.isRepeatable() ? "&cnot repeatable" : "&arepeatable"))
+        ));
     }
 
     public ItemStack createGuiItem(Material material, @Nullable Component name, @Nullable Component... lore) {
@@ -275,6 +284,11 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
 
             case Slots.REWARD_ICON:
                 openItemIconSelector(player);
+                break;
+
+            case Slots.REPEATABLE_STATUS:
+                reward.setRepeatable(!reward.isRepeatable());
+                initializeItems();
                 break;
         }
     }
@@ -599,7 +613,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 // Run deletion async
                 player.sendMessage(Utils.parseColors(config.getString("prefix") + " &7Deleting reward &e" + reward.getId() + "&7..."));
                 Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
-                    reward.kill();
+                    reward.kill(false);
 
                     // Switch back to main thread for UI updates
                     Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {

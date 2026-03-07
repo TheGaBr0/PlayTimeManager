@@ -12,12 +12,23 @@ import java.io.IOException;
 import java.util.*;
 
 public class RewardRegistry {
+
+    private static RewardRegistry instance;
+
+
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final Set<JoinStreakReward> rewards = new HashSet<>();
     private final ArrayList<RewardSubInstance> joinRewardsInstances = new ArrayList<RewardSubInstance>();
     private JoinStreakReward lastRewardByJoins;
 
-    public RewardRegistry() {}
+    private RewardRegistry() {}
+
+    public static RewardRegistry getInstance() {
+        if (instance == null) {
+            instance = new RewardRegistry();
+        }
+        return instance;
+    }
 
     public void createRewardsDirectory() {
         File rewardsFolder = new File(plugin.getDataFolder(), "Rewards");

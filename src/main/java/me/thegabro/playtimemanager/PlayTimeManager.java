@@ -52,7 +52,7 @@ public class PlayTimeManager extends JavaPlugin{
     private JoinStreaksManager joinStreaksManager;
     private SessionManager sessionManager;
     private String configuredPlugin;
-    public final String CURRENT_CONFIG_VERSION = "4.2";
+    public final String CURRENT_CONFIG_VERSION = "4.3";
     public final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
     public final boolean CACHE_DEBUG = false;
     @Override

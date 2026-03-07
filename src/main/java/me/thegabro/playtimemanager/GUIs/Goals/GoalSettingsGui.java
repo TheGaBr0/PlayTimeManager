@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
 import me.thegabro.playtimemanager.Events.ChatEventManager;
+import me.thegabro.playtimemanager.GUIs.JoinStreak.JoinStreakRewardSettingsGui;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -140,7 +141,7 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.GOAL_REPEATABLE_STATUS, createGuiItem(
                 goal.isRepeatable() ? Material.LIME_DYE : Material.GRAY_DYE,
                 Component.text(goal.isRepeatable() ? "§a§lGoal repeatable" : "§c§lGoal not repeatable"),
-                Component.text("§7Click to make this goal " + (goal.isActive() ? "not " : "") + "repeatable")
+                Component.text("§7Click to make this goal " + (goal.isRepeatable() ? "not " : "") + "repeatable")
         ));
 
         inventory.setItem(Slots.GOAL_OFFLINE_REWARDS, createGuiItem(

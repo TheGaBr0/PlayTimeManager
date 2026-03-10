@@ -1,27 +1,32 @@
 package me.thegabro.playtimemanager;
 
-import me.thegabro.playtimemanager.Commands.PlayTimeStats;
+import me.thegabro.playtimemanager.Commands.*;
+import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeCommandManager;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
+import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.Database.LogFilter;
 import me.thegabro.playtimemanager.Database.Migration.DatabaseMigration;
-import me.thegabro.playtimemanager.ExternalPluginSupport.AntiAFKPlus.AntiAFKPlusAFKHook;
-import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsAFKHook;
-import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
-import me.thegabro.playtimemanager.GUIs.Goals.*;
-import me.thegabro.playtimemanager.GUIs.JoinStreak.*;
-import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
-import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
-import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
-import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
-import me.thegabro.playtimemanager.Updates.UpdateManager;
-import me.thegabro.playtimemanager.Commands.*;
-import me.thegabro.playtimemanager.Commands.PlayTimeCommandManager.PlayTimeCommandManager;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.Events.JoinEventManager;
-import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.Events.QuitEventManager;
+import me.thegabro.playtimemanager.ExternalPluginSupport.AntiAFKPlus.AntiAFKPlusAFKHook;
+import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsAFKHook;
+import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlayTimePlaceHolders;
+import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
+import me.thegabro.playtimemanager.GUIs.Goals.AllGoalsGui;
+import me.thegabro.playtimemanager.GUIs.Goals.GoalRequirementsGui;
+import me.thegabro.playtimemanager.GUIs.Goals.GoalRewardsGui;
+import me.thegabro.playtimemanager.GUIs.Goals.GoalSettingsGui;
+import me.thegabro.playtimemanager.GUIs.JoinStreak.AllJoinStreakRewardsGui;
+import me.thegabro.playtimemanager.GUIs.JoinStreak.JoinStreakRewardPrizesGui;
+import me.thegabro.playtimemanager.GUIs.JoinStreak.JoinStreakRewardSettingsGui;
+import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
+import me.thegabro.playtimemanager.Goals.GoalsManager;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
+import me.thegabro.playtimemanager.Updates.UpdateManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
@@ -34,7 +39,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 
 import java.util.Objects;
 
@@ -52,9 +56,8 @@ public class PlayTimeManager extends JavaPlugin{
     private JoinStreaksManager joinStreaksManager;
     private SessionManager sessionManager;
     private String configuredPlugin;
-    public final String CURRENT_CONFIG_VERSION = "4.3";
-    public final String SERVER_VERSION = Bukkit.getBukkitVersion().split("-")[0];
-    public final boolean CACHE_DEBUG = false;
+    private final String CURRENT_CONFIG_VERSION = "4.3";
+    private final boolean CACHE_DEBUG = false;
     @Override
     public void onEnable() {
 
@@ -372,5 +375,13 @@ public class PlayTimeManager extends JavaPlugin{
 
     public String getAFKPlugin(){
         return configuredPlugin;
+    }
+
+    public String getConfigVersion(){
+        return CURRENT_CONFIG_VERSION;
+    }
+
+    public boolean isDebugCacheEnabled(){
+        return CACHE_DEBUG;
     }
 }

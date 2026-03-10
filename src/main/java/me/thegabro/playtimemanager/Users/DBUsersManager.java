@@ -29,7 +29,7 @@ public class DBUsersManager {
     private final BiMap<String, String> nicknameUuidCache;
     private final Map<String, DBUser> userCache;
     private final Set<String> nonExistentUsers = ConcurrentHashMap.newKeySet();
-
+    private final boolean cacheDebugEnabled;
 
     private List<String> playersHiddenFromLeaderBoard;
     private DBUsersManager() {
@@ -37,7 +37,7 @@ public class DBUsersManager {
         this.userCache = new ConcurrentHashMap<>();
         this.nicknameUuidCache = Maps.synchronizedBiMap(HashBiMap.create());
         this.playersHiddenFromLeaderBoard = new ArrayList<>();
-
+        this.cacheDebugEnabled = plugin.isDebugCacheEnabled();
         startCacheMaintenanceTask();
     }
 
@@ -126,14 +126,14 @@ public class DBUsersManager {
         // Fast path: check cache (on main thread before going async)
         DBUser cached = userCache.get(uuid);
         if (cached != null) {
-            if (plugin.CACHE_DEBUG) {
+            if (cacheDebugEnabled) {
                 plugin.getLogger().info("Cache hit for player: " + cached.getNickname() + " from context: unknown");
             }
             Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
             return;
         }
 
-        if (plugin.CACHE_DEBUG) {
+        if (cacheDebugEnabled) {
             plugin.getLogger().info("Cache miss for UUID: " + uuid + " from context: unknown");
         }
 
@@ -144,7 +144,7 @@ public class DBUsersManager {
                 return;
             }
 
-            if (plugin.CACHE_DEBUG) {
+            if (cacheDebugEnabled) {
                 plugin.getLogger().info("Loading player from DB: " + uuid + " from context: unknown");
             }
 
@@ -155,7 +155,7 @@ public class DBUsersManager {
                         userCache.put(uuid, user);
                         nicknameUuidCache.put(user.getNickname().toLowerCase(), uuid);
 
-                        if (plugin.CACHE_DEBUG) {
+                        if (cacheDebugEnabled) {
                             plugin.getLogger().info("Cached player: " + user.getNickname());
                         }
                     }
@@ -176,14 +176,14 @@ public class DBUsersManager {
         // Fast path: check cache (on main thread before going async)
         DBUser cached = userCache.get(uuid);
         if (cached != null) {
-            if (plugin.CACHE_DEBUG) {
+            if (cacheDebugEnabled) {
                 plugin.getLogger().info("Cache hit for player: " + cached.getNickname() + " from context: " + context);
             }
             Bukkit.getScheduler().runTask(plugin, () -> callback.accept(cached));
             return;
         }
 
-        if (plugin.CACHE_DEBUG) {
+        if (cacheDebugEnabled) {
             plugin.getLogger().info("Cache miss for UUID: " + uuid + " from context: " + context);
         }
 
@@ -193,7 +193,7 @@ public class DBUsersManager {
                 return;
             }
 
-            if (plugin.CACHE_DEBUG) {
+            if (cacheDebugEnabled) {
                 plugin.getLogger().info("Loading player from DB: " + uuid + " from context: " + context);
             }
 
@@ -204,7 +204,7 @@ public class DBUsersManager {
                         userCache.put(uuid, user);
                         nicknameUuidCache.put(user.getNickname().toLowerCase(), uuid);
 
-                        if (plugin.CACHE_DEBUG) {
+                        if (cacheDebugEnabled) {
                             plugin.getLogger().info("Cached player: " + user.getNickname());
                         }
                     }
@@ -400,7 +400,7 @@ public class DBUsersManager {
             nicknameUuidCache.put(newNickname.toLowerCase(), uuid);
         }
 
-        if (plugin.CACHE_DEBUG) {
+        if (cacheDebugEnabled) {
             plugin.getLogger().info("Updated nickname in cache: " + oldNickname + " -> " + newNickname + " for UUID: " + uuid);
         }
     }
@@ -426,7 +426,7 @@ public class DBUsersManager {
         // Add new mapping
         nicknameUuidCache.put(nickname.toLowerCase(), newUUID);
 
-        if (plugin.CACHE_DEBUG) {
+        if (cacheDebugEnabled) {
             plugin.getLogger().info("Updated UUID in cache: " + oldUUID + " -> " + newUUID + " for nickname: " + nickname);
         }
     }

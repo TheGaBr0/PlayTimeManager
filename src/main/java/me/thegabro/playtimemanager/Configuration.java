@@ -359,7 +359,7 @@ public class Configuration {
             }
 
             // Step 6: Update config version and save (embedded into set)
-            set("config-version", plugin.CURRENT_CONFIG_VERSION);
+            set("config-version", plugin.getConfigVersion());
 
             // Step 7:  refresh cache
             loadCache();

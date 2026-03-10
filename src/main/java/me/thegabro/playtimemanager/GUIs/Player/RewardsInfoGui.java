@@ -3,11 +3,14 @@ package me.thegabro.playtimemanager.GUIs.Player;
 import me.thegabro.playtimemanager.GUIs.BaseCustomGUI;
 import me.thegabro.playtimemanager.GUIs.InventoryListener;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardExecutor;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Utils;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import net.kyori.adventure.text.Component;
@@ -36,6 +39,8 @@ public class RewardsInfoGui extends BaseCustomGUI {
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
+    private final RewardRegistry rewardRegistry = RewardRegistry.getInstance();
+    private final RewardExecutor rewardExecutor = RewardExecutor.getInstance();
     private final GUIsConfiguration config;
     private final boolean isOwner;
     private final DBUser subject;
@@ -169,7 +174,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
     private void loadRewards() {
         allDisplayItems.clear();
 
-        ArrayList<RewardSubInstance> joinRewardsMap = rewardsManager.getRewardRegistry().getJoinRewardsMap();
+        ArrayList<RewardSubInstance> joinRewardsMap = rewardRegistry.getJoinRewardsMap();
         ArrayList<RewardSubInstance> rewardsReceived = subject.getReceivedRewards();
         ArrayList<RewardSubInstance> rewardsToBeClaimed = subject.getRewardsToBeClaimed();
         RewardStatus status;
@@ -177,7 +182,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
         for (RewardSubInstance subInstance : joinRewardsMap) {
             Integer rewardId = subInstance.mainInstanceID();
 
-            JoinStreakReward reward = rewardsManager.getRewardRegistry().getReward(rewardId);
+            JoinStreakReward reward = rewardRegistry.getReward(rewardId);
             if (reward == null) continue;
 
             if (rewardsReceived.contains(subInstance)) {
@@ -199,7 +204,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
                 continue;
 
             Integer rewardId = subInstance.mainInstanceID();
-            JoinStreakReward reward = rewardsManager.getRewardRegistry().getReward(rewardId);
+            JoinStreakReward reward = rewardRegistry.getReward(rewardId);
 
             if (reward == null) continue;
 
@@ -539,7 +544,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
                 return;
             }
 
-            JoinStreakReward reward = rewardsManager.getRewardRegistry().getReward(rewardId);
+            JoinStreakReward reward = rewardRegistry.getReward(rewardId);
             if (reward == null) {
                 sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                         config.getString("rewards-gui.messages.reward-not-found")));
@@ -548,9 +553,9 @@ public class RewardsInfoGui extends BaseCustomGUI {
             }
 
             try {
+                if (!(subject instanceof OnlineUser onlineUser)) return;
 
-                rewardsManager.getRewardExecutor().processCompletedReward(sender,
-                        JoinStreaksManager.getInstance().getRewardRegistry().getSubInstance(rewardId, specificJoinCount));
+                rewardExecutor.processCompletedReward(onlineUser, rewardRegistry.getSubInstance(rewardId, specificJoinCount));
 
                 loadRewards();
                 applyFilters();
@@ -592,9 +597,11 @@ public class RewardsInfoGui extends BaseCustomGUI {
             return;
         }
 
+        if (!(subject instanceof OnlineUser onlineUser)) return;
+
         int claimedCount = 0;
         for (RewardSubInstance subInstance : claimableRewards) {
-            rewardsManager.getRewardExecutor().processCompletedReward(sender, subInstance);
+            rewardExecutor.processCompletedReward(onlineUser, subInstance);
             claimedCount++;
         }
 

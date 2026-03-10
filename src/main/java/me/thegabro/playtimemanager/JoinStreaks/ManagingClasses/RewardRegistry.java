@@ -15,10 +15,15 @@ public class RewardRegistry {
 
     private static RewardRegistry instance;
 
-
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+
+    // Master set of all loaded rewards
     private final Set<JoinStreakReward> rewards = new HashSet<>();
+
+    // Flat list of sub-instances, one entry per join count per reward (expanded from ranges)
     private final ArrayList<RewardSubInstance> joinRewardsInstances = new ArrayList<RewardSubInstance>();
+
+    // The reward with the highest max required joins — used to detect when a cycle should restart
     private JoinStreakReward lastRewardByJoins;
 
     private RewardRegistry() {}
@@ -39,6 +44,7 @@ public class RewardRegistry {
         createWarningFile(rewardsFolder);
     }
 
+    /** Drops a plain-text warning in the Rewards folder reminding admins not to rename reward files. */
     private void createWarningFile(File rewardsFolder) {
         File warningFile = new File(rewardsFolder, "NEVER RENAME FILES IN THIS FOLDER.txt");
         if (!warningFile.exists()) {
@@ -56,6 +62,7 @@ public class RewardRegistry {
         }
     }
 
+    /** Scans the Rewards folder and loads every valid .yml file as a {@link JoinStreakReward}. */
     public void loadRewards() {
         rewards.clear();
         joinRewardsInstances.clear();
@@ -86,6 +93,7 @@ public class RewardRegistry {
     public void removeReward(JoinStreakReward reward) {
         rewards.remove(reward);
 
+        // If no rewards remain, disable the schedule automatically
         if (rewards.isEmpty()) {
             plugin.getConfiguration().set("rewards-check-schedule-activation", false);
         }
@@ -94,55 +102,58 @@ public class RewardRegistry {
         updateEndLoopReward();
     }
 
+    /**
+     * Expands a reward's join range into individual {@link RewardSubInstance} entries.
+     * A reward covering joins 3–6 produces four sub-instances (3, 4, 5, 6).
+     * Rewards with a required-joins of -1 (disabled) are skipped entirely.
+     */
     public void updateJoinRewardsMap(JoinStreakReward reward) {
 
         int minJoins = reward.getMinRequiredJoins();
         int maxJoins = reward.getMaxRequiredJoins();
-        //List<String> debugOutput = new ArrayList<>();
 
         if (minJoins == -1) {
             return;
         }
         else if (minJoins == maxJoins) {
             joinRewardsInstances.add(new RewardSubInstance(reward.getId(), minJoins, false));
-            //debugOutput.add(reward.getId() + "." + minJoins);
-
         }
         else {
             for (int joinCount = minJoins; joinCount <= maxJoins; joinCount++) {
                 joinRewardsInstances.add(new RewardSubInstance(reward.getId(), joinCount, false));
-                //debugOutput.add(reward.getId() + "." + joinCount);
-
             }
         }
-        //plugin.getLogger().info("SubInstances: " + String.join(" ", debugOutput));
-
     }
 
+    /** Recalculates which reward has the highest max required joins. Called after any add/remove. */
     public void updateEndLoopReward() {
-        // Find the reward with the highest required joins
         lastRewardByJoins = rewards.stream()
-                .filter(reward -> reward.getMinRequiredJoins() != -1) // Exclude rewards with no join requirement
+                .filter(reward -> reward.getMinRequiredJoins() != -1)
                 .max(Comparator.comparingInt(JoinStreakReward::getMaxRequiredJoins))
                 .orElse(null);
     }
 
+    /**
+     * Returns the sub-instances that should be processed for a given join count.
+     *
+     * Already-received rewards are filtered out. Additionally, if a player has multiple
+     * unclaimed rewards from previous cycles, only the one matching the current join count
+     * is kept — preventing a flood of notifications for stale rewards.
+     */
     public ArrayList<RewardSubInstance> getRewardIdsForJoinCount(int joinCount, OnlineUser onlineUser) {
         ArrayList<RewardSubInstance> rewardIds = new ArrayList<>();
-
 
         for (RewardSubInstance subInstance : joinRewardsInstances) {
             JoinStreakReward reward = getReward(subInstance.mainInstanceID());
 
             if (reward == null) continue;
 
-            // For single join rewards, check if join count meets the exact requirement
             if (joinCount >= subInstance.requiredJoins() && subInstance.requiredJoins() != -1) {
                 rewardIds.add(subInstance);
             }
         }
 
-        // Filter out rewards the user already has
+        // Strip rewards the player has already received
         ArrayList<RewardSubInstance> receivedRewards = onlineUser.getReceivedRewards();
         rewardIds.removeIf(reward ->
                 receivedRewards.stream().anyMatch(receivedReward ->
@@ -151,10 +162,8 @@ public class RewardRegistry {
                 )
         );
 
-        //Without this part of code, supposing a player has 10 rewards unclaimed from previous cycles (from 1.1 to 1.10)
-        // then it would receive a notification about all of them all at once. 10 notifications per check. Terrible.
-        // We need to filter all the unclaimed rewards from previous cycle except the last one(s) (the one(s) that should be available
-        // since the last check)
+        // If a player has many unclaimed rewards from past cycles (e.g. 1.1 through 1.10),
+        // only surface the one matching the current join count to avoid spamming them.
         ArrayList<RewardSubInstance> unclaimedRewards = onlineUser.getRewardsToBeClaimed();
         rewardIds.removeIf(reward ->
                 unclaimedRewards.stream().anyMatch(unclaimedReward ->
@@ -180,7 +189,7 @@ public class RewardRegistry {
                 return subInstance;
             }
         }
-        return null; // Return null if not found
+        return null;
     }
 
     public boolean isEmpty() {
@@ -197,6 +206,7 @@ public class RewardRegistry {
         lastRewardByJoins = null;
     }
 
+    /** Returns the next available reward ID (current max + 1). */
     public int getNextRewardId() {
         return rewards.stream()
                 .mapToInt(JoinStreakReward::getId)

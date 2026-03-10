@@ -13,6 +13,15 @@ import java.util.*;
 import java.util.function.Consumer;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 
+/**
+ * Represents a player known to the database, whether they are currently online or not.
+ *
+ * All fields are populated asynchronously from the database. Mutating methods follow the
+ * pattern of updating the in-memory state immediately, then persisting to the database on
+ * a background thread. Callbacks run back on the main thread when provided.
+ *
+ * {@link OnlineUser} extends this class to add live, session-aware data.
+ */
 public class DBUser {
     protected String uuid;
     protected String nickname;
@@ -32,13 +41,18 @@ public class DBUser {
     protected boolean afk;
     protected OfflinePlayer playerInstance;
     protected ArrayList<String> notReceivedGoals;
+
+    // The last-seen value from the previous session, captured on join before it is overwritten.
+    // Used by CycleScheduler to determine streak eligibility.
     protected Instant previousSessionLastSeen;
 
-    public static final DBUser LOADING = new DBUser(); // Special instance for loading state
-    public static final DBUser NOT_FOUND = new DBUser(); // Special instance for not found
+    /** Sentinel value returned while a user is still being loaded from the database. */
+    public static final DBUser LOADING = new DBUser();
+    /** Sentinel value returned when a lookup finds no matching player. */
+    public static final DBUser NOT_FOUND = new DBUser();
+
     /**
-     * Private constructor to create a DBUser with all data loaded from database.
-     * Used internally by factory methods.
+     * Full constructor used by factory methods once all data has been read from the database.
      */
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, long DBAFKplaytime,
                    ArrayList<String> completedGoals, ArrayList<String> notReceivedGoals ,Instant lastSeen, Instant firstJoin, int relativeJoinStreak,
@@ -62,8 +76,8 @@ public class DBUser {
     }
 
     /**
-     * Protected constructor for subclass use only (OnlineUser).
-     * The subclass is responsible for calling loadUserDataAsync and handling initialization.
+     * Minimal constructor for subclass use (OnlineUser) and sentinel instances.
+     * The caller is responsible for populating fields via {@link #loadUserDataAsync}.
      */
     protected DBUser() {
         this.completedGoals = new ArrayList<>();
@@ -74,11 +88,9 @@ public class DBUser {
     }
 
     /**
-     * Asynchronously creates a new DBUser for an active player.
-     * Handles user mapping and loads existing data from database.
-     *
-     * @param p the Player object representing the user
-     * @param callback Called when user is fully loaded with the DBUser instance
+     * Asynchronously creates a DBUser for a player who just joined the server.
+     * Runs user mapping (UUID/nickname consistency checks) and loads all data from the database.
+     * Fires {@code callback} on the main thread once the user is ready.
      */
     public static void createDBUserAsync(Player p, Consumer<DBUser> callback) {
         String uuid = p.getUniqueId().toString();
@@ -94,7 +106,7 @@ public class DBUser {
             user.userMapping();
             user.loadUserDataSync();
 
-            // Handle legacy null first_join values
+            // Handle legacy records where first_join was never set
             if(user.firstJoin == null){
                 user.firstJoin = Instant.now();
                 DatabaseHandler.getInstance().getPlayerDAO().updateFirstJoin(uuid, user.firstJoin);
@@ -105,11 +117,8 @@ public class DBUser {
     }
 
     /**
-     * Factory method to create DBUser asynchronously from UUID.
-     * Loads all user data from the database and creates a new instance.
-     *
-     * @param uuid the player's unique identifier string
-     * @param callback Called with the loaded DBUser instance (or null if UUID is null)
+     * Loads a DBUser by UUID asynchronously, reading all fields from the database.
+     * Calls {@code callback} with null if the UUID is null.
      */
     public static void fromUUIDAsync(String uuid, Consumer<DBUser> callback) {
         if(uuid == null) {
@@ -124,8 +133,8 @@ public class DBUser {
     }
 
     /**
-     * Internal synchronous method to load user from UUID.
-     * Should only be called from async contexts.
+     * Synchronous internal helper for loading a user by UUID.
+     * Must only be called from an async context to avoid blocking the main thread.
      */
     private static DBUser fromUUIDSync(String uuid) {
         if(uuid == null)
@@ -149,8 +158,7 @@ public class DBUser {
     }
 
     /**
-     * Loads user data from the database into instance variables.
-     * Called during async construction to populate all user statistics.
+     * Populates all instance fields from the database.
      * Must be called from an async context.
      */
     protected void loadUserDataSync() {
@@ -159,7 +167,7 @@ public class DBUser {
         this.artificialPlaytime = DatabaseHandler.getInstance().getPlayerDAO().getArtificialPlaytime(uuid);
         this.completedGoals = DatabaseHandler.getInstance().getGoalsDAO().getCompletedGoals(uuid);
         this.previousSessionLastSeen = DatabaseHandler.getInstance().getPlayerDAO().getLastSeen(uuid);
-        this.lastSeen = this.previousSessionLastSeen; // lastSeen in sync for DBUser usage
+        this.lastSeen = this.previousSessionLastSeen;
         this.firstJoin = DatabaseHandler.getInstance().getPlayerDAO().getFirstJoin(uuid);
         this.relativeJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getRelativeJoinStreak(uuid);
         this.absoluteJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getRelativeJoinStreak(uuid);
@@ -169,10 +177,8 @@ public class DBUser {
     }
 
     /**
-     * Asynchronously loads user data from database and calls callback when complete.
+     * Kicks off an async database load and fires {@code callback} on the main thread when done.
      * Used by subclasses that need to load data after construction.
-     *
-     * @param callback Called on main thread after data is loaded
      */
     protected void loadUserDataAsync(Runnable callback) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -204,12 +210,17 @@ public class DBUser {
         }
     }
 
-    // Getters - these are safe as synchronous since they use cached data
+    // --- Getters (safe to call synchronously; all values are cached in memory) ---
+
     public Instant getFirstJoin(){ return firstJoin; }
     public Instant getLastSeen() { return lastSeen; }
     public String getUuid() { return uuid; }
     public String getNickname() { return nickname; }
 
+    /**
+     * Returns the effective playtime, optionally subtracting AFK time
+     * based on the {@code ignore-afk-time} config setting.
+     */
     public long getPlaytime() {
         long totalPlaytime = DBplaytime + artificialPlaytime;
         if (plugin.getConfiguration().getBoolean("ignore-afk-time", false)) {
@@ -218,6 +229,7 @@ public class DBUser {
         return totalPlaytime;
     }
 
+    /** Overridden by OnlineUser to include the current unsaved session. Base implementation ignores the snapshot. */
     public long getPlaytimeWithSnapshot(long playtimeSnapshot) {
         return getPlaytime();
     }
@@ -261,7 +273,6 @@ public class DBUser {
             }
         });
     }
-
 
     public void markGoalAsCompletedAsync(String goalName, boolean received, Runnable callback){
         completedGoals.add(goalName);
@@ -376,6 +387,11 @@ public class DBUser {
         resetRelativeJoinStreakAsync(null);
     }
 
+    /**
+     * Marks all pending (unclaimed) rewards as expired.
+     * Used when a cycle ends and the player hasn't claimed their rewards yet,
+     * so they can still be claimed once in the next cycle but not re-earned freely.
+     */
     public void migrateUnclaimedRewardsAsync(Runnable callback){
         if (rewardsToBeClaimed.isEmpty()) {
             if(callback != null) callback.run();
@@ -439,10 +455,12 @@ public class DBUser {
         unreceiveRewardAsync(rewardSubInstance, null);
     }
 
+    /** Removes all in-memory reward tracking for the given main instance, without touching the database. */
     public void wipeRewardsToBeClaimed(Integer mainInstanceID) {
         rewardsToBeClaimed.removeIf(r -> Objects.equals(r.mainInstanceID(), mainInstanceID));
     }
 
+    /** Removes all in-memory received-reward records for the given main instance, without touching the database. */
     public void wipeReceivedRewards(Integer mainInstanceID) {
         receivedRewards.removeIf(r -> Objects.equals(r.mainInstanceID(), mainInstanceID));
     }
@@ -475,19 +493,20 @@ public class DBUser {
         addReceivedRewardAsync(rewardSubInstance, null);
     }
 
-
+    /** Returns a snapshot of received rewards to avoid exposing the internal list. */
     public ArrayList<RewardSubInstance> getReceivedRewards() {
         return new ArrayList<>(receivedRewards);
     }
 
+    /** Returns a snapshot of rewards pending claim to avoid exposing the internal list. */
     public ArrayList<RewardSubInstance> getRewardsToBeClaimed() {
         return new ArrayList<>(rewardsToBeClaimed);
     }
 
     /**
-     * Handles user mapping logic for UUID and nickname consistency.
-     * Updates database records when UUID or nickname changes are detected.
-     * Also updates caches to maintain consistency.
+     * Ensures UUID and nickname records are consistent when a player joins.
+     * Handles three cases: nickname change (same UUID), UUID change (same nickname, e.g. cracked→premium),
+     * and brand-new player. Also updates the in-memory caches on the main thread.
      * Must be called from an async context.
      */
     private void userMapping() {
@@ -519,6 +538,7 @@ public class DBUser {
         return DBAFKplaytime;
     }
 
+    /** Overridden by OnlineUser to include AFK time from the current session. */
     public long getAFKPlaytimeWithSnapshot(long playtimeSnapshot) {
         return getAFKPlaytime();
     }
@@ -531,6 +551,7 @@ public class DBUser {
         this.afk = afk;
     }
 
+    /** Wipes all stored data for this user both in memory and in the database. */
     public void resetAsync(Runnable callback) {
         this.DBplaytime = 0;
         this.DBAFKplaytime = 0;

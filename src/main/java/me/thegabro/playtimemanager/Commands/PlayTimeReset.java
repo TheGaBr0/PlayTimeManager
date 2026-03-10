@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager.Commands;
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.StreakTracker;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
@@ -31,6 +32,7 @@ public class PlayTimeReset {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
+    private final StreakTracker streakTracker = StreakTracker.getInstance();
     // Map to store pending confirmations with a timestamp
     private static final Map<UUID, PendingReset> pendingResets = new HashMap<>();
     // Timeout for confirmation (60 seconds)
@@ -224,7 +226,7 @@ public class PlayTimeReset {
 
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 user.resetJoinStreaks();
-                joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
+                streakTracker.restartUserJoinStreakRewards(user);
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(Utils.parseColors(config.getString("prefix") +
@@ -244,7 +246,7 @@ public class PlayTimeReset {
 
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 user.resetJoinStreakRewards();
-                joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
+                streakTracker.restartUserJoinStreakRewards(user);
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     sender.sendMessage(Utils.parseColors(config.getString("prefix") +
@@ -388,11 +390,11 @@ public class PlayTimeReset {
                             case "joinstreak":
                                 totalDataReset.addAndGet(user.getRelativeJoinStreak());
                                 user.resetJoinStreaks();
-                                joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
+                                streakTracker.restartUserJoinStreakRewards(user);
                                 break;
                             case "joinstreak_rewards":
                                 user.resetJoinStreakRewards();
-                                joinStreaksManager.getStreakTracker().restartUserJoinStreakRewards(user);
+                                streakTracker.restartUserJoinStreakRewards(user);
                                 break;
                             case "goals":
                                 totalDataReset.addAndGet(user.getCompletedGoals().size());

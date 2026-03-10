@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager.GUIs.JoinStreak;
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
 import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -42,8 +43,8 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         static final int DESCRIPTION = 29;
         static final int REWARDS_DESCRIPTION = 31;
         static final int REWARD_MESSAGE = 33;
-        static final int REPEATABLE_STATUS = 37;
-        static final int REWARD_ICON = 40;
+        static final int REPEATABLE_STATUS = 48;
+        static final int REWARD_ICON = 50;
         static final int DELETE_REWARD = 45;
         static final int BACK_BUTTON = 53;
     }
@@ -197,10 +198,24 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         inventory.setItem(Slots.REWARD_ICON, iconItem);
 
         // Repeatable toggle button
+        boolean isRanged = reward.getMinRequiredJoins() != reward.getMaxRequiredJoins();
+        boolean isRepeatable = reward.isRepeatable();
+
+        List<Component> repeatableLore = new ArrayList<>();
+        if (isRanged) {
+            // Ranged rewards are always repeatable — button is locked
+            repeatableLore.add(Utils.parseColors("&aAlways repeatable for ranged rewards"));
+            repeatableLore.add(Utils.parseColors("&7Set a single value to allow toggling"));
+        } else if (isRepeatable) {
+            repeatableLore.add(Utils.parseColors("&7Click to make this reward &cnot repeatable"));
+        } else {
+            repeatableLore.add(Utils.parseColors("&7Click to make this reward &arepeatable"));
+        }
+
         inventory.setItem(Slots.REPEATABLE_STATUS, createGuiItem(
-                reward.isRepeatable() ? Material.LIME_DYE : Material.GRAY_DYE,
-                Utils.parseColors(reward.isRepeatable() ? "&a&lReward Repeatable" : "&c&lReward Not Repeatable"),
-                Utils.parseColors("&7Click to make this reward " + (reward.isRepeatable() ? "&cnot repeatable" : "&arepeatable"))
+                isRepeatable ? Material.LIME_DYE : Material.GRAY_DYE,
+                Utils.parseColors(isRepeatable ? "&a&lReward Repeatable" : "&c&lReward Not Repeatable"),
+                repeatableLore.toArray(new Component[0])
         ));
     }
 
@@ -287,10 +302,24 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                 break;
 
             case Slots.REPEATABLE_STATUS:
-                reward.setRepeatable(!reward.isRepeatable());
-                initializeItems();
+                handleRepeatableToggle(player);
                 break;
         }
+    }
+
+    private void handleRepeatableToggle(Player player) {
+        boolean isRanged = reward.getMinRequiredJoins() != reward.getMaxRequiredJoins();
+
+        // Ranged rewards must always be repeatable — block toggling off
+        if (isRanged) {
+            player.sendMessage(Utils.parseColors(
+                    config.getString("prefix") + " &cCannot disable repeatable: set a single value for Required Joins first."
+            ));
+            return;
+        }
+
+        reward.setRepeatable(!reward.isRepeatable());
+        initializeItems();
     }
 
     private void openRequiredJoinsEditor(Player player) {
@@ -310,6 +339,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                         "&7  This represents a range of joins from x1 to x2\n" +
                         "&7  Example: \"1-25\" triggers on ALL joins from 1st to 25th\n" +
                         "&7• Enter &c-1 &7to deactivate this reward\n" +
+                        "&cNote: &7Setting a range (e.g. &e1-25&7) will force repeatability on.\n" +
                         "&7• Type &c&ocancel&r&7 to exit\n"+
                         "&7If chat input &cdoesn't work&7 please take a look at the wiki\n"+
                         "&7For more info regarding the issue and workarounds."
@@ -329,6 +359,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
 
         chatEventManager.startChatInput(player, (p, input) -> {
             if (!input.equalsIgnoreCase("cancel")) {
+                boolean wasRepeatable = reward.isRepeatable();
                 boolean success = reward.setRequiredJoinsFromString(input);
                 if (success) {
                     String newValue = reward.getRequiredJoinsDisplay();
@@ -336,9 +367,15 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                         player.sendMessage(Utils.parseColors("&aReward has been deactivated!"));
                     } else {
                         player.sendMessage(Utils.parseColors("&aRequired joins updated to " + newValue + "!"));
+                        // Warn if repeatability was automatically enabled
+                        if (!wasRepeatable && reward.isRepeatable()) {
+                            player.sendMessage(Utils.parseColors(
+                                    config.getString("prefix") + " &eNote: &7Repeatability has been &aenabled &7because Required Joins is now a range."
+                            ));
+                        }
                     }
-                    JoinStreaksManager.getInstance().getRewardRegistry().updateJoinRewardsMap(reward);
-                    JoinStreaksManager.getInstance().getRewardRegistry().updateEndLoopReward();
+                    RewardRegistry.getInstance().updateJoinRewardsMap(reward);
+                    RewardRegistry.getInstance().updateEndLoopReward();
                 } else {
                     player.sendMessage(Utils.parseColors("&cInvalid format. Please enter a positive number, -1 to deactivate, or a valid range (e.g., 1-25)."));
                 }

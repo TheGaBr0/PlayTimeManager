@@ -21,18 +21,41 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+/**
+ * Manages the timing of join streak cycles using a Quartz cron expression.
+ *
+ * Each cycle ends when the cron fires. At that point, players who haven't joined
+ * during the cycle have their streaks reset, and the set of players tracked for
+ * the current cycle is cleared so tracking starts fresh.
+ */
 public class CycleScheduler {
+    private static CycleScheduler instance;
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private CronExpression cronExpression;
     private TimeZone timezone;
     private Date nextIntervalReset;
     private long exactIntervalSeconds;
     private BukkitTask intervalTask;
+
+    // Players who have joined at least once during the current cycle.
+    // Used to avoid double-counting joins or double-granting rewards within the same cycle.
     protected final Set<String> playersJoinedDuringCurrentCycle = new HashSet<>();
+
     private String checkTimeToText;
 
-    public CycleScheduler() {}
+    private CycleScheduler() {}
 
+    public static CycleScheduler getInstance() {
+        if (instance == null) {
+            instance = new CycleScheduler();
+        }
+        return instance;
+    }
+
+    /**
+     * Reads the cron config, calculates the cycle length, and schedules the first reset.
+     * Must be called once before the scheduler is used.
+     */
     public void initialize() {
         validateConfiguration();
 
@@ -40,6 +63,7 @@ public class CycleScheduler {
         Date firstTrigger = cronExpression.getNextValidTimeAfter(now);
         Date secondTrigger = cronExpression.getNextValidTimeAfter(firstTrigger);
 
+        // Derive cycle length from two consecutive triggers rather than hardcoding it
         long intervalMillis = secondTrigger.getTime() - firstTrigger.getTime();
         exactIntervalSeconds = intervalMillis / 1000;
         translateCheckTimeToText();
@@ -49,13 +73,12 @@ public class CycleScheduler {
         scheduleNextReset();
     }
 
+    /** Parses and validates the cron expression and timezone from config, falling back to defaults on error. */
     private void validateConfiguration() {
         try {
-            // Validate cron expression (using Quartz cron expression)
             String cronString = plugin.getConfiguration().getString("streak-reset-schedule", "0 0 0 * * ?");
             this.cronExpression = new CronExpression(cronString);
 
-            // Set the timezone
             String timezoneConfig = plugin.getConfiguration().getString("reset-schedule-timezone", "server");
             if ("utc".equalsIgnoreCase(timezoneConfig)) {
                 this.timezone = TimeZone.getTimeZone("UTC");
@@ -73,7 +96,6 @@ public class CycleScheduler {
         } catch (ParseException e) {
             plugin.getLogger().severe("Invalid cron expression in config! Using default: 0 0 0 * * ?");
             try {
-                // Make sure the default is in the correct format for Quartz CronExpression
                 this.cronExpression = new CronExpression("0 0 0 * * ?");
                 this.timezone = TimeZone.getDefault();
                 this.cronExpression.setTimeZone(timezone);
@@ -83,6 +105,7 @@ public class CycleScheduler {
         }
     }
 
+    /** Converts the active cron expression to a human-readable English description. */
     public void translateCheckTimeToText() {
         try {
             CronParser parser = new CronParser(
@@ -100,20 +123,23 @@ public class CycleScheduler {
         }
     }
 
+    /**
+     * Schedules the next cycle reset using the cron expression.
+     * When it fires, tracked players are cleared, inactive streaks are reset asynchronously,
+     * and this method reschedules itself for the following cycle.
+     */
     private void scheduleNextReset() {
         cancelIntervalTask();
 
         Date oldSchedule;
-
         oldSchedule = Objects.requireNonNullElseGet(nextIntervalReset, Date::new);
 
         nextIntervalReset = cronExpression.getNextValidTimeAfter(oldSchedule);
 
         long delayInMillis = nextIntervalReset.getTime() - oldSchedule.getTime();
+        long delayInTicks = Math.max(20, delayInMillis / 50); // Minimum 1 second (20 ticks)
 
-        long delayInTicks = Math.max(20, delayInMillis / 50); // Min 1 second (20 ticks)
-
-        if (JoinStreaksManager.getInstance().getRewardRegistry().isEmpty() && plugin.getConfiguration().getBoolean("streak-check-verbose", false)) {
+        if (RewardRegistry.getInstance().isEmpty() && plugin.getConfiguration().getBoolean("streak-check-verbose", false)) {
             plugin.getLogger().info("No active rewards found, but scheduler will continue running to track absolute join streaks.");
         }
 
@@ -141,27 +167,33 @@ public class CycleScheduler {
         }
     }
 
+    /**
+     * Returns whether the given player is eligible to earn a streak increment on this join.
+     *
+     * A player is ineligible if they already joined during this cycle.
+     * First-time players (no previous session) are always eligible.
+     * Otherwise, eligibility depends on whether they last joined within the allowed window
+     * ({@code intervalSeconds * missed-joins tolerance}).
+     */
     public boolean isEligibleForStreak(OnlineUser user) {
 
         if (playersJoinedDuringCurrentCycle.contains(user.getUuid())) {
             return false;
         }
 
-        // First-time players (no lastSeen) are always eligible
         if (user.getPreviousSessionLastSeen() == null) {
             return true;
         }
-
 
         long secondsBetween = Duration.between(user.getPreviousSessionLastSeen(), Instant.now()).getSeconds();
         return secondsBetween <= exactIntervalSeconds * plugin.getConfiguration().getInt("reset-joinstreak.missed-joins", 1);
     }
 
+    /** Returns true if the current time falls within the active cycle window. */
     public boolean isCurrentCycle() {
         if (nextIntervalReset == null) return false;
 
         Date now = new Date();
-        // Previous reset is simply one interval before the next reset
         Date previousReset = new Date(nextIntervalReset.getTime() - exactIntervalSeconds * 1000);
 
         return now.after(previousReset) && now.before(nextIntervalReset);
@@ -186,8 +218,12 @@ public class CycleScheduler {
         return scheduleInfo;
     }
 
+    /**
+     * Recalculates state after a server reload.
+     * Updates the next reset time, clears cycle tracking if we're in a new cycle,
+     * and re-populates the current cycle's player set from the database.
+     */
     public void updateOnReload() {
-        // Update interval reset times first
         Date now = new Date();
         nextIntervalReset = cronExpression.getNextValidTimeAfter(now);
 
@@ -232,6 +268,4 @@ public class CycleScheduler {
         cancelIntervalTask();
         playersJoinedDuringCurrentCycle.clear();
     }
-
-
 }

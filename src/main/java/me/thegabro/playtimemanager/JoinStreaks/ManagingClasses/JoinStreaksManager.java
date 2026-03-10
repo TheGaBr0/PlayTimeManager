@@ -13,17 +13,24 @@ import org.bukkit.entity.Player;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Central coordinator for the join streak system.
+ *
+ * Delegates cycle timing to {@link CycleScheduler}, streak tracking to {@link StreakTracker},
+ * reward evaluation to {@link RewardProcessor}, and reward delivery to {@link RewardExecutor}.
+ * Entry points are player login events and the scheduled cycle reset.
+ */
 public class JoinStreaksManager {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DatabaseHandler db = DatabaseHandler.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private final RewardRegistry rewardRegistry = RewardRegistry.getInstance();
-    private StreakTracker streakTracker;
-    private CycleScheduler cycleScheduler;
+    private final CycleScheduler cycleScheduler = CycleScheduler.getInstance();
+    private final StreakTracker streakTracker = StreakTracker.getInstance();
+    private final RewardExecutor rewardExecutor = RewardExecutor.getInstance();
+    private final RewardMessageService messageService = RewardMessageService.getInstance();
     private RewardProcessor rewardProcessor;
-    private RewardExecutor rewardExecutor;
-    private RewardMessageService messageService;
 
     private JoinStreaksManager() {}
 
@@ -35,13 +42,10 @@ public class JoinStreaksManager {
         return InstanceHolder.instance;
     }
 
+    /** Loads rewards, wires up the processor, and starts the cycle scheduler. */
     public void initialize() {
 
-        this.cycleScheduler = new CycleScheduler();
-        this.streakTracker = new StreakTracker();
-        this.rewardExecutor = new RewardExecutor();
-        this.messageService = new RewardMessageService();
-        this.rewardProcessor = new RewardProcessor(
+        rewardProcessor = RewardProcessor.initialize(
                 rewardRegistry,
                 streakTracker,
                 rewardExecutor,
@@ -58,10 +62,18 @@ public class JoinStreaksManager {
         }
     }
 
+    /**
+     * Handles all streak logic when a player joins the server.
+     *
+     * If the player already joined this cycle, nothing happens. Otherwise, eligibility
+     * is checked, if they missed too many cycles their streaks are reset, then the
+     * absolute streak is incremented and, if the schedule is active, the relative streak
+     * and any matching rewards are processed.
+     */
     public void processPlayerLogin(OnlineUser onlineUser) {
 
         if (cycleScheduler.playersJoinedDuringCurrentCycle.contains(onlineUser.getUuid())) {
-            return; // Already joined this cycle, do nothing
+            return;
         }
 
         boolean isEligible = cycleScheduler.isEligibleForStreak(onlineUser);
@@ -78,6 +90,11 @@ public class JoinStreaksManager {
         }
     }
 
+    /**
+     * Called at the end of each cycle to reset streaks for players who didn't join.
+     * Offline players are handled asynchronously via a database lookup;
+     * online players are processed directly on the main thread.
+     */
     public void resetMissingPlayerStreaksAsync() {
         if (!plugin.getConfiguration().getBoolean("reset-joinstreak.enabled", true)) return;
 
@@ -96,25 +113,33 @@ public class JoinStreaksManager {
             );
         });
 
-        // Process online players on main thread if needed
         onlineUsersManager.getOnlineUsersByUUID().values().forEach(this::processOnlineUserForCycleReset);
     }
 
+    /**
+     * Applies cycle-reset streak logic to a player who is currently online.
+     * Their absolute streak is incremented and, if applicable, their relative streak
+     * and rewards are processed, equivalent to a fresh login event for the new cycle.
+     */
     private void processOnlineUserForCycleReset(OnlineUser onlineUser) {
-        // Always increment absolute streak
         streakTracker.incrementAbsoluteStreak(onlineUser);
         cycleScheduler.markPlayerJoinedInCurrentCycle(onlineUser.getUuid());
 
-        // Only increment relative streak and check rewards if schedule is active AND rewards exist
         if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation", true) && !rewardRegistry.isEmpty()) {
             streakTracker.incrementRelativeStreak(onlineUser);
             Player player = onlineUser.getPlayerInstance();
+
             if (player != null) {
                 rewardProcessor.processEligibleRewards(onlineUser);
             }
         }
     }
 
+    /**
+     * Toggles the join streak check schedule on or off.
+     * If turning on, verifies that at least one reward exists before activating.
+     * Returns true if the state change was applied successfully.
+     */
     public boolean toggleJoinStreakCheckSchedule(CommandSender sender) {
         boolean currentState = plugin.getConfiguration().getBoolean("rewards-check-schedule-activation", true);
         plugin.getConfiguration().set("rewards-check-schedule-activation", !currentState);
@@ -152,28 +177,6 @@ public class JoinStreaksManager {
         cycleScheduler.cleanUp();
         rewardRegistry.cleanUp();
 
-        // Clean up singleton reference to allow garbage collection
         InstanceHolder.instance = null;
-    }
-
-    // Getters for components
-    public RewardRegistry getRewardRegistry() {
-        return rewardRegistry;
-    }
-
-    public StreakTracker getStreakTracker() {
-        return streakTracker;
-    }
-
-    public RewardExecutor getRewardExecutor(){
-        return rewardExecutor;
-    }
-
-    public CycleScheduler getCycleScheduler() {
-        return cycleScheduler;
-    }
-
-    public RewardProcessor getRewardProcessor() {
-        return rewardProcessor;
     }
 }

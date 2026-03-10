@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
+import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -14,17 +15,34 @@ import java.util.function.Consumer;
 
 public class StreakTracker {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
+    private final RewardRegistry rewardRegistry = RewardRegistry.getInstance();
 
-    public StreakTracker() {}
+    private static StreakTracker instance;
 
+    private StreakTracker() {}
+
+    public static StreakTracker getInstance() {
+        if (instance == null) {
+            instance = new StreakTracker();
+        }
+        return instance;
+    }
+
+    /** Increments the all-time join streak for the given player. */
     public void incrementAbsoluteStreak(OnlineUser user) {
         user.incrementAbsoluteJoinStreak();
     }
 
+    /** Increments the current-cycle join streak for the given player. */
     public void incrementRelativeStreak(OnlineUser user) {
         user.incrementRelativeJoinStreak();
     }
 
+    /**
+     * Asynchronously resets join streaks for players who have been inactive too long.
+     * A player is considered inactive if they haven't been seen within {@code intervalSeconds * missesAllowed}.
+     * Calls {@code callback} with the number of players whose streaks were reset once all are processed.
+     */
     public void resetInactivePlayerStreaksAsync(Set<String> playersWithStreaks, long intervalSeconds, int missesAllowed, Consumer<Integer> callback) {
         AtomicInteger playersReset = new AtomicInteger();
         AtomicInteger processedCount = new AtomicInteger();
@@ -55,7 +73,7 @@ public class StreakTracker {
                     }
                 }
 
-                // Track when all async operations finish
+                // Fire the callback only after all async lookups have completed
                 if (processedCount.incrementAndGet() == totalPlayers) {
                     callback.accept(playersReset.get());
                 }
@@ -63,10 +81,20 @@ public class StreakTracker {
         }
     }
 
-
+    /**
+     * Resets a user's reward progress at the end of a streak cycle.
+     * Repeatable rewards are removed from receivedRewards so they can be earned again.
+     * Non-repeatable rewards are intentionally left in place to block future claims.
+     * Any unclaimed rewards are migrated to expired status, and the relative streak is reset.
+     */
     public void restartUserJoinStreakRewards(DBUser user) {
         ArrayList<RewardSubInstance> userReceivedRewards = user.getReceivedRewards();
         for (RewardSubInstance subInstance : userReceivedRewards) {
+            JoinStreakReward reward = rewardRegistry.getReward(subInstance.mainInstanceID());
+
+            // Leave non-repeatable rewards in receivedRewards so rewardProcessor.hasAlreadyReceived() blocks them forever
+            if (reward == null || !reward.isRepeatable()) continue;
+
             user.unreceiveReward(subInstance);
         }
         user.migrateUnclaimedRewards();

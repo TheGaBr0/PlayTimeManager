@@ -23,9 +23,7 @@ public class Version363to364Updater {
 
         RewardRegistry.getInstance().loadRewards();
         for(JoinStreakReward j : RewardRegistry.getInstance().getRewards()){
-            plugin.getLogger().info(String.valueOf(j.isRepeatable()));
             j.setRepeatable(true);
-            plugin.getLogger().info(String.valueOf(j.isRepeatable()));
         }
 
     }

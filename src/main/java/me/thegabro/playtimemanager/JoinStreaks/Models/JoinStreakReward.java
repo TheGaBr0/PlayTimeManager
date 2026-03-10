@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager.JoinStreaks.Models;
 
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Material;
@@ -15,6 +16,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
+/**
+ * Represents a single join streak reward definition, backed by a .yml file in the Rewards folder.
+ *
+ * A reward can target a single join count (e.g. exactly the 10th join) or a range
+ * (e.g. joins 1 through 25). Range-based rewards are always repeatable because the
+ * non-repeatable concept only makes sense for a single milestone.
+ *
+ * Changes to any field are persisted immediately by calling {@link #saveToFile()}.
+ */
 public class JoinStreakReward {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
@@ -31,15 +41,22 @@ public class JoinStreakReward {
     private String rewardDescription;
     private boolean repeatable;
 
+    /**
+     * Constructs a reward with the given ID.
+     * If a matching .yml file exists it is loaded; otherwise defaults are applied and the file is created.
+     *
+     * @param id           unique numeric identifier (matches the file name)
+     * @param requiredJoins initial join requirement — ignored if the file already exists
+     */
     public JoinStreakReward(int id, int requiredJoins) {
         this.id = id;
-        this.requiredJoinsRange = new int[]{requiredJoins, requiredJoins}; // Initialize as single value
+        this.requiredJoinsRange = new int[]{requiredJoins, requiredJoins};
         this.rewardFile = new File(plugin.getDataFolder() + File.separator + "Rewards" + File.separator + id + ".yml");
         loadFromFile();
         saveToFile();
     }
 
-
+    /** Reads all reward settings from the backing .yml file, or sets defaults if the file does not exist yet. */
     private void loadFromFile() {
         if (rewardFile.exists()) {
             FileConfiguration config = YamlConfiguration.loadConfiguration(rewardFile);
@@ -55,9 +72,7 @@ public class JoinStreakReward {
                             if (min > 0 && max >= min) {
                                 requiredJoinsRange = new int[]{min, max};
                             }
-                        } catch (NumberFormatException ignored) {
-                            // If parsing fails, keep the existing value
-                        }
+                        } catch (NumberFormatException ignored) {}
                     }
                 }
             }
@@ -70,6 +85,12 @@ public class JoinStreakReward {
             commands = new ArrayList<>(config.getStringList("commands"));
             repeatable = config.getBoolean("repeatable");
             itemIcon = config.getString("item-icon", Material.SUNFLOWER.toString());
+
+            // Range-based rewards cannot be non-repeatable — enforce this on load
+            if (!repeatable && requiredJoinsRange[0] != requiredJoinsRange[1]) {
+                plugin.getLogger().warning("Reward " + id + ": 'repeatable' was false but required-joins-range is a range. Forcing repeatable=true.");
+                repeatable = true;
+            }
         } else {
             rewardMessage = getDefaultRewardMessage();
             rewardSound = getDefaultRewardSound();
@@ -82,6 +103,7 @@ public class JoinStreakReward {
         }
     }
 
+    /** Writes all current field values to the backing .yml file, creating it if necessary. */
     protected void saveToFile() {
         try {
             if (!rewardFile.exists()) {
@@ -103,7 +125,7 @@ public class JoinStreakReward {
                     "reward-sound is played to a player if it reaches the join streak specified in this config.",
                     "A list of available sounds can be found here: https://jd.papermc.io/paper/<VERSION>/org/bukkit/Sound.html",
                     "Replace '<VERSION>' in the link with your current minecraft version.",
-                    "N.B. If your current version doesn’t work, use the latest patch of the same major version. ",
+                    "N.B. If your current version doesn't work, use the latest patch of the same major version. ",
                     "E.g. '1.19' doesn't work, use '1.19.4'.",
                     "---------------------------",
                     "reward-message is showed to a player if it reaches the join streak specified in this config.",
@@ -112,8 +134,9 @@ public class JoinStreakReward {
                     "---------------------------",
                     "reward-description provides detailed information about the reward.",
                     "---------------------------",
-                    "---------------------------",
-                    "repeatable specifies whether this reward can be obtained multiple times by a player or only the first one",
+                    "repeatable specifies whether this reward can be obtained multiple times by a player or only the first one.",
+                    "NOTE: repeatable=false is only allowed when required-joins-range is a single value (e.g. '30-30').",
+                    "If required-joins-range is a range (e.g. '1-25'), repeatable is automatically set to true.",
                     "---------------------------",
                     "item-icon represents the visual representation of the reward in GUI.",
                     "---------------------------",
@@ -127,9 +150,7 @@ public class JoinStreakReward {
                     "- '/broadcast PLAYER_NAME has reached an amazing join streak!'"
             ));
 
-            // Save join requirements in the new format
             config.set("required-joins-range", requiredJoinsRange[0] + "-" + requiredJoinsRange[1]);
-
             config.set("reward-sound", rewardSound);
             config.set("reward-message",rewardMessage);
             config.set("description", description);
@@ -143,7 +164,6 @@ public class JoinStreakReward {
             plugin.getLogger().severe("Could not save reward file for " + id + ": " + e.getMessage());
         }
     }
-
 
     private String getDefaultRewardSound() {
         return "ENTITY_PLAYER_LEVELUP";
@@ -173,10 +193,12 @@ public class JoinStreakReward {
         return requiredJoinsRange[1];
     }
 
+    /** Returns true if this reward targets a single join count rather than a range. */
     public boolean isSingleJoinReward() {
         return requiredJoinsRange[0] == requiredJoinsRange[1];
     }
 
+    /** Returns the join requirement as a display string, e.g. "10" or "1-25". */
     public String getRequiredJoinsDisplay() {
         if (isSingleJoinReward()) {
             return String.valueOf(requiredJoinsRange[0]);
@@ -207,6 +229,10 @@ public class JoinStreakReward {
         return rewardFile;
     }
 
+    /**
+     * Updates the join range and saves to file.
+     * If min != max, repeatable is forced to true since range rewards cannot be one-time.
+     */
     public void setRequiredJoinsRange(int minJoins, int maxJoins) {
 
         if (maxJoins < minJoins) {
@@ -214,9 +240,19 @@ public class JoinStreakReward {
         }
 
         this.requiredJoinsRange = new int[]{minJoins, maxJoins};
+
+        if (minJoins != maxJoins) {
+            this.repeatable = true;
+        }
+
         saveToFile();
     }
 
+    /**
+     * Parses a join range from a string and applies it.
+     * Accepts a single integer ("10"), a range ("1-25"), or "-1" to disable the reward.
+     * Returns false if the string is invalid or the values are out of range.
+     */
     public boolean setRequiredJoinsFromString(String rangeStr) {
         if (rangeStr == null || rangeStr.isEmpty()) {
             return false;
@@ -246,7 +282,6 @@ public class JoinStreakReward {
             }
             return false;
         } else {
-            // Single number
             try {
                 int value = Integer.parseInt(rangeStr.trim());
                 if (value <= 0) {
@@ -281,7 +316,14 @@ public class JoinStreakReward {
         saveToFile();
     }
 
-    public void setRepeatable(boolean repeatable){
+    /**
+     * Sets the repeatable flag. Silently ignored if the reward targets a range,
+     * since range rewards must always be repeatable.
+     */
+    public void setRepeatable(boolean repeatable) {
+        if (!repeatable && requiredJoinsRange[0] != requiredJoinsRange[1]) {
+            return;
+        }
         this.repeatable = repeatable;
         saveToFile();
     }
@@ -308,7 +350,6 @@ public class JoinStreakReward {
         return rewardDescription;
     }
 
-    // Setters for new fields
     public void setItemIcon(String itemIcon) {
         this.itemIcon = itemIcon;
         saveToFile();
@@ -324,13 +365,16 @@ public class JoinStreakReward {
         saveToFile();
     }
 
+    /**
+     * Removes this reward from the registry and deletes its file.
+     * If {@code update} is false, also wipes all player records associated with this reward.
+     */
     public void kill(boolean update) {
-        rewardsManager.getRewardRegistry().removeReward(this);
+        RewardRegistry.getInstance().removeReward(this);
         deleteFile();
 
         if(!update)
             DBUsersManager.getInstance().removeRewardFromAllUsers(id);
-
     }
 
     @Override

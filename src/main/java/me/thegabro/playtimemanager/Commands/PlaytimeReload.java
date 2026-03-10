@@ -3,7 +3,9 @@ package me.thegabro.playtimemanager.Commands;
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.CycleScheduler;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -25,6 +27,8 @@ public class PlaytimeReload implements CommandExecutor {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
+    private final RewardRegistry rewardRegistry = RewardRegistry.getInstance();
+    private final CycleScheduler cycleScheduler = CycleScheduler.getInstance();
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
@@ -61,14 +65,14 @@ public class PlaytimeReload implements CommandExecutor {
 
             dbUsersManager.updateTopPlayersFromDB();
 
-            joinStreaksManager.getRewardRegistry().clearRewards();
-            joinStreaksManager.getRewardRegistry().loadRewards();
+            rewardRegistry.clearRewards();
+            rewardRegistry.loadRewards();
 
-            joinStreaksManager.getCycleScheduler().initialize();
+            cycleScheduler.initialize();
 
             // Only start the task if it's enabled in config
             if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation", true)) {
-                joinStreaksManager.getCycleScheduler().getNextSchedule();
+                cycleScheduler.getNextSchedule();
                 sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Join streak check schedule has been restarted"));
             }
 

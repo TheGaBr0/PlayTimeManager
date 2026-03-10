@@ -18,9 +18,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class RewardMessageService {
+    private static RewardMessageService instance;
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
-    public RewardMessageService() {}
+
+    private RewardMessageService() {}
+
+    public static RewardMessageService getInstance() {
+        if (instance == null) {
+            instance = new RewardMessageService();
+        }
+        return instance;
+    }
 
     public void sendRewardRelatedMessage(OnlineUser user, RewardSubInstance subInstance, String message, int delaySeconds) {
         Map<String, String> replacements = new HashMap<>();

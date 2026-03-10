@@ -399,7 +399,7 @@ public class OnlineUser extends DBUser {
      * @param subInstance The reward subinstance to check
      * @return true if the reward is expired, false otherwise
      */
-    public boolean isExpired(RewardSubInstance subInstance){
+    public boolean isRewardExpired(RewardSubInstance subInstance){
         for(RewardSubInstance subInstance2 : rewardsToBeClaimed){
             if(Objects.equals(subInstance2.mainInstanceID(), subInstance.mainInstanceID()) &&
                     Objects.equals(subInstance2.requiredJoins(), subInstance.requiredJoins()))

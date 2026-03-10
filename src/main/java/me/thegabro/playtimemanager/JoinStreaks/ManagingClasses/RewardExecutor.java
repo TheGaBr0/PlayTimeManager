@@ -15,29 +15,43 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class RewardExecutor {
-    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final RewardMessageService messageService;
+    private static RewardExecutor instance;
 
-    public RewardExecutor() {
-        this.messageService = new RewardMessageService();
+    private final PlayTimeManager plugin = PlayTimeManager.getInstance();
+    private final RewardMessageService messageService = RewardMessageService.getInstance();
+
+    private RewardExecutor() {}
+
+    public static RewardExecutor getInstance() {
+        if (instance == null) {
+            instance = new RewardExecutor();
+        }
+        return instance;
     }
 
-    public void processCompletedReward(Player player, RewardSubInstance subInstance) {
-        OnlineUser onlineUser = OnlineUsersManager.getInstance().getOnlineUser(player.getName());
-        JoinStreakReward reward = JoinStreaksManager.getInstance().getRewardRegistry().getReward(subInstance.mainInstanceID());
+    public void processCompletedReward(OnlineUser onlineUser, RewardSubInstance subInstance) {
+        JoinStreakReward reward = RewardRegistry.getInstance().getReward(subInstance.mainInstanceID());
 
         // Logic for expired rewards: only mark as received if the player's current relative
         // join streak meets the condition. This prevents issues when players don't claim
         // rewards in the current cycle - they should only be claimable once in the next cycle.
-        if (onlineUser.isExpired(subInstance)) {
+        if (onlineUser.isRewardExpired(subInstance)) {
             onlineUser.unclaimReward(subInstance);
-            try {
-                if (onlineUser.getRelativeJoinStreak() >= subInstance.requiredJoins()) {
-                    onlineUser.addReceivedReward(subInstance);
-                }
-            } catch (NumberFormatException | ArrayIndexOutOfBoundsException ignored) {}
+
+            boolean isRepeatable = reward.isRepeatable();
+
+            if (!isRepeatable) {
+                // Non-repeatable: always mark as received to prevent re-obtaining
+                onlineUser.addReceivedReward(subInstance);
+            } else {
+                // Repeatable: only mark as received if streak still qualifies
+                try {
+                    if (onlineUser.getRelativeJoinStreak() >= subInstance.requiredJoins()) {
+                        onlineUser.addReceivedReward(subInstance);
+                    }
+                } catch (NumberFormatException | ArrayIndexOutOfBoundsException ignored) {}
+            }
         } else {
-            // Regular reward - always mark as received
             onlineUser.unclaimReward(subInstance);
             onlineUser.addReceivedReward(subInstance);
         }
@@ -46,11 +60,11 @@ public class RewardExecutor {
             assignPermissionsForReward(onlineUser, reward);
         }
 
-        executeRewardCommands(reward, player);
+        executeRewardCommands(reward, onlineUser.getPlayerInstance());
 
         messageService.sendRewardRelatedMessage(onlineUser, subInstance, reward.getRewardMessage(), 1);
 
-        playRewardSound(player, reward);
+        playRewardSound(onlineUser.getPlayerInstance(), reward);
     }
     private void assignPermissionsForReward(OnlineUser onlineUser, JoinStreakReward reward) {
         ArrayList<String> permissions = reward.getPermissions();

@@ -112,8 +112,6 @@ public class PlayTimeManager extends JavaPlugin{
             return;
         }
 
-        // Initialize singleton configurations
-
         PlaytimeFormatsConfiguration playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
         playtimeFormatsConfiguration.initialize(this);
 

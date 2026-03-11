@@ -6,7 +6,8 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 
 import java.sql.*;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 
 public class PlayerDAO {
@@ -137,8 +138,14 @@ public class PlayerDAO {
         try {
             conn = dbManager.getConnection();
 
-            ps = conn.prepareStatement("SELECT uuid FROM play_time WHERE nickname = ? LIMIT 1;");
+            // On premium (online mode) servers, Mojang enforces globally unique nicknames
+            // so case-insensitive lookup is safe. On cracked servers, different players
+            // could have the same nickname with different casing, so we must match exactly.
+            String query = plugin.getServer().getOnlineMode()
+                    ? "SELECT uuid FROM play_time WHERE LOWER(nickname) = LOWER(?) LIMIT 1;"
+                    : "SELECT uuid FROM play_time WHERE nickname = ? LIMIT 1;";
 
+            ps = conn.prepareStatement(query);
             ps.setString(1, nickname);
 
             rs = ps.executeQuery();
@@ -150,12 +157,9 @@ public class PlayerDAO {
             plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
         } finally {
             try {
-                if (rs != null)
-                    rs.close();
-                if (ps != null)
-                    ps.close();
-                if (conn != null)
-                    conn.close();
+                if (rs != null) rs.close();
+                if (ps != null) ps.close();
+                if (conn != null) conn.close();
             } catch (SQLException ex) {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }

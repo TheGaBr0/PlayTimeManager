@@ -1,11 +1,11 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders;
 
+import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormat;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
-import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
@@ -25,7 +25,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final PlaytimeFormatsConfiguration playtimeFormatsConfiguration = PlaytimeFormatsConfiguration.getInstance();
     private LuckPermsManager luckPermsManager = null;
-    private PlaytimeFormat playtimeFormat;
+    private record PlayTimeFormatParseResult(String params, PlaytimeFormat format) {}
 
     /**
      * Get user data from cache or trigger async load
@@ -57,45 +57,30 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
         return DBUser.LOADING;
     }
-    private String processParams(String params) {
-        // Find the last occurrence of "_"
+
+    private PlayTimeFormatParseResult processParams(String params) {
         int lastUnderscoreIndex = params.lastIndexOf("_");
+
         if (lastUnderscoreIndex == -1) {
-            // Check if there's a colon directly in the params (for cases like "PlayTime:test")
             int colonIndex = params.indexOf(":");
             if (colonIndex != -1) {
-                // Extract the format name after the colon
                 String formatName = params.substring(colonIndex + 1);
-                playtimeFormat = playtimeFormatsConfiguration.getFormat(formatName);
-                if (playtimeFormat == null) {
-                    playtimeFormat = playtimeFormatsConfiguration.getFormat("default");
-                }
-                // Return params without the format part
-                return params.substring(0, colonIndex);
+                PlaytimeFormat format = playtimeFormatsConfiguration.getFormat(formatName);
+                if (format == null) format = playtimeFormatsConfiguration.getFormat("default");
+                return new PlayTimeFormatParseResult(params.substring(0, colonIndex), format);
             }
-
-            playtimeFormat = playtimeFormatsConfiguration.getFormat("default");
-            return params; // No underscore found, return original
+            return new PlayTimeFormatParseResult(params, playtimeFormatsConfiguration.getFormat("default"));
         }
 
-        // Look for ":" after the last underscore
         int colonIndex = params.indexOf(":", lastUnderscoreIndex);
         if (colonIndex == -1) {
-            playtimeFormat = playtimeFormatsConfiguration.getFormat("default");
-            return params; // No colon found after last underscore
+            return new PlayTimeFormatParseResult(params, playtimeFormatsConfiguration.getFormat("default"));
         }
 
-        // Extract the format name after the colon (everything after ":")
         String formatName = params.substring(colonIndex + 1);
-        playtimeFormat = playtimeFormatsConfiguration.getFormat(formatName);
-
-        // If format is not found, use default
-        if (playtimeFormat == null) {
-            playtimeFormat = playtimeFormatsConfiguration.getFormat("default");
-        }
-
-        // Remove the format part (from ":" to the end)
-        return params.substring(0, colonIndex);
+        PlaytimeFormat format = playtimeFormatsConfiguration.getFormat(formatName);
+        if (format == null) format = playtimeFormatsConfiguration.getFormat("default");
+        return new PlayTimeFormatParseResult(params.substring(0, colonIndex), format);
     }
 
     public PlayTimePlaceHolders() {
@@ -132,10 +117,12 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     public String onRequest(OfflinePlayer player, String params) {
         if (params == null) return null;
 
-        params = processParams(params);
+        PlayTimeFormatParseResult result = processParams(params);
+        String cleanParams = result.params();
+        PlaytimeFormat playtimeFormat = result.format();
 
         // Handle rank placeholder
-        if (params.equalsIgnoreCase("rank")) {
+        if (cleanParams.equalsIgnoreCase("rank")) {
             try {
                 int position = dbUsersManager.getTopPlayers().indexOf(onlineUsersManager.getOnlineUser(player.getName())) + 1;
                 return position != 0 ?
@@ -146,7 +133,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         }
 
         // Handle first join placeholder
-        if (params.equalsIgnoreCase("firstjoin")) {
+        if (cleanParams.equalsIgnoreCase("firstjoin")) {
             try {
                 DBUser user = onlineUsersManager.getOnlineUser(player.getName());
                 if (user == null) return getErrorMessage("user not found");
@@ -161,7 +148,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         }
 
         // Handle join streak placeholder
-        if (params.equalsIgnoreCase("joinstreak")) {
+        if (cleanParams.equalsIgnoreCase("joinstreak")) {
             try {
                 return String.valueOf(
                         onlineUsersManager.getOnlineUser(player.getName()).getAbsoluteJoinStreak()
@@ -172,7 +159,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         }
 
         // Handle basic AFK playtime placeholders
-        if (params.equalsIgnoreCase("afk_playtime")) {
+        if (cleanParams.equalsIgnoreCase("afk_playtime")) {
             try {
                 return Utils.ticksToFormattedPlaytime(
                         onlineUsersManager.getOnlineUser(player.getName()).getAFKPlaytime(),
@@ -185,7 +172,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
         // Handle unit-specific AFK playtime placeholders
         for (String unit : TIME_UNITS) {
-            if (params.equalsIgnoreCase("afk_playtime_" + unit)) {
+            if (cleanParams.equalsIgnoreCase("afk_playtime_" + unit)) {
                 try {
                     return String.valueOf(Utils.ticksToTimeUnit(
                             onlineUsersManager.getOnlineUser(player.getName()).getAFKPlaytime(),
@@ -198,7 +185,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         }
 
         // Handle basic playtime placeholders
-        if (params.equalsIgnoreCase("playtime")) {
+        if (cleanParams.equalsIgnoreCase("playtime")) {
             try {
                 return Utils.ticksToFormattedPlaytime(
                         onlineUsersManager.getOnlineUser(player.getName()).getPlaytime(),
@@ -211,7 +198,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
         // Handle unit-specific playtime placeholders
         for (String unit : TIME_UNITS) {
-            if (params.equalsIgnoreCase("playtime_" + unit)) {
+            if (cleanParams.equalsIgnoreCase("playtime_" + unit)) {
                 try {
                     return String.valueOf(Utils.ticksToTimeUnit(
                             onlineUsersManager.getOnlineUser(player.getName()).getPlaytime(),
@@ -224,100 +211,100 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         }
 
 
-        String paramLower = params.toLowerCase();
+        String paramLower = cleanParams.toLowerCase();
 
         // Handle rank placeholders
         if (paramLower.startsWith("rank_")) {
-            return handleRank(params.substring(5));
+            return handleRank(cleanParams.substring(5));
         }
 
         // Handle first join placeholders
         if (paramLower.startsWith("firstjoin_")) {
-            return handleFirstJoin(params.substring(10));
+            return handleFirstJoin(cleanParams.substring(10));
         }
 
         // Handle join streak placeholders
         if (paramLower.startsWith("joinstreak_")) {
-            return handleJoinStreak(params.substring(11));
+            return handleJoinStreak(cleanParams.substring(11));
         }
 
         // Handle LP prefix top
         if (paramLower.startsWith("lp_prefix_top_")) {
-            return handleLPPrefixTop(params.substring(14));
+            return handleLPPrefixTop(cleanParams.substring(14));
         }
 
         // Handle last seen elapsed top with units
         for (String unit : TIME_UNITS) {
             String prefix = "lastseen_elapsed_top_" + unit.toLowerCase() + "_";
             if (paramLower.startsWith(prefix)) {
-                return handleLastSeenElapsedTop(params.substring(prefix.length()), unit);
+                return handleLastSeenElapsedTop(cleanParams.substring(prefix.length()), unit);
             }
         }
 
         // Handle last seen elapsed top
         if (paramLower.startsWith("lastseen_elapsed_top_")) {
-            return handleLastSeenElapsedTop(params.substring(21));
+            return handleLastSeenElapsedTop(cleanParams.substring(21));
         }
 
         // Handle last seen elapsed with units
         for (String unit : TIME_UNITS) {
             String prefix = "lastseen_elapsed_" + unit.toLowerCase() + "_";
             if (paramLower.startsWith(prefix)) {
-                return handleLastSeenElapsed(params.substring(prefix.length()), unit);
+                return handleLastSeenElapsed(cleanParams.substring(prefix.length()), unit);
             }
         }
 
         // Handle other placeholders
         if (paramLower.startsWith("lastseen_elapsed_")) {
-            return handleLastSeenElapsed(params.substring(17));
+            return handleLastSeenElapsed(cleanParams.substring(17));
         }
 
         if (paramLower.startsWith("nickname_top_")) {
-            return handleNicknameTop(params.substring(13));
+            return handleNicknameTop(cleanParams.substring(13));
         }
 
         // Handle playtime top with units
         for (String unit : TIME_UNITS) {
             String prefix = "playtime_top_" + unit.toLowerCase() + "_";
             if (paramLower.startsWith(prefix)) {
-                return handlePlayTimeTop(params.substring(prefix.length()), unit);
+                return handlePlayTimeTop(cleanParams.substring(prefix.length()), unit);
             }
         }
 
         if (paramLower.startsWith("playtime_top_")) {
-            return handlePlayTimeTop(params.substring(13));
+            return handlePlayTimeTop(cleanParams.substring(13), playtimeFormat);
         }
 
         // Handle AFK playtime with units and nickname
         for (String unit : TIME_UNITS) {
             String prefix = "afk_playtime_" + unit.toLowerCase() + "_";
             if (paramLower.startsWith(prefix)) {
-                return handleAFKPlayTime(params.substring(prefix.length()), unit);
+                return handleAFKPlayTime(cleanParams.substring(prefix.length()), unit);
             }
         }
 
         if (paramLower.startsWith("afk_playtime_")) {
-            return handleAFKPlayTime(params.substring(13));
+            return handleAFKPlayTime(cleanParams.substring(13), playtimeFormat);
         }
 
         // Handle playtime with units and nickname
         for (String unit : TIME_UNITS) {
             String prefix = "playtime_" + unit.toLowerCase() + "_";
             if (paramLower.startsWith(prefix)) {
-                return handlePlayTime(params.substring(prefix.length()), unit);
+                return handlePlayTime(cleanParams.substring(prefix.length()), unit);
             }
         }
 
         if (paramLower.startsWith("playtime_")) {
-            return handlePlayTime(params.substring(9));
+            return handlePlayTime(cleanParams.substring(9), playtimeFormat);
         }
 
         if (paramLower.startsWith("lastseen_top_")) {
-            return handleLastSeenTop(params.substring(13));
+            return handleLastSeenTop(cleanParams.substring(13));
         }
 
         if (paramLower.startsWith("lastseen_")) {
-            return handleLastSeen(params.substring(9));
+            return handleLastSeen(cleanParams.substring(9));
         }
 
         return null;
@@ -402,7 +389,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
                 getErrorMessage("Wrong top position?");
     }
 
-    private String handlePlayTimeTop(String posStr) {
+    private String handlePlayTimeTop(String posStr, PlaytimeFormat playtimeFormat) {
         if (!isStringInt(posStr)) return getErrorMessage("Wrong top position?");
 
         DBUser user = dbUsersManager.getTopPlayerAtPosition(Integer.parseInt(posStr));
@@ -419,7 +406,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         else return String.valueOf(Utils.ticksToTimeUnit(user.getAFKPlaytime(), unit));
     }
 
-    private String handleAFKPlayTime(String nickname) {
+    private String handleAFKPlayTime(String nickname, PlaytimeFormat playtimeFormat) {
         DBUser user = getUserFromCache(nickname);
         if (user == DBUser.LOADING) return getErrorMessage("Loading...");
         else if (user == DBUser.NOT_FOUND) return getErrorMessage("Player not found in db");
@@ -434,7 +421,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
         else return String.valueOf(Utils.ticksToTimeUnit(user.getPlaytime(), unit));
     }
 
-    private String handlePlayTime(String nickname) {
+    private String handlePlayTime(String nickname, PlaytimeFormat playtimeFormat) {
         DBUser user = getUserFromCache(nickname);
 
         if (user == DBUser.LOADING) return getErrorMessage("Loading...");

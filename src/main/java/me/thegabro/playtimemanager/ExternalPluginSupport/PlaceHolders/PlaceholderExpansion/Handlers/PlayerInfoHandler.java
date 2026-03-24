@@ -35,10 +35,8 @@ public class PlayerInfoHandler implements PlaceholderHandler {
         String p = params.toLowerCase();
         return p.equals("rank")
                 || p.equals("firstjoin")
-                || p.equals("joinstreak")
                 || p.startsWith("rank_")
                 || p.startsWith("firstjoin_")
-                || p.startsWith("joinstreak_")
                 || p.startsWith("nickname_top_")
                 || p.startsWith("lastseen_");
     }
@@ -71,26 +69,12 @@ public class PlayerInfoHandler implements PlaceholderHandler {
             }
         }
 
-        if (p.equals("joinstreak")) {
-            try {
-                return String.valueOf(
-                        onlineUsersManager.getOnlineUser(player.getName()).getAbsoluteJoinStreak()
-                );
-            } catch (Exception e) {
-                return utils.error("couldn't get join streak");
-            }
-        }
-
         if (p.startsWith("rank_")) {
             return handleRank(params.substring(5));
         }
 
         if (p.startsWith("firstjoin_")) {
             return handleFirstJoin(params.substring(10));
-        }
-
-        if (p.startsWith("joinstreak_")) {
-            return handleJoinStreak(params.substring(11));
         }
 
         if (p.startsWith("nickname_top_")) {
@@ -150,13 +134,6 @@ public class PlayerInfoHandler implements PlaceholderHandler {
         if (user == DBUser.NOT_FOUND) return utils.error("Player not found in db");
         if (user.getFirstJoin() == null) return utils.error("First join data missing");
         return Utils.formatInstant(user.getFirstJoin(), datetimeFormat());
-    }
-
-    private String handleJoinStreak(String nickname) {
-        DBUser user = resolver.resolve(nickname);
-        if (user == DBUser.LOADING) return utils.error("Loading...");
-        if (user == DBUser.NOT_FOUND) return utils.error("Player not found in db");
-        return String.valueOf(user.getAbsoluteJoinStreak());
     }
 
     private String handleNicknameTop(String posStr) {

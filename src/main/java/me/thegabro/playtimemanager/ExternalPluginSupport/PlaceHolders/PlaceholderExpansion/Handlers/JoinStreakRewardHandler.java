@@ -28,20 +28,53 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
 
     @Override
     public boolean canHandle(String params) {
-        return params.toLowerCase().startsWith(PREFIX);
+        String p = params.toLowerCase();
+        return p.equals("joinstreak")
+                || p.equals("relative_joinstreak")
+                || p.startsWith("joinstreak_")
+                || p.startsWith("relative_joinstreak_")
+                || p.startsWith(PREFIX);
     }
 
     /**
-     * Entry point. Strips the prefix and delegates to the appropriate handler.
-     *
-     * Expected formats after prefix:
-     *   <id>_<property>                       — single-join reward, self
-     *   <id>.<requiredJoins>_<property>       — range reward sub-instance, self
-     *   <id>_<property>_<nickname>            — single-join reward, specific player
-     *   <id>.<requiredJoins>_<property>_<nickname> — range reward sub-instance, specific player
+     * Entry point. Routes joinstreak info placeholders and streak_reward_ placeholders.
      */
     @Override
     public String handle(String params, OfflinePlayer player, PlaytimeFormat format) {
+        String p = params.toLowerCase();
+
+        // --- Joinstreak info placeholders ---
+
+        if (p.equals("joinstreak")) {
+            try {
+                return String.valueOf(
+                        onlineUsersManager.getOnlineUser(player.getName()).getAbsoluteJoinStreak()
+                );
+            } catch (Exception e) {
+                return utils.error("couldn't get join streak");
+            }
+        }
+
+        if (p.equals("relative_joinstreak")) {
+            try {
+                return String.valueOf(
+                        onlineUsersManager.getOnlineUser(player.getName()).getRelativeJoinStreak()
+                );
+            } catch (Exception e) {
+                return utils.error("couldn't get join streak");
+            }
+        }
+
+        if (p.startsWith("relative_joinstreak_")) {
+            return handleRelativeJoinStreak(params.substring(20));
+        }
+
+        if (p.startsWith("joinstreak_")) {
+            return handleAbsoluteJoinStreak(params.substring(11));
+        }
+
+        // --- Streak reward placeholders ---
+
         String remainder = params.substring(PREFIX.length()); // strip "streak_reward_"
 
         // Parse optional sub-instance qualifier: "<id>.<requiredJoins>_..." vs "<id>_..."
@@ -125,6 +158,20 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
         return resolveProperty(property, reward, effectiveRequiredJoins, user);
     }
 
+    private String handleAbsoluteJoinStreak(String nickname) {
+        DBUser user = resolver.resolve(nickname);
+        if (user == DBUser.LOADING) return utils.error("Loading...");
+        if (user == DBUser.NOT_FOUND) return utils.error("Player not found in db");
+        return String.valueOf(user.getAbsoluteJoinStreak());
+    }
+
+    private String handleRelativeJoinStreak(String nickname) {
+        DBUser user = resolver.resolve(nickname);
+        if (user == DBUser.LOADING) return utils.error("Loading...");
+        if (user == DBUser.NOT_FOUND) return utils.error("Player not found in db");
+        return String.valueOf(user.getRelativeJoinStreak());
+    }
+
     /**
      * Resolves the requested property for the given reward sub-instance and user.
      */
@@ -161,7 +208,7 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
                 return String.valueOf(reward.isRepeatable());
 
             default:
-                return utils.error("unknown streak reward placeholder");
+                return null;
         }
     }
 

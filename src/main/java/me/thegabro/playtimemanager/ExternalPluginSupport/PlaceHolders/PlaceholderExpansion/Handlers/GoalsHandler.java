@@ -41,7 +41,7 @@ public class GoalsHandler implements PlaceholderHandler {
             return handleGoalCountByNickname(params.substring(11));
         }
 
-        return utils.error("unknown goal placeholder");
+        return null;
     }
 
     private String handleGoalCount(OfflinePlayer player) {

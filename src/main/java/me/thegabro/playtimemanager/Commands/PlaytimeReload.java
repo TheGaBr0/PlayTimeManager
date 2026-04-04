@@ -3,11 +3,10 @@ package me.thegabro.playtimemanager.Commands;
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
-import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.CycleScheduler;
+import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
@@ -26,10 +25,8 @@ public class PlaytimeReload implements CommandExecutor {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
-    private final JoinStreaksManager joinStreaksManager = JoinStreaksManager.getInstance();
-    private final RewardRegistry rewardRegistry = RewardRegistry.getInstance();
-    private final CycleScheduler cycleScheduler = CycleScheduler.getInstance();
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
 
@@ -47,33 +44,37 @@ public class PlaytimeReload implements CommandExecutor {
             goalsManager.clearGoals();
             goalsManager.loadGoals();
 
-            //reload online users data
-            for(Player p : Bukkit.getOnlinePlayers()) {
+            // Reload online users data
+            for (Player p : Bukkit.getOnlinePlayers()) {
                 OnlineUser user = onlineUsersManager.getOnlineUser(Objects.requireNonNull(p.getPlayer()).getName());
                 if (user != null) {
-                    // Update DB with the latest playtime before removing
                     user.updatePlayTime();
-                    // Now remove the user
                     onlineUsersManager.removeOnlineUser(user);
                 }
             }
             onlineUsersManager.loadOnlineUsers();
-
 
             onlineUsersManager.startGoalCheckSchedule();
             sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Goal check schedule has been restarted"));
 
             dbUsersManager.updateTopPlayersFromDB();
 
+            // Reload join streaks — fetch fresh references after cleanUp() nulls the singleton
+            RewardRegistry rewardRegistry = RewardRegistry.getInstance();
             rewardRegistry.clearRewards();
             rewardRegistry.loadRewards();
 
-            cycleScheduler.initialize();
+            JoinStreaksManager.getInstance().cleanUp();
+            JoinStreaksManager freshJSM = JoinStreaksManager.getInstance();
+            freshJSM.initialize();
+            freshJSM.onServerReload();
 
-            // Only start the task if it's enabled in config
             if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation", true)) {
-                cycleScheduler.getNextSchedule();
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Join streak check schedule has been restarted"));
+                if (!rewardRegistry.isEmpty()) {
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Join streak check schedule has been restarted"));
+                } else {
+                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Join streak check schedule not started: no active rewards found"));
+                }
             }
 
             return true;

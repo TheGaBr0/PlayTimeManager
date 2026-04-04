@@ -39,6 +39,9 @@ public class JoinStreaksManager {
     }
 
     public static JoinStreaksManager getInstance() {
+        if (InstanceHolder.instance == null) {
+            InstanceHolder.instance = new JoinStreaksManager();
+        }
         return InstanceHolder.instance;
     }
 
@@ -99,18 +102,24 @@ public class JoinStreaksManager {
         if (!plugin.getConfiguration().getBoolean("reset-joinstreak.enabled", true)) return;
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            Set<String> playersWithStreaks = db.getStreakDAO().getPlayersWithActiveStreaks();
 
-            streakTracker.resetInactivePlayerStreaksAsync(
-                    playersWithStreaks,
-                    cycleScheduler.getIntervalSeconds(),
-                    plugin.getConfiguration().getInt("reset-joinstreak.missed-joins", 1),
-                    playersReset -> {
-                        if (plugin.getConfiguration().getBoolean("streak-check-verbose", false)) {
-                            plugin.getLogger().info(String.format("Streak reset for %d players", playersReset));
+            try {
+
+                Set<String> playersWithStreaks = db.getStreakDAO().getPlayersWithActiveStreaks();
+
+                streakTracker.resetInactivePlayerStreaksAsync(
+                        playersWithStreaks,
+                        cycleScheduler.getIntervalSeconds(),
+                        plugin.getConfiguration().getInt("reset-joinstreak.missed-joins", 1),
+                        playersReset -> {
+                            if (plugin.getConfiguration().getBoolean("streak-check-verbose", false)) {
+                                plugin.getLogger().info(String.format("Streak reset for %d players", playersReset));
+                            }
                         }
-                    }
-            );
+                );
+            } catch (IllegalStateException e) {
+                plugin.getLogger().warning("Streak reset skipped — database not available: " + e.getMessage());
+            }
         });
 
         onlineUsersManager.getOnlineUsersByUUID().values().forEach(this::processOnlineUserForCycleReset);

@@ -154,8 +154,8 @@ public class RewardsInfoGui extends BaseCustomGUI {
         allDisplayItems.clear();
 
         ArrayList<RewardSubInstance> joinRewardsMap = rewardRegistry.getJoinRewardsMap();
-        ArrayList<RewardSubInstance> rewardsReceived = subject.getReceivedRewards();
-        ArrayList<RewardSubInstance> rewardsToBeClaimed = subject.getRewardsToBeClaimed();
+        List<RewardSubInstance> rewardsReceived = subject.getReceivedRewards();
+        List<RewardSubInstance> rewardsToBeClaimed = subject.getRewardsToBeClaimed();
 
 
         RewardStatus status;
@@ -572,7 +572,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
             return;
         }
 
-        ArrayList<RewardSubInstance> claimableRewards = subject.getRewardsToBeClaimed();
+        List<RewardSubInstance> claimableRewards = subject.getRewardsToBeClaimed();
 
         if (claimableRewards.isEmpty()) {
             return;

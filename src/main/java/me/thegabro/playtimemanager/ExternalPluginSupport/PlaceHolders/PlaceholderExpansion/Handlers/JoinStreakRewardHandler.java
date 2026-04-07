@@ -10,7 +10,7 @@ import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import org.bukkit.OfflinePlayer;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class JoinStreakRewardHandler implements PlaceholderHandler {
 
@@ -214,7 +214,7 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
 
 
     private RewardSubInstance findSubInstanceInToBeClaimed(DBUser user, int rewardId, int requiredJoins) {
-        ArrayList<RewardSubInstance> rewards = user.getRewardsToBeClaimed();
+        List<RewardSubInstance> rewards = user.getRewardsToBeClaimed();
         if (rewards == null) return null;
         for (RewardSubInstance sub : rewards) {
             if (sub.mainInstanceID() == rewardId && sub.requiredJoins() == requiredJoins) {
@@ -229,7 +229,7 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
      * Returns null if not found.
      */
     private RewardSubInstance findSubInstance(DBUser user, int rewardId, int requiredJoins) {
-        ArrayList<RewardSubInstance> rewards = user.getReceivedRewards();
+        List<RewardSubInstance> rewards = user.getReceivedRewards();
         if (rewards == null) return null;
         for (RewardSubInstance sub : rewards) {
             if (sub.mainInstanceID() == rewardId && sub.requiredJoins() == requiredJoins) {

@@ -32,6 +32,7 @@ public class PlaytimeReload implements CommandExecutor {
 
         if (sender.hasPermission("playtime.reload")) {
             // Reload configurations
+
             plugin.getConfiguration().reload();
 
             PlaytimeFormatsConfiguration.getInstance().reload();

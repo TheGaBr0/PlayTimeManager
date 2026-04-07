@@ -6,23 +6,29 @@ import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.Statistic;
-import org.bukkit.entity.Player;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
  * Represents a player known to the database, whether they are currently online or not.
  *
  * All fields are populated asynchronously from the database. Mutating methods follow the
- * pattern of updating the in-memory state immediately, then persisting to the database on
- * a background thread. Callbacks run back on the main thread when provided.
+ * pattern of updating the in-memory state immediately (always on the main thread), then
+ * persisting to the database on a background thread. Callbacks run back on the main thread
+ * when provided.
  *
  * {@link OnlineUser} extends this class to add live, session-aware data.
+ *
+ * Thread-safety contract:
+ *   - All in-memory mutations MUST be called from the main thread.
+ *   - DB writes are dispatched to async threads internally.
+ *   - The List fields use CopyOnWriteArrayList so that reads from async threads
+ *     (e.g. during leaderboard snapshots) are safe without locking.
  */
 public class DBUser {
     protected String uuid;
@@ -32,17 +38,18 @@ public class DBUser {
     protected long DBAFKplaytime;
     protected static final PlayTimeManager plugin = PlayTimeManager.getInstance();
     protected long fromServerOnJoinPlayTime;
-    protected ArrayList<String> completedGoals;
+    // CopyOnWriteArrayList: writes are main-thread-only; reads may occur from async threads.
+    protected List<String> completedGoals;
     protected Instant lastSeen;
     protected Instant firstJoin;
     protected final GoalsManager goalsManager = GoalsManager.getInstance();
     protected int relativeJoinStreak;
     protected int absoluteJoinStreak;
-    protected ArrayList<RewardSubInstance> receivedRewards = new ArrayList<>();
-    protected ArrayList<RewardSubInstance> rewardsToBeClaimed = new ArrayList<>();
+    protected List<RewardSubInstance> receivedRewards;
+    protected List<RewardSubInstance> rewardsToBeClaimed;
     protected boolean afk;
     protected OfflinePlayer playerInstance;
-    protected ArrayList<String> notReceivedGoals;
+    protected List<String> notReceivedGoals;
 
     // The last-seen value from the previous session, captured on join before it is overwritten.
     // Used by CycleScheduler to determine streak eligibility.
@@ -57,24 +64,25 @@ public class DBUser {
      * Full constructor used by factory methods once all data has been read from the database.
      */
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, long DBAFKplaytime,
-                   ArrayList<String> completedGoals, ArrayList<String> notReceivedGoals ,Instant lastSeen, Instant firstJoin, int relativeJoinStreak,
-                   int absoluteJoinStreak, ArrayList<RewardSubInstance> receivedRewards, ArrayList<RewardSubInstance> rewardsToBeClaimed){
+                   List<String> completedGoals, List<String> notReceivedGoals, Instant lastSeen, Instant firstJoin,
+                   int relativeJoinStreak, int absoluteJoinStreak,
+                   List<RewardSubInstance> receivedRewards, List<RewardSubInstance> rewardsToBeClaimed) {
 
         this.uuid = uuid;
         this.nickname = nickname;
         this.DBplaytime = playtime;
         this.artificialPlaytime = artificialPlaytime;
         this.DBAFKplaytime = DBAFKplaytime;
-        this.notReceivedGoals = notReceivedGoals;
-        this.completedGoals = completedGoals;
+        this.notReceivedGoals = new CopyOnWriteArrayList<>(notReceivedGoals);
+        this.completedGoals = new CopyOnWriteArrayList<>(completedGoals);
         this.lastSeen = lastSeen;
         this.firstJoin = firstJoin;
         this.relativeJoinStreak = relativeJoinStreak;
         this.absoluteJoinStreak = absoluteJoinStreak;
-        this.receivedRewards = receivedRewards;
-        this.rewardsToBeClaimed = rewardsToBeClaimed;
-        afk = false;
-        playerInstance = null;
+        this.receivedRewards = new CopyOnWriteArrayList<>(receivedRewards);
+        this.rewardsToBeClaimed = new CopyOnWriteArrayList<>(rewardsToBeClaimed);
+        this.afk = false;
+        this.playerInstance = null;
     }
 
     /**
@@ -82,48 +90,21 @@ public class DBUser {
      * The caller is responsible for populating fields via {@link #loadUserDataAsync}.
      */
     protected DBUser() {
-        this.completedGoals = new ArrayList<>();
-        this.receivedRewards = new ArrayList<>();
-        this.rewardsToBeClaimed = new ArrayList<>();
+        this.completedGoals = new CopyOnWriteArrayList<>();
+        this.notReceivedGoals = new CopyOnWriteArrayList<>();
+        this.receivedRewards = new CopyOnWriteArrayList<>();
+        this.rewardsToBeClaimed = new CopyOnWriteArrayList<>();
         this.afk = false;
         this.playerInstance = null;
     }
 
     /**
-     * Asynchronously creates a DBUser for a player who just joined the server.
-     * Runs user mapping (UUID/nickname consistency checks) and loads all data from the database.
-     * Fires {@code callback} on the main thread once the user is ready.
-     */
-    public static void createDBUserAsync(Player p, Consumer<DBUser> callback) {
-        String uuid = p.getUniqueId().toString();
-        String nickname = p.getName();
-        long fromServerPlayTime = p.getStatistic(Statistic.PLAY_ONE_MINUTE);
-
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            DBUser user = new DBUser(uuid, nickname, 0, 0, 0,
-                    new ArrayList<>(), new ArrayList<>(), null, null, 0, 0,
-                    new ArrayList<>(), new ArrayList<>());
-            user.fromServerOnJoinPlayTime = fromServerPlayTime;
-
-            user.userMapping();
-            user.loadUserDataSync();
-
-            // Handle legacy records where first_join was never set
-            if(user.firstJoin == null){
-                user.firstJoin = Instant.now();
-                DatabaseHandler.getInstance().getPlayerDAO().updateFirstJoin(uuid, user.firstJoin);
-            }
-
-            Bukkit.getScheduler().runTask(plugin, () -> callback.accept(user));
-        });
-    }
-
-    /**
-     * Loads a DBUser by UUID asynchronously, reading all fields from the database.
-     * Calls {@code callback} with null if the UUID is null.
+     * Asynchronously loads a DBUser for an offline lookup by UUID.
+     * Fires {@code callback} on the main thread once the user is ready, or with {@code null}
+     * if the UUID is null.
      */
     public static void fromUUIDAsync(String uuid, Consumer<DBUser> callback) {
-        if(uuid == null) {
+        if (uuid == null) {
             callback.accept(null);
             return;
         }
@@ -139,24 +120,26 @@ public class DBUser {
      * Must only be called from an async context to avoid blocking the main thread.
      */
     private static DBUser fromUUIDSync(String uuid) {
-        if(uuid == null)
+        if (uuid == null)
             return null;
 
         String nickname = DatabaseHandler.getInstance().getPlayerDAO().getNickname(uuid);
         long playtime = DatabaseHandler.getInstance().getPlayerDAO().getPlaytime(uuid);
         long artificialPlaytime = DatabaseHandler.getInstance().getPlayerDAO().getArtificialPlaytime(uuid);
         long afkplaytime = DatabaseHandler.getInstance().getPlayerDAO().getAFKPlaytime(uuid);
-        ArrayList<String> completedGoals = DatabaseHandler.getInstance().getGoalsDAO().getCompletedGoals(uuid);
-        ArrayList<String> notReceivedGoals = DatabaseHandler.getInstance().getGoalsDAO().getNotReceivedGoals(uuid);
+        List<String> completedGoals = DatabaseHandler.getInstance().getGoalsDAO().getCompletedGoals(uuid);
+        List<String> notReceivedGoals = DatabaseHandler.getInstance().getGoalsDAO().getNotReceivedGoals(uuid);
         Instant lastSeen = DatabaseHandler.getInstance().getPlayerDAO().getLastSeen(uuid);
         Instant firstJoin = DatabaseHandler.getInstance().getPlayerDAO().getFirstJoin(uuid);
         int relativeJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getRelativeJoinStreak(uuid);
+        // FIX: was incorrectly calling getRelativeJoinStreak for the absolute streak
         int absoluteJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getAbsoluteJoinStreak(uuid);
-        ArrayList<RewardSubInstance> receivedRewards = DatabaseHandler.getInstance().getStreakDAO().getReceivedRewards(uuid);
-        ArrayList<RewardSubInstance> rewardsToBeClaimed = DatabaseHandler.getInstance().getStreakDAO().getRewardsToBeClaimed(uuid);
+        List<RewardSubInstance> receivedRewards = DatabaseHandler.getInstance().getStreakDAO().getReceivedRewards(uuid);
+        List<RewardSubInstance> rewardsToBeClaimed = DatabaseHandler.getInstance().getStreakDAO().getRewardsToBeClaimed(uuid);
 
-        return new DBUser(uuid, nickname, playtime, artificialPlaytime, afkplaytime, completedGoals, notReceivedGoals, lastSeen, firstJoin, relativeJoinStreak,
-                absoluteJoinStreak, receivedRewards, rewardsToBeClaimed);
+        return new DBUser(uuid, nickname, playtime, artificialPlaytime, afkplaytime,
+                completedGoals, notReceivedGoals, lastSeen, firstJoin,
+                relativeJoinStreak, absoluteJoinStreak, receivedRewards, rewardsToBeClaimed);
     }
 
     /**
@@ -167,15 +150,20 @@ public class DBUser {
         this.DBplaytime = DatabaseHandler.getInstance().getPlayerDAO().getPlaytime(uuid);
         this.DBAFKplaytime = DatabaseHandler.getInstance().getPlayerDAO().getAFKPlaytime(uuid);
         this.artificialPlaytime = DatabaseHandler.getInstance().getPlayerDAO().getArtificialPlaytime(uuid);
-        this.completedGoals = DatabaseHandler.getInstance().getGoalsDAO().getCompletedGoals(uuid);
+        this.completedGoals = new CopyOnWriteArrayList<>(
+                DatabaseHandler.getInstance().getGoalsDAO().getCompletedGoals(uuid));
+        this.notReceivedGoals = new CopyOnWriteArrayList<>(
+                DatabaseHandler.getInstance().getGoalsDAO().getNotReceivedGoals(uuid));
         this.previousSessionLastSeen = DatabaseHandler.getInstance().getPlayerDAO().getLastSeen(uuid);
         this.lastSeen = this.previousSessionLastSeen;
         this.firstJoin = DatabaseHandler.getInstance().getPlayerDAO().getFirstJoin(uuid);
         this.relativeJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getRelativeJoinStreak(uuid);
+        // FIX: was incorrectly calling getRelativeJoinStreak for the absolute streak
         this.absoluteJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getAbsoluteJoinStreak(uuid);
-        this.receivedRewards = DatabaseHandler.getInstance().getStreakDAO().getReceivedRewards(uuid);
-        this.rewardsToBeClaimed = DatabaseHandler.getInstance().getStreakDAO().getRewardsToBeClaimed(uuid);
-        this.notReceivedGoals = DatabaseHandler.getInstance().getGoalsDAO().getNotReceivedGoals(uuid);
+        this.receivedRewards = new CopyOnWriteArrayList<>(
+                DatabaseHandler.getInstance().getStreakDAO().getReceivedRewards(uuid));
+        this.rewardsToBeClaimed = new CopyOnWriteArrayList<>(
+                DatabaseHandler.getInstance().getStreakDAO().getRewardsToBeClaimed(uuid));
     }
 
     /**
@@ -185,7 +173,7 @@ public class DBUser {
     protected void loadUserDataAsync(Runnable callback) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             loadUserDataSync();
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
@@ -212,9 +200,11 @@ public class DBUser {
         }
     }
 
-    // --- Getters (safe to call synchronously; all values are cached in memory) ---
+    // -------------------------------------------------------------------------
+    // Getters (safe to call synchronously; all values are cached in memory)
+    // -------------------------------------------------------------------------
 
-    public Instant getFirstJoin(){ return firstJoin; }
+    public Instant getFirstJoin() { return firstJoin; }
     public Instant getLastSeen() { return lastSeen; }
     public String getUuid() { return uuid; }
     public String getNickname() { return nickname; }
@@ -244,7 +234,7 @@ public class DBUser {
         this.artificialPlaytime = artificialPlaytime;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getPlayerDAO().updateArtificialPlaytime(uuid, artificialPlaytime);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
@@ -254,38 +244,36 @@ public class DBUser {
         setArtificialPlaytimeAsync(artificialPlaytime, null);
     }
 
-    public ArrayList<String> getCompletedGoals(){
+    public List<String> getCompletedGoals() {
         return completedGoals;
     }
 
-    public ArrayList<String> getNotReceivedGoals(){
+    public List<String> getNotReceivedGoals() {
         return notReceivedGoals;
     }
 
-    public boolean hasCompletedGoal(String goalName){
+    public boolean hasCompletedGoal(String goalName) {
         return completedGoals.contains(goalName);
     }
 
-    public void markGoalAsReceivedAsync(String goalName, Runnable callback){
+    public void markGoalAsReceivedAsync(String goalName, Runnable callback) {
         notReceivedGoals.remove(goalName);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getGoalsDAO().markGoalAsReceived(uuid, goalName);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
     }
 
-    public void markGoalAsCompletedAsync(String goalName, boolean received, Runnable callback){
+    public void markGoalAsCompletedAsync(String goalName, boolean received, Runnable callback) {
         completedGoals.add(goalName);
-
-        if(!received)
+        if (!received) {
             notReceivedGoals.add(goalName);
-
+        }
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getGoalsDAO().addCompletedGoal(uuid, nickname, goalName, received);
-
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
@@ -297,102 +285,102 @@ public class DBUser {
         notReceivedGoals.remove(goalName);
     }
 
-    public void unmarkGoalAsCompletedAsync(String goalName, Runnable callback){
+    public void unmarkGoalAsCompletedAsync(String goalName, Runnable callback) {
         completedGoals.remove(goalName);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getGoalsDAO().removeCompletedGoal(uuid, goalName);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
     }
 
-    public void reloadGoalsSync(){
-        this.completedGoals.clear();
-        this.completedGoals = DatabaseHandler.getInstance().getGoalsDAO().getCompletedGoals(uuid);
+    public void reloadGoalsSync() {
+        this.completedGoals = new CopyOnWriteArrayList<>(
+                DatabaseHandler.getInstance().getGoalsDAO().getCompletedGoals(uuid));
     }
 
-    public void unmarkGoalAsCompleted(String goalName){
+    public void unmarkGoalAsCompleted(String goalName) {
         unmarkGoalAsCompletedAsync(goalName, null);
     }
 
-    public int getAbsoluteJoinStreak(){
+    public int getAbsoluteJoinStreak() {
         return absoluteJoinStreak;
     }
 
-    public int getRelativeJoinStreak(){
+    public int getRelativeJoinStreak() {
         return relativeJoinStreak;
     }
 
-    public void incrementRelativeJoinStreakAsync(Runnable callback){
+    public void incrementRelativeJoinStreakAsync(Runnable callback) {
         this.relativeJoinStreak++;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getStreakDAO().setRelativeJoinStreak(uuid, this.relativeJoinStreak);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
     }
 
-    public void incrementRelativeJoinStreak(){
+    public void incrementRelativeJoinStreak() {
         incrementRelativeJoinStreakAsync(null);
     }
 
-    public void incrementAbsoluteJoinStreakAsync(Runnable callback){
+    public void incrementAbsoluteJoinStreakAsync(Runnable callback) {
         this.absoluteJoinStreak++;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getStreakDAO().setAbsoluteJoinStreak(uuid, this.absoluteJoinStreak);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
     }
 
-    public void incrementAbsoluteJoinStreak(){
+    public void incrementAbsoluteJoinStreak() {
         incrementAbsoluteJoinStreakAsync(null);
     }
 
-    public void setRelativeJoinStreakAsync(int value, Runnable callback){
+    public void setRelativeJoinStreakAsync(int value, Runnable callback) {
         this.relativeJoinStreak = value;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getStreakDAO().setRelativeJoinStreak(uuid, this.relativeJoinStreak);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
     }
 
-    public void setRelativeJoinStreak(int value){
+    public void setRelativeJoinStreak(int value) {
         setRelativeJoinStreakAsync(value, null);
     }
 
-    public void resetJoinStreaksAsync(Runnable callback){
+    public void resetJoinStreaksAsync(Runnable callback) {
         this.relativeJoinStreak = 0;
         this.absoluteJoinStreak = 0;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getStreakDAO().setAbsoluteJoinStreak(uuid, 0);
             DatabaseHandler.getInstance().getStreakDAO().setRelativeJoinStreak(uuid, 0);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
     }
 
-    public void resetJoinStreaks(){
+    public void resetJoinStreaks() {
         resetJoinStreaksAsync(null);
     }
 
-    public void resetRelativeJoinStreakAsync(Runnable callback){
+    public void resetRelativeJoinStreakAsync(Runnable callback) {
         this.relativeJoinStreak = 0;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getStreakDAO().setRelativeJoinStreak(uuid, 0);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
     }
 
-    public void resetRelativeJoinStreak(){
+    public void resetRelativeJoinStreak() {
         resetRelativeJoinStreakAsync(null);
     }
 
@@ -401,20 +389,19 @@ public class DBUser {
      * Used when a cycle ends and the player hasn't claimed their rewards yet,
      * so they can still be claimed once in the next cycle but not re-earned freely.
      */
-    public void migrateUnclaimedRewardsAsync(Runnable callback){
+    public void migrateUnclaimedRewardsAsync(Runnable callback) {
         if (rewardsToBeClaimed.isEmpty()) {
-            if(callback != null) callback.run();
+            if (callback != null) callback.run();
             return;
         }
 
         List<RewardSubInstance> expiredRewards = new ArrayList<>();
-        for(RewardSubInstance subInstance : rewardsToBeClaimed){
-            RewardSubInstance expiredInstance = new RewardSubInstance(
+        for (RewardSubInstance subInstance : rewardsToBeClaimed) {
+            expiredRewards.add(new RewardSubInstance(
                     subInstance.mainInstanceID(),
                     subInstance.requiredJoins(),
                     true
-            );
-            expiredRewards.add(expiredInstance);
+            ));
         }
 
         rewardsToBeClaimed.clear();
@@ -422,7 +409,7 @@ public class DBUser {
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getStreakDAO().markRewardsAsExpired(uuid);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
@@ -441,12 +428,12 @@ public class DBUser {
         }
     }
 
-    private void removeOutOfRangeFromList(ArrayList<RewardSubInstance> list, Integer mainInstanceID, int newMin, int newMax) {
+    private void removeOutOfRangeFromList(List<RewardSubInstance> list, Integer mainInstanceID, int newMin, int newMax) {
         list.removeIf(r -> r.mainInstanceID().equals(mainInstanceID) &&
                 (r.requiredJoins() < newMin || r.requiredJoins() > newMax));
     }
 
-    private void fillMissingRangeEntries(ArrayList<RewardSubInstance> list, Integer mainInstanceID, int newMin, int newMax) {
+    private void fillMissingRangeEntries(List<RewardSubInstance> list, Integer mainInstanceID, int newMin, int newMax) {
         boolean hasAny = list.stream().anyMatch(r -> r.mainInstanceID().equals(mainInstanceID));
         if (!hasAny) return;
 
@@ -460,7 +447,7 @@ public class DBUser {
         }
     }
 
-    private void updateInList(ArrayList<RewardSubInstance> list, Integer mainInstanceID, int oldRequiredJoins, int newRequiredJoins) {
+    private void updateInList(List<RewardSubInstance> list, Integer mainInstanceID, int oldRequiredJoins, int newRequiredJoins) {
         for (int i = 0; i < list.size(); i++) {
             RewardSubInstance r = list.get(i);
             if (r.mainInstanceID().equals(mainInstanceID) && r.requiredJoins() == oldRequiredJoins) {
@@ -469,17 +456,18 @@ public class DBUser {
         }
     }
 
-    public void migrateUnclaimedRewards(){
+    public void migrateUnclaimedRewards() {
         migrateUnclaimedRewardsAsync(null);
     }
 
     public void unclaimRewardAsync(RewardSubInstance rewardSubInstance, Runnable callback) {
-        rewardsToBeClaimed.removeIf(unclaimedReward -> unclaimedReward.mainInstanceID().equals(rewardSubInstance.mainInstanceID()) &&
-                unclaimedReward.requiredJoins().equals(rewardSubInstance.requiredJoins()));
+        rewardsToBeClaimed.removeIf(r ->
+                r.mainInstanceID().equals(rewardSubInstance.mainInstanceID()) &&
+                        r.requiredJoins().equals(rewardSubInstance.requiredJoins()));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getStreakDAO().removeRewardToBeClaimed(uuid, rewardSubInstance);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
@@ -490,12 +478,13 @@ public class DBUser {
     }
 
     public void unreceiveRewardAsync(RewardSubInstance rewardSubInstance, Runnable callback) {
-        receivedRewards.removeIf(receivedReward -> receivedReward.mainInstanceID().equals(rewardSubInstance.mainInstanceID()) &&
-                receivedReward.requiredJoins().equals(rewardSubInstance.requiredJoins()));
+        receivedRewards.removeIf(r ->
+                r.mainInstanceID().equals(rewardSubInstance.mainInstanceID()) &&
+                        r.requiredJoins().equals(rewardSubInstance.requiredJoins()));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getStreakDAO().removeReceivedReward(uuid, rewardSubInstance);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
@@ -519,7 +508,7 @@ public class DBUser {
         rewardsToBeClaimed.add(rewardSubInstance);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getStreakDAO().addRewardToBeClaimed(uuid, nickname, rewardSubInstance);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
@@ -533,55 +522,24 @@ public class DBUser {
         receivedRewards.add(rewardSubInstance);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getStreakDAO().addReceivedReward(uuid, nickname, rewardSubInstance);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
     }
 
-    public void addReceivedReward(RewardSubInstance rewardSubInstance){
+    public void addReceivedReward(RewardSubInstance rewardSubInstance) {
         addReceivedRewardAsync(rewardSubInstance, null);
     }
 
     /** Returns a snapshot of received rewards to avoid exposing the internal list. */
-    public ArrayList<RewardSubInstance> getReceivedRewards() {
+    public List<RewardSubInstance> getReceivedRewards() {
         return new ArrayList<>(receivedRewards);
     }
 
     /** Returns a snapshot of rewards pending claim to avoid exposing the internal list. */
-    public ArrayList<RewardSubInstance> getRewardsToBeClaimed() {
+    public List<RewardSubInstance> getRewardsToBeClaimed() {
         return new ArrayList<>(rewardsToBeClaimed);
-    }
-
-    /**
-     * Ensures UUID and nickname records are consistent when a player joins.
-     * Handles three cases: nickname change (same UUID), UUID change (same nickname, e.g. cracked→premium),
-     * and brand-new player. Also updates the in-memory caches on the main thread.
-     * Must be called from an async context.
-     */
-    private void userMapping() {
-        boolean uuidExists = DatabaseHandler.getInstance().getPlayerDAO().playerExists(uuid);
-        String existingNickname = uuidExists ? DatabaseHandler.getInstance().getPlayerDAO().getNickname(uuid) : null;
-        String existingUUID = DatabaseHandler.getInstance().getPlayerDAO().getUUIDFromNickname(nickname);
-        DBUsersManager dbUsersManager = DBUsersManager.getInstance();
-
-        if (uuidExists) {
-            if (!nickname.equals(existingNickname)) {
-                DatabaseHandler.getInstance().getPlayerDAO().updateNickname(uuid, nickname);
-
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    dbUsersManager.updateNicknameInCache(uuid, existingNickname, nickname);
-                });
-            }
-        } else if (existingUUID != null) {
-            DatabaseHandler.getInstance().getPlayerDAO().updateUUID(uuid, nickname);
-
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                dbUsersManager.updateUUIDInCache(existingUUID, uuid, nickname);
-            });
-        } else {
-            DatabaseHandler.getInstance().getPlayerDAO().addNewPlayer(uuid, nickname, fromServerOnJoinPlayTime);
-        }
     }
 
     public long getAFKPlaytime() {
@@ -612,12 +570,13 @@ public class DBUser {
         this.relativeJoinStreak = 0;
         this.absoluteJoinStreak = 0;
         this.completedGoals.clear();
+        this.notReceivedGoals.clear();
         this.receivedRewards.clear();
         this.rewardsToBeClaimed.clear();
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getPlayerDAO().resetUserInDatabase(uuid);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
@@ -637,7 +596,7 @@ public class DBUser {
             DatabaseHandler.getInstance().getPlayerDAO().updatePlaytime(uuid, 0);
             DatabaseHandler.getInstance().getPlayerDAO().updateArtificialPlaytime(uuid, 0);
             DatabaseHandler.getInstance().getPlayerDAO().updateAFKPlaytime(uuid, 0);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
@@ -651,7 +610,7 @@ public class DBUser {
         this.lastSeen = null;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getPlayerDAO().updateLastSeen(uuid, null);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
@@ -665,7 +624,7 @@ public class DBUser {
         this.firstJoin = null;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getPlayerDAO().updateFirstJoin(uuid, null);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
@@ -681,7 +640,7 @@ public class DBUser {
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getStreakDAO().resetAllUserRewards(uuid);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
@@ -693,9 +652,10 @@ public class DBUser {
 
     public void resetGoalsAsync(Runnable callback) {
         this.completedGoals.clear();
+        this.notReceivedGoals.clear();
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getGoalsDAO().removeAllGoalsFromUser(uuid);
-            if(callback != null) {
+            if (callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });

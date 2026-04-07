@@ -2,12 +2,12 @@ package me.thegabro.playtimemanager.Commands;
 
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
+import me.thegabro.playtimemanager.GUIs.Player.PlayerStatsGui;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Utils;
-import me.thegabro.playtimemanager.GUIs.Player.PlayerStatsGui;
 import org.bukkit.Bukkit;
 import org.bukkit.Statistic;
 import org.bukkit.command.Command;
@@ -133,7 +133,7 @@ public class PlayTimeStats implements CommandExecutor {
             sender.sendMessage(Utils.parseColors("&7No goals completed yet"));
         } else {
 
-            ArrayList<String> completedGoals = user.getCompletedGoals();
+            List<String> completedGoals = user.getCompletedGoals();
             Map<String, Integer> goalsCount = new LinkedHashMap<>();
             for (String name : completedGoals) {
                 goalsCount.put(name, goalsCount.getOrDefault(name, 0) + 1);

@@ -8,7 +8,7 @@ import me.thegabro.playtimemanager.Users.OnlineUser;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -88,7 +88,7 @@ public class StreakTracker {
      * Any unclaimed rewards are migrated to expired status, and the relative streak is reset.
      */
     public void restartUserJoinStreakRewards(DBUser user) {
-        ArrayList<RewardSubInstance> userReceivedRewards = user.getReceivedRewards();
+        List<RewardSubInstance> userReceivedRewards = user.getReceivedRewards();
         for (RewardSubInstance subInstance : userReceivedRewards) {
             JoinStreakReward reward = rewardRegistry.getReward(subInstance.mainInstanceID());
 

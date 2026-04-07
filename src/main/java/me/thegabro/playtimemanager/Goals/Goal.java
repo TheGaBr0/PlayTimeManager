@@ -6,9 +6,9 @@ import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
+import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
-import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
@@ -22,12 +22,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.quartz.CronExpression;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class Goal {
@@ -89,34 +88,34 @@ public class Goal {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
                 Instant since;
-                if(useCronExpression){
+                if (useCronExpression) {
                     Date now = new Date();
                     Date firstTrigger = cronExpression.getNextValidTimeAfter(now);
                     Date secondTrigger = cronExpression.getNextValidTimeAfter(firstTrigger);
-
                     long intervalMillis = secondTrigger.getTime() - firstTrigger.getTime();
-                    long exactIntervalSeconds = intervalMillis / 1000;
-
-                    since = Instant.now().minusSeconds(exactIntervalSeconds);
-                }else{
+                    since = Instant.now().minusSeconds(intervalMillis / 1000);
+                } else {
                     since = Instant.now().minusSeconds(intervalSeconds);
                 }
 
-                List<String> playersUuids = DatabaseHandler.getInstance().getPlayerDAO().getPlayersSeenSince(since);
+                List<String> uuids = DatabaseHandler.getInstance().getPlayerDAO().getPlayersSeenSince(since);
 
-                List<DBUser> loadedUsers = new ArrayList<>();
-                for (String uuid : playersUuids) {
-                    DBUser user = dbUsersManager.getUserFromUUIDSync(uuid);
-                    if (user != null && !user.isOnline()) {
-                        loadedUsers.add(user);
-                    }
-                }
+                // Resolve all UUIDs concurrently, each via a CompletableFuture
+                List<CompletableFuture<DBUser>> futures = uuids.stream()
+                        .map(uuid -> {
+                            CompletableFuture<DBUser> future = new CompletableFuture<>();
+                            dbUsersManager.getUserFromUUIDAsyncWithContext(uuid, "time-window-load", future::complete);
+                            return future;
+                        })
+                        .toList();
 
-                // Safely modify shared state on main thread
+                List<DBUser> loadedUsers = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                        .thenApply(v -> futures.stream()
+                                .map(CompletableFuture::join)
+                                .filter(user -> user != null && !user.isOnline())
+                                .toList())
+                        .get();
                 Bukkit.getScheduler().runTask(plugin, () -> {
-
-                    //plugin.getLogger().info("Loaded " + loadedUsers.size() + " players seen in the last window.");
-
                     if (callback != null) {
                         callback.accept(Collections.unmodifiableList(loadedUsers));
                     }
@@ -125,7 +124,6 @@ public class Goal {
             } catch (Exception e) {
                 plugin.getLogger().severe("Error while loading players joined during time window: " + e.getMessage());
                 e.printStackTrace();
-
                 if (callback != null) {
                     Bukkit.getScheduler().runTask(plugin, () -> callback.accept(Collections.emptyList()));
                 }

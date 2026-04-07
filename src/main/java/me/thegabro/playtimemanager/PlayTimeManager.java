@@ -224,9 +224,6 @@ public class PlayTimeManager extends JavaPlugin{
             joinStreaksManager.cleanUp();
         }
 
-        if (dbUsersManager != null) {
-            dbUsersManager.clearCaches();
-        }
 
         HandlerList.unregisterAll(this);
 

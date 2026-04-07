@@ -9,10 +9,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class RewardRegistry {
 
@@ -156,7 +153,7 @@ public class RewardRegistry {
         }
 
         // Strip rewards the player has already received
-        ArrayList<RewardSubInstance> receivedRewards = onlineUser.getReceivedRewards();
+        List<RewardSubInstance> receivedRewards = onlineUser.getReceivedRewards();
         rewardIds.removeIf(reward ->
                 receivedRewards.stream().anyMatch(receivedReward ->
                         receivedReward.mainInstanceID().equals(reward.mainInstanceID()) &&
@@ -166,7 +163,7 @@ public class RewardRegistry {
 
         // If a player has many unclaimed rewards from past cycles (e.g. 1.1 through 1.10),
         // only surface the one matching the current join count to avoid spamming them.
-        ArrayList<RewardSubInstance> unclaimedRewards = onlineUser.getRewardsToBeClaimed();
+        List<RewardSubInstance> unclaimedRewards = onlineUser.getRewardsToBeClaimed();
         rewardIds.removeIf(reward ->
                 unclaimedRewards.stream().anyMatch(unclaimedReward ->
                         unclaimedReward.mainInstanceID().equals(reward.mainInstanceID()) &&

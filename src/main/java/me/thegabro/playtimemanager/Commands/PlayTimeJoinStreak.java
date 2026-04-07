@@ -4,9 +4,7 @@ import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.AllJoinStreakRewardsGui;
 import me.thegabro.playtimemanager.GUIs.Player.RewardsInfoGui;
-import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
-import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
@@ -167,7 +165,6 @@ public class PlayTimeJoinStreak implements CommandExecutor, TabCompleter {
 
                     // Check if all players have been processed
                     if (processedPlayers.incrementAndGet() == allNicknames.size()) {
-                        dbUsersManager.clearCaches();
 
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             sender.sendMessage(Utils.parseColors(config.getString("prefix") +

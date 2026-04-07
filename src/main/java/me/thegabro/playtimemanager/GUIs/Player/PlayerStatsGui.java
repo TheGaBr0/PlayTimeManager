@@ -1,15 +1,14 @@
 package me.thegabro.playtimemanager.GUIs.Player;
 
 import me.clip.placeholderapi.PlaceholderAPI;
+import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.GUIs.BaseCustomGUI;
 import me.thegabro.playtimemanager.GUIs.InventoryListener;
-import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
-import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
-import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
@@ -638,7 +637,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
         combinations.put("%ABSOLUTE_STREAK%", String.valueOf(subject.getAbsoluteJoinStreak()));
 
         // Goals information
-        ArrayList<String> completedGoals = subject.getCompletedGoals();
+        List<String> completedGoals = subject.getCompletedGoals();
         combinations.put("%GOALS_COUNT%", String.valueOf(completedGoals.size()));
 
         //Playtime Leaderboard
@@ -663,7 +662,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
         switch (itemType.toLowerCase()) {
             case "goals":
                 // Handle goal list placeholders - display in rows of 3
-                ArrayList<String> completedGoals = subject.getCompletedGoals();
+                List<String> completedGoals = subject.getCompletedGoals();
 
                 Map<String, Integer> goalsCount = new LinkedHashMap<>();
 

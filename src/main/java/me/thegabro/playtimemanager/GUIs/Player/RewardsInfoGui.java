@@ -150,6 +150,26 @@ public class RewardsInfoGui extends BaseCustomGUI {
         }
     }
 
+    private boolean isReceived(List<RewardSubInstance> receivedRewards, RewardSubInstance subInstance) {
+        for (RewardSubInstance r : receivedRewards) {
+            if (r.mainInstanceID().equals(subInstance.mainInstanceID()) &&
+                    r.requiredJoins().equals(subInstance.requiredJoins())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isToBeClaimed(List<RewardSubInstance> rewardsToBeClaimed, RewardSubInstance subInstance) {
+        for (RewardSubInstance r : rewardsToBeClaimed) {
+            if (r.mainInstanceID().equals(subInstance.mainInstanceID()) &&
+                    r.requiredJoins().equals(subInstance.requiredJoins())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void loadRewards() {
         allDisplayItems.clear();
 
@@ -166,9 +186,9 @@ public class RewardsInfoGui extends BaseCustomGUI {
             JoinStreakReward reward = rewardRegistry.getReward(rewardId);
             if (reward == null) continue;
 
-            if (rewardsReceived.contains(subInstance)) {
+            if (isReceived(rewardsReceived, subInstance)) {
                 status = RewardStatus.CLAIMED;
-            } else if (rewardsToBeClaimed.contains(subInstance)) {
+            } else if (isToBeClaimed(rewardsToBeClaimed, subInstance)) {
                 status = RewardStatus.AVAILABLE;
             } else {
                 status = RewardStatus.LOCKED;
@@ -189,9 +209,14 @@ public class RewardsInfoGui extends BaseCustomGUI {
 
             if (reward == null) continue;
 
+            // Skip if already added by the first loop (reward still exists in registry)
+            boolean alreadyAdded = allDisplayItems.stream().anyMatch(item ->
+                    item.subInstance().mainInstanceID().equals(subInstance.mainInstanceID()) &&
+                            item.subInstance().requiredJoins().equals(subInstance.requiredJoins())
+            );
+            if (alreadyAdded) continue;
+
             status = RewardStatus.AVAILABLE_OLD;
-
-
             allDisplayItems.add(new RewardDisplayItem(reward, subInstance, status));
         }
         // Sort the display items using the natural ordering (defined by Comparable)

@@ -9,7 +9,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 
 public class RewardRegistry {
 
@@ -103,22 +106,21 @@ public class RewardRegistry {
     }
 
     /**
-     * Expands a reward's join range into individual {@link RewardSubInstance} entries.
+     * Refreshes the {@link RewardSubInstance} entries for a reward in the flat instances list.
+     * Removes any existing entries for the reward, then re-expands its current join range.
      * A reward covering joins 3–6 produces four sub-instances (3, 4, 5, 6).
      * Rewards with a required-joins of -1 (disabled) are skipped entirely.
      */
     public void updateJoinRewardsMap(JoinStreakReward reward) {
+        joinRewardsInstances.removeIf(r -> r.mainInstanceID() == reward.getId());
 
         int minJoins = reward.getMinRequiredJoins();
         int maxJoins = reward.getMaxRequiredJoins();
 
         if (minJoins == -1) {
-            return;
-        }
-        else if (minJoins == maxJoins) {
+        } else if (minJoins == maxJoins) {
             joinRewardsInstances.add(new RewardSubInstance(reward.getId(), minJoins, false));
-        }
-        else {
+        } else {
             for (int joinCount = minJoins; joinCount <= maxJoins; joinCount++) {
                 joinRewardsInstances.add(new RewardSubInstance(reward.getId(), joinCount, false));
             }

@@ -1,9 +1,9 @@
 package me.thegabro.playtimemanager.Database.DAOs;
 
 import me.thegabro.playtimemanager.Database.Database;
-import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.Database.Errors;
+import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
 import java.sql.*;
@@ -12,6 +12,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -300,6 +301,140 @@ public class JoinstreakDAO {
         }
 
         return rewards;
+    }
+
+    public void updateRequiredJoinsForReward(Integer mainInstanceID, int newRequiredJoins) {
+        Connection conn = null;
+        PreparedStatement updateReceivedPs = null;
+        PreparedStatement updateClaimablePs = null;
+
+        try {
+            conn = dbManager.getConnection();
+            conn.setAutoCommit(false);
+
+            updateReceivedPs = conn.prepareStatement(
+                    "UPDATE received_rewards SET required_joins = ? WHERE main_instance_ID = ?;"
+            );
+            updateReceivedPs.setInt(1, newRequiredJoins);
+            updateReceivedPs.setInt(2, mainInstanceID);
+            updateReceivedPs.executeUpdate();
+
+            updateClaimablePs = conn.prepareStatement(
+                    "UPDATE rewards_to_be_claimed SET required_joins = ?, updated_at = ? WHERE main_instance_ID = ?;"
+            );
+            updateClaimablePs.setInt(1, newRequiredJoins);
+            updateClaimablePs.setObject(2, nowForDatabase());
+            updateClaimablePs.setInt(3, mainInstanceID);
+            updateClaimablePs.executeUpdate();
+
+            conn.commit();
+
+        } catch (SQLException ex) {
+            try {
+                if (conn != null) conn.rollback();
+            } catch (SQLException rollbackEx) {
+                plugin.getLogger().log(Level.SEVERE, "Error rolling back transaction", rollbackEx);
+            }
+            plugin.getLogger().log(Level.SEVERE, "Error updating required_joins for reward " + mainInstanceID + ": " + ex.getMessage());
+        } finally {
+            try {
+                if (conn != null) conn.setAutoCommit(true);
+                if (updateReceivedPs != null) updateReceivedPs.close();
+                if (updateClaimablePs != null) updateClaimablePs.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
+    }
+
+    public void syncRangeRewardEntries(Integer mainInstanceID, int newMin, int newMax) {
+        Connection conn = null;
+        PreparedStatement deleteReceivedPs = null;
+        PreparedStatement deleteClaimablePs = null;
+        PreparedStatement insertReceivedPs = null;
+        PreparedStatement selectUsersPs = null;
+        ResultSet rs = null;
+
+        try {
+            conn = dbManager.getConnection();
+            conn.setAutoCommit(false);
+
+            deleteReceivedPs = conn.prepareStatement(
+                    "DELETE FROM received_rewards WHERE main_instance_ID = ? AND (required_joins < ? OR required_joins > ?);"
+            );
+            deleteReceivedPs.setInt(1, mainInstanceID);
+            deleteReceivedPs.setInt(2, newMin);
+            deleteReceivedPs.setInt(3, newMax);
+            deleteReceivedPs.executeUpdate();
+
+            deleteClaimablePs = conn.prepareStatement(
+                    "DELETE FROM rewards_to_be_claimed WHERE main_instance_ID = ? AND (required_joins < ? OR required_joins > ?);"
+            );
+            deleteClaimablePs.setInt(1, mainInstanceID);
+            deleteClaimablePs.setInt(2, newMin);
+            deleteClaimablePs.setInt(3, newMax);
+            deleteClaimablePs.executeUpdate();
+
+            selectUsersPs = conn.prepareStatement(
+                    "SELECT DISTINCT user_uuid, nickname FROM received_rewards WHERE main_instance_ID = ?;"
+            );
+            selectUsersPs.setInt(1, mainInstanceID);
+            rs = selectUsersPs.executeQuery();
+
+            List<String[]> usersWithReward = new ArrayList<>();
+            while (rs.next()) {
+                usersWithReward.add(new String[]{rs.getString("user_uuid"), rs.getString("nickname")});
+            }
+            rs.close();
+            rs = null;
+
+            insertReceivedPs = conn.prepareStatement(
+                    "INSERT INTO received_rewards (user_uuid, nickname, main_instance_ID, required_joins, received_at) " +
+                            "SELECT ?, ?, ?, ?, ? WHERE NOT EXISTS (" +
+                            "  SELECT 1 FROM received_rewards WHERE user_uuid = ? AND main_instance_ID = ? AND required_joins = ?" +
+                            ");"
+            );
+
+            for (String[] user : usersWithReward) {
+                String uuid = user[0];
+                String nickname = user[1];
+                for (int joinCount = newMin; joinCount <= newMax; joinCount++) {
+                    insertReceivedPs.setString(1, uuid);
+                    insertReceivedPs.setString(2, nickname);
+                    insertReceivedPs.setInt(3, mainInstanceID);
+                    insertReceivedPs.setInt(4, joinCount);
+                    insertReceivedPs.setObject(5, nowForDatabase());
+                    insertReceivedPs.setString(6, uuid);
+                    insertReceivedPs.setInt(7, mainInstanceID);
+                    insertReceivedPs.setInt(8, joinCount);
+                    insertReceivedPs.addBatch();
+                }
+            }
+            insertReceivedPs.executeBatch();
+
+            conn.commit();
+
+        } catch (SQLException ex) {
+            try {
+                if (conn != null) conn.rollback();
+            } catch (SQLException rollbackEx) {
+                plugin.getLogger().log(Level.SEVERE, "Error rolling back transaction", rollbackEx);
+            }
+            plugin.getLogger().log(Level.SEVERE, "Error syncing range entries for reward " + mainInstanceID, ex);
+        } finally {
+            try {
+                if (conn != null) conn.setAutoCommit(true);
+                if (rs != null) rs.close();
+                if (selectUsersPs != null) selectUsersPs.close();
+                if (deleteReceivedPs != null) deleteReceivedPs.close();
+                if (deleteClaimablePs != null) deleteClaimablePs.close();
+                if (insertReceivedPs != null) insertReceivedPs.close();
+                if (conn != null) conn.close();
+            } catch (SQLException ex) {
+                plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
+            }
+        }
     }
 
     public void removeRewardFromAllUsers(Integer mainInstanceID) {

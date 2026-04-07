@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager.Users;
 
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
+import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -9,9 +10,10 @@ import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
-import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 
 /**
  * Represents a player known to the database, whether they are currently online or not.
@@ -170,7 +172,7 @@ public class DBUser {
         this.lastSeen = this.previousSessionLastSeen;
         this.firstJoin = DatabaseHandler.getInstance().getPlayerDAO().getFirstJoin(uuid);
         this.relativeJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getRelativeJoinStreak(uuid);
-        this.absoluteJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getRelativeJoinStreak(uuid);
+        this.absoluteJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getAbsoluteJoinStreak(uuid);
         this.receivedRewards = DatabaseHandler.getInstance().getStreakDAO().getReceivedRewards(uuid);
         this.rewardsToBeClaimed = DatabaseHandler.getInstance().getStreakDAO().getRewardsToBeClaimed(uuid);
         this.notReceivedGoals = DatabaseHandler.getInstance().getGoalsDAO().getNotReceivedGoals(uuid);
@@ -276,16 +278,23 @@ public class DBUser {
 
     public void markGoalAsCompletedAsync(String goalName, boolean received, Runnable callback){
         completedGoals.add(goalName);
+
+        if(!received)
+            notReceivedGoals.add(goalName);
+
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             DatabaseHandler.getInstance().getGoalsDAO().addCompletedGoal(uuid, nickname, goalName, received);
-
-            if(!received)
-                notReceivedGoals.add(goalName);
 
             if(callback != null) {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
+    }
+
+    /** Removes a goal from in-memory lists only, without touching the database. */
+    public void wipeGoal(String goalName) {
+        completedGoals.remove(goalName);
+        notReceivedGoals.remove(goalName);
     }
 
     public void unmarkGoalAsCompletedAsync(String goalName, Runnable callback){
@@ -417,6 +426,47 @@ public class DBUser {
                 Bukkit.getScheduler().runTask(plugin, callback);
             }
         });
+    }
+
+    public void updateRewardRequiredJoins(Integer mainInstanceID, int oldMin, int oldMax, int newMin, int newMax) {
+        if (oldMin == oldMax) {
+            // Single-value reward: remap the one entry to the new value
+            updateInList(receivedRewards, mainInstanceID, oldMin, newMin);
+            updateInList(rewardsToBeClaimed, mainInstanceID, oldMin, newMin);
+        } else {
+            // Range reward: drop out-of-range entries, then fill any gaps within the new range
+            removeOutOfRangeFromList(receivedRewards, mainInstanceID, newMin, newMax);
+            removeOutOfRangeFromList(rewardsToBeClaimed, mainInstanceID, newMin, newMax);
+            fillMissingRangeEntries(receivedRewards, mainInstanceID, newMin, newMax);
+        }
+    }
+
+    private void removeOutOfRangeFromList(ArrayList<RewardSubInstance> list, Integer mainInstanceID, int newMin, int newMax) {
+        list.removeIf(r -> r.mainInstanceID().equals(mainInstanceID) &&
+                (r.requiredJoins() < newMin || r.requiredJoins() > newMax));
+    }
+
+    private void fillMissingRangeEntries(ArrayList<RewardSubInstance> list, Integer mainInstanceID, int newMin, int newMax) {
+        boolean hasAny = list.stream().anyMatch(r -> r.mainInstanceID().equals(mainInstanceID));
+        if (!hasAny) return;
+
+        for (int joinCount = newMin; joinCount <= newMax; joinCount++) {
+            final int jc = joinCount;
+            boolean alreadyPresent = list.stream().anyMatch(r ->
+                    r.mainInstanceID().equals(mainInstanceID) && r.requiredJoins() == jc);
+            if (!alreadyPresent) {
+                list.add(new RewardSubInstance(mainInstanceID, jc, false));
+            }
+        }
+    }
+
+    private void updateInList(ArrayList<RewardSubInstance> list, Integer mainInstanceID, int oldRequiredJoins, int newRequiredJoins) {
+        for (int i = 0; i < list.size(); i++) {
+            RewardSubInstance r = list.get(i);
+            if (r.mainInstanceID().equals(mainInstanceID) && r.requiredJoins() == oldRequiredJoins) {
+                list.set(i, new RewardSubInstance(mainInstanceID, newRequiredJoins, r.expired()));
+            }
+        }
     }
 
     public void migrateUnclaimedRewards(){

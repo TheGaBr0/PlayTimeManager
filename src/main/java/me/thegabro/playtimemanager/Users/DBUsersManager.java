@@ -358,20 +358,42 @@ public class DBUsersManager {
         }
     }
 
-    public void removeGoalFromAllUsers(String goalName) {
-        for (OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()) {
-            user.unmarkGoalAsCompleted(goalName);
+    /**
+     * Returns all users currently held in memory: online users plus any offline
+     * users sitting in the cache. Use this whenever an in-memory mutation must
+     * be applied to every loaded user, regardless of online status.
+     */
+    private Collection<DBUser> getAllLoadedUsers() {
+        Map<String, DBUser> merged = new HashMap<>(onlineUsersManager.getOnlineUsersByUUID());
+        for (Map.Entry<String, DBUser> entry : userCache.entrySet()) {
+            merged.putIfAbsent(entry.getKey(), entry.getValue());
         }
-        DatabaseHandler.getInstance().getGoalsDAO().removeGoalFromAllUsers(goalName);
+        return merged.values();
     }
 
     public void removeRewardFromAllUsers(Integer mainInstanceID) {
-        for (OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()) {
+        for (DBUser user : getAllLoadedUsers()) {
             user.wipeReceivedRewards(mainInstanceID);
             user.wipeRewardsToBeClaimed(mainInstanceID);
         }
         DatabaseHandler.getInstance().getStreakDAO().removeRewardFromAllUsers(mainInstanceID);
     }
+
+    public void updateRequiredJoinsForReward(Integer mainInstanceID, int oldMin, int oldMax, int newMin, int newMax) {
+        for (DBUser user : getAllLoadedUsers()) {
+            user.updateRewardRequiredJoins(mainInstanceID, oldMin, oldMax, newMin, newMax);
+        }
+    }
+
+
+
+    public void removeGoalFromAllUsers(String goalName) {
+        for (DBUser user : getAllLoadedUsers()) {
+            user.wipeGoal(goalName);
+        }
+        DatabaseHandler.getInstance().getGoalsDAO().removeGoalFromAllUsers(goalName);
+    }
+
 
     /**
      * Updates the nickname in cache when a player changes their name.

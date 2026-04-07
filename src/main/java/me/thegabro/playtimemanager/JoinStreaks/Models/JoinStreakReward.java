@@ -1,10 +1,10 @@
 package me.thegabro.playtimemanager.JoinStreaks.Models;
 
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
-import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
+import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
-import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUsersManager;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -27,7 +27,7 @@ import java.util.Objects;
  */
 public class JoinStreakReward {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final JoinStreaksManager rewardsManager = JoinStreaksManager.getInstance();
+    private final DatabaseHandler databaseHandler = DatabaseHandler.getInstance();
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private final int id;
     private int[] requiredJoinsRange;
@@ -234,16 +234,26 @@ public class JoinStreakReward {
      * If min != max, repeatable is forced to true since range rewards cannot be one-time.
      */
     public void setRequiredJoinsRange(int minJoins, int maxJoins) {
-
         if (maxJoins < minJoins) {
             maxJoins = minJoins;
         }
+
+        int oldMin = this.requiredJoinsRange[0];
+        int oldMax = this.requiredJoinsRange[1];
 
         this.requiredJoinsRange = new int[]{minJoins, maxJoins};
 
         if (minJoins != maxJoins) {
             this.repeatable = true;
         }
+
+        if (!repeatable) {
+            databaseHandler.getStreakDAO().updateRequiredJoinsForReward(id, maxJoins);
+        } else {
+            databaseHandler.getStreakDAO().syncRangeRewardEntries(id, minJoins, maxJoins);
+        }
+
+        DBUsersManager.getInstance().updateRequiredJoinsForReward(id, oldMin, oldMax, minJoins, maxJoins);
 
         saveToFile();
     }

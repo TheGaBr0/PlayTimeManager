@@ -1,18 +1,17 @@
 package me.thegabro.playtimemanager.GUIs.Player;
 
+import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.GUIs.BaseCustomGUI;
 import me.thegabro.playtimemanager.GUIs.InventoryListener;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardExecutor;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
-import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
-import me.thegabro.playtimemanager.Users.DBUser;
-import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
+import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Utils;
-import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
@@ -99,51 +98,31 @@ public class RewardsInfoGui extends BaseCustomGUI {
 
     }
 
-    public static class RewardDisplayItem implements Comparable<RewardDisplayItem> {
-        private final JoinStreakReward reward;
-        private final RewardStatus status;
-        private final RewardSubInstance subInstance;
-
-        public RewardDisplayItem(JoinStreakReward reward, RewardSubInstance subInstance, RewardStatus status) {
-            this.reward = reward;
-            this.status = status;
-            this.subInstance = subInstance;
-        }
-
-        public JoinStreakReward getReward() {
-            return reward;
-        }
-
-        public RewardStatus getStatus() {
-            return status;
-        }
-
-        public RewardSubInstance getSubInstance() {
-            return subInstance;
-        }
+    public record RewardDisplayItem(JoinStreakReward reward, RewardSubInstance subInstance,
+                                    RewardStatus status) implements Comparable<RewardDisplayItem> {
 
         @Override
-        public int compareTo(RewardDisplayItem other) {
-            // First, sort by status: AVAILABLE, LOCKED, CLAIMED
-            if (this.status != other.status) {
-                return this.status.ordinal() - other.status.ordinal();
-            }
+            public int compareTo(RewardDisplayItem other) {
+                // First, sort by status: AVAILABLE, LOCKED, CLAIMED
+                if (this.status != other.status) {
+                    return this.status.ordinal() - other.status.ordinal();
+                }
 
-            // Then sort by required joins
-            if (this.subInstance.requiredJoins() != other.subInstance.requiredJoins() &&
-                    this.subInstance.requiredJoins() != -1 && other.subInstance.requiredJoins() != -1) {
+                // Then sort by required joins
+                if (this.subInstance.requiredJoins() != other.subInstance.requiredJoins() &&
+                        this.subInstance.requiredJoins() != -1 && other.subInstance.requiredJoins() != -1) {
+                    return Integer.compare(this.subInstance.requiredJoins(), other.subInstance.requiredJoins());
+                }
+
+                // If same required joins, sort by instance number (1.x)
+                if (this.reward.getId() != other.reward.getId()) {
+                    return Integer.compare(this.reward.getId(), other.reward.getId());
+                }
+
+                // Finally, sort by sub-instance number (x.1)
                 return Integer.compare(this.subInstance.requiredJoins(), other.subInstance.requiredJoins());
             }
-
-            // If same required joins, sort by instance number (1.x)
-            if (this.reward.getId() != other.reward.getId()) {
-                return Integer.compare(this.reward.getId(), other.reward.getId());
-            }
-
-            // Finally, sort by sub-instance number (x.1)
-            return Integer.compare(this.subInstance.requiredJoins(), other.subInstance.requiredJoins());
         }
-    }
 
     private enum RewardStatus {
         AVAILABLE_OLD,
@@ -156,7 +135,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
         filteredDisplayItems.clear();
 
         for (RewardDisplayItem item : allDisplayItems) {
-            switch (item.getStatus()) {
+            switch (item.status()) {
                 case CLAIMED:
                     if (currentFilter == FilterType.CLAIMED) filteredDisplayItems.add(item);
                     break;
@@ -177,6 +156,8 @@ public class RewardsInfoGui extends BaseCustomGUI {
         ArrayList<RewardSubInstance> joinRewardsMap = rewardRegistry.getJoinRewardsMap();
         ArrayList<RewardSubInstance> rewardsReceived = subject.getReceivedRewards();
         ArrayList<RewardSubInstance> rewardsToBeClaimed = subject.getRewardsToBeClaimed();
+
+
         RewardStatus status;
 
         for (RewardSubInstance subInstance : joinRewardsMap) {
@@ -280,15 +261,15 @@ public class RewardsInfoGui extends BaseCustomGUI {
                 while (protectedSlots.contains(slot)) slot++;
                 if (slot >= 45) break;
 
-                JoinStreakReward reward = displayItem.getReward();
-                int specificJoins = displayItem.getSubInstance().requiredJoins();
+                JoinStreakReward reward = displayItem.reward();
+                int specificJoins = displayItem.subInstance().requiredJoins();
                 int currentStreak = subject.getRelativeJoinStreak();
 
                 Material material = Material.valueOf(reward.getItemIcon());
                 String statusPrefix, rewardType;
                 List<String> lore = new ArrayList<>();
 
-                switch (displayItem.getStatus()) {
+                switch (displayItem.status()) {
                     case AVAILABLE_OLD:
                     case AVAILABLE:
                         statusPrefix = translateDynamic(config.getString("rewards-gui.reward-items.available.prefix"));
@@ -313,7 +294,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
                 String requiredJoinsText = translateDynamic(config.getString("rewards-gui.reward-items.info-lore.required-joins"));
                 lore.add(requiredJoinsText);
 
-                if (!(displayItem.getStatus() == RewardStatus.AVAILABLE_OLD) && !(displayItem.getStatus() == RewardStatus.AVAILABLE)) {
+                if (!(displayItem.status() == RewardStatus.AVAILABLE_OLD) && !(displayItem.status() == RewardStatus.AVAILABLE)) {
                     String streakColor = currentStreak < specificJoins ?
                             config.getString("rewards-gui.reward-items.info-lore.join-streak-color.insufficient") :
                             config.getString("rewards-gui.reward-items.info-lore.join-streak-color.sufficient");
@@ -358,7 +339,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
 
                 NamespacedKey idKey = new NamespacedKey(plugin, "reward_id");
                 NamespacedKey typeKey = new NamespacedKey(plugin, "reward_type");
-                meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, displayItem.reward.getId()+"."+displayItem.getSubInstance().requiredJoins());
+                meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, displayItem.reward.getId()+"."+displayItem.subInstance().requiredJoins());
                 meta.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, rewardType);
 
                 item.setItemMeta(meta);

@@ -326,8 +326,6 @@ public class PlayTimeReset {
 
             for (String nickname : allNicknames) {
                 dbUsersManager.getUserFromNicknameAsyncWithContext(nickname, "reset all players generic command", user -> {
-                    // FIX: always increment processedPlayers even on null so the completion
-                    // message is guaranteed to fire regardless of lookup failures
                     if (user != null) {
                         switch (resetType) {
                             case "playtime":

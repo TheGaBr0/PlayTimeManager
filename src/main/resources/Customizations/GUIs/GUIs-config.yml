@@ -13,47 +13,96 @@
 #=================================================================
 
 # Available internal placeholders for this gui: %CURRENT_PAGE%, %TOTAL_PAGES%, %REQUIRED_JOINS%, %JOIN_STREAK_COLOR%,
-# %CURRENT_STREAK%, %DESCRIPTION%, %REWARD_DESCRIPTION%, %COUNT%
+# %CURRENT_STREAK%, %DESCRIPTION%, %REWARD_DESCRIPTION%, %COUNT%, %PLAYER_NAME%
 # PlaceholdersAPI support: no
+#
+# Special expanding placeholders usable inside reward-items lore lists:
+#   %REQUIRED_JOINS_LINE%     - Inserts the formatted required-joins line (from info-lore.required-joins)
+#   %JOIN_STREAK_LINE%        - Inserts the formatted join-streak line (from info-lore.join-streak)
+#                               Skipped automatically for AVAILABLE rewards
+#   %DESCRIPTION%             - Expands into one line per description line of the reward (skipped if empty)
+#   %REWARD_DESCRIPTION%      - Expands into one line per reward-description line (skipped if empty)
+#   Any other line            - Rendered as-is (supports all global placeholders above)
+
 rewards-gui:
   gui:
     title: "Claim Your Rewards"
-    border-item-name: "&f[&6P.T.M.&f]&7"
+    size: 54  # Must be a multiple of 9 (9, 18, 27, 36, 45, 54)
+    border:
+      enabled: true
+      material: "BLACK_STAINED_GLASS_PANE"
+      name: "&f[&6P.T.M.&f]&7"
+
+  # Slot configuration - all navigation/action button positions
+  slots:
+    next-page: 50
+    prev-page: 48
+    page-indicator: 49
+    filter-claimed: 3
+    filter-available: 4
+    filter-locked: 5
+    no-rewards: 22
+    claim-all: 46
 
   pagination:
-    page-indicator: "&e&lPage %CURRENT_PAGE% of %TOTAL_PAGES%"
+    page-indicator:
+      material: "PAPER"
+      name: "&e&lPage %CURRENT_PAGE% of %TOTAL_PAGES%"
     next-page:
+      material: "ARROW"
       name: "&a&lNext Page →"
-      lore: "&7Click to view the next page"
+      lore:
+        - "&7Click to view the next page"
+    next-page-disabled:
+      material: "BARRIER"
+      name: "&c&lNo More Pages"
+      lore: []
     prev-page:
+      material: "ARROW"
       name: "&a&l← Previous Page"
-      lore: "&7Click to view the previous page"
-    no-more-pages: "&c&lNo More Pages"
-    first-page: "&c&lFirst Page"
+      lore:
+        - "&7Click to view the previous page"
+    prev-page-disabled:
+      material: "BARRIER"
+      name: "&c&lFirst Page"
+      lore: []
 
   filters:
+    active-material: "LIME_DYE"
+    inactive-material: "GRAY_DYE"
     claimed:
       enabled-name: "&9&l[ CLAIMED REWARDS ]"
       disabled-name: "&7Claimed Rewards"
-      lore-enabled: "&7Currently viewing: &9&lClaimed rewards"
-      lore-disabled: "&7Click to view all claimed rewards"
+      lore-enabled:
+        - "&7Currently viewing: &9&lClaimed rewards"
+      lore-disabled:
+        - "&7Click to view all claimed rewards"
     available:
       enabled-name: "&6&l[ AVAILABLE REWARDS ]"
       disabled-name: "&7Available Rewards"
-      lore-enabled: "&7Currently viewing: &6&lAvailable rewards"
-      lore-disabled: "&7Click to view rewards ready to claim"
+      lore-enabled:
+        - "&7Currently viewing: &6&lAvailable rewards"
+      lore-disabled:
+        - "&7Click to view rewards ready to claim"
     locked:
       enabled-name: "&4&l[ LOCKED REWARDS ]"
       disabled-name: "&7Locked Rewards"
-      lore-enabled: "&7Currently viewing: &4&lLocked rewards"
-      lore-disabled: "&7Click to view upcoming rewards"
+      lore-enabled:
+        - "&7Currently viewing: &4&lLocked rewards"
+      lore-disabled:
+        - "&7Click to view upcoming rewards"
 
   claim-all:
+    material: "CHEST"
     name: "&e&lClaim all"
+    lore:
+      - "&7Click to claim all available rewards"
 
   no-rewards:
+    material: "BARRIER"
     name: "&l&cNo rewards to display!"
-    lore: "&7Try changing your filters"
+    lore:
+      - "&7Try changing your filters"
 
   reward-items:
     available:
@@ -61,25 +110,40 @@ rewards-gui:
       lore:
         - "&aThis reward is available to claim!"
         - "&7Click to receive your reward"
+        - ""
+        - "&7Required Joins: &e%REQUIRED_JOINS%"
+        - ""
+        - "&7%DESCRIPTION%"
+        - ""
+        - "&7%REWARD_DESCRIPTION%"
+
     claimed:
       prefix: "&8&l[CLAIMED] "
       lore:
         - "&8You've already claimed this reward"
+        - ""
+        - "&7Required Joins: &e%REQUIRED_JOINS%"
+        - ""
+        - "&7%DESCRIPTION%"
+        - ""
+        - "&7%REWARD_DESCRIPTION%"
+
     locked:
       prefix: "&c&l[LOCKED] "
       lore:
         - "&cYou haven't reached this join streak yet"
+        - ""
+        - "&7Required Joins: &e%REQUIRED_JOINS%"
+        - "&7Your current join streak: %JOIN_STREAK_COLOR%%CURRENT_STREAK%"
+        - ""
+        - "&7%DESCRIPTION%"
+        - ""
+        - "&7%REWARD_DESCRIPTION%"
 
-    info-lore:
-      required-joins: "&7Required Joins: &e%REQUIRED_JOINS%"
-      join-streak: "&7Your current join streak: %JOIN_STREAK_COLOR%%CURRENT_STREAK%"
-      join-streak-color:
-        sufficient: "&a"
-        insufficient: "&c"
-      description-separator: ""
-      description: "&7%DESCRIPTION%"
-      reward-description-separator: ""
-      reward-description: "&7%REWARD_DESCRIPTION%"
+  sounds:
+    claim-success: "ENTITY_PLAYER_LEVELUP"
+    claim-error: "ENTITY_VILLAGER_NO"
+    no-permission: "ENTITY_VILLAGER_NO"
 
   messages:
     no-permission: "&cYou don't have permission to claim rewards"

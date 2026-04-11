@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.GUIs.Player;
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.GUIs.BaseCustomGUI;
 import me.thegabro.playtimemanager.GUIs.InventoryListener;
@@ -14,10 +15,7 @@ import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -33,7 +31,6 @@ import java.util.*;
 
 public class RewardsInfoGui extends BaseCustomGUI {
 
-    //TODO: refactor how internal placeholders are handled
     private final Inventory inv;
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
@@ -43,26 +40,32 @@ public class RewardsInfoGui extends BaseCustomGUI {
     private final GUIsConfiguration config;
     private final boolean isOwner;
     private final DBUser subject;
+    private OfflinePlayer resolvedOfflinePlayer;
     private int currentPage = 0;
     private final List<RewardDisplayItem> allDisplayItems = new ArrayList<>();
     private final List<RewardDisplayItem> filteredDisplayItems = new ArrayList<>();
-    private final int REWARDS_PER_PAGE = 28; // Maximum number of rewards per page
-    private final int NEXT_BUTTON_SLOT = 50;
-    private final int PREV_BUTTON_SLOT = 48;
-    private final int PAGE_INDICATOR_SLOT = 49;
-    private final int SHOW_CLAIMED_BUTTON_SLOT = 3;
-    private final int SHOW_AVAILABLE_BUTTON_SLOT = 4;
-    private final int SHOW_LOCKED_BUTTON_SLOT = 5;
-    private final int CLAIM_ALL_BUTTON_SLOT = 46;
+    private final int REWARDS_PER_PAGE = 28;
+
+    private final int NEXT_BUTTON_SLOT;
+    private final int PREV_BUTTON_SLOT;
+    private final int PAGE_INDICATOR_SLOT;
+    private final int SHOW_CLAIMED_BUTTON_SLOT;
+    private final int SHOW_AVAILABLE_BUTTON_SLOT;
+    private final int SHOW_LOCKED_BUTTON_SLOT;
+    private final int CLAIM_ALL_BUTTON_SLOT;
+    private final int NO_REWARDS_SLOT;
+
+    private final Material FILTER_ACTIVE_MATERIAL;
+    private final Material FILTER_INACTIVE_MATERIAL;
 
     private final Map<String, String> globalPlaceholders = new HashMap<>();
 
-    private enum FilterType {
-        CLAIMED,
-        AVAILABLE,
-        LOCKED
-    }
+    private enum FilterType { CLAIMED, AVAILABLE, LOCKED }
     private FilterType currentFilter = FilterType.AVAILABLE;
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
 
     public RewardsInfoGui(Player sender, DBUser subject, String sessionToken) {
         super(sender, sessionToken);
@@ -70,103 +73,231 @@ public class RewardsInfoGui extends BaseCustomGUI {
         this.subject = subject;
         this.isOwner = sender.getName().equalsIgnoreCase(subject.getNickname());
 
-        if(isOwner)
-            inv = Bukkit.createInventory(this, 54, Utils.parseColors(config.getString("rewards-gui.gui.title")));
-        else
-            inv = Bukkit.createInventory(this, 54, Utils.parseColors(subject.getNickname()+"'s rewards"));
+        NEXT_BUTTON_SLOT           = config.getOrDefaultInt("rewards-gui.slots.next-page", 50);
+        PREV_BUTTON_SLOT           = config.getOrDefaultInt("rewards-gui.slots.prev-page", 48);
+        PAGE_INDICATOR_SLOT        = config.getOrDefaultInt("rewards-gui.slots.page-indicator", 49);
+        SHOW_CLAIMED_BUTTON_SLOT   = config.getOrDefaultInt("rewards-gui.slots.filter-claimed", 3);
+        SHOW_AVAILABLE_BUTTON_SLOT = config.getOrDefaultInt("rewards-gui.slots.filter-available", 4);
+        SHOW_LOCKED_BUTTON_SLOT    = config.getOrDefaultInt("rewards-gui.slots.filter-locked", 5);
+        CLAIM_ALL_BUTTON_SLOT      = config.getOrDefaultInt("rewards-gui.slots.claim-all", 46);
+        NO_REWARDS_SLOT            = config.getOrDefaultInt("rewards-gui.slots.no-rewards", 21);
 
+        FILTER_ACTIVE_MATERIAL   = parseMaterial(config.getString("rewards-gui.filters.active-material"), Material.LIME_DYE);
+        FILTER_INACTIVE_MATERIAL = parseMaterial(config.getString("rewards-gui.filters.inactive-material"), Material.GRAY_DYE);
+
+        int size = config.getOrDefaultInt("rewards-gui.gui.size", 54);
+        String title = isOwner
+                ? config.getString("rewards-gui.gui.title")
+                : subject.getNickname() + "'s rewards";
+
+        inv = Bukkit.createInventory(this, size, Utils.parseColors(title));
     }
 
+    // -------------------------------------------------------------------------
+    // Public API
+    // -------------------------------------------------------------------------
+
     public void openInventory() {
-        currentPage = 0; // Reset to first page when opening the GUI
+        currentPage = 0;
+        resolvedOfflinePlayer = subject.isOnline()
+                ? ((OnlineUser) subject).getPlayerInstance()
+                : subject.getPlayerInstance();
+
         initializeGlobalPlaceholders();
         loadRewards();
         applyFilters();
-        initializeItems();
 
-        // Track active GUIs
-        InventoryListener.getInstance().registerGUI(sender.getUniqueId(), this);
-
-        sender.openInventory(inv);
+        if (subject.isOnline()) {
+            initializeItems();
+            InventoryListener.getInstance().registerGUI(sender.getUniqueId(), this);
+            sender.openInventory(inv);
+        } else {
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                initializeItems();
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    InventoryListener.getInstance().registerGUI(sender.getUniqueId(), this);
+                    if (sender.isOnline()) sender.openInventory(inv);
+                });
+            });
+        }
     }
 
     public void changePage(int page) {
         currentPage = page;
         initializeItems();
-
         sender.updateInventory();
-
     }
+
+    @Override
+    public @NotNull Inventory getInventory() {
+        return inv;
+    }
+
+    // -------------------------------------------------------------------------
+    // Core item builder — ALL items must pass through here
+    // -------------------------------------------------------------------------
+
+    /**
+     * The single pipeline every item in this GUI must pass through.
+     *
+     * Steps:
+     *   1. Resolve internal placeholders (%PLAYER_NAME%, %CURRENT_PAGE%, etc.)
+     *   2. Resolve PlaceholderAPI placeholders
+     *   3. Detect player-head icon and apply the correct skin
+     *   4. Apply name + lore with italic stripped
+     *   5. Optionally write PDC entries
+     *
+     * @param materialString  raw material name from config (may be PLAYER_HEAD or PLAYER_HEAD:name)
+     * @param rawName         raw display-name string (may contain placeholders)
+     * @param rawLore         raw lore lines (may contain placeholders); null = no lore
+     * @param pdcEntries      optional map of NamespacedKey → String to write into the PDC; null = none
+     */
+    private ItemStack buildItem(String materialString,
+                                String rawName,
+                                @Nullable List<String> rawLore,
+                                @Nullable Map<NamespacedKey, String> pdcEntries) {
+
+        String resolvedName = applyPlaceholders(rawName);
+
+        List<String> resolvedLore = new ArrayList<>();
+        if (rawLore != null)
+            for (String line : rawLore)
+                resolvedLore.add(applyPlaceholders(line));
+
+        String resolvedMaterial = applyPlaceholders(materialString);
+
+        ItemStack item;
+        if (isPlayerHead(resolvedMaterial)) {
+            String[] parts = resolvedMaterial.split(":", 2);
+            boolean hasSpecificSkin = parts.length > 1 && !parts[1].trim().isEmpty();
+            item = hasSpecificSkin
+                    ? Utils.createPlayerHead(resolvedMaterial)
+                    : Utils.createPlayerHeadWithContext(resolvedMaterial, subject.getNickname(), resolvedOfflinePlayer);
+        } else {
+            item = new ItemStack(parseMaterial(resolvedMaterial, Material.PAPER));
+        }
+
+        // 4 — apply meta
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return item;
+
+        meta.displayName(Utils.parseColors(resolvedName).decoration(TextDecoration.ITALIC, false));
+
+        if (!resolvedLore.isEmpty()) {
+            List<Component> loreComponents = new ArrayList<>();
+            for (String line : resolvedLore)
+                loreComponents.add(Utils.parseColors(line).decoration(TextDecoration.ITALIC, false));
+            meta.lore(loreComponents);
+        }
+
+        // 5 — write PDC entries if provided
+        if (pdcEntries != null) {
+            PersistentDataContainer pdc = meta.getPersistentDataContainer();
+            for (Map.Entry<NamespacedKey, String> entry : pdcEntries.entrySet())
+                pdc.set(entry.getKey(), PersistentDataType.STRING, entry.getValue());
+        }
+
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    /** Convenience overload — no PDC entries. */
+    private ItemStack buildItem(String materialString, String rawName, @Nullable List<String> rawLore) {
+        return buildItem(materialString, rawName, rawLore, null);
+    }
+
+    /** Convenience overload — no lore, no PDC entries. */
+    private ItemStack buildItem(String materialString, String rawName) {
+        return buildItem(materialString, rawName, null, null);
+    }
+
+    // -------------------------------------------------------------------------
+    // Placeholder resolution (steps 1 + 2 of the pipeline)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Applies internal global placeholders first, then PlaceholderAPI.
+     * Always safe to call — gracefully strips unresolved %tokens% when PAPI is unavailable.
+     */
+    private String applyPlaceholders(String text) {
+        if (text == null || text.isEmpty()) return text == null ? "" : text;
+
+        String result = text;
+        for (Map.Entry<String, String> entry : globalPlaceholders.entrySet())
+            result = result.replace(entry.getKey(), entry.getValue());
+
+        if (plugin.isPlaceholdersAPIConfigured()) {
+            try {
+                result = PlaceholderAPI.setPlaceholders(resolvedOfflinePlayer, result);
+            } catch (Exception e) {
+                result = result.replaceAll("%[^%]+%", "");
+            }
+        }
+
+        return result;
+    }
+
+    // -------------------------------------------------------------------------
+    // Placeholder maps
+    // -------------------------------------------------------------------------
+
+    private void initializeGlobalPlaceholders() {
+        globalPlaceholders.clear();
+        globalPlaceholders.put("%PLAYER_NAME%",     subject.getNickname());
+        globalPlaceholders.put("%CURRENT_STREAK%",  String.valueOf(subject.getRelativeJoinStreak()));
+        globalPlaceholders.put("%ABSOLUTE_STREAK%", String.valueOf(subject.getAbsoluteJoinStreak()));
+    }
+
+    private void updateDynamicPlaceholders() {
+        int totalPages = (int) Math.ceil((double) filteredDisplayItems.size() / REWARDS_PER_PAGE);
+        globalPlaceholders.put("%CURRENT_PAGE%", String.valueOf(currentPage + 1));
+        globalPlaceholders.put("%TOTAL_PAGES%",  String.valueOf(Math.max(totalPages, 1)));
+    }
+
+    // -------------------------------------------------------------------------
+    // Data loading & filtering
+    // -------------------------------------------------------------------------
 
     public record RewardDisplayItem(JoinStreakReward reward, RewardSubInstance subInstance,
                                     RewardStatus status) implements Comparable<RewardDisplayItem> {
-
         @Override
-            public int compareTo(RewardDisplayItem other) {
-                // First, sort by status: AVAILABLE, LOCKED, CLAIMED
-                if (this.status != other.status) {
-                    return this.status.ordinal() - other.status.ordinal();
-                }
-
-                // Then sort by required joins
-                if (this.subInstance.requiredJoins() != other.subInstance.requiredJoins() &&
-                        this.subInstance.requiredJoins() != -1 && other.subInstance.requiredJoins() != -1) {
-                    return Integer.compare(this.subInstance.requiredJoins(), other.subInstance.requiredJoins());
-                }
-
-                // If same required joins, sort by instance number (1.x)
-                if (this.reward.getId() != other.reward.getId()) {
-                    return Integer.compare(this.reward.getId(), other.reward.getId());
-                }
-
-                // Finally, sort by sub-instance number (x.1)
+        public int compareTo(RewardDisplayItem other) {
+            if (this.status != other.status)
+                return this.status.ordinal() - other.status.ordinal();
+            if (this.subInstance.requiredJoins() != other.subInstance.requiredJoins() &&
+                    this.subInstance.requiredJoins() != -1 && other.subInstance.requiredJoins() != -1)
                 return Integer.compare(this.subInstance.requiredJoins(), other.subInstance.requiredJoins());
-            }
+            if (this.reward.getId() != other.reward.getId())
+                return Integer.compare(this.reward.getId(), other.reward.getId());
+            return Integer.compare(this.subInstance.requiredJoins(), other.subInstance.requiredJoins());
         }
-
-    private enum RewardStatus {
-        AVAILABLE_OLD,
-        AVAILABLE,
-        LOCKED,
-        CLAIMED,
     }
+
+    private enum RewardStatus { AVAILABLE_OLD, AVAILABLE, LOCKED, CLAIMED }
 
     private void applyFilters() {
         filteredDisplayItems.clear();
-
         for (RewardDisplayItem item : allDisplayItems) {
             switch (item.status()) {
-                case CLAIMED:
-                    if (currentFilter == FilterType.CLAIMED) filteredDisplayItems.add(item);
-                    break;
-                case AVAILABLE_OLD:
-                case AVAILABLE:
-                    if (currentFilter == FilterType.AVAILABLE) filteredDisplayItems.add(item);
-                    break;
-                case LOCKED:
-                    if (currentFilter == FilterType.LOCKED) filteredDisplayItems.add(item);
-                    break;
+                case CLAIMED      -> { if (currentFilter == FilterType.CLAIMED)   filteredDisplayItems.add(item); }
+                case AVAILABLE_OLD,
+                     AVAILABLE    -> { if (currentFilter == FilterType.AVAILABLE) filteredDisplayItems.add(item); }
+                case LOCKED       -> { if (currentFilter == FilterType.LOCKED)    filteredDisplayItems.add(item); }
             }
         }
     }
 
-    private boolean isReceived(List<RewardSubInstance> receivedRewards, RewardSubInstance subInstance) {
-        for (RewardSubInstance r : receivedRewards) {
-            if (r.mainInstanceID().equals(subInstance.mainInstanceID()) &&
-                    r.requiredJoins().equals(subInstance.requiredJoins())) {
+    private boolean isReceived(List<RewardSubInstance> received, RewardSubInstance sub) {
+        for (RewardSubInstance r : received)
+            if (r.mainInstanceID().equals(sub.mainInstanceID()) && r.requiredJoins().equals(sub.requiredJoins()))
                 return true;
-            }
-        }
         return false;
     }
 
-    private boolean isToBeClaimed(List<RewardSubInstance> rewardsToBeClaimed, RewardSubInstance subInstance) {
-        for (RewardSubInstance r : rewardsToBeClaimed) {
-            if (r.mainInstanceID().equals(subInstance.mainInstanceID()) &&
-                    r.requiredJoins().equals(subInstance.requiredJoins())) {
+    private boolean isToBeClaimed(List<RewardSubInstance> toBeClaimed, RewardSubInstance sub) {
+        for (RewardSubInstance r : toBeClaimed)
+            if (r.mainInstanceID().equals(sub.mainInstanceID()) && r.requiredJoins().equals(sub.requiredJoins()))
                 return true;
-            }
-        }
         return false;
     }
 
@@ -174,54 +305,41 @@ public class RewardsInfoGui extends BaseCustomGUI {
         allDisplayItems.clear();
 
         ArrayList<RewardSubInstance> joinRewardsMap = rewardRegistry.getJoinRewardsMap();
-        List<RewardSubInstance> rewardsReceived = subject.getReceivedRewards();
-        List<RewardSubInstance> rewardsToBeClaimed = subject.getRewardsToBeClaimed();
-
-
-        RewardStatus status;
+        List<RewardSubInstance> rewardsReceived     = subject.getReceivedRewards();
+        List<RewardSubInstance> rewardsToBeClaimed  = subject.getRewardsToBeClaimed();
 
         for (RewardSubInstance subInstance : joinRewardsMap) {
-            Integer rewardId = subInstance.mainInstanceID();
-
-            JoinStreakReward reward = rewardRegistry.getReward(rewardId);
+            JoinStreakReward reward = rewardRegistry.getReward(subInstance.mainInstanceID());
             if (reward == null) continue;
 
-            if (isReceived(rewardsReceived, subInstance)) {
-                status = RewardStatus.CLAIMED;
-            } else if (isToBeClaimed(rewardsToBeClaimed, subInstance)) {
-                status = RewardStatus.AVAILABLE;
-            } else {
-                status = RewardStatus.LOCKED;
-            }
-
+            RewardStatus status;
+            if      (isReceived(rewardsReceived, subInstance))       status = RewardStatus.CLAIMED;
+            else if (isToBeClaimed(rewardsToBeClaimed, subInstance)) status = RewardStatus.AVAILABLE;
+            else                                                      status = RewardStatus.LOCKED;
 
             allDisplayItems.add(new RewardDisplayItem(reward, subInstance, status));
-
         }
 
         for (RewardSubInstance subInstance : subject.getRewardsToBeClaimed()) {
+            if (!subInstance.expired()) continue;
 
-            if (!subInstance.expired())
-                continue;
-
-            Integer rewardId = subInstance.mainInstanceID();
-            JoinStreakReward reward = rewardRegistry.getReward(rewardId);
-
+            JoinStreakReward reward = rewardRegistry.getReward(subInstance.mainInstanceID());
             if (reward == null) continue;
 
-            // Skip if already added by the first loop (reward still exists in registry)
             boolean alreadyAdded = allDisplayItems.stream().anyMatch(item ->
                     item.subInstance().mainInstanceID().equals(subInstance.mainInstanceID()) &&
-                            item.subInstance().requiredJoins().equals(subInstance.requiredJoins())
-            );
+                            item.subInstance().requiredJoins().equals(subInstance.requiredJoins()));
             if (alreadyAdded) continue;
 
-            status = RewardStatus.AVAILABLE_OLD;
-            allDisplayItems.add(new RewardDisplayItem(reward, subInstance, status));
+            allDisplayItems.add(new RewardDisplayItem(reward, subInstance, RewardStatus.AVAILABLE_OLD));
         }
-        // Sort the display items using the natural ordering (defined by Comparable)
+
         Collections.sort(allDisplayItems);
     }
+
+    // -------------------------------------------------------------------------
+    // GUI rendering
+    // -------------------------------------------------------------------------
 
     public void initializeItems() {
         int leftIndex = 9, rightIndex = 17;
@@ -230,323 +348,217 @@ public class RewardsInfoGui extends BaseCustomGUI {
 
         updateDynamicPlaceholders();
 
-        // Create borders
-        for (int i = 0; i < 54; i++) {
-            if (i <= 9 || i >= 45 || i == leftIndex || i == rightIndex) {
-                inv.setItem(i, createGuiItem(Material.BLACK_STAINED_GLASS_PANE,
-                        Utils.parseColors(config.getString("rewards-gui.gui.border-item-name"))));
-                protectedSlots.add(i);
-                if (i == leftIndex) leftIndex += 9;
-                if (i == rightIndex) rightIndex += 9;
+        // Border
+        if (config.getOrDefaultBoolean("rewards-gui.gui.border.enabled", true)) {
+            String borderMaterialString = config.getOrDefaultString("rewards-gui.gui.border.material", "BLACK_STAINED_GLASS_PANE");
+            String borderName           = config.getOrDefaultString("rewards-gui.gui.border.name", " ");
+            int size = inv.getSize();
+
+            for (int i = 0; i < size; i++) {
+                if (i <= 9 || i >= size - 9 || i == leftIndex || i == rightIndex) {
+                    safeSetItem(i, buildItem(borderMaterialString, borderName));
+                    protectedSlots.add(i);
+                    if (i == leftIndex)  leftIndex  += 9;
+                    if (i == rightIndex) rightIndex += 9;
+                }
             }
         }
 
         createFilterButtons();
 
-        if(isOwner){
-            inv.setItem(CLAIM_ALL_BUTTON_SLOT, createGuiItem(Material.CHEST,
-                    Utils.parseColors(config.getString("rewards-gui.claim-all.name"))));
-            protectedSlots.add(CLAIM_ALL_BUTTON_SLOT);
-        }
+        if (isOwner)
+            safeSetProtected(CLAIM_ALL_BUTTON_SLOT, buildClaimAllButton());
 
         int totalPages = (int) Math.ceil((double) filteredDisplayItems.size() / REWARDS_PER_PAGE);
         if (totalPages > 1) {
-            inv.setItem(PAGE_INDICATOR_SLOT, createGuiItem(Material.PAPER,
-                    Utils.parseColors(translateDynamic(config.getString("rewards-gui.pagination.page-indicator")))));
-            protectedSlots.add(PAGE_INDICATOR_SLOT);
-
-            if (currentPage < totalPages - 1) {
-                inv.setItem(NEXT_BUTTON_SLOT, createGuiItem(Material.ARROW,
-                        Utils.parseColors(config.getString("rewards-gui.pagination.next-page.name")),
-                        Utils.parseColors(config.getString("rewards-gui.pagination.next-page.lore"))));
-            } else {
-                inv.setItem(NEXT_BUTTON_SLOT, createGuiItem(Material.BARRIER,
-                        Utils.parseColors(config.getString("rewards-gui.pagination.no-more-pages"))));
-            }
-            protectedSlots.add(NEXT_BUTTON_SLOT);
-
-            if (currentPage > 0) {
-                inv.setItem(PREV_BUTTON_SLOT, createGuiItem(Material.ARROW,
-                        Utils.parseColors(config.getString("rewards-gui.pagination.prev-page.name")),
-                        Utils.parseColors(config.getString("rewards-gui.pagination.prev-page.lore"))));
-            } else {
-                inv.setItem(PREV_BUTTON_SLOT, createGuiItem(Material.BARRIER,
-                        Utils.parseColors(config.getString("rewards-gui.pagination.first-page"))));
-            }
-            protectedSlots.add(PREV_BUTTON_SLOT);
+            safeSetProtected(PAGE_INDICATOR_SLOT, buildPageIndicator());
+            safeSetProtected(NEXT_BUTTON_SLOT, currentPage < totalPages - 1
+                    ? buildNavButton("rewards-gui.pagination.next-page")
+                    : buildNavButton("rewards-gui.pagination.next-page-disabled"));
+            safeSetProtected(PREV_BUTTON_SLOT, currentPage > 0
+                    ? buildNavButton("rewards-gui.pagination.prev-page")
+                    : buildNavButton("rewards-gui.pagination.prev-page-disabled"));
         }
 
         if (!filteredDisplayItems.isEmpty()) {
             int startIndex = currentPage * REWARDS_PER_PAGE;
-            int endIndex = Math.min(startIndex + REWARDS_PER_PAGE, filteredDisplayItems.size());
-            List<RewardDisplayItem> currentPageRewards = filteredDisplayItems.subList(startIndex, endIndex);
+            int endIndex   = Math.min(startIndex + REWARDS_PER_PAGE, filteredDisplayItems.size());
+            List<RewardDisplayItem> pageRewards = filteredDisplayItems.subList(startIndex, endIndex);
 
             int slot = 10;
-            for (RewardDisplayItem displayItem : currentPageRewards) {
+            for (RewardDisplayItem displayItem : pageRewards) {
                 while (protectedSlots.contains(slot)) slot++;
-                if (slot >= 45) break;
-
-                JoinStreakReward reward = displayItem.reward();
-                int specificJoins = displayItem.subInstance().requiredJoins();
-                int currentStreak = subject.getRelativeJoinStreak();
-
-                Material material = Material.valueOf(reward.getItemIcon());
-                String statusPrefix, rewardType;
-                List<String> lore = new ArrayList<>();
-
-                switch (displayItem.status()) {
-                    case AVAILABLE_OLD:
-                    case AVAILABLE:
-                        statusPrefix = translateDynamic(config.getString("rewards-gui.reward-items.available.prefix"));
-                        lore.addAll(translateDynamic(config.getStringList("rewards-gui.reward-items.available.lore")));
-                        rewardType = "CLAIMABLE";
-                        break;
-                    case CLAIMED:
-                        statusPrefix = translateDynamic(config.getString("rewards-gui.reward-items.claimed.prefix"));
-                        lore.addAll(translateDynamic(config.getStringList("rewards-gui.reward-items.claimed.lore")));
-                        rewardType = "CLAIMED";
-                        break;
-                    case LOCKED:
-                    default:
-                        statusPrefix = translateDynamic(config.getString("rewards-gui.reward-items.locked.prefix"));
-                        lore.addAll(translateDynamic(config.getStringList("rewards-gui.reward-items.locked.lore")));
-                        rewardType = "LOCKED";
-                        break;
-                }
-                String requiredJoins = specificJoins == -1 ? "-" : String.valueOf(specificJoins);
-                globalPlaceholders.put("%REQUIRED_JOINS%", requiredJoins);
-
-                String requiredJoinsText = translateDynamic(config.getString("rewards-gui.reward-items.info-lore.required-joins"));
-                lore.add(requiredJoinsText);
-
-                if (!(displayItem.status() == RewardStatus.AVAILABLE_OLD) && !(displayItem.status() == RewardStatus.AVAILABLE)) {
-                    String streakColor = currentStreak < specificJoins ?
-                            config.getString("rewards-gui.reward-items.info-lore.join-streak-color.insufficient") :
-                            config.getString("rewards-gui.reward-items.info-lore.join-streak-color.sufficient");
-
-                    String joinStreakText = translateDynamic(config.getString("rewards-gui.reward-items.info-lore.join-streak"));
-                    joinStreakText = quickTranslate(joinStreakText, "%JOIN_STREAK_COLOR%", streakColor);
-                    joinStreakText = quickTranslate(joinStreakText, "%COLOR%", streakColor);
-                    lore.add(joinStreakText);
-                }
-
-                if (!reward.getDescription().isEmpty()) {
-                    lore.add(translateDynamic(config.getString("rewards-gui.reward-items.info-lore.description-separator")));
-                    String descTemplate = config.getString("rewards-gui.reward-items.info-lore.description");
-                    for (String line : reward.getDescription().split("/n")) {
-                        String filled = quickTranslate(descTemplate, "%DESCRIPTION%", line);
-                        String translatedLine = translateDynamic(filled);
-                        lore.add(translatedLine);
-                    }
-                }
-
-
-                if (!reward.getRewardDescription().isEmpty()) {
-                    lore.add(translateDynamic(config.getString("rewards-gui.reward-items.info-lore.reward-description-separator")));
-                    String rewardDescTemplate = config.getString("rewards-gui.reward-items.info-lore.reward-description");
-                    for (String line : reward.getRewardDescription().split("/n")) {
-                        String filled = quickTranslate(rewardDescTemplate, "%REWARD_DESCRIPTION%", line);
-                        String translatedLine = translateDynamic(filled);
-                        lore.add(translatedLine);
-                    }
-                }
-
-                List<Component> componentLore = new ArrayList<>();
-                for (String loreLine : lore) componentLore.add(Utils.parseColors(loreLine));
-
-                ItemStack item = new ItemStack(material);
-                ItemMeta meta = item.getItemMeta();
-                meta.displayName(Utils.parseColors(statusPrefix).decoration(TextDecoration.ITALIC, false));
-
-                ArrayList<Component> metalore = new ArrayList<>();
-                for (Component loreLine : componentLore) metalore.add(loreLine.decoration(TextDecoration.ITALIC, false));
-                meta.lore(metalore);
-
-                NamespacedKey idKey = new NamespacedKey(plugin, "reward_id");
-                NamespacedKey typeKey = new NamespacedKey(plugin, "reward_type");
-                meta.getPersistentDataContainer().set(idKey, PersistentDataType.STRING, displayItem.reward.getId()+"."+displayItem.subInstance().requiredJoins());
-                meta.getPersistentDataContainer().set(typeKey, PersistentDataType.STRING, rewardType);
-
-                item.setItemMeta(meta);
-                inv.setItem(slot, item);
+                if (slot >= inv.getSize() - 9) break;
+                safeSetItem(slot, buildRewardItem(displayItem));
                 slot++;
             }
         } else {
-            inv.setItem(22, createGuiItem(Material.BARRIER,
-                    Utils.parseColors(config.getString("rewards-gui.no-rewards.name")),
-                    Utils.parseColors(config.getString("rewards-gui.no-rewards.lore"))));
+            safeSetItem(NO_REWARDS_SLOT, buildItem(
+                    config.getOrDefaultString("rewards-gui.no-rewards.material", "BARRIER"),
+                    config.getString("rewards-gui.no-rewards.name"),
+                    getStringOrList("rewards-gui.no-rewards.lore")));
         }
     }
 
-    // Create the filter toggle buttons
+    // -------------------------------------------------------------------------
+    // Specific item builders — all delegate to buildItem()
+    // -------------------------------------------------------------------------
+
     private void createFilterButtons() {
-        Material claimedMaterial = currentFilter == FilterType.CLAIMED ? Material.LIME_DYE : Material.GRAY_DYE;
-        String claimedName = currentFilter == FilterType.CLAIMED ?
-                config.getString("rewards-gui.filters.claimed.enabled-name") :
-                config.getString("rewards-gui.filters.claimed.disabled-name");
-        String claimedLore = currentFilter == FilterType.CLAIMED ?
-                config.getString("rewards-gui.filters.claimed.lore-enabled") :
-                config.getString("rewards-gui.filters.claimed.lore-disabled");
-
-        inv.setItem(SHOW_CLAIMED_BUTTON_SLOT, createGuiItem(
-                claimedMaterial,
-                Utils.parseColors(claimedName),
-                Utils.parseColors(claimedLore)
-        ));
-        protectedSlots.add(SHOW_CLAIMED_BUTTON_SLOT);
-
-        Material availableMaterial = currentFilter == FilterType.AVAILABLE ? Material.LIME_DYE : Material.GRAY_DYE;
-        String availableName = currentFilter == FilterType.AVAILABLE ?
-                config.getString("rewards-gui.filters.available.enabled-name") :
-                config.getString("rewards-gui.filters.available.disabled-name");
-        String availableLore = currentFilter == FilterType.AVAILABLE ?
-                config.getString("rewards-gui.filters.available.lore-enabled") :
-                config.getString("rewards-gui.filters.available.lore-disabled");
-
-        inv.setItem(SHOW_AVAILABLE_BUTTON_SLOT, createGuiItem(
-                availableMaterial,
-                Utils.parseColors(availableName),
-                Utils.parseColors(availableLore)
-        ));
-        protectedSlots.add(SHOW_AVAILABLE_BUTTON_SLOT);
-
-        Material lockedMaterial = currentFilter == FilterType.LOCKED ? Material.LIME_DYE : Material.GRAY_DYE;
-        String lockedName = currentFilter == FilterType.LOCKED ?
-                config.getString("rewards-gui.filters.locked.enabled-name") :
-                config.getString("rewards-gui.filters.locked.disabled-name");
-        String lockedLore = currentFilter == FilterType.LOCKED ?
-                config.getString("rewards-gui.filters.locked.lore-enabled") :
-                config.getString("rewards-gui.filters.locked.lore-disabled");
-
-        inv.setItem(SHOW_LOCKED_BUTTON_SLOT, createGuiItem(
-                lockedMaterial,
-                Utils.parseColors(lockedName),
-                Utils.parseColors(lockedLore)
-        ));
-        protectedSlots.add(SHOW_LOCKED_BUTTON_SLOT);
+        createFilterButton(SHOW_CLAIMED_BUTTON_SLOT,   FilterType.CLAIMED,   "claimed");
+        createFilterButton(SHOW_AVAILABLE_BUTTON_SLOT, FilterType.AVAILABLE, "available");
+        createFilterButton(SHOW_LOCKED_BUTTON_SLOT,    FilterType.LOCKED,    "locked");
     }
 
+    private void createFilterButton(int slot, FilterType type, String configKey) {
+        boolean isActive = currentFilter == type;
+        String materialString = isActive
+                ? config.getOrDefaultString("rewards-gui.filters.active-material", "LIME_DYE")
+                : config.getOrDefaultString("rewards-gui.filters.inactive-material", "GRAY_DYE");
+        String nameKey = isActive
+                ? "rewards-gui.filters." + configKey + ".enabled-name"
+                : "rewards-gui.filters." + configKey + ".disabled-name";
+        String lorePath = isActive
+                ? "rewards-gui.filters." + configKey + ".lore-enabled"
+                : "rewards-gui.filters." + configKey + ".lore-disabled";
 
-    private ItemStack createGuiItem(Material material, @Nullable Component name, @Nullable Component... lore) {
-        ItemStack item = new ItemStack(material, 1);
-        ItemMeta meta = item.getItemMeta();
+        safeSetProtected(slot, buildItem(materialString, config.getString(nameKey), getStringOrList(lorePath)));
+    }
 
-        if (name != null) {
-            meta.displayName(name.decoration(TextDecoration.ITALIC, false));
+    private ItemStack buildPageIndicator() {
+        return buildItem(
+                config.getOrDefaultString("rewards-gui.pagination.page-indicator.material", "PAPER"),
+                config.getString("rewards-gui.pagination.page-indicator.name"));
+    }
+
+    private ItemStack buildNavButton(String path) {
+        return buildItem(
+                config.getOrDefaultString(path + ".material", "ARROW"),
+                config.getString(path + ".name"),
+                getStringOrList(path + ".lore"));
+    }
+
+    private ItemStack buildClaimAllButton() {
+        return buildItem(
+                config.getOrDefaultString("rewards-gui.claim-all.material", "CHEST"),
+                config.getString("rewards-gui.claim-all.name"),
+                getStringOrList("rewards-gui.claim-all.lore"));
+    }
+
+    private ItemStack buildRewardItem(RewardDisplayItem displayItem) {
+        JoinStreakReward reward       = displayItem.reward();
+        RewardSubInstance subInstance = displayItem.subInstance();
+        int specificJoins             = subInstance.requiredJoins();
+
+        String statusKey;
+        String rewardType;
+        switch (displayItem.status()) {
+            case AVAILABLE_OLD, AVAILABLE -> { statusKey = "available"; rewardType = "CLAIMABLE"; }
+            case CLAIMED                  -> { statusKey = "claimed";   rewardType = "CLAIMED";   }
+            default                       -> { statusKey = "locked";    rewardType = "LOCKED";    }
         }
 
-        ArrayList<Component> metalore = new ArrayList<>();
-        if (lore != null) {
-            // Disable italic for each lore line
-            for (Component loreLine : lore) {
-                metalore.add(loreLine.decoration(TextDecoration.ITALIC, false));
+        // Inject per-reward placeholder before building
+        globalPlaceholders.put("%REQUIRED_JOINS%", specificJoins == -1 ? "-" : String.valueOf(specificJoins));
+
+        String materialString = reward.getItemIcon();
+        String rawName        = config.getString("rewards-gui.reward-items." + statusKey + ".prefix");
+        List<String> rawLore  = expandLoreTemplate(
+                getStringOrList("rewards-gui.reward-items." + statusKey + ".lore"), reward);
+
+        // PDC entries
+        Map<NamespacedKey, String> pdc = new LinkedHashMap<>();
+        pdc.put(new NamespacedKey(plugin, "reward_id"),   reward.getId() + "." + subInstance.requiredJoins());
+        pdc.put(new NamespacedKey(plugin, "reward_type"), rewardType);
+
+        return buildItem(materialString, rawName, rawLore, pdc);
+    }
+
+    // -------------------------------------------------------------------------
+    // Lore template expansion
+    // -------------------------------------------------------------------------
+
+    /**
+     * Expands %DESCRIPTION% and %REWARD_DESCRIPTION% into multiple lines before
+     * the result is handed to buildItem() for placeholder resolution.
+     */
+    private List<String> expandLoreTemplate(List<String> template, JoinStreakReward reward) {
+        List<String> result = new ArrayList<>();
+        if (template == null) return result;
+
+        for (String line : template) {
+            if (line.contains("%DESCRIPTION%")) {
+                if (!reward.getDescription().isEmpty())
+                    for (String descLine : reward.getDescription().split("/n"))
+                        result.add(line.replace("%DESCRIPTION%", descLine));
+            } else if (line.contains("%REWARD_DESCRIPTION%")) {
+                if (!reward.getRewardDescription().isEmpty())
+                    for (String descLine : reward.getRewardDescription().split("/n"))
+                        result.add(line.replace("%REWARD_DESCRIPTION%", descLine));
+            } else {
+                result.add(line);
             }
         }
-
-        meta.lore(metalore);
-        item.setItemMeta(meta);
-        return item;
+        return result;
     }
 
+    // -------------------------------------------------------------------------
+    // Click handling
+    // -------------------------------------------------------------------------
 
-    @Override
-    public @NotNull Inventory getInventory() {
-        return inv;
-    }
+    public void onGUIClick(Player whoClicked, int slot, ItemStack clickedItem,
+                           @NotNull InventoryAction action, @NotNull InventoryClickEvent event) {
 
-    public void onGUIClick(Player whoClicked, int slot, ItemStack clickedItem, @NotNull InventoryAction action, @NotNull InventoryClickEvent event) {
+        if (clickedItem == null || clickedItem.getType() == Material.AIR) return;
 
-        if (clickedItem == null || clickedItem.getType().equals(Material.AIR)
-                || clickedItem.getType().equals(Material.BLACK_STAINED_GLASS_PANE)) {
-            return;
-        }
+        if (slot == SHOW_CLAIMED_BUTTON_SLOT)   { currentFilter = FilterType.CLAIMED;    currentPage = 0; applyFilters(); initializeItems(); return; }
+        if (slot == SHOW_AVAILABLE_BUTTON_SLOT) { currentFilter = FilterType.AVAILABLE;  currentPage = 0; applyFilters(); initializeItems(); return; }
+        if (slot == SHOW_LOCKED_BUTTON_SLOT)    { currentFilter = FilterType.LOCKED;     currentPage = 0; applyFilters(); initializeItems(); return; }
 
-        if (slot == SHOW_CLAIMED_BUTTON_SLOT) {
-            currentFilter = FilterType.CLAIMED;
-            currentPage=0;
-            applyFilters();
-            initializeItems();
-            return;
-        }
+        if (slot == CLAIM_ALL_BUTTON_SLOT && isOwner) { claimAllRewards(); return; }
 
-        if (slot == SHOW_AVAILABLE_BUTTON_SLOT) {
-            currentFilter = FilterType.AVAILABLE;
-            currentPage=0;
-            applyFilters();
-            initializeItems();
-            return;
-        }
+        Material navMat = parseMaterial(config.getString("rewards-gui.pagination.next-page.material"), Material.ARROW);
+        if (slot == NEXT_BUTTON_SLOT && clickedItem.getType() == navMat) { changePage(currentPage + 1); return; }
+        if (slot == PREV_BUTTON_SLOT && clickedItem.getType() == navMat) { changePage(currentPage - 1); return; }
 
-        if (slot == SHOW_LOCKED_BUTTON_SLOT) {
-            currentFilter = FilterType.LOCKED;
-            currentPage=0;
-            applyFilters();
-            initializeItems();
-            return;
-        }
-
-        if (slot == CLAIM_ALL_BUTTON_SLOT && isOwner) {
-            claimAllRewards();
-            return;
-        }
-
-        // Handle pagination buttons
-        if (slot == NEXT_BUTTON_SLOT && clickedItem.getType() == Material.ARROW) {
-            changePage(currentPage + 1);
-            return;
-        }
-
-        if (slot == PREV_BUTTON_SLOT && clickedItem.getType() == Material.ARROW) {
-            changePage(currentPage - 1);
-            return;
-        }
-
-        // Handle clicking on a reward
-        if (clickedItem.getItemMeta().hasDisplayName() && isOwner) {
-
+        if (clickedItem.hasItemMeta() && isOwner) {
             PersistentDataContainer container = clickedItem.getItemMeta().getPersistentDataContainer();
             NamespacedKey typeKey = new NamespacedKey(plugin, "reward_type");
-
-            if (container.has(typeKey, PersistentDataType.STRING)) {
-                if(container.get(typeKey, PersistentDataType.STRING).equals("CLAIMABLE")){
-                    // Extract reward instance from the lore
-                    NamespacedKey idKey = new NamespacedKey(plugin, "reward_id");
-
-                    if (container.has(idKey, PersistentDataType.STRING)) {
-                        String instance = container.get(idKey, PersistentDataType.STRING);
-                        claimReward(instance);
-                    } else {
-                        whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
-                                config.getString("rewards-gui.messages.not-available")));
-                        whoClicked.playSound(whoClicked.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
-                    }
+            if (container.has(typeKey, PersistentDataType.STRING) &&
+                    "CLAIMABLE".equals(container.get(typeKey, PersistentDataType.STRING))) {
+                NamespacedKey idKey = new NamespacedKey(plugin, "reward_id");
+                if (container.has(idKey, PersistentDataType.STRING)) {
+                    claimReward(container.get(idKey, PersistentDataType.STRING));
+                } else {
+                    whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+                            config.getString("rewards-gui.messages.not-available")));
+                    playSound(config.getString("rewards-gui.sounds.claim-error"), whoClicked);
                 }
             }
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Reward claiming
+    // -------------------------------------------------------------------------
+
     private void claimReward(String instance) {
+        if (!validateSession()) { handleInvalidSession(); return; }
+
         String[] parts = instance.split("\\.");
-
-        if (!validateSession()) {
-            handleInvalidSession();
-            return;
-        }
-
         if (parts.length != 2) {
-            // Handle invalid format
-            System.err.println("Invalid instance format: " + instance);
+            plugin.getLogger().severe("Invalid reward instance format: " + instance);
             return;
         }
 
         try {
-            int rewardId = Integer.parseInt(parts[0]);
+            int rewardId          = Integer.parseInt(parts[0]);
             int specificJoinCount = Integer.parseInt(parts[1]);
 
             if (!sender.hasPermission("playtime.joinstreak.claim")) {
                 sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                         config.getString("rewards-gui.messages.no-permission")));
-                sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                playSound(config.getString("rewards-gui.sounds.no-permission"), sender);
                 return;
             }
 
@@ -554,33 +566,29 @@ public class RewardsInfoGui extends BaseCustomGUI {
             if (reward == null) {
                 sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                         config.getString("rewards-gui.messages.reward-not-found")));
-                sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                playSound(config.getString("rewards-gui.sounds.claim-error"), sender);
                 return;
             }
 
+            if (!(subject instanceof OnlineUser onlineUser)) return;
+
             try {
-                if (!(subject instanceof OnlineUser onlineUser)) return;
-
-                rewardExecutor.processCompletedReward(onlineUser, rewardRegistry.getSubInstance(rewardId, specificJoinCount));
-
-                loadRewards();
-                applyFilters();
-                initializeItems();
+                rewardExecutor.processCompletedReward(onlineUser,
+                        rewardRegistry.getSubInstance(rewardId, specificJoinCount));
+                loadRewards(); applyFilters(); initializeItems();
                 sender.updateInventory();
             } catch (Exception e) {
-                plugin.getLogger().severe("Error processing reward for player " + sender.getName() + ": " + e.getMessage());
+                plugin.getLogger().severe("Error processing reward for " + sender.getName() + ": " + e.getMessage());
                 e.printStackTrace();
                 sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                         config.getString("rewards-gui.messages.error-processing")));
-                sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+                playSound(config.getString("rewards-gui.sounds.claim-error"), sender);
             }
 
         } catch (NumberFormatException e) {
-            System.err.println("Failed to parse numbers from instance: " + instance);
+            plugin.getLogger().severe("Failed to parse reward instance: " + instance);
             e.printStackTrace();
         }
-
-
     }
 
     private void claimAllRewards() {
@@ -593,16 +601,12 @@ public class RewardsInfoGui extends BaseCustomGUI {
         if (!sender.hasPermission("playtime.joinstreak.claim")) {
             sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                     config.getString("rewards-gui.messages.no-permission")));
-            sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            playSound(config.getString("rewards-gui.sounds.no-permission"), sender);
             return;
         }
 
         List<RewardSubInstance> claimableRewards = subject.getRewardsToBeClaimed();
-
-        if (claimableRewards.isEmpty()) {
-            return;
-        }
-
+        if (claimableRewards.isEmpty()) return;
         if (!(subject instanceof OnlineUser onlineUser)) return;
 
         int claimedCount = 0;
@@ -612,77 +616,70 @@ public class RewardsInfoGui extends BaseCustomGUI {
         }
 
         if (claimedCount > 0) {
-            // Use efficient placeholder replacement for count
-            String message = quickTranslate(
-                    config.getString("rewards-gui.messages.claimed-rewards"),
-                    "%COUNT%", String.valueOf(claimedCount)
-            );
-
+            String message = config.getString("rewards-gui.messages.claimed-rewards")
+                    .replace("%COUNT%", String.valueOf(claimedCount));
             sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " + message));
-            sender.playSound(sender.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f);
-
-            // Reload the rewards to refresh the GUI
-            loadRewards();
-            applyFilters();
-            initializeItems();
+            playSound(config.getString("rewards-gui.sounds.claim-success"), sender);
+            loadRewards(); applyFilters(); initializeItems();
         } else {
             sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
                     config.getString("rewards-gui.messages.error-processing")));
-            sender.playSound(sender.getLocation(), Sound.ENTITY_VILLAGER_NO, 1f, 1f);
+            playSound(config.getString("rewards-gui.sounds.claim-error"), sender);
         }
     }
 
-    /**
-     * Initialize global placeholders that don't change during the GUI session
-     */
-    private void initializeGlobalPlaceholders() {
-        globalPlaceholders.clear();
-        globalPlaceholders.put("%PLAYER_NAME%", subject.getNickname());
-        globalPlaceholders.put("%CURRENT_STREAK%", String.valueOf(subject.getRelativeJoinStreak()));
-        globalPlaceholders.put("%ABSOLUTE_STREAK%", String.valueOf(subject.getAbsoluteJoinStreak()));
+    // -------------------------------------------------------------------------
+    // Utility helpers
+    // -------------------------------------------------------------------------
+
+    private List<String> getStringOrList(String path) {
+        List<String> list = config.getStringList(path);
+        if (list != null && !list.isEmpty()) return list;
+
+        String single = config.getString(path);
+        if (single != null && !single.isBlank() && !single.equals("[]")) return Collections.singletonList(single);
+
+        return Collections.emptyList();
     }
 
-    /**
-     * Update dynamic placeholders that change during GUI operations
-     */
-    private void updateDynamicPlaceholders() {
-        int totalPages = (int) Math.ceil((double) filteredDisplayItems.size() / REWARDS_PER_PAGE);
-        globalPlaceholders.put("%CURRENT_PAGE%", String.valueOf(currentPage + 1));
-        globalPlaceholders.put("%TOTAL_PAGES%", String.valueOf(totalPages));
-    }
-
-    /**
-     * Translate text with global placeholders
-     */
-    private String translateDynamic(String text) {
-        if (text == null || text.isEmpty()) return text;
-
-        String result = text;
-
-        // Apply global placeholders
-        for (Map.Entry<String, String> entry : globalPlaceholders.entrySet()) {
-            result = result.replace(entry.getKey(), entry.getValue());
+    private Material parseMaterial(String name, Material fallback) {
+        if (name == null || name.isBlank()) return fallback;
+        if (isPlayerHead(name)) return Material.PLAYER_HEAD;
+        try {
+            return Material.valueOf(name.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Invalid material '" + name + "' in GUIs config, using fallback: " + fallback);
+            return fallback;
         }
-
-        return result;
     }
-    /**
-     * Translate a list of strings with global placeholders
-     */
-    private List<String> translateDynamic(List<String> list) {
-        if (list == null || list.isEmpty()) return list;
-        List<String> result = new ArrayList<>();
-        for (String s : list) {
-            result.add(translateDynamic(s));
+
+    private boolean isPlayerHead(String iconString) {
+        return iconString != null && iconString.toUpperCase().startsWith("PLAYER_HEAD");
+    }
+
+    private void playSound(String soundName, Player player) {
+        try {
+            Sound sound = null;
+            try { sound = (Sound) Sound.class.getField(soundName).get(null); }
+            catch (NoSuchFieldException | IllegalAccessException ignored) {}
+            if (sound != null) {
+                player.playSound(player.getLocation(), sound, 10.0f, 0.0f);
+            } else {
+                plugin.getLogger().warning("Could not find sound '" + soundName + "' for join streak reward");
+            }
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to play sound '" + soundName + "': " + e.getMessage());
         }
-        return result;
     }
 
-    /**
-     * Quick translate for single dynamic placeholders (most efficient for simple cases)
-     */
-    private String quickTranslate(String text, String placeholder, String value) {
-        return text != null ? text.replace(placeholder, value) : text;
+    private void safeSetItem(int slot, ItemStack item) {
+        if (slot >= 0 && slot < inv.getSize()) inv.setItem(slot, item);
     }
 
+    private void safeSetProtected(int slot, ItemStack item) {
+        if (slot >= 0 && slot < inv.getSize()) {
+            inv.setItem(slot, item);
+            protectedSlots.add(slot);
+        }
+    }
 }

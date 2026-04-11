@@ -132,7 +132,6 @@ public class DBUser {
         Instant lastSeen = DatabaseHandler.getInstance().getPlayerDAO().getLastSeen(uuid);
         Instant firstJoin = DatabaseHandler.getInstance().getPlayerDAO().getFirstJoin(uuid);
         int relativeJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getRelativeJoinStreak(uuid);
-        // FIX: was incorrectly calling getRelativeJoinStreak for the absolute streak
         int absoluteJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getAbsoluteJoinStreak(uuid);
         List<RewardSubInstance> receivedRewards = DatabaseHandler.getInstance().getStreakDAO().getReceivedRewards(uuid);
         List<RewardSubInstance> rewardsToBeClaimed = DatabaseHandler.getInstance().getStreakDAO().getRewardsToBeClaimed(uuid);
@@ -158,7 +157,6 @@ public class DBUser {
         this.lastSeen = this.previousSessionLastSeen;
         this.firstJoin = DatabaseHandler.getInstance().getPlayerDAO().getFirstJoin(uuid);
         this.relativeJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getRelativeJoinStreak(uuid);
-        // FIX: was incorrectly calling getRelativeJoinStreak for the absolute streak
         this.absoluteJoinStreak = DatabaseHandler.getInstance().getStreakDAO().getAbsoluteJoinStreak(uuid);
         this.receivedRewards = new CopyOnWriteArrayList<>(
                 DatabaseHandler.getInstance().getStreakDAO().getReceivedRewards(uuid));

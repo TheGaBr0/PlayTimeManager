@@ -97,15 +97,6 @@ public class OnlineUsersManager {
 
     /**
      * Persists playtime, AFK time, and last-seen for every online user in a single async task.
-     *
-     * FIX: the previous implementation called updatePlayTime() / updateAFKPlayTime() /
-     * updateLastSeen() per user, each of which spawned its own async thread internally.
-     * That means N players × 3 additional threads were created, and the returned
-     * CompletableFuture completed before any DB write had actually finished.
-     *
-     * Now all DB writes happen directly inside the one async thread we dispatch here,
-     * using snapshot values captured on the main thread before the dispatch.
-     * The CompletableFuture completes only after every write is done.
      */
     public CompletableFuture<Void> updateAllOnlineUsersPlaytimeAsync() {
         CompletableFuture<Void> future = new CompletableFuture<>();

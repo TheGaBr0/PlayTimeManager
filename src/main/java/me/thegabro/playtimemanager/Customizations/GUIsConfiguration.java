@@ -16,18 +16,13 @@ public class GUIsConfiguration {
     private FileConfiguration config;
     private File file;
 
-    // Cache to store all configuration values in memory
     private final Map<String, Object> configCache = new ConcurrentHashMap<>();
 
     private static final String CONFIG_FILENAME = "GUIs-config.yml";
     private static final String CONFIG_PATH = "Customizations/GUIs/";
 
-    // Private constructor to prevent instantiation
-    private GUIsConfiguration() {
-        // Empty constructor - initialization happens in initialize()
-    }
+    private GUIsConfiguration() {}
 
-    // Thread-safe singleton instance getter
     public static synchronized GUIsConfiguration getInstance() {
         if (instance == null) {
             instance = new GUIsConfiguration();
@@ -35,7 +30,6 @@ public class GUIsConfiguration {
         return instance;
     }
 
-    // Initialize the configuration with the plugin instance
     public void initialize(PlayTimeManager plugin) {
         if (this.plugin == null) {
             this.plugin = plugin;
@@ -74,9 +68,6 @@ public class GUIsConfiguration {
         config = YamlConfiguration.loadConfiguration(file);
     }
 
-    /**
-     * Loads all configuration values into memory cache
-     */
     private void loadCache() {
         if (config == null) {
             plugin.getLogger().warning("Config is null, cannot load cache");
@@ -85,7 +76,6 @@ public class GUIsConfiguration {
 
         configCache.clear();
 
-        // Load all keys from the configuration into cache
         for (String key : config.getKeys(true)) {
             Object value = config.get(key);
             configCache.put(key, value);
@@ -102,18 +92,13 @@ public class GUIsConfiguration {
         return config;
     }
 
-    /**
-     * Gets a value from cache if available, otherwise from config
-     */
     public Object get(String path) {
         if (configCache.containsKey(path)) {
             return configCache.get(path);
         }
 
-        // Fallback to config if cache miss or not loaded
         Object value = config.get(path);
 
-        // Cache the value for future use
         if (value != null) {
             configCache.put(path, value);
         }
@@ -121,33 +106,21 @@ public class GUIsConfiguration {
         return value;
     }
 
-    /**
-     * Checks if a configuration path exists in either cache or config
-     * @param path The configuration path to check
-     * @return true if the path exists, false otherwise
-     */
     public boolean contains(String path) {
-        // First check cache for faster lookup
         if (configCache.containsKey(path)) {
             return true;
         }
 
-        // Fallback to config if not in cache
         return config != null && config.contains(path);
     }
 
-    /**
-     * Gets a value from cache if available, otherwise from config with default
-     */
     public Object get(String path, Object def) {
         if (configCache.containsKey(path)) {
             return configCache.get(path);
         }
 
-        // Fallback to config if cache miss or not loaded
         Object value = config.get(path, def);
 
-        // Cache the value for future use
         if (value != null) {
             configCache.put(path, value);
         }
@@ -155,9 +128,6 @@ public class GUIsConfiguration {
         return value;
     }
 
-    /**
-     * Sets a value in both config and cache
-     */
     public void set(String path, Object value) {
         config.set(path, value);
         configCache.put(path, value);
@@ -179,7 +149,7 @@ public class GUIsConfiguration {
             }
         }
 
-        set(path, defaultValue);
+        configCache.put(path, defaultValue);
         return defaultValue;
     }
 
@@ -362,20 +332,13 @@ public class GUIsConfiguration {
         }
     }
 
-    /**
-     * Gets a configuration section from the config
-     * @param path The path to the configuration section
-     * @return ConfigurationSection or null if not found
-     */
     public ConfigurationSection getConfigurationSection(String path) {
         if (config == null) {
             return null;
         }
         return config.getConfigurationSection(path);
     }
-    /**
-     * Gets a String List value from cache
-     */
+
     public List<String> getStringList(String path) {
         Object value = get(path);
         if (value instanceof List) {
@@ -385,16 +348,12 @@ public class GUIsConfiguration {
         }
         return null;
     }
-    /**
-     * Gets a String value from cache
-     */
+
     public String getString(String path) {
         Object value = get(path);
         return value != null ? value.toString() : null;
     }
-    /**
-     * Gets an Integer value from cache
-     */
+
     public Integer getInt(String path) {
         Object value = get(path);
         if (value instanceof Number) {
@@ -402,9 +361,7 @@ public class GUIsConfiguration {
         }
         return null;
     }
-    /**
-     * Gets a Boolean value from cache
-     */
+
     public Boolean getBoolean(String path) {
         Object value = get(path);
         if (value instanceof Boolean) {
@@ -412,9 +369,7 @@ public class GUIsConfiguration {
         }
         return null;
     }
-    /**
-     * Gets a Double value from cache
-     */
+
     public Double getDouble(String path) {
         Object value = get(path);
         if (value instanceof Number) {
@@ -422,9 +377,7 @@ public class GUIsConfiguration {
         }
         return null;
     }
-    /**
-     * Clears the cache
-     */
+
     public void clearCache() {
         configCache.clear();
     }

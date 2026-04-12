@@ -40,8 +40,6 @@ public class Version363to364Updater {
         GUIsConfiguration guisConfiguration = GUIsConfiguration.getInstance();
         guisConfiguration.initialize(plugin);
 
-        // ── rewards-gui ──────────────────────────────────────────────────────────
-
         String borderName    = guisConfiguration.getString("rewards-gui.gui.border-item-name");
         String pageIndicator = guisConfiguration.getString("rewards-gui.pagination.page-indicator");
         String noMorePages   = guisConfiguration.getString("rewards-gui.pagination.no-more-pages");
@@ -50,12 +48,10 @@ public class Version363to364Updater {
         String prevPageLore  = guisConfiguration.getString("rewards-gui.pagination.prev-page.lore");
         String noRewardsLore = guisConfiguration.getString("rewards-gui.no-rewards.lore");
 
-        // Reward item lores
         List<String> availableLore = guisConfiguration.getStringList("rewards-gui.reward-items.available.lore");
         List<String> claimedLore   = guisConfiguration.getStringList("rewards-gui.reward-items.claimed.lore");
         List<String> lockedLore    = guisConfiguration.getStringList("rewards-gui.reward-items.locked.lore");
 
-        // Old info-lore section — these get appended to each lore list
         String infoRequiredJoins    = guisConfiguration.getString("rewards-gui.reward-items.info-lore.required-joins");
         String infoJoinStreak       = guisConfiguration.getString("rewards-gui.reward-items.info-lore.join-streak");
         String infoDescSeparator    = guisConfiguration.getString("rewards-gui.reward-items.info-lore.description-separator");
@@ -63,7 +59,6 @@ public class Version363to364Updater {
         String infoRDescSeparator   = guisConfiguration.getString("rewards-gui.reward-items.info-lore.reward-description-separator");
         String infoRDesc            = guisConfiguration.getString("rewards-gui.reward-items.info-lore.reward-description");
 
-        // Old format strings (may exist on newer old configs, absent on oldest)
         String availableDescFmt  = guisConfiguration.getString("rewards-gui.reward-items.available.description-format");
         String availableRDescFmt = guisConfiguration.getString("rewards-gui.reward-items.available.reward-description-format");
         String claimedDescFmt    = guisConfiguration.getString("rewards-gui.reward-items.claimed.description-format");
@@ -71,7 +66,6 @@ public class Version363to364Updater {
         String lockedDescFmt     = guisConfiguration.getString("rewards-gui.reward-items.locked.description-format");
         String lockedRDescFmt    = guisConfiguration.getString("rewards-gui.reward-items.locked.reward-description-format");
 
-        // Filter lores (were plain strings in old config)
         String claimedLoreEnabled    = guisConfiguration.getString("rewards-gui.filters.claimed.lore-enabled");
         String claimedLoreDisabled   = guisConfiguration.getString("rewards-gui.filters.claimed.lore-disabled");
         String availableLoreEnabled  = guisConfiguration.getString("rewards-gui.filters.available.lore-enabled");
@@ -79,15 +73,11 @@ public class Version363to364Updater {
         String lockedLoreEnabled     = guisConfiguration.getString("rewards-gui.filters.locked.lore-enabled");
         String lockedLoreDisabled    = guisConfiguration.getString("rewards-gui.filters.locked.lore-disabled");
 
-        // ── run the update ────────────────────────────────────────────────────────
-
         guisConfiguration.updateConfig();
 
         guisConfiguration.getConfig().set("rewards-gui.reward-items.info-lore", null);
         guisConfiguration.clearCache();
         guisConfiguration.reload();
-
-        // ── restore rewards-gui values ────────────────────────────────────────────
 
         if (borderName    != null) guisConfiguration.set("rewards-gui.gui.border.name",                    borderName);
         if (pageIndicator != null) guisConfiguration.set("rewards-gui.pagination.page-indicator.name",     pageIndicator);
@@ -98,7 +88,6 @@ public class Version363to364Updater {
         if (prevPageLore  != null) guisConfiguration.set("rewards-gui.pagination.prev-page.lore",  Collections.singletonList(prevPageLore));
         if (noRewardsLore != null) guisConfiguration.set("rewards-gui.no-rewards.lore",            Collections.singletonList(noRewardsLore));
 
-        // Build migrated lore lists, folding in info-lore and format strings
         if (availableLore != null) guisConfiguration.set("rewards-gui.reward-items.available.lore",
                 migrateLore(availableLore, availableDescFmt, availableRDescFmt,
                         infoRequiredJoins, null, infoDescSeparator, infoDesc, infoRDescSeparator, infoRDesc));
@@ -119,22 +108,6 @@ public class Version363to364Updater {
         Configuration.getInstance().updateConfig(false);
     }
 
-    /**
-     * Migrates an old lore list to the new format by:
-     * 1. Replacing bare "%DESCRIPTION%" / "%REWARD_DESCRIPTION%" entries with their old format strings
-     * 2. Appending any info-lore lines that were previously separate (required-joins, join-streak,
-     *    description, reward-description with their separators) if they are not already present.
-     *
-     * @param lore           The existing lore list from the old config
-     * @param descFmt        Old description-format string (may be null)
-     * @param rDescFmt       Old reward-description-format string (may be null)
-     * @param requiredJoins  Old info-lore.required-joins line (may be null)
-     * @param joinStreak     Old info-lore.join-streak line (null for available/claimed)
-     * @param descSep        Old info-lore.description-separator line (may be null)
-     * @param desc           Old info-lore.description line (may be null)
-     * @param rDescSep       Old info-lore.reward-description-separator line (may be null)
-     * @param rDesc          Old info-lore.reward-description line (may be null)
-     */
     private List<String> migrateLore(List<String> lore,
                                      String descFmt, String rDescFmt,
                                      String requiredJoins, String joinStreak,
@@ -142,7 +115,6 @@ public class Version363to364Updater {
                                      String rDescSep, String rDesc) {
         List<String> result = new ArrayList<>(lore.size());
 
-        // Step 1 — copy existing lines, folding in old format strings where applicable
         for (String line : lore) {
             if ("%DESCRIPTION%".equals(line.trim()) && descFmt != null && !descFmt.isBlank()) {
                 result.add(descFmt);
@@ -153,25 +125,19 @@ public class Version363to364Updater {
             }
         }
 
-        // Step 2 — append info-lore lines that weren't already in the lore list
-        // (old config kept these separate; new config expects them inline)
         if (requiredJoins != null && !requiredJoins.isBlank() && !result.contains(requiredJoins))
             result.add(requiredJoins);
 
-        // join-streak only applies to locked (passed as null for available/claimed)
-        if (joinStreak != null && !joinStreak.isBlank() && !result.contains(joinStreak)) {
-            // Strip the now-removed %JOIN_STREAK_COLOR% placeholder — replace with &e as neutral fallback
+        if (joinStreak != null && !joinStreak.isBlank() && !result.contains(joinStreak))
             result.add(joinStreak.replace("%JOIN_STREAK_COLOR%", "&e"));
-        }
 
-        if (descSep != null && !result.contains(descSep))
+        if (descSep != null && !descSep.isBlank() && !result.contains(descSep))
             result.add(descSep);
 
-        // desc line becomes the format template for %DESCRIPTION% expansion
         if (desc != null && !desc.isBlank() && !result.contains(desc))
             result.add(desc);
 
-        if (rDescSep != null && !result.contains(rDescSep))
+        if (rDescSep != null && !rDescSep.isBlank() && !result.contains(rDescSep))
             result.add(rDescSep);
 
         if (rDesc != null && !rDesc.isBlank() && !result.contains(rDesc))
@@ -179,6 +145,4 @@ public class Version363to364Updater {
 
         return result;
     }
-
-
 }

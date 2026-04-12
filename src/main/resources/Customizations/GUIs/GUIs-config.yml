@@ -5,6 +5,22 @@
 # hexadecimal values between 00 and ff (same as decimal 0-255)
 # Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
 #
+# ─────────────────────────────────────────────────────────────────────────────
+#  PLACEHOLDERAPI SUPPORT
+#  PlaceholderAPI (PAPI) is supported in every GUI in this file.
+#  You can use any PAPI placeholder alongside the internal %PLACEHOLDER% ones.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# ─────────────────────────────────────────────────────────────────────────────
+#  PLAYER HEAD SPECIAL ITEM
+#  Any item's material can be set to PLAYER_HEAD to display a player's skin.
+#  Two formats are supported:
+#    PLAYER_HEAD            - Automatically uses the skin of the stat's subject
+#    PLAYER_HEAD:playername - Uses the skin of a specific player by name
+#  NOTE: The named variant relies on Mojang's API and may occasionally be
+#        outdated or unavailable.
+# ─────────────────────────────────────────────────────────────────────────────
+#
 # Internal placeholders used in this file are GUI-DEPENDENT. They can only be used within the specific gui section
 # where they're defined. All available placeholders are shown in this configuration file.
 
@@ -12,17 +28,10 @@
 #                   JOIN STREAKS REWARDS GUI
 #=================================================================
 
-# Available internal placeholders for this gui: %CURRENT_PAGE%, %TOTAL_PAGES%, %REQUIRED_JOINS%, %JOIN_STREAK_COLOR%,
-# %CURRENT_STREAK%, %DESCRIPTION%, %REWARD_DESCRIPTION%, %COUNT%, %PLAYER_NAME%
-# PlaceholdersAPI support: no
-#
-# Special expanding placeholders usable inside reward-items lore lists:
-#   %REQUIRED_JOINS_LINE%     - Inserts the formatted required-joins line (from info-lore.required-joins)
-#   %JOIN_STREAK_LINE%        - Inserts the formatted join-streak line (from info-lore.join-streak)
-#                               Skipped automatically for AVAILABLE rewards
-#   %DESCRIPTION%             - Expands into one line per description line of the reward (skipped if empty)
-#   %REWARD_DESCRIPTION%      - Expands into one line per reward-description line (skipped if empty)
-#   Any other line            - Rendered as-is (supports all global placeholders above)
+# Available internal placeholders for this gui: %CURRENT_PAGE%, %TOTAL_PAGES%, %REQUIRED_JOINS%,
+# %CURRENT_STREAK%, %DESCRIPTION%, %REWARD_DESCRIPTION%
+
+
 
 rewards-gui:
   gui:
@@ -134,7 +143,7 @@ rewards-gui:
         - "&cYou haven't reached this join streak yet"
         - ""
         - "&7Required Joins: &e%REQUIRED_JOINS%"
-        - "&7Your current join streak: %JOIN_STREAK_COLOR%%CURRENT_STREAK%"
+        - "&7Your current join streak: %CURRENT_STREAK%"
         - ""
         - "&7%DESCRIPTION%"
         - ""
@@ -160,11 +169,6 @@ rewards-gui:
 # Available internal placeholders: %PLAYER_NAME%, %UUID%, %PLAYTIME%, %ACTUAL_PLAYTIME%, %ARTIFICIAL_PLAYTIME%,
 # %AFK_PLAYTIME%, %FIRST_JOIN_DATE%, %ACCOUNT_AGE%, %LAST_SEEN_DATE%, %TIME_SINCE_LAST_SEEN%, %RELATIVE_STREAK%,
 # %ABSOLUTE_STREAK%, %GOALS_COUNT%, %GOALS_LIST%, %POSITION%
-# PlaceholdersAPI support: yes - You can use whatever PAPI placeholder in this GUI!
-
-# You can use a special item: PLAYER_HEAD. By default, it displays the skin of the stats owner.
-# To show a specific player's skin, use the format PLAYER_HEAD:playername.
-# NOTE: This method is not guaranteed to be 100% reliable, as Mojang's API may occasionally be outdated or unavailable.
 
 # Instructions:
 # - 'views' section defines different GUI configurations based on who is viewing:

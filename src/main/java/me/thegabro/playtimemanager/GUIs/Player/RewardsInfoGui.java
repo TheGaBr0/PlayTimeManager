@@ -141,30 +141,33 @@ public class RewardsInfoGui extends BaseCustomGUI {
      * The single pipeline every item in this GUI must pass through.
      *
      * Steps:
-     *   1. Resolve internal placeholders (%PLAYER_NAME%, %CURRENT_PAGE%, etc.)
-     *   2. Resolve PlaceholderAPI placeholders
-     *   3. Detect player-head icon and apply the correct skin
-     *   4. Apply name + lore with italic stripped
-     *   5. Optionally write PDC entries
+     *   1. Resolve internal global placeholders (%PLAYER_NAME%, %CURRENT_PAGE%, etc.)
+     *   2. Resolve per-call extra placeholders (%REQUIRED_JOINS%, etc.)
+     *   3. Resolve PlaceholderAPI placeholders
+     *   4. Detect player-head icon and apply the correct skin
+     *   5. Apply name + lore with italic stripped
+     *   6. Optionally write PDC entries
      *
-     * @param materialString  raw material name from config (may be PLAYER_HEAD or PLAYER_HEAD:name)
-     * @param rawName         raw display-name string (may contain placeholders)
-     * @param rawLore         raw lore lines (may contain placeholders); null = no lore
-     * @param pdcEntries      optional map of NamespacedKey → String to write into the PDC; null = none
+     * @param materialString    raw material name from config (may be PLAYER_HEAD or PLAYER_HEAD:name)
+     * @param rawName           raw display-name string (may contain placeholders)
+     * @param rawLore           raw lore lines (may contain placeholders); null = no lore
+     * @param pdcEntries        optional map of NamespacedKey → String to write into the PDC; null = none
+     * @param extraPlaceholders optional per-call placeholder map resolved after global ones; null = none
      */
     private ItemStack buildItem(String materialString,
                                 String rawName,
                                 @Nullable List<String> rawLore,
-                                @Nullable Map<NamespacedKey, String> pdcEntries) {
+                                @Nullable Map<NamespacedKey, String> pdcEntries,
+                                @Nullable Map<String, String> extraPlaceholders) {
 
-        String resolvedName = applyPlaceholders(rawName);
+        String resolvedName = applyPlaceholders(rawName, extraPlaceholders);
 
         List<String> resolvedLore = new ArrayList<>();
         if (rawLore != null)
             for (String line : rawLore)
-                resolvedLore.add(applyPlaceholders(line));
+                resolvedLore.add(applyPlaceholders(line, extraPlaceholders));
 
-        String resolvedMaterial = applyPlaceholders(materialString);
+        String resolvedMaterial = applyPlaceholders(materialString, extraPlaceholders);
 
         ItemStack item;
         if (isPlayerHead(resolvedMaterial)) {
@@ -174,10 +177,10 @@ public class RewardsInfoGui extends BaseCustomGUI {
                     ? Utils.createPlayerHead(resolvedMaterial)
                     : Utils.createPlayerHeadWithContext(resolvedMaterial, subject.getNickname(), resolvedOfflinePlayer);
         } else {
-            item = new ItemStack(parseMaterial(resolvedMaterial, Material.PAPER));
+            Material mat = parseMaterial(resolvedMaterial, Material.PAPER);
+            item = new ItemStack(mat);
         }
 
-        // 4 — apply meta
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return item;
 
@@ -190,7 +193,6 @@ public class RewardsInfoGui extends BaseCustomGUI {
             meta.lore(loreComponents);
         }
 
-        // 5 — write PDC entries if provided
         if (pdcEntries != null) {
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             for (Map.Entry<NamespacedKey, String> entry : pdcEntries.entrySet())
@@ -201,30 +203,28 @@ public class RewardsInfoGui extends BaseCustomGUI {
         return item;
     }
 
-    /** Convenience overload — no PDC entries. */
+    private ItemStack buildItem(String materialString, String rawName, @Nullable List<String> rawLore, @Nullable Map<NamespacedKey, String> pdcEntries) {
+        return buildItem(materialString, rawName, rawLore, pdcEntries, null);
+    }
+
     private ItemStack buildItem(String materialString, String rawName, @Nullable List<String> rawLore) {
-        return buildItem(materialString, rawName, rawLore, null);
+        return buildItem(materialString, rawName, rawLore, null, null);
     }
 
-    /** Convenience overload — no lore, no PDC entries. */
     private ItemStack buildItem(String materialString, String rawName) {
-        return buildItem(materialString, rawName, null, null);
+        return buildItem(materialString, rawName, null, null, null);
     }
 
-    // -------------------------------------------------------------------------
-    // Placeholder resolution (steps 1 + 2 of the pipeline)
-    // -------------------------------------------------------------------------
-
-    /**
-     * Applies internal global placeholders first, then PlaceholderAPI.
-     * Always safe to call — gracefully strips unresolved %tokens% when PAPI is unavailable.
-     */
-    private String applyPlaceholders(String text) {
+    private String applyPlaceholders(String text, @Nullable Map<String, String> extraPlaceholders) {
         if (text == null || text.isEmpty()) return text == null ? "" : text;
 
         String result = text;
         for (Map.Entry<String, String> entry : globalPlaceholders.entrySet())
             result = result.replace(entry.getKey(), entry.getValue());
+
+        if (extraPlaceholders != null)
+            for (Map.Entry<String, String> entry : extraPlaceholders.entrySet())
+                result = result.replace(entry.getKey(), entry.getValue());
 
         if (plugin.isPlaceholdersAPIConfigured()) {
             try {
@@ -342,25 +342,32 @@ public class RewardsInfoGui extends BaseCustomGUI {
     // -------------------------------------------------------------------------
 
     public void initializeItems() {
-        int leftIndex = 9, rightIndex = 17;
         protectedSlots.clear();
         inv.clear();
 
         updateDynamicPlaceholders();
 
-        // Border
         if (config.getOrDefaultBoolean("rewards-gui.gui.border.enabled", true)) {
             String borderMaterialString = config.getOrDefaultString("rewards-gui.gui.border.material", "BLACK_STAINED_GLASS_PANE");
             String borderName           = config.getOrDefaultString("rewards-gui.gui.border.name", " ");
             int size = inv.getSize();
+            int columns = 9;
+            int rows = size / columns;
 
-            for (int i = 0; i < size; i++) {
-                if (i <= 9 || i >= size - 9 || i == leftIndex || i == rightIndex) {
-                    safeSetItem(i, buildItem(borderMaterialString, borderName));
-                    protectedSlots.add(i);
-                    if (i == leftIndex)  leftIndex  += 9;
-                    if (i == rightIndex) rightIndex += 9;
-                }
+            Set<Integer> borderSlots = new HashSet<>();
+            for (int col = 0; col < columns; col++) {
+                borderSlots.add(col);
+                borderSlots.add((rows - 1) * columns + col);
+            }
+            for (int row = 1; row < rows - 1; row++) {
+                borderSlots.add(row * columns);
+                borderSlots.add(row * columns + (columns - 1));
+            }
+
+            ItemStack borderItem = buildItem(borderMaterialString, borderName);
+            for (int slot : borderSlots) {
+                safeSetItem(slot, borderItem);
+                protectedSlots.add(slot);
             }
         }
 
@@ -458,20 +465,19 @@ public class RewardsInfoGui extends BaseCustomGUI {
             default                       -> { statusKey = "locked";    rewardType = "LOCKED";    }
         }
 
-        // Inject per-reward placeholder before building
-        globalPlaceholders.put("%REQUIRED_JOINS%", specificJoins == -1 ? "-" : String.valueOf(specificJoins));
+        Map<String, String> extraPlaceholders = new HashMap<>();
+        extraPlaceholders.put("%REQUIRED_JOINS%", specificJoins == -1 ? "-" : String.valueOf(specificJoins));
 
         String materialString = reward.getItemIcon();
         String rawName        = config.getString("rewards-gui.reward-items." + statusKey + ".prefix");
         List<String> rawLore  = expandLoreTemplate(
                 getStringOrList("rewards-gui.reward-items." + statusKey + ".lore"), reward);
 
-        // PDC entries
         Map<NamespacedKey, String> pdc = new LinkedHashMap<>();
         pdc.put(new NamespacedKey(plugin, "reward_id"),   reward.getId() + "." + subInstance.requiredJoins());
         pdc.put(new NamespacedKey(plugin, "reward_type"), rewardType);
 
-        return buildItem(materialString, rawName, rawLore, pdc);
+        return buildItem(materialString, rawName, rawLore, pdc, extraPlaceholders);
     }
 
     // -------------------------------------------------------------------------

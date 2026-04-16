@@ -34,16 +34,17 @@
 # - '/give PLAYER_NAME diamond 64'
 # - '/broadcast PLAYER_NAME has reached an amazing join streak!'
 
-required-joins-range: 11-19
+required-joins-range: 30-30
 reward-sound: ENTITY_PLAYER_LEVELUP
 reward-message: '[&6PlayTime&eManager&f]&7 Congratulations &e%PLAYER_NAME%&7, you
   have redeemed your reward successfully!'
 description: '&7Here you can place a description/n&7of this reward. It is optional/n&7and
   should be concise.'
 reward-description: '&7Here you can add a brief list of what the player/n&7will receive
-  upon completion. E.g.:/n&l&eRewards:/n&l&e- &r&a+150&7 claim blocks blocks'
+  upon completion. E.g.:/n&l&eRewards:/n&l&e- &r&7[&#FFBABAD&#FBA8AEe&#F896A3d&#F48497i&#F0738Cc&#EC6180a&#E94F74t&#E53D69e&#E12B5Dd&r&7]
+  tag'
 permissions: []
 commands:
-- /say Hey PLAYER_NAME this is a tutorial!
-repeatable: true
-item-icon: IRON_INGOT
+- /say Hey PLAYER_NAME this last reward is obtainable only once!
+repeatable: false
+item-icon: ENCHANTED_GOLDEN_APPLE

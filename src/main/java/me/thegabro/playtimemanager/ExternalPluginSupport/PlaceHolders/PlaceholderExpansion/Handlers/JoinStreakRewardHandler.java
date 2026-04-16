@@ -12,6 +12,7 @@ import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import org.bukkit.OfflinePlayer;
 
 import java.util.List;
+import java.util.Set;
 
 public class JoinStreakRewardHandler implements PlaceholderHandler {
 
@@ -21,6 +22,7 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
     private final PlaceholderUtils utils;
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final RewardRegistry rewardRegistry = RewardRegistry.getInstance();
+    private static final Set<String> NO_NICKNAME_PROPS = Set.of("description", "reward_description");
 
     public JoinStreakRewardHandler(UserResolver resolver, PlaceholderUtils utils) {
         this.resolver = resolver;
@@ -139,11 +141,11 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
             return utils.error("join count out of reward range");
         }
 
-        // Split property and optional nickname from the remainder
-        // Properties: received, claimed, expired, required_joins, description, repeatable
+        // Split property, optional nickname, and optional line index from the remainder
         String[] parts = splitPropertyAndNickname(afterId);
         String property = parts[0];
         String nickname = parts[1];
+        Integer lineIndex = parts[2] != null ? Integer.parseInt(parts[2]) : null;
 
         // Resolve user
         DBUser user;
@@ -156,7 +158,7 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
             if (user == DBUser.NOT_FOUND) return utils.error("Player not found in db");
         }
 
-        return resolveProperty(property, reward, effectiveRequiredJoins, user);
+        return resolveProperty(property, reward, effectiveRequiredJoins, user, lineIndex);
     }
 
     private String handleAbsoluteJoinStreak(String nickname) {
@@ -176,7 +178,7 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
     /**
      * Resolves the requested property for the given reward sub-instance and user.
      */
-    private String resolveProperty(String property, JoinStreakReward reward, int effectiveRequiredJoins, DBUser user) {
+    private String resolveProperty(String property, JoinStreakReward reward, int effectiveRequiredJoins, DBUser user, Integer lineIndex) {
         switch (property.toLowerCase()) {
 
             case "received": {
@@ -199,11 +201,21 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
             case "required_joins":
                 return reward.getRequiredJoinsDisplay();
 
-            case "description":
-                return reward.getDescription();
+            case "description": {
+                String desc = reward.getDescription();
+                if (desc == null) return "";
+                String[] lines = desc.split("/n");
+                if (lineIndex == null) return lines[0];
+                return lineIndex < lines.length ? lines[lineIndex] : "";
+            }
 
-            case "reward_description":
-                return reward.getRewardDescription();
+            case "reward_description": {
+                String desc = reward.getRewardDescription();
+                if (desc == null) return "";
+                String[] lines = desc.split("/n");
+                if (lineIndex == null) return lines[0];
+                return lineIndex < lines.length ? lines[lineIndex] : "";
+            }
 
             case "repeatable":
                 return String.valueOf(reward.isRepeatable());
@@ -212,7 +224,6 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
                 return null;
         }
     }
-
 
     private RewardSubInstance findSubInstanceInToBeClaimed(DBUser user, int rewardId, int requiredJoins) {
         List<RewardSubInstance> rewards = user.getRewardsToBeClaimed();
@@ -240,31 +251,81 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
         return null;
     }
 
-    /**
-     * Splits a string like "received_Steve" into ["received", "Steve"],
-     * or "received" into ["received", null] when no nickname is present.
-     *
-     * Known multi-word properties (required_joins, reward_description) are checked first
-     * to avoid mistaking their underscore for a nickname separator.
-     */
     private String[] splitPropertyAndNickname(String input) {
-        // Known two-word properties that contain an underscore
         String[] twoWordProperties = {"required_joins", "reward_description", "to_be_claimed"};
 
         for (String prop : twoWordProperties) {
             if (input.toLowerCase().startsWith(prop + "_")) {
-                String nickname = input.substring(prop.length() + 1);
-                return new String[]{prop, nickname.isEmpty() ? null : nickname};
+                String rest = input.substring(prop.length() + 1);
+                // description and reward_description: line index only, no nickname
+                if (NO_NICKNAME_PROPS.contains(prop)) {
+                    return splitLineOnly(prop, rest);
+                }
+                return splitNicknameAndLine(prop, rest);
             }
             if (input.equalsIgnoreCase(prop)) {
-                return new String[]{prop, null};
+                return new String[]{prop, null, null};
             }
         }
 
-        // Single-word property
         int underscore = input.indexOf('_');
-        if (underscore == -1) return new String[]{input, null};
-        return new String[]{input.substring(0, underscore), input.substring(underscore + 1)};
+        if (underscore == -1) return new String[]{input, null, null};
+        String prop = input.substring(0, underscore);
+        String rest = input.substring(underscore + 1);
+
+        // Also guard single-word "description" here (e.g. "description_line_0")
+        if (NO_NICKNAME_PROPS.contains(prop.toLowerCase())) {
+            return splitLineOnly(prop, rest);
+        }
+        return splitNicknameAndLine(prop, rest);
+    }
+
+    /**
+     * For properties that take only a line index (no nickname).
+     * Accepts "line_<index>" → [prop, null, index]
+     * Anything else is treated as an invalid suffix → [prop, null, null]
+     */
+    private String[] splitLineOnly(String prop, String rest) {
+        if (rest == null || rest.isEmpty()) return new String[]{prop, null, null};
+
+        String lower = rest.toLowerCase();
+        if (lower.startsWith("line_")) {
+            String possibleIndex = rest.substring(5); // after "line_"
+            int lineIndex = parseIntOrError(possibleIndex);
+            if (lineIndex != -1) {
+                return new String[]{prop, null, String.valueOf(lineIndex)};
+            }
+        }
+        // Unrecognised suffix — ignore it and return no line index
+        return new String[]{prop, null, null};
+    }
+
+    /**
+     * Given a property and whatever follows it (nickname and/or line index),
+     * returns [property, nickname, lineIndex] where lineIndex may be null.
+     *
+     * Handles these cases:
+     *   "line_0"           → [prop, null, "0"]
+     *   "Steve_line_0"     → [prop, "Steve", "0"]
+     *   "Steve"            → [prop, "Steve", null]
+     *   ""  / null         → [prop, null, null]
+     */
+    private String[] splitNicknameAndLine(String prop, String rest) {
+        if (rest == null || rest.isEmpty()) return new String[]{prop, null, null};
+
+        // Check if rest ends with "_line_<index>"
+        int lineMarker = rest.toLowerCase().lastIndexOf("_line_");
+        if (lineMarker != -1) {
+            String possibleIndex = rest.substring(lineMarker + 6); // after "_line_"
+            int lineIndex = parseIntOrError(possibleIndex);
+            if (lineIndex != -1) {
+                String nickname = rest.substring(0, lineMarker);
+                return new String[]{prop, nickname.isEmpty() ? null : nickname, String.valueOf(lineIndex)};
+            }
+        }
+
+        // No valid line suffix — treat rest as nickname
+        return new String[]{prop, rest.isEmpty() ? null : rest, null};
     }
 
     /** Returns -1 if the string is not a valid non-negative integer. */

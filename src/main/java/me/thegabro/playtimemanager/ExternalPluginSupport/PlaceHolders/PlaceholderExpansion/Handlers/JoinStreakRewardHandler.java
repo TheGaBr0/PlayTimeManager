@@ -22,7 +22,14 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
     private final PlaceholderUtils utils;
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final RewardRegistry rewardRegistry = RewardRegistry.getInstance();
-    private static final Set<String> NO_NICKNAME_PROPS = Set.of("description", "reward_description");
+
+    // These properties are static reward metadata — never player-specific, never accept a nickname
+    private static final Set<String> NO_NICKNAME_PROPS = Set.of(
+            "description",
+            "reward_description",
+            "required_joins",
+            "repeatable"
+    );
 
     public JoinStreakRewardHandler(UserResolver resolver, PlaceholderUtils utils) {
         this.resolver = resolver;
@@ -147,15 +154,17 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
         String nickname = parts[1];
         Integer lineIndex = parts[2] != null ? Integer.parseInt(parts[2]) : null;
 
-        // Resolve user
-        DBUser user;
-        if (nickname == null) {
-            user = onlineUsersManager.getOnlineUser(player.getName());
-            if (user == null) return utils.error("user not found");
-        } else {
-            user = resolver.resolve(nickname);
-            if (user == DBUser.LOADING) return utils.error("Loading...");
-            if (user == DBUser.NOT_FOUND) return utils.error("Player not found in db");
+        // Resolve user — skipped entirely for static (no-nickname) properties
+        DBUser user = null;
+        if (!NO_NICKNAME_PROPS.contains(property.toLowerCase())) {
+            if (nickname == null) {
+                user = onlineUsersManager.getOnlineUser(player.getName());
+                if (user == null) return utils.error("user not found");
+            } else {
+                user = resolver.resolve(nickname);
+                if (user == DBUser.LOADING) return utils.error("Loading...");
+                if (user == DBUser.NOT_FOUND) return utils.error("Player not found in db");
+            }
         }
 
         return resolveProperty(property, reward, effectiveRequiredJoins, user, lineIndex);
@@ -177,6 +186,7 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
 
     /**
      * Resolves the requested property for the given reward sub-instance and user.
+     * user may be null for static properties (description, reward_description, required_joins, repeatable).
      */
     private String resolveProperty(String property, JoinStreakReward reward, int effectiveRequiredJoins, DBUser user, Integer lineIndex) {
         switch (property.toLowerCase()) {
@@ -257,7 +267,6 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
         for (String prop : twoWordProperties) {
             if (input.toLowerCase().startsWith(prop + "_")) {
                 String rest = input.substring(prop.length() + 1);
-                // description and reward_description: line index only, no nickname
                 if (NO_NICKNAME_PROPS.contains(prop)) {
                     return splitLineOnly(prop, rest);
                 }
@@ -273,7 +282,6 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
         String prop = input.substring(0, underscore);
         String rest = input.substring(underscore + 1);
 
-        // Also guard single-word "description" here (e.g. "description_line_0")
         if (NO_NICKNAME_PROPS.contains(prop.toLowerCase())) {
             return splitLineOnly(prop, rest);
         }
@@ -288,8 +296,7 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
     private String[] splitLineOnly(String prop, String rest) {
         if (rest == null || rest.isEmpty()) return new String[]{prop, null, null};
 
-        String lower = rest.toLowerCase();
-        if (lower.startsWith("line_")) {
+        if (rest.toLowerCase().startsWith("line_")) {
             String possibleIndex = rest.substring(5); // after "line_"
             int lineIndex = parseIntOrError(possibleIndex);
             if (lineIndex != -1) {

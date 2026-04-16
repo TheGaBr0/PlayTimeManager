@@ -7,6 +7,7 @@ import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
 import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.Users.DBUser;
+import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import org.bukkit.OfflinePlayer;
 
@@ -46,20 +47,20 @@ public class JoinStreakRewardHandler implements PlaceholderHandler {
         // --- Joinstreak info placeholders ---
 
         if (p.equals("joinstreak")) {
+            OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+            if (onlineUser == null) return utils.error("Loading...");
             try {
-                return String.valueOf(
-                        onlineUsersManager.getOnlineUser(player.getName()).getAbsoluteJoinStreak()
-                );
+                return String.valueOf(onlineUser.getAbsoluteJoinStreak());
             } catch (Exception e) {
                 return utils.error("couldn't get join streak");
             }
         }
 
         if (p.equals("relative_joinstreak")) {
+            OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+            if (onlineUser == null) return utils.error("Loading...");
             try {
-                return String.valueOf(
-                        onlineUsersManager.getOnlineUser(player.getName()).getRelativeJoinStreak()
-                );
+                return String.valueOf(onlineUser.getRelativeJoinStreak());
             } catch (Exception e) {
                 return utils.error("couldn't get join streak");
             }

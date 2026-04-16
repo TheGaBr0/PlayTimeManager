@@ -5,6 +5,7 @@ import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.Placeholde
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlaceholderExpansion.Utils.UserResolver;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.Users.DBUser;
+import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import org.bukkit.OfflinePlayer;
 
@@ -45,10 +46,10 @@ public class GoalsHandler implements PlaceholderHandler {
     }
 
     private String handleGoalCount(OfflinePlayer player) {
+        OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+        if (onlineUser == null) return utils.error("Loading...");
         try {
-            return String.valueOf(
-                    onlineUsersManager.getOnlineUser(player.getName()).getCompletedGoals().size()
-            );
+            return String.valueOf(onlineUser.getCompletedGoals().size());
         } catch (Exception e) {
             return utils.error("couldn't get goal count");
         }
@@ -64,11 +65,10 @@ public class GoalsHandler implements PlaceholderHandler {
         String nickname = parts[1];
 
         if (nickname == null) {
-            // self form
+            OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+            if (onlineUser == null) return utils.error("Loading...");
             try {
-                boolean completed = onlineUsersManager.getOnlineUser(player.getName())
-                        .hasCompletedGoal(goalName);
-                return String.valueOf(completed);
+                return String.valueOf(onlineUser.hasCompletedGoal(goalName));
             } catch (Exception e) {
                 return utils.error("couldn't get goal status");
             }

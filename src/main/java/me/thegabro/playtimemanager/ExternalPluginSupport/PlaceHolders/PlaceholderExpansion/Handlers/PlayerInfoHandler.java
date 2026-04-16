@@ -6,6 +6,7 @@ import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.Placeholde
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.OfflinePlayer;
@@ -46,9 +47,10 @@ public class PlayerInfoHandler implements PlaceholderHandler {
         String p = params.toLowerCase();
 
         if (p.equals("rank")) {
+            OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+            if (onlineUser == null) return utils.error("Loading...");
             try {
-                int position = dbUsersManager.getTopPlayers()
-                        .indexOf(onlineUsersManager.getOnlineUser(player.getName())) + 1;
+                int position = dbUsersManager.getTopPlayers().indexOf(onlineUser) + 1;
                 return position != 0
                         ? String.valueOf(position)
                         : plugin.getConfiguration().getString("placeholders.not-in-leaderboard-message", "-");
@@ -58,10 +60,10 @@ public class PlayerInfoHandler implements PlaceholderHandler {
         }
 
         if (p.equals("firstjoin")) {
+            OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+            if (onlineUser == null) return utils.error("Loading...");
             try {
-                DBUser user = onlineUsersManager.getOnlineUser(player.getName());
-                if (user == null) return utils.error("user not found");
-                Instant firstJoin = user.getFirstJoin();
+                Instant firstJoin = onlineUser.getFirstJoin();
                 if (firstJoin == null) return utils.error("first join data missing");
                 return Utils.formatInstant(firstJoin, datetimeFormat());
             } catch (Exception e) {

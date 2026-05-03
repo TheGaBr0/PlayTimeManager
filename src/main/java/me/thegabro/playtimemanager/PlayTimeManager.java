@@ -16,6 +16,7 @@ import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsA
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlayTimePlaceHolders;
 import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
+import me.thegabro.playtimemanager.ExternalPluginSupport.placeholderAfkTime.AFKPlaceholderManager;
 import me.thegabro.playtimemanager.GUIs.Goals.AllGoalsGui;
 import me.thegabro.playtimemanager.GUIs.Goals.GoalRequirementsGui;
 import me.thegabro.playtimemanager.GUIs.Goals.GoalRewardsGui;
@@ -123,6 +124,7 @@ public class PlayTimeManager extends JavaPlugin{
 
         permissionsManagerConfigured = checkPermissionsPlugin();
         afkDetectionConfigured = checkAFKPlugin();
+        handlePlaceholderAfkDetectionLoad();
 
         GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(this);
@@ -259,6 +261,18 @@ public class PlayTimeManager extends JavaPlugin{
 
     public SessionManager getSessionManager() { return sessionManager; }
 
+    public Boolean isPlaceholderAfkDetectionEnabled() {
+        return config.getBoolean("placeholder-afk-detection.enabled", false);
+    }
+
+    public String getPlaceholderAfkDetectionPlaceholder() {
+        return config.getString("placeholder-afk-detection.placeholder", null);
+    }
+
+    public String getPlaceholderAfkDetectionAfkValue() {
+        return config.getString("placeholder-afk-detection.afk-value", null);
+    }
+
     private boolean checkAFKPlugin(){
         String configuredPlugin = config.getString("afk-detection-plugin", "none").toLowerCase();
         if ("essentials".equals(configuredPlugin)) {
@@ -341,6 +355,28 @@ public class PlayTimeManager extends JavaPlugin{
             }
         }
         return false;
+    }
+
+    public void handlePlaceholderAfkDetectionLoad() {
+        PlayTimeManager ptm = PlayTimeManager.getInstance();
+
+        if (ptm.isPlaceholderAfkDetectionEnabled()) {
+            String placeholder = ptm.getPlaceholderAfkDetectionPlaceholder();
+            String afkValue = ptm.getPlaceholderAfkDetectionAfkValue();
+
+            if (placeholder == null) {
+                ptm.getLogger().warning("Placeholder AFK Detection enabled but placeholder wasn't supplied.");
+                return;
+            }
+
+            if (afkValue == null) {
+                ptm.getLogger().warning("Placeholder AFK Detection enabled but afk value wasn't supplied.");
+                return;
+            }
+
+            AFKPlaceholderManager.getInstance().start(placeholder, afkValue);
+
+        } else AFKPlaceholderManager.getInstance().reset();
     }
 
     private boolean checkPermissionsPlugin() {

@@ -36,6 +36,16 @@ public class GoalsManager {
 
         for(String notReceivedGoal : notReceivedGoals){
             user.markGoalAsReceivedAsync(notReceivedGoal, () -> {
+
+                Goal goal = getGoal(notReceivedGoal);
+
+                if (goal == null) {
+                    plugin.getLogger().warning("Goal '" + notReceivedGoal
+                            + "' not found for player " + user.getNickname()
+                            + " — it may have been deleted or renamed.");
+                    return;
+                }
+
                 Player player = user.getPlayerInstance();
                 if (player != null && player.isOnline()) {
                     getGoal(notReceivedGoal).processCompletedGoal(user, player);

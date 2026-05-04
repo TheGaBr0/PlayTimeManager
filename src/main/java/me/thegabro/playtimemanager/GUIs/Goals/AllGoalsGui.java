@@ -23,7 +23,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 public class AllGoalsGui implements InventoryHolder, Listener {
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
@@ -83,15 +87,15 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 meta.displayName(Utils.parseColors("&e" + goal.getName()).decoration(TextDecoration.ITALIC, false));
                 List<Component> lore = Arrays.asList(
                         Utils.parseColors("§7Active: ")
-                                .append(Component.text(goal.isActive() ? "true" : "false")
+                                .append(Component.text(Boolean.toString(goal.isActive()))
                                         .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
                                 .decoration(TextDecoration.ITALIC, false),
                         Utils.parseColors("§7Repeatable: ")
-                                .append(Component.text(goal.isRepeatable() ? "true" : "false")
+                                .append(Component.text(Boolean.toString(goal.isRepeatable()))
                                         .color(goal.isRepeatable() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
                                 .decoration(TextDecoration.ITALIC, false),
                         Utils.parseColors("§7Offline rewards: ")
-                                .append(Component.text(goal.areOfflineRewardsEnabled() ? "true" : "false")
+                                .append(Component.text(Boolean.toString(goal.areOfflineRewardsEnabled()))
                                         .color(goal.areOfflineRewardsEnabled() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
                                 .decoration(TextDecoration.ITALIC, false),
                         Utils.parseColors("§e" + goal.getRewardPermissions().size() + "§7 " + (goal.getRewardPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
@@ -210,7 +214,7 @@ public class AllGoalsGui implements InventoryHolder, Listener {
         player.sendMessage(fullMessage);
 
         chatEventManager.startChatInput(player, (p, message) -> {
-            if (!message.equalsIgnoreCase("cancel")) {
+            if (!message.trim().equalsIgnoreCase("cancel")) {
                 if(!message.isEmpty()){
                     goalsManager.addGoal(new Goal(plugin, message, false));
                 }
@@ -225,11 +229,10 @@ public class AllGoalsGui implements InventoryHolder, Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
-        if(e.getInventory().getHolder() instanceof AllGoalsGui) {
+        if(e.getInventory().getHolder() instanceof AllGoalsGui gui) {
             if((e.getRawSlot() < e.getInventory().getSize())) {
                 e.setCancelled(true);
 
-                AllGoalsGui gui = (AllGoalsGui) e.getInventory().getHolder();
                 gui.onGUIClick((Player)e.getWhoClicked(), e.getRawSlot(), e.getCurrentItem(), e.getAction(), e);
 
             }else{

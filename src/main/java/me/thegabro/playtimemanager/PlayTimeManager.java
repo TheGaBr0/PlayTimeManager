@@ -16,7 +16,7 @@ import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsA
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlayTimePlaceHolders;
 import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
-import me.thegabro.playtimemanager.ExternalPluginSupport.placeholderAfkTime.AFKPlaceholderManager;
+import me.thegabro.playtimemanager.ExternalPluginSupport.genericAFKPlaceholder.AFKPlaceholderManager;
 import me.thegabro.playtimemanager.GUIs.Goals.AllGoalsGui;
 import me.thegabro.playtimemanager.GUIs.Goals.GoalRequirementsGui;
 import me.thegabro.playtimemanager.GUIs.Goals.GoalRewardsGui;
@@ -41,10 +41,11 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
-public class PlayTimeManager extends JavaPlugin{
+public class PlayTimeManager extends JavaPlugin {
 
     private static PlayTimeManager instance;
     private Configuration config;
@@ -57,8 +58,9 @@ public class PlayTimeManager extends JavaPlugin{
     private JoinStreaksManager joinStreaksManager;
     private SessionManager sessionManager;
     private String configuredPlugin;
-    private final String CURRENT_CONFIG_VERSION = "4.3";
+    private final String CURRENT_CONFIG_VERSION = "4.4";
     private final boolean CACHE_DEBUG = false;
+
     @Override
     public void onEnable() {
 
@@ -91,7 +93,7 @@ public class PlayTimeManager extends JavaPlugin{
 
             boolean success = updateManager.performVersionUpdate(config.getString("config-version", null), CURRENT_CONFIG_VERSION);
 
-            if(!success){
+            if (!success) {
                 Bukkit.getPluginManager().disablePlugin(this);
                 return;
             }
@@ -122,9 +124,20 @@ public class PlayTimeManager extends JavaPlugin{
         CommandsConfiguration commandsConfig = CommandsConfiguration.getInstance();
         commandsConfig.initialize(this);
 
+        // Has papi
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new PlayTimePlaceHolders().register();
+            placeholdersapiConfigured = true;
+        }
+        // papi not found
+        else placeholdersapiConfigured = false;
+
         permissionsManagerConfigured = checkPermissionsPlugin();
         afkDetectionConfigured = checkAFKPlugin();
-        handlePlaceholderAfkDetectionLoad();
+
+        // checks everything inside the method
+        handlePlaceholderAfkDetectionLoad(afkDetectionConfigured);
+
 
         GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(this);
@@ -135,13 +148,6 @@ public class PlayTimeManager extends JavaPlugin{
         joinStreaksManager = JoinStreaksManager.getInstance();
         joinStreaksManager.initialize();
         joinStreaksManager.onServerReload();
-
-        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new PlayTimePlaceHolders().register();
-            placeholdersapiConfigured = true;
-        }else{
-            placeholdersapiConfigured = false;
-        }
 
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
@@ -253,13 +259,24 @@ public class PlayTimeManager extends JavaPlugin{
         return LuckPermsManager.getInstance(this).getLuckPermsApi();
     }
 
-    public boolean isPermissionsManagerConfigured(){ return permissionsManagerConfigured; }
+    public boolean isPermissionsManagerConfigured() {
+        return permissionsManagerConfigured;
+    }
 
-    public boolean isAfkDetectionConfigured(){ return afkDetectionConfigured; }
+    /**
+     * Since this is only used in jetsAntiAFK plugin check, there is no need to check placeholder AFK detection.
+     */
+    public boolean isAfkDetectionConfigured() {
+        return afkDetectionConfigured;
+    }
 
-    public boolean isPlaceholdersAPIConfigured(){ return placeholdersapiConfigured; }
+    public boolean isPlaceholdersAPIConfigured() {
+        return placeholdersapiConfigured;
+    }
 
-    public SessionManager getSessionManager() { return sessionManager; }
+    public SessionManager getSessionManager() {
+        return sessionManager;
+    }
 
     public Boolean isPlaceholderAfkDetectionEnabled() {
         return config.getBoolean("placeholder-afk-detection.enabled", false);
@@ -273,12 +290,12 @@ public class PlayTimeManager extends JavaPlugin{
         return config.getString("placeholder-afk-detection.afk-value", null);
     }
 
-    private boolean checkAFKPlugin(){
+    private boolean checkAFKPlugin() {
         String configuredPlugin = config.getString("afk-detection-plugin", "none").toLowerCase();
         if ("essentials".equals(configuredPlugin)) {
             Plugin essentials = Bukkit.getPluginManager().getPlugin("Essentials");
-            if(essentials != null && essentials.isEnabled()){
-                try{
+            if (essentials != null && essentials.isEnabled()) {
+                try {
                     EssentialsAFKHook afkHook = EssentialsAFKHook.getInstance();
                     getServer().getPluginManager().registerEvents(afkHook, this);
                     getLogger().info("Essentials detected! Launching related functions");
@@ -287,15 +304,14 @@ public class PlayTimeManager extends JavaPlugin{
                     getLogger().severe("ERROR: Failed to initialize Essentials API: " + e.getMessage());
                     return false;
                 }
-            }else{
+            } else {
                 getLogger().warning(
                         "Failed to initialize afk detection: Essentials plugin configured but not found! " +
                                 "\nUntil this is resolved, PlayTimeManager will not be able to detect afk playtime"
                 );
                 return false;
             }
-        }
-        else if ("purpur".equals(configuredPlugin)) {
+        } else if ("purpur".equals(configuredPlugin)) {
             try {
                 Class.forName("org.purpurmc.purpur.event.PlayerAFKEvent");
                 PurpurAFKHook afkHook = PurpurAFKHook.getInstance();
@@ -312,11 +328,10 @@ public class PlayTimeManager extends JavaPlugin{
                 getLogger().severe("ERROR: Failed to initialize Purpur AFK detection: " + e.getMessage());
                 return false;
             }
-        }
-        else if ("antiafkplus".equals(configuredPlugin)) {
+        } else if ("antiafkplus".equals(configuredPlugin)) {
             Plugin antiAFKPlus = Bukkit.getPluginManager().getPlugin("AntiAFKPlus");
-            if(antiAFKPlus != null && antiAFKPlus.isEnabled()){
-                try{
+            if (antiAFKPlus != null && antiAFKPlus.isEnabled()) {
+                try {
                     AntiAFKPlusAFKHook afkHook = AntiAFKPlusAFKHook.getInstance();
                     afkHook.register();
                     getLogger().info("AntiAFKPlus detected! Launching related functions");
@@ -325,18 +340,17 @@ public class PlayTimeManager extends JavaPlugin{
                     getLogger().severe("ERROR: Failed to initialize AntiAFKPlus API: " + e.getMessage());
                     return false;
                 }
-            }else{
+            } else {
                 getLogger().warning(
                         "Failed to initialize afk detection: AntiAFKPlus plugin configured but not found! " +
                                 "\nUntil this is resolved, PlayTimeManager will not be able to detect afk playtime"
                 );
                 return false;
             }
-        }
-        else if ("jetsantiafkpro".equals(configuredPlugin)) {
+        } else if ("jetsantiafkpro".equals(configuredPlugin)) {
             Plugin jetsAntiAFKPro = Bukkit.getPluginManager().getPlugin("JetsAntiAFKPro");
-            if(jetsAntiAFKPro != null && jetsAntiAFKPro.isEnabled()){
-                try{
+            if (jetsAntiAFKPro != null && jetsAntiAFKPro.isEnabled()) {
+                try {
                     Class<?> hookClass = Class.forName("me.thegabro.playtimemanager.ExternalPluginSupport.JetsAntiAFKPro.JetsAntiAFKProHook");
                     Object afkHook = hookClass.getMethod("getInstance").invoke(null);
                     hookClass.getMethod("init").invoke(afkHook);
@@ -346,7 +360,7 @@ public class PlayTimeManager extends JavaPlugin{
                     getLogger().severe("ERROR: Failed to initialize JetsAntiAFKPro API: " + e.getMessage());
                     return false;
                 }
-            }else{
+            } else {
                 getLogger().warning(
                         "Failed to initialize afk detection: JetsAntiAFKPro plugin configured but not found! " +
                                 "\nUntil this is resolved, PlayTimeManager will not be able to detect afk playtime"
@@ -357,20 +371,32 @@ public class PlayTimeManager extends JavaPlugin{
         return false;
     }
 
-    public void handlePlaceholderAfkDetectionLoad() {
-        PlayTimeManager ptm = PlayTimeManager.getInstance();
+    /**
+     * @param afkDetectionConfigured intends to prevent duplicate usage of checkAFKPlugin().
+     */
+    public void handlePlaceholderAfkDetectionLoad(@Nullable Boolean afkDetectionConfigured) {
+        if (isPlaceholderAfkDetectionEnabled()) {
+            if (afkDetectionConfigured == null)
+                afkDetectionConfigured = checkAFKPlugin();
 
-        if (ptm.isPlaceholderAfkDetectionEnabled()) {
-            String placeholder = ptm.getPlaceholderAfkDetectionPlaceholder();
-            String afkValue = ptm.getPlaceholderAfkDetectionAfkValue();
+            if (!placeholdersapiConfigured) {
+                getLogger().warning("PAPI not found, AFK detection by placeholder check is disabled!");
+                return;
+            } else if (afkDetectionConfigured) {
+                getLogger().warning("Both AFK detection plugin and placeholder AFK detection are enabled! Please set AFK detection plugin to 'none' in order to use placeholder AFK detection.");
+                return;
+            }
+
+            String placeholder = getPlaceholderAfkDetectionPlaceholder();
+            String afkValue = getPlaceholderAfkDetectionAfkValue();
 
             if (placeholder == null) {
-                ptm.getLogger().warning("Placeholder AFK Detection enabled but placeholder wasn't supplied.");
+                getLogger().warning("Placeholder AFK Detection enabled but placeholder wasn't supplied.");
                 return;
             }
 
             if (afkValue == null) {
-                ptm.getLogger().warning("Placeholder AFK Detection enabled but afk value wasn't supplied.");
+                getLogger().warning("Placeholder AFK Detection enabled but afk value wasn't supplied.");
                 return;
             }
 
@@ -404,15 +430,15 @@ public class PlayTimeManager extends JavaPlugin{
         return false;
     }
 
-    public String getAFKPlugin(){
+    public String getAFKPlugin() {
         return configuredPlugin;
     }
 
-    public String getConfigVersion(){
+    public String getConfigVersion() {
         return CURRENT_CONFIG_VERSION;
     }
 
-    public boolean isDebugCacheEnabled(){
+    public boolean isDebugCacheEnabled() {
         return CACHE_DEBUG;
     }
 }

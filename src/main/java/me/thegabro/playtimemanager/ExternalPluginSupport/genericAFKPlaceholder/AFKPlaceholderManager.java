@@ -1,4 +1,4 @@
-package me.thegabro.playtimemanager.ExternalPluginSupport.placeholderAfkTime;
+package me.thegabro.playtimemanager.ExternalPluginSupport.genericAFKPlaceholder;
 
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.thegabro.playtimemanager.ExternalPluginSupport.AFKSyncManager;
@@ -13,6 +13,12 @@ import java.util.UUID;
 
 public class AFKPlaceholderManager {
     private static AFKPlaceholderManager instance;
+    private final AFKSyncManager afkSyncManager = AFKSyncManager.getInstance();
+
+    public static AFKPlaceholderManager getInstance() {
+        if (instance == null) instance = new AFKPlaceholderManager();
+        return instance;
+    }
 
     private final HashSet<UUID> playersAfk = new HashSet<>();
     private BukkitTask task = null;
@@ -43,10 +49,10 @@ public class AFKPlaceholderManager {
                             OnlineUser user = OnlineUsersManager.getInstance().getOnlineUserByUUID(uuid);
 
                             if (isAfk) {
-                                AFKSyncManager.getInstance().handleAFKGo(user);
+                                afkSyncManager.handleAFKGo(user);
                                 playersAfk.add(p.getUniqueId());
                             } else {
-                                AFKSyncManager.getInstance().handleAFKReturn(user);
+                                afkSyncManager.handleAFKReturn(user);
                                 playersAfk.remove(p.getUniqueId());
                             }
                         }
@@ -55,12 +61,5 @@ public class AFKPlaceholderManager {
                         e.printStackTrace();
                     }
                 }), 0, 20);
-    }
-
-    public static AFKPlaceholderManager getInstance() {
-        if (instance == null) {
-            instance = new AFKPlaceholderManager();
-        }
-        return instance;
     }
 }

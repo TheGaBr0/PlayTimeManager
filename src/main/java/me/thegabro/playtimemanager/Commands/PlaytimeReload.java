@@ -78,6 +78,8 @@ public class PlaytimeReload implements CommandExecutor {
                 }
             }
 
+            plugin.handlePlaceholderAfkDetectionLoad(null); // <- this
+
             return true;
         } else {
             sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));

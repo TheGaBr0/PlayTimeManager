@@ -23,7 +23,7 @@
 # Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
 
 #Leave this untouched
-config-version: 4.3
+config-version: 4.4
 
 #Choose your permissions management plugin
 #Available options: "luckperms"
@@ -114,6 +114,12 @@ database-debug: false
 #
 #Using a different afk detection system? Let me know on my GitHub issues page!
 afk-detection-plugin: "none"
+
+# Description
+placeholder-afk-detection:
+  enabled: true
+  placeholder: "%AFKPlus_Status%"
+  afk-value: "<#686868>ᴀꜰᴋ "
 
 # When enabled, AFK time is excluded from total playtime calculations used throughout
 # the plugin (goals requirements, displays, etc.). AFK time tracking continues

@@ -112,14 +112,24 @@ database-debug: false
 # - Set player.idle-timeout.kick-if-idle field to false in purpur.yml
 # The purpur option works for Leaf and LightSpigot servers as well.
 #
+# When your AFK plugin is natively supported, always prefer using this option over
+# placeholder-based detection as it is more efficient and reliable.
+#
 #Using a different afk detection system? Let me know on my GitHub issues page!
 afk-detection-plugin: "none"
 
-# Description
+
+# Placeholder-based AFK detection uses a PAPI placeholder to determine if a player is AFK.
+# This is useful for AFK plugins not natively supported by this plugin.
+#
+# NOTE: This option is IGNORED if afk-detection-plugin is set to anything other than "none".
+#       To use placeholder-based detection, afk-detection-plugin must be set to "none".
 placeholder-afk-detection:
-  enabled: true
-  placeholder: "%AFKPlus_Status%"
-  afk-value: "<#686868>ᴀꜰᴋ "
+  enabled: false
+  # The PlaceholderAPI placeholder to evaluate for AFK status.
+  placeholder: "%essentials_afk%"
+  # The value the placeholder must return for the player to be considered AFK.
+  afk-value: "yes"
 
 # When enabled, AFK time is excluded from total playtime calculations used throughout
 # the plugin (goals requirements, displays, etc.). AFK time tracking continues

@@ -11,7 +11,7 @@ public class Version364to365Updater {
     }
 
     private void recreateConfigFile() {
-        Configuration.getInstance().updateConfig(true);
+        Configuration.getInstance().updateConfig(false);
     }
 
 }

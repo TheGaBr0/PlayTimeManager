@@ -78,7 +78,7 @@ public class PlaytimeReload implements CommandExecutor {
                 }
             }
 
-            plugin.handlePlaceholderAfkDetectionLoad(null); // <- this
+            plugin.handlePlaceholderAfkDetectionLoad(null); // afkDetectionConfigured is set to null so it gets retrieved again to check for config changes
 
             return true;
         } else {

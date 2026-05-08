@@ -31,6 +31,7 @@ public class AFKPlaceholderManager {
             task.cancel();
             task = null;
         }
+        playersAfk.clear(); // clear stale state so re-enable starts fresh
     }
 
     public void start(String placeholder, String afkVal) {

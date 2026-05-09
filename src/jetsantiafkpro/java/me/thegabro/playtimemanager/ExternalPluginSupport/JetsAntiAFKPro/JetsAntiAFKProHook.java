@@ -93,7 +93,6 @@ public class JetsAntiAFKProHook {
     }
 
     public void handleQuit(Player player) {
-        plugin.getLogger().info(player.getName()+" removed from afk");
         lastAFKState.remove(player.getUniqueId());
     }
 }

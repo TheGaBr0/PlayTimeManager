@@ -1,8 +1,11 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport.AFKPlus;
 
+import me.thegabro.playtimemanager.Events.OnlineUserReadyEvent;
 import me.thegabro.playtimemanager.ExternalPluginSupport.AFKSyncManager;
+import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
+import net.lapismc.afkplus.AFKPlus;
 import net.lapismc.afkplus.api.AFKStartEvent;
 import net.lapismc.afkplus.api.AFKStopEvent;
 import net.lapismc.afkplus.playerdata.AFKPlusPlayer;
@@ -68,5 +71,24 @@ public class AFKPlusAFKHook implements Listener {
         if (onlineUser == null) return;
 
         afkSyncManager.handleAFKReturn(onlineUser);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onOnlineUserReady(OnlineUserReadyEvent event) {
+
+        OnlineUser onlineUser = event.getOnlineUser();
+        Player player = onlineUser.getPlayerInstance();
+        PlayTimeManager.getInstance().getLogger().info(player.getName());
+
+        if (player == null || !player.isOnline()) return;
+
+        AFKPlus afkPlus = (AFKPlus) Bukkit.getPluginManager().getPlugin("AFKPlus");
+        if (afkPlus == null) return;
+
+        AFKPlusPlayer afkPlusPlayer = afkPlus.getPlayer(player);
+        if (afkPlusPlayer == null) return;
+        if (afkPlusPlayer.isAFK()) {
+            afkSyncManager.handleAFKGo(onlineUser);
+        }
     }
 }

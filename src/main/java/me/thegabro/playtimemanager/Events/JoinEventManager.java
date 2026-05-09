@@ -6,6 +6,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
+import org.bukkit.Bukkit;
 import org.bukkit.Statistic;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -38,6 +39,11 @@ public class JoinEventManager implements Listener {
                 goalsManager.processPlayerLogin(onlineUser);
                 dbUsersManager.markAsExistent(onlineUser.getNickname());
                 dbUsersManager.updateCachedTopPlayers(onlineUser);
+
+                Bukkit.getScheduler().runTask(plugin, () ->
+                        Bukkit.getPluginManager().callEvent(new OnlineUserReadyEvent(onlineUser))
+                );
+
             });
 
 

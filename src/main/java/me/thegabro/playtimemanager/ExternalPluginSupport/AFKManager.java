@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport;
 
+import me.thegabro.playtimemanager.ExternalPluginSupport.AFKPlus.AFKPlusAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.AntiAFKPlus.AntiAFKPlusAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
@@ -96,6 +97,26 @@ public class AFKManager {
                 } else {
                     plugin.getLogger().warning(
                             "Failed to initialize afk detection: AntiAFKPlus plugin configured but not found! " +
+                                    "\nUntil this is resolved, PlayTimeManager will not be able to detect afk playtime"
+                    );
+                    return false;
+                }
+            }
+            case "afkplus" -> {
+                Plugin antiAFKPlus = Bukkit.getPluginManager().getPlugin("AFKPlus");
+                if (antiAFKPlus != null && antiAFKPlus.isEnabled()) {
+                    try {
+                        AFKPlusAFKHook afkHook = AFKPlusAFKHook.getInstance();
+                        plugin.getServer().getPluginManager().registerEvents(afkHook, plugin);
+                        plugin.getLogger().info("AFKPlus detected! Launching related functions");
+                        return true;
+                    } catch (Exception e) {
+                        plugin.getLogger().severe("ERROR: Failed to initialize AFKPlus API: " + e.getMessage());
+                        return false;
+                    }
+                } else {
+                    plugin.getLogger().warning(
+                            "Failed to initialize afk detection: AFKPlus plugin configured but not found! " +
                                     "\nUntil this is resolved, PlayTimeManager will not be able to detect afk playtime"
                     );
                     return false;

@@ -74,10 +74,6 @@
                                     <shadedPattern>me.thegabro.playtimemanager.libs.hikari</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.jeff_media.updatechecker</pattern>
-                                    <shadedPattern>me.thegabro.playtimemanager.libs.updatechecker</shadedPattern>
-                                </relocation>
-                                <relocation>
                                     <pattern>org.bstats</pattern>
                                     <shadedPattern>me.thegabro.playtimemanager.libs.bstats</shadedPattern>
                                 </relocation>
@@ -124,6 +120,11 @@
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
+        </repository>
+        <repository>
+            <id>lapismc-releases</id>
+            <name>LapisMC Maven</name>
+            <url>https://maven.lapismc.net/</url>
         </repository>
     </repositories>
 
@@ -204,6 +205,15 @@
             <groupId>com.github.koyere</groupId>
             <artifactId>AntiAFKPlus</artifactId>
             <version>2.9</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- AFKPlus -->
+
+        <dependency>
+            <groupId>net.lapismc</groupId>
+            <artifactId>AFKPlus</artifactId>
+            <version>3.5.2</version>
             <scope>provided</scope>
         </dependency>
 

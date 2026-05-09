@@ -88,7 +88,7 @@ public class RewardProcessor {
                         plugin.getConfiguration().getString("join-unclaimed-previous-message",
                                 "[&6PlayTime&eManager&f]&7 &e%PLAYER_NAME%&7, you've joined &6%REQUIRED_JOINS%&7 " +
                                         "consecutive times, but you didn't claim your previous reward! Please use &e/claimrewards&7 " +
-                                        "to collect your pending rewards before new ones can be granted."), 0);
+                                        "to collect your pending rewards before new ones can be granted."));
                 continue;
             }
             processQualifiedReward(onlineUser, subInstance);
@@ -113,7 +113,7 @@ public class RewardProcessor {
             messageService.sendRewardRelatedMessage(onlineUser, subInstance,
                     plugin.getConfiguration().getString("join-warn-autoclaim-message", "[&6PlayTime&eManager&f]&7 " +
                             "Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times and " +
-                            "unlocked a new reward! We have automatically claimed it for you!"), 1);
+                            "unlocked a new reward! We have automatically claimed it for you!"));
 
             rewardExecutor.processCompletedReward(onlineUser, subInstance);
         } else {
@@ -124,7 +124,7 @@ public class RewardProcessor {
             messageService.sendRewardRelatedMessage(onlineUser, subInstance,
                     plugin.getConfiguration().getString("join-warn-claim-message", "[&6PlayTime&eManager&f]&7 " +
                             "Great job, &e%PLAYER_NAME%&7! You have joined &6%REQUIRED_JOINS%&7 consecutive times and " +
-                            "unlocked a new reward! Use &e/claimrewards&7 to collect it!"), 1);
+                            "unlocked a new reward! Use &e/claimrewards&7 to collect it!"));
         }
     }
 }

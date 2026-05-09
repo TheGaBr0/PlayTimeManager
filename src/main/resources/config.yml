@@ -192,6 +192,11 @@ join-unclaimed-previous-message: "[&6PlayTime&eManager&f]&7 &e%PLAYER_NAME%&7, y
                                   but you didn't claim your previous reward! Please use &e/claimrewards&7 to collect your pending 
                                   rewards before new ones can be granted."
 
+# Delay (in seconds) before join streak reward messages are sent to the player after joining.
+# This is useful when using a welcome MOTD plugin, as it ensures reward notifications
+# appear after the initial welcome messages rather than being mixed in with them.
+join-reward-message-delay: 1
+
 #=================================================================
 #                           PLACEHOLDERS
 #=================================================================

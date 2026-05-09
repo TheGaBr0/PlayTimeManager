@@ -5,7 +5,6 @@ import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
-import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -62,7 +61,7 @@ public class RewardExecutor {
 
         executeRewardCommands(reward, onlineUser.getPlayerInstance());
 
-        messageService.sendRewardRelatedMessage(onlineUser, subInstance, reward.getRewardMessage(), 1);
+        messageService.sendRewardRelatedMessage(onlineUser, subInstance, reward.getRewardMessage());
 
         playRewardSound(onlineUser.getPlayerInstance(), reward);
     }

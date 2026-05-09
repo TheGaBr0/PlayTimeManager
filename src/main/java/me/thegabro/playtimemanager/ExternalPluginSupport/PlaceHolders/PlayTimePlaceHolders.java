@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders;
 
+import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
@@ -59,6 +60,11 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
     @Override
     public String onRequest(OfflinePlayer player, String params) {
         if (params == null) return null;
+
+        // Resolve bracket placeholders like {player_name} before handling
+        if (params.contains("{") && player != null) {
+            params = PlaceholderAPI.setPlaceholders(player, params.replace("{", "%").replace("}", "%"));
+        }
 
         ParamParser.ParseResult result = parser.parse(params);
 

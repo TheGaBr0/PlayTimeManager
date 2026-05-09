@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager.Commands;
 import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
+import me.thegabro.playtimemanager.ExternalPluginSupport.AFKManager;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
@@ -78,7 +79,7 @@ public class PlaytimeReload implements CommandExecutor {
                 }
             }
 
-            plugin.handlePlaceholderAfkDetectionLoad(null); // afkDetectionConfigured is set to null so it gets retrieved again to check for config changes
+            AFKManager.getInstance().handlePlaceholderAfkDetectionLoad(null); // afkDetectionConfigured is set to null so it gets retrieved again to check for config changes
 
             return true;
         } else {

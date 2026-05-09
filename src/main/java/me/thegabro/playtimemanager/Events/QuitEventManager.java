@@ -1,8 +1,9 @@
 package me.thegabro.playtimemanager.Events;
 
+import me.thegabro.playtimemanager.ExternalPluginSupport.AFKManager;
+import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
-import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -28,10 +29,10 @@ public class QuitEventManager implements Listener {
             // Finalize AFK time first if player was AFK
             final long quitTimePlaytime = event.getPlayer().getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE);
 
-            if (plugin.isAfkDetectionConfigured() && onlineUser.isAFK()) {
+            if (AFKManager.getInstance().isAfkDetectionConfigured() && onlineUser.isAFK()) {
                 onlineUser.finalizeCurrentAFKSession(quitTimePlaytime);
 
-                if(plugin.getAFKPlugin().equals("jetsantiafkpro")) {
+                if(AFKManager.getInstance().getConfiguredAFKPlugin().equals("jetsantiafkpro")) {
                     try {
                         Class<?> hookClass = Class.forName("me.thegabro.playtimemanager.ExternalPluginSupport.JetsAntiAFKPro.JetsAntiAFKProHook");
                         Object hook = hookClass.getMethod("getInstance").invoke(null);

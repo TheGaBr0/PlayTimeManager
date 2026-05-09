@@ -1,5 +1,7 @@
 package me.thegabro.playtimemanager.Events;
 
+import io.papermc.paper.event.player.AsyncChatEvent;
+import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -13,8 +15,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import io.papermc.paper.event.player.AsyncChatEvent;
-import me.thegabro.playtimemanager.PlayTimeManager;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -105,9 +105,10 @@ public class ChatEventManager implements Listener {
 
         event.setCancelled(true);
         String message = PlainTextComponentSerializer.plainText().serialize(event.message());
+        String trimmed = message.trim();
 
         // Handle special keywords
-        if (message.equalsIgnoreCase("cancel")) {
+        if (trimmed.equalsIgnoreCase("cancel")) {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 String finalMessage = session.allowNewlines() ? session.getMessageAsString() : "cancel";
                 session.callback().accept(player, finalMessage);
@@ -116,7 +117,7 @@ public class ChatEventManager implements Listener {
             return;
         }
 
-        if (message.equalsIgnoreCase("confirm")) {
+        if (trimmed.equalsIgnoreCase("confirm")) {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 String finalMessage = session.allowNewlines() ? session.getMessageAsString() : "confirm";
                 session.callback().accept(player, finalMessage);
@@ -150,13 +151,13 @@ public class ChatEventManager implements Listener {
 
         // Handle newline keyword if enabled
         if (session.allowNewlines()) {
-            if (message.equalsIgnoreCase("newline")) {
+            if (trimmed.equalsIgnoreCase("newline")) {
                 session.addRow("");
                 displayCurrentMessage(player, session, "New line added");
                 return;
             }
 
-            if (message.equalsIgnoreCase("removeline")) {
+            if (trimmed.equalsIgnoreCase("removeline")) {
                 if (!session.getRows().isEmpty()) {
                     session.removeLastRow();
                     displayCurrentMessage(player, session, "Last line removed");
@@ -263,7 +264,7 @@ public class ChatEventManager implements Listener {
 
     private void handleInput(Player player, String message, ChatInputSession session) {
         UUID playerId = player.getUniqueId();
-        session.callback().accept(player, message);
+        session.callback().accept(player, message.trim());
         activeSessions.remove(playerId);
     }
 

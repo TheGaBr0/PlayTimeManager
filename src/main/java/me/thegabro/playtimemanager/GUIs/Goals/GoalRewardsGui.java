@@ -243,7 +243,7 @@ public class GoalRewardsGui implements InventoryHolder, Listener {
         chatEventManager.startChatInput(player, (p, message) -> {
             if (!message.equalsIgnoreCase("cancel")) {
                 if(!message.isEmpty()){
-                    goal.addPermission(message.trim());
+                    goal.addPermission(message);
                     player.sendMessage(Utils.parseColors("&aPermission added: &f" + message));
                 }
             } else {

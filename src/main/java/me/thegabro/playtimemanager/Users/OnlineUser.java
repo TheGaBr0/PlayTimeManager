@@ -262,6 +262,13 @@ public class OnlineUser extends DBUser {
         updateLastSeenAsync(null);
     }
 
+    /** Sets lastSeen to a specific instant in memory and persists it asynchronously. */
+    public void setLastSeenToAsync(Instant timestamp) {
+        this.lastSeen = timestamp;
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () ->
+                DatabaseHandler.getInstance().getPlayerDAO().updateLastSeen(uuid, timestamp));
+    }
+
     /**
      * Always returns the current instant for online users, since they are active right now.
      */
@@ -325,6 +332,24 @@ public class OnlineUser extends DBUser {
      */
     public void refreshFromServerOnJoinPlayTime() {
         this.fromServerOnJoinPlayTime = playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE);
+    }
+
+    /**
+     * Syncs in-memory fields to match what was just persisted to the DB during a vanish
+     * logout simulation, then re-anchors the playtime and AFK baselines.
+     *
+     * After this call the player's live delta calculations restart from {@code stat},
+     * so getPlaytime() and getAFKPlaytime() continue accumulating correctly while vanished.
+     */
+    void syncAfterVanishPersist(long stat) {
+        this.DBplaytime = this.DBplaytime + (stat - this.fromServerOnJoinPlayTime);
+        this.DBAFKplaytime = this.DBAFKplaytime + this.currentSessionAFKTime;
+        this.currentSessionAFKTime = 0;
+        this.afkTimeFinalized = false;
+        this.fromServerOnJoinPlayTime = stat;
+        if (this.afk) {
+            this.afkStartPlaytime = stat;
+        }
     }
 
     // -------------------------------------------------------------------------

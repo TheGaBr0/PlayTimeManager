@@ -5,7 +5,6 @@ import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.Placeholde
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlaceholderExpansion.Utils.UserResolver;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
-import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.OfflinePlayer;
@@ -40,20 +39,20 @@ public class PlaytimeHandler implements PlaceholderHandler {
         String p = params.toLowerCase();
 
         if (p.equals("playtime")) {
-            OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
-            if (onlineUser == null) return utils.error("Loading...");
+            DBUser user = onlineUsersManager.getEffectiveUser(player.getName());
+            if (user == null) return utils.error("Loading...");
             try {
-                return Utils.ticksToFormattedPlaytime(onlineUser.getPlaytime(), format);
+                return Utils.ticksToFormattedPlaytime(user.getPlaytime(), format);
             } catch (Exception e) {
                 return utils.error("couldn't get playtime");
             }
         }
 
         if (p.equals("afk_playtime")) {
-            OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
-            if (onlineUser == null) return utils.error("Loading...");
+            DBUser user = onlineUsersManager.getEffectiveUser(player.getName());
+            if (user == null) return utils.error("Loading...");
             try {
-                return Utils.ticksToFormattedPlaytime(onlineUser.getAFKPlaytime(), format);
+                return Utils.ticksToFormattedPlaytime(user.getAFKPlaytime(), format);
             } catch (Exception e) {
                 return utils.error("couldn't get AFK playtime");
             }
@@ -61,10 +60,10 @@ public class PlaytimeHandler implements PlaceholderHandler {
 
         for (String unit : UNITS) {
             if (p.equals("playtime_" + unit)) {
-                OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
-                if (onlineUser == null) return utils.error("Loading...");
+                DBUser user = onlineUsersManager.getEffectiveUser(player.getName());
+                if (user == null) return utils.error("Loading...");
                 try {
-                    return String.valueOf(Utils.ticksToTimeUnit(onlineUser.getPlaytime(), unit));
+                    return String.valueOf(Utils.ticksToTimeUnit(user.getPlaytime(), unit));
                 } catch (Exception e) {
                     return utils.error("couldn't get playtime");
                 }
@@ -73,10 +72,10 @@ public class PlaytimeHandler implements PlaceholderHandler {
 
         for (String unit : UNITS) {
             if (p.equals("afk_playtime_" + unit)) {
-                OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
-                if (onlineUser == null) return utils.error("Loading...");
+                DBUser user = onlineUsersManager.getEffectiveUser(player.getName());
+                if (user == null) return utils.error("Loading...");
                 try {
-                    return String.valueOf(Utils.ticksToTimeUnit(onlineUser.getAFKPlaytime(), unit));
+                    return String.valueOf(Utils.ticksToTimeUnit(user.getAFKPlaytime(), unit));
                 } catch (Exception e) {
                     return utils.error("couldn't get AFK playtime");
                 }

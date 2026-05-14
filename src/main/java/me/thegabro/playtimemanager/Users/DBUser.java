@@ -61,6 +61,30 @@ public class DBUser {
     public static final DBUser NOT_FOUND = new DBUser();
 
     /**
+     * Creates a frozen snapshot of an OnlineUser's current state.
+     * Called after the vanish-persist has completed and in-memory fields have been synced,
+     * so all values reflect exactly what was written to the database at vanish time.
+     * lastSeen is set to the vanish instant (stored by updateAllOnQuitInternal).
+     */
+    static DBUser createFrozenSnapshot(OnlineUser source) {
+        return new DBUser(
+                source.uuid,
+                source.nickname,
+                source.DBplaytime,
+                source.artificialPlaytime,
+                source.DBAFKplaytime,
+                source.completedGoals,
+                source.notReceivedGoals,
+                source.lastSeen,
+                source.firstJoin,
+                source.relativeJoinStreak,
+                source.absoluteJoinStreak,
+                source.receivedRewards,
+                source.rewardsToBeClaimed
+        );
+    }
+
+    /**
      * Full constructor used by factory methods once all data has been read from the database.
      */
     private DBUser(String uuid, String nickname, long playtime, long artificialPlaytime, long DBAFKplaytime,

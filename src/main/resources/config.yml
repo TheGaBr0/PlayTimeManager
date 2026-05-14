@@ -137,6 +137,19 @@ placeholder-afk-detection:
 ignore-afk-time: false
 
 #=================================================================
+#                             VANISH
+#=================================================================
+
+vanish-protection:
+  enabled: false
+  debug: false
+  placeholder: "%vanishpp_is_vanished%"
+  vanish-value: "Yes"
+  commands:
+    - /v
+    - /vanish
+
+#=================================================================
 #                           JOIN STREAKS
 #=================================================================
 

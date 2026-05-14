@@ -212,8 +212,11 @@ public class DBUsersManager {
                 playersHiddenFromLeaderBoard = plugin.getConfiguration()
                         .getStringList("placeholders.playtime-leaderboard-blacklist", new ArrayList<>());
 
+                // Fetch extra slots to compensate for vanished players whose DB playtime is real
+                // but whose resolved snapshot playtime is lower — re-sorting may push them down.
+                int vanishedCount = onlineUsersManager.getVanishedPlayers().size();
                 Map<String, String> dbTopPlayers = DatabaseHandler.getInstance().getStatisticsDAO()
-                        .getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersHiddenFromLeaderBoard.size());
+                        .getTopPlayersByPlaytime(TOP_PLAYERS_LIMIT + playersHiddenFromLeaderBoard.size() + vanishedCount);
 
                 List<CompletableFuture<DBUser>> futures = dbTopPlayers.keySet().stream()
                         .map(uuid -> {
@@ -229,6 +232,18 @@ public class DBUsersManager {
                                     .map(CompletableFuture::join)
                                     .filter(Objects::nonNull)
                                     .filter(user -> !playersHiddenFromLeaderBoard.contains(user.getNickname()))
+                                    // Replace vanished online users with their frozen snapshots so the
+                                    // leaderboard shows apparent (not real) playtime while they are hidden.
+                                    .map(user -> {
+                                        if (user instanceof OnlineUser ou && onlineUsersManager.isCurrentlyVanished(ou)) {
+                                            DBUser snapshot = onlineUsersManager.getVanishSnapshot(ou.getUuid());
+                                            return snapshot != null ? snapshot : user;
+                                        }
+                                        return user;
+                                    })
+                                    // Re-sort by resolved playtime: vanished players' snapshot playtime is
+                                    // lower than their real DB playtime (which keeps growing for crash-safety).
+                                    .sorted(Comparator.comparing(DBUser::getPlaytime).reversed())
                                     .limit(TOP_PLAYERS_LIMIT)
                                     .toList();
 
@@ -255,10 +270,18 @@ public class DBUsersManager {
 
         String uuid = onlineUser.getUuid();
 
-        getUserFromUUIDAsyncWithContext(uuid, "cached leaderboard update", user -> {
-            if (user == null)
-                return;
+        getUserFromUUIDAsyncWithContext(uuid, "cached leaderboard update", resolvedUser -> {
+            if (resolvedUser == null) return;
 
+            // Vanished players appear in the leaderboard with their frozen snapshot values
+            DBUser userToInsert = resolvedUser;
+            if (resolvedUser instanceof OnlineUser ou && onlineUsersManager.isCurrentlyVanished(ou)) {
+                DBUser snapshot = onlineUsersManager.getVanishSnapshot(uuid);
+                if (snapshot == null) return; // snapshot not ready yet, skip
+                userToInsert = snapshot;
+            }
+
+            final DBUser finalUser = userToInsert;
             synchronized (topPlayers) {
                 int index = -1;
                 for (int i = 0; i < topPlayers.size(); i++) {
@@ -269,9 +292,9 @@ public class DBUsersManager {
                 }
 
                 if (index >= 0) {
-                    topPlayers.set(index, user);
+                    topPlayers.set(index, finalUser);
                 } else {
-                    topPlayers.add(user);
+                    topPlayers.add(finalUser);
                 }
 
                 topPlayers.sort(Comparator.comparing(DBUser::getPlaytime).reversed());

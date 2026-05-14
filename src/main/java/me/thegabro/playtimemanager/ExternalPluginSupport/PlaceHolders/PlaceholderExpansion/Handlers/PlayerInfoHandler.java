@@ -6,7 +6,6 @@ import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.Placeholde
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
-import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.OfflinePlayer;
@@ -47,10 +46,17 @@ public class PlayerInfoHandler implements PlaceholderHandler {
         String p = params.toLowerCase();
 
         if (p.equals("rank")) {
-            OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
-            if (onlineUser == null) return utils.error("Loading...");
+            DBUser user = onlineUsersManager.getEffectiveUser(player.getName());
+            if (user == null) return utils.error("Loading...");
             try {
-                int position = dbUsersManager.getTopPlayers().indexOf(onlineUser) + 1;
+                List<DBUser> top = dbUsersManager.getTopPlayers();
+                int position = 0;
+                for (int i = 0; i < top.size(); i++) {
+                    if (top.get(i).getUuid().equals(user.getUuid())) {
+                        position = i + 1;
+                        break;
+                    }
+                }
                 return position != 0
                         ? String.valueOf(position)
                         : plugin.getConfiguration().getString("placeholders.not-in-leaderboard-message", "-");
@@ -60,10 +66,10 @@ public class PlayerInfoHandler implements PlaceholderHandler {
         }
 
         if (p.equals("firstjoin")) {
-            OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
-            if (onlineUser == null) return utils.error("Loading...");
+            DBUser user = onlineUsersManager.getEffectiveUser(player.getName());
+            if (user == null) return utils.error("Loading...");
             try {
-                Instant firstJoin = onlineUser.getFirstJoin();
+                Instant firstJoin = user.getFirstJoin();
                 if (firstJoin == null) return utils.error("first join data missing");
                 return Utils.formatInstant(firstJoin, datetimeFormat());
             } catch (Exception e) {

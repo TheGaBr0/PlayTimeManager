@@ -34,11 +34,16 @@ public class JoinEventManager implements Listener {
                 }
 
                 onlineUsersManager.addOnlineUser(onlineUser);
-                onlineUser.updateLastSeen();
+
+                boolean vanishedOnJoin = onlineUsersManager.isCurrentlyVanished(onlineUser);
+                if (!vanishedOnJoin) {
+                    onlineUser.updateLastSeen();
+                    dbUsersManager.updateCachedTopPlayers(onlineUser);
+                }
+
                 joinStreaksManager.processPlayerLogin(onlineUser);
                 goalsManager.processPlayerLogin(onlineUser);
                 dbUsersManager.markAsExistent(onlineUser.getNickname());
-                dbUsersManager.updateCachedTopPlayers(onlineUser);
 
                 Bukkit.getScheduler().runTask(plugin, () ->
                         Bukkit.getPluginManager().callEvent(new OnlineUserReadyEvent(onlineUser))

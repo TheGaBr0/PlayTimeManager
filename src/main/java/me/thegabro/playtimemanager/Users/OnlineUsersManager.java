@@ -18,6 +18,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class OnlineUsersManager {
     private static volatile OnlineUsersManager instance;
     private BukkitTask dbUpdateSchedule;
+    private BukkitTask vanishPollSchedule;
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final GoalsManager goalsManager = GoalsManager.getInstance();
     private final Configuration config = Configuration.getInstance();
@@ -53,9 +54,9 @@ public class OnlineUsersManager {
     public void initialize() {
         startGoalCheckSchedule();
         startDBUpdateSchedule();
+        startVanishPollSchedule();
     }
 
-    //TODO: check copy of map
     public Map<String, OnlineUser> getOnlineUsersByUUID() {
         return onlineUsersByUUID;
     }
@@ -97,7 +98,7 @@ public class OnlineUsersManager {
         String placeholder = config.getString("vanish-protection.placeholder", "");
         if (placeholder.isEmpty()) return false;
 
-        String expected = config.getString("vanish-protection.value", "Yes");
+        String expected = config.getString("vanish-protection.vanish-value", "Yes");
         String actual = PlaceholderAPI.setPlaceholders(onlineUser.getPlayerInstance(), placeholder);
         return expected.equals(actual);
     }
@@ -134,9 +135,9 @@ public class OnlineUsersManager {
 
             // Update cached leaderboard so the live OnlineUser entry is replaced with the snapshot.
             DBUsersManager.getInstance().updateCachedTopPlayers(onlineUser);
-
-            plugin.getLogger().info("[Vanish] Simulated logout for " + onlineUser.getNickname()
-                    + (fromJoin ? " (joined in vanish)" : ""));
+            if(config.getBoolean("vanish-protection.debug", false))
+                plugin.getLogger().info("[Vanish] Added " + onlineUser.getNickname() + " to vanish "
+                        + (fromJoin ? " (joined in vanish)" : ""));
         });
     }
 
@@ -149,7 +150,8 @@ public class OnlineUsersManager {
     public void removeVanishedPlayer(OnlineUser onlineUser) {
         vanishedPlayers.remove(onlineUser);
         vanishSnapshots.remove(onlineUser.getUuid());
-        plugin.getLogger().info("[Vanish] Removed " + onlineUser.getNickname() + " from vanish");
+        if(config.getBoolean("vanish-protection.debug", false))
+            plugin.getLogger().info("[Vanish] Removed " + onlineUser.getNickname() + " from vanish");
     }
 
     public void addOnlineUser(OnlineUser onlineUser) {
@@ -185,6 +187,34 @@ public class OnlineUsersManager {
                 g.restartCompletionCheckTask();
             }
         }
+    }
+
+    private void startVanishPollSchedule() {
+        if (!config.getBoolean("vanish-protection.enabled", false)) return;
+        if (!plugin.isPlaceholdersAPIConfigured()) return;
+
+        long intervalTicks = config.getInt("vanish-protection.poll-interval-seconds", 5) * 20L;
+
+        vanishPollSchedule = new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (OnlineUser user : new ArrayList<>(onlineUsersByName.values())) {
+                    boolean shouldBeVanished = isVanished(user);
+                    boolean currentlyVanished = isCurrentlyVanished(user);
+
+                    if (shouldBeVanished && !currentlyVanished) {
+                        addVanishedPlayer(user, true);
+                        if (config.getBoolean("vanish-protection.debug", false))
+                            plugin.getLogger().info("[Vanish] Poll detected vanish for " + user.getNickname());
+                    } else if (!shouldBeVanished && currentlyVanished) {
+                        removeVanishedPlayer(user);
+                        DBUsersManager.getInstance().updateCachedTopPlayers(user);
+                        if (config.getBoolean("vanish-protection.debug", false))
+                            plugin.getLogger().info("[Vanish] Poll detected unvanish for " + user.getNickname());
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, intervalTicks, intervalTicks);
     }
 
     private void startDBUpdateSchedule() {
@@ -247,6 +277,7 @@ public class OnlineUsersManager {
 
     public void stopSchedules() {
         Optional.ofNullable(dbUpdateSchedule).ifPresent(BukkitTask::cancel);
+        Optional.ofNullable(vanishPollSchedule).ifPresent(BukkitTask::cancel);
     }
 
     /**

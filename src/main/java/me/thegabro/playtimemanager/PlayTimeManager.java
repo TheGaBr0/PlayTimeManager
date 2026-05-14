@@ -11,7 +11,6 @@ import me.thegabro.playtimemanager.Database.Migration.DatabaseMigration;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.Events.JoinEventManager;
 import me.thegabro.playtimemanager.Events.QuitEventManager;
-import me.thegabro.playtimemanager.Events.VanishCommandListener;
 import me.thegabro.playtimemanager.ExternalPluginSupport.AFKManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlayTimePlaceHolders;
@@ -145,7 +144,6 @@ public class PlayTimeManager extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
         getServer().getPluginManager().registerEvents(ChatEventManager.getInstance(), this);
-        getServer().getPluginManager().registerEvents(new VanishCommandListener(), this);
 
 
         Bukkit.getPluginManager().registerEvents(new AllGoalsGui(), this);

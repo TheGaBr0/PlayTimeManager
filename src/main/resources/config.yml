@@ -144,24 +144,22 @@ ignore-afk-time: false
 # Without this, PTM could indirectly reveal that a player is vanished
 # (e.g. via playtime leaderboards or placeholders showing inactivity).
 #
-# Both the placeholder AND the commands list are required:
-# - The placeholder detects vanish state at any time (e.g. on login)
-# - The commands catch the exact moment a player vanishes/unvanishes
-
+# PTM polls the placeholder on a configurable interval to detect state changes,
+# covering all vanish mechanisms (commands, API calls, GUIs, auto-vanish, etc.).
 
 vanish-protection:
   # Enable or disable vanish protection entirely
   enabled: false
   # Log vanish detection events to console
   debug: false
-  # PAPI placeholder used to check vanish state at any time
+  # PAPI placeholder used to check vanish state
   placeholder: "%vanish_placeholder%"
   # The value the placeholder returns when the player is vanished
   vanish-value: "Yes"
-  # Commands that toggle vanish -> add every alias your vanish plugin uses
-  commands:
-    - /v
-    - /vanish
+  # How often (in seconds) PTM polls the placeholder to detect vanish state changes.
+  # Lower values reduce the detection window but increase PlaceholderAPI calls.
+  # 5 seconds is a good default for most servers.
+  poll-interval-seconds: 5
 
 #=================================================================
 #                           JOIN STREAKS

@@ -140,11 +140,25 @@ ignore-afk-time: false
 #                             VANISH
 #=================================================================
 
+# Prevents PlayTimeManager from leaking a player's vanish status.
+# Without this, PTM could indirectly reveal that a player is vanished
+# (e.g. via playtime leaderboards or placeholders showing inactivity).
+#
+# Both the placeholder AND the commands list are required:
+# - The placeholder detects vanish state at any time (e.g. on login)
+# - The commands catch the exact moment a player vanishes/unvanishes
+
+
 vanish-protection:
+  # Enable or disable vanish protection entirely
   enabled: false
+  # Log vanish detection events to console
   debug: false
-  placeholder: "%vanishpp_is_vanished%"
+  # PAPI placeholder used to check vanish state at any time
+  placeholder: "%vanish_placeholder%"
+  # The value the placeholder returns when the player is vanished
   vanish-value: "Yes"
+  # Commands that toggle vanish -> add every alias your vanish plugin uses
   commands:
     - /v
     - /vanish

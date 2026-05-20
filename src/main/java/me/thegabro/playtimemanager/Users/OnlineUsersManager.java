@@ -165,7 +165,9 @@ public class OnlineUsersManager {
         onlineUsersByName.remove(onlineUser.getNickname().toLowerCase());
         onlineUsersByUUID.remove(onlineUser.getUuid());
 
-        removeVanishedPlayer(onlineUser);
+        if (isCurrentlyVanished(onlineUser)) {
+            removeVanishedPlayer(onlineUser);
+        }
     }
 
     public void loadOnlineUsers() {

@@ -1,5 +1,6 @@
 package me.thegabro.playtimemanager.Events;
 
+import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -13,6 +14,7 @@ public class QuitEventManager implements Listener {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+    private final GoalsManager goalsManager = GoalsManager.getInstance();
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event){
@@ -21,6 +23,8 @@ public class QuitEventManager implements Listener {
             plugin.getLogger().severe("OnlineUser is null for player: " + event.getPlayer().getName());
             return;
         }
+
+        goalsManager.processPlayerQuit(onlineUser);
 
         onlineUsersManager.removeOnlineUser(onlineUser);
 

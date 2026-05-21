@@ -7,6 +7,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 
 import java.sql.*;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -51,6 +52,46 @@ public class GoalsDAO {
         }
 
         return Timestamp.from(instant);
+    }
+
+    private Instant instantFromDatabase(ResultSet rs, String columnName) throws SQLException {
+        Database.DBTYPES dbType = DatabaseHandler.getInstance().getDatabaseType();
+
+        if (dbType == Database.DBTYPES.SQLITE) {
+            String text = rs.getString(columnName);
+            if (text == null || text.trim().isEmpty()) {
+                return null;
+            }
+            LocalDateTime ldt = LocalDateTime.parse(text, SQLITE_ISO);
+            return ldt.atZone(ZoneId.of("UTC")).toInstant();
+        }
+
+        Timestamp ts = rs.getTimestamp(columnName);
+        return ts != null ? ts.toInstant() : null;
+    }
+
+    public Instant getLastCompletionTime(String uuid, String goalName) {
+        String query = "SELECT completed_at FROM completed_goals " +
+                "WHERE user_uuid = ? AND goal_name = ? " +
+                "ORDER BY completed_at DESC LIMIT 1";
+
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, uuid);
+            stmt.setString(2, goalName.trim());
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return instantFromDatabase(rs, "completed_at");
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE,
+                    "Error getting last completion time for goal '" + goalName + "' and UUID " + uuid + ": " + e.getMessage());
+        }
+
+        return null;
     }
 
     public void removeGoalFromAllUsers(String goalToRemove) {

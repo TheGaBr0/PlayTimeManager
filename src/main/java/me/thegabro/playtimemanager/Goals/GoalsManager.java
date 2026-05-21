@@ -42,6 +42,16 @@ public class GoalsManager {
                 }
             });
         }
+
+        for (Goal goal : goals) {
+            goal.handlePlayerJoin(user);
+        }
+    }
+
+    public void processPlayerQuit(OnlineUser user) {
+        for (Goal goal : goals) {
+            goal.handlePlayerQuit(user);
+        }
     }
 
     public void addGoal(Goal goal) {

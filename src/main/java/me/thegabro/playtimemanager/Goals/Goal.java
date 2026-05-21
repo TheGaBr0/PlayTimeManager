@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public class Goal {
@@ -55,6 +56,12 @@ public class Goal {
     private final Map<String, String> goalMessageReplacements;
     private Date nextIntervalCheck; // Track next check time for interval mode
     private boolean offlineRewards;
+
+    private boolean perPlayerInterval;
+    private final Map<String, BukkitTask> perPlayerCheckTasks = new ConcurrentHashMap<>();
+    private final Map<String, Long> targetPlaytimeByUser = new ConcurrentHashMap<>();
+    private final Map<String, Integer> completionsByUser = new ConcurrentHashMap<>();
+    private final Set<String> lastCompletionLoading = ConcurrentHashMap.newKeySet();
 
     private boolean useCronExpression = true; // true for cron, false for seconds
     private long intervalSeconds = 900; // default 15 minutes in seconds
@@ -145,6 +152,10 @@ public class Goal {
                 this.cronExpression.setTimeZone(timezone);
             }
             saveToFile();
+            
+            if (this.active) {
+                restartCompletionCheckTask();
+            }
 
         } catch(Exception e) {
             plugin.getLogger().severe("Invalid check-time-interval configuration in goal " + name + "! Setting the goal as inactive: " + e.getMessage());
@@ -196,6 +207,7 @@ public class Goal {
             active = config.getBoolean("active", false);
             isRepeatable = config.getBoolean("repeatable", false);
             offlineRewards = config.getBoolean("offline-rewards", false);
+            perPlayerInterval = config.getBoolean("per-player-interval", false);
             completionCheckInterval = config.getString("check-time-interval", "900");
             checkTimeTimezone = config.getString("check-time-timezone", "server");
             verbose = config.getBoolean("verbose", false);
@@ -206,6 +218,7 @@ public class Goal {
             rewardCommands = new ArrayList<>();
             isRepeatable = false;
             offlineRewards = false;
+            perPlayerInterval = false;
             completionCheckInterval = "900";
             checkTimeTimezone = "server";
             verbose = false;
@@ -235,6 +248,11 @@ public class Goal {
                     "  - If true, players who are offline when completing the goal will receive rewards when they next log in.",
                     "  - Note: Currently, only players who were online during the last completion check interval are eligible.",
                     "    For example, if the goal is checked daily and a player does not join within that day, they will not receive the reward.",
+                    "",
+                    "per-player-interval:",
+                    "  - If true, the completion check interval is applied per player instead of globally.",
+                    "  - Only applies when check-time-interval is a number of seconds (not cron).",
+                    "  - Cron expressions always run globally.",
                     "",
                     "check-time-interval:",
                     "  - Defines the completion check time rate for the goal.",
@@ -302,6 +320,7 @@ public class Goal {
             config.set("active", active);
             config.set("repeatable", isRepeatable);
             config.set("offline-rewards", offlineRewards);
+            config.set("per-player-interval", perPlayerInterval);
             config.set("check-time-interval", completionCheckInterval);
             config.set("check-time-timezone", checkTimeTimezone);
             config.set("verbose", verbose);
@@ -331,14 +350,106 @@ public class Goal {
             completionCheckTask.cancel();
         }
         completionCheckTask = null;
+        cancelPerPlayerTasks();
     }
 
     public void restartCompletionCheckTask() {
         cancelCheckTask();
+        cancelPerPlayerTasks();
+        if (perPlayerInterval) {
+            if (useCronExpression) {
+                plugin.getLogger().warning("Goal " + name + ": per-player-interval is enabled but check-time-interval is a cron expression. Falling back to global cron scheduling.");
+            } else {
+                startPerPlayerCompletionCheck();
+                return;
+            }
+        }
         if (useCronExpression) {
             startCronCompletionCheck();
         } else {
             startSecondsCompletionCheck();
+        }
+    }
+
+    private void startPerPlayerCompletionCheck() {
+        if (offlineRewards) {
+            plugin.getLogger().warning("Goal " + name + ": per-player-interval is enabled with offline-rewards. Offline rewards use the global check window and may be imprecise.");
+        }
+
+        for (OnlineUser user : onlineUsersManager.getOnlineUsersByUUID().values()) {
+            handlePlayerJoin(user);
+        }
+    }
+
+    private void schedulePerPlayerCheck(OnlineUser user) {
+        if (user == null || !active) {
+            return;
+        }
+
+        String uuid = user.getUuid();
+        if (perPlayerCheckTasks.containsKey(uuid)) {
+            return;
+        }
+
+        // Check their playtime every 10 seconds to see if they crossed the milestone
+        long pollDelayTicks = 10 * 20L; 
+        BukkitTask task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                runPerPlayerCheck(user);
+            }
+        }.runTaskTimer(plugin, pollDelayTicks, pollDelayTicks);
+
+        perPlayerCheckTasks.put(uuid, task);
+    }
+
+    private void runPerPlayerCheck(OnlineUser user) {
+        if (!active) {
+            return;
+        }
+        if (!canRunPerPlayerCheck(user)) {
+            return;
+        }
+        checkCompletion(user);
+    }
+
+    private boolean canRunPerPlayerCheck(DBUser user) {
+        if (!perPlayerInterval || useCronExpression) {
+            return true;
+        }
+
+        String uuid = user.getUuid();
+        Long target = targetPlaytimeByUser.get(uuid);
+        
+        // Grab their exact live playtime in Bukkit ticks
+        Player player = Bukkit.getPlayer(UUID.fromString(uuid));
+        long currentPlaytimeTicks = (player != null && player.isOnline()) 
+            ? player.getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE) 
+            : user.getPlaytime();
+
+        // If they just logged in, calculate their next milestone based on current playtime
+        if (target == null) {
+            long intervalTicks = intervalSeconds * 20L;
+            target = ((currentPlaytimeTicks / intervalTicks) + 1) * intervalTicks;
+            targetPlaytimeByUser.put(uuid, target);
+            return false;
+        }
+
+        // If they hit the milestone, give reward and advance the milestone!
+        if (currentPlaytimeTicks >= target) {
+            targetPlaytimeByUser.put(uuid, target + (intervalSeconds * 20L));
+            return true;
+        }
+
+        return false;
+    }
+
+    
+
+    private void recordCompletion(DBUser user) {
+        // can be left empty for now
+        if (!perPlayerInterval || useCronExpression) {
+            return;
         }
     }
 
@@ -489,6 +600,7 @@ public class Goal {
                 long playerTime = user.getPlaytime();
                 if (getRequirements().checkRequirements(player, playerTime)) {
                     user.markGoalAsCompletedAsync(name, true, () -> {
+                        recordCompletion(user);
                         if (verbose) {
                             plugin.getLogger().info(String.format(
                                     "User %s has reached the goal %s",
@@ -513,6 +625,7 @@ public class Goal {
                         .thenAcceptAsync(requirementsMet -> {
                             if (requirementsMet) {
                                 user.markGoalAsCompletedAsync(name, false, () -> {
+                                    recordCompletion(user);
                                     if (verbose) {
                                         plugin.getLogger().info(String.format(
                                                 "Offline user %s has reached the goal %s",
@@ -540,6 +653,37 @@ public class Goal {
             sendGoalMessage(player);
 
             playGoalSound(player);
+    }
+
+    public void handlePlayerJoin(OnlineUser user) {
+        if (!active || !perPlayerInterval || useCronExpression) {
+            return;
+        }
+        schedulePerPlayerCheck(user);
+    }
+
+    public void handlePlayerQuit(OnlineUser user) {
+        if (!perPlayerInterval) {
+            return;
+        }
+
+        String uuid = user.getUuid();
+        BukkitTask task = perPlayerCheckTasks.remove(uuid);
+        if (task != null && !task.isCancelled()) {
+            task.cancel();
+        }
+
+        // Clear their target from memory, it will be safely recalculated when they join again
+        targetPlaytimeByUser.remove(uuid);
+    }
+
+    private void cancelPerPlayerTasks() {
+        for (BukkitTask task : perPlayerCheckTasks.values()) {
+            if (task != null && !task.isCancelled()) {
+                task.cancel();
+            }
+        }
+        perPlayerCheckTasks.clear();
     }
 
     private void assignPermissionsForGoal(DBUser onlineUser) {
@@ -723,6 +867,13 @@ public class Goal {
     public Map<String, Object> getNextSchedule() {
         Map<String, Object> scheduleInfo = new HashMap<>();
 
+        if (perPlayerInterval && !useCronExpression) {
+            scheduleInfo.put("nextCheck", "per-player");
+            scheduleInfo.put("timeRemaining", "per-player");
+            scheduleInfo.put("timeCheckToText", checkTimeToText);
+            return scheduleInfo;
+        }
+
         Date nextCheck = useCronExpression ? nextIntervalCheckCron : nextIntervalCheck;
 
         if (active && nextCheck != null) {
@@ -772,6 +923,7 @@ public class Goal {
         }
         else{
             cancelCheckTask();
+            cancelPerPlayerTasks();
             if(verbose)
                 plugin.getLogger().info("Goal "+name+" has been deactivated");
         }
@@ -865,6 +1017,7 @@ public class Goal {
     public void kill(boolean update) {
         goalsManager.removeGoal(this);
         cancelCheckTask();
+        cancelPerPlayerTasks();
         deleteFile();
 
         if(!update)

@@ -2,7 +2,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>me.theGabro</groupId>
@@ -17,8 +16,6 @@
 
     <build>
         <plugins>
-
-            <!-- Compiler -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -27,8 +24,6 @@
                     <release>${java.version}</release>
                 </configuration>
             </plugin>
-
-            <!-- Shade -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -44,7 +39,6 @@
                             <minimizeJar>true</minimizeJar>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <finalName>${project.artifactId}-${project.version}</finalName>
-
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
@@ -55,37 +49,48 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
+                                <filter>
+                                    <artifact>org.postgresql:postgresql</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.mysql:mysql-connector-j</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.zaxxer:HikariCP</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
                             </filters>
-
                             <relocations>
                                 <relocation>
                                     <pattern>com.zaxxer.hikari</pattern>
                                     <shadedPattern>me.thegabro.playtimemanager.libs.hikari</shadedPattern>
                                 </relocation>
-
                                 <relocation>
                                     <pattern>org.bstats</pattern>
                                     <shadedPattern>me.thegabro.playtimemanager.libs.bstats</shadedPattern>
                                 </relocation>
-
                                 <relocation>
                                     <pattern>org.quartz</pattern>
                                     <shadedPattern>me.thegabro.playtimemanager.libs.quartz</shadedPattern>
                                 </relocation>
-
                                 <relocation>
                                     <pattern>com.cronutils</pattern>
                                     <shadedPattern>me.thegabro.playtimemanager.libs.cronutils</shadedPattern>
                                 </relocation>
                             </relocations>
-
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
-
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -97,33 +102,28 @@
     <repositories>
         <repository>
             <id>purpur</id>
+            <name>Purpur Maven Repo</name>
             <url>https://repo.purpurmc.org/snapshots</url>
         </repository>
-
         <repository>
             <id>essentials-releases</id>
             <url>https://repo.essentialsx.net/releases/</url>
         </repository>
-
         <repository>
             <id>placeholderapi</id>
             <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
         </repository>
-
         <repository>
             <id>codemc-snapshots</id>
             <url>https://repo.codemc.io/repository/maven-snapshots/</url>
         </repository>
-
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
-
     </repositories>
 
     <dependencies>
-
         <!-- EssentialsX -->
         <dependency>
             <groupId>net.essentialsx</groupId>
@@ -145,9 +145,10 @@
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>5.1.0</version>
+            <scope>compile</scope>
         </dependency>
 
-        <!-- Log4j -->
+        <!-- HikariCP Log Filter -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
@@ -162,7 +163,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- LuckPerms -->
+        <!-- LuckPerms API -->
         <dependency>
             <groupId>net.luckperms</groupId>
             <artifactId>api</artifactId>
@@ -175,13 +176,15 @@
             <groupId>org.bstats</groupId>
             <artifactId>bstats-bukkit</artifactId>
             <version>3.1.0</version>
+            <scope>compile</scope>
         </dependency>
 
-        <!-- Quartz -->
+        <!-- Quartz Scheduler -->
         <dependency>
             <groupId>org.quartz-scheduler</groupId>
             <artifactId>quartz</artifactId>
             <version>2.5.0</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- Cron Utils -->
@@ -189,6 +192,7 @@
             <groupId>com.cronutils</groupId>
             <artifactId>cron-utils</artifactId>
             <version>9.2.1</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- AntiAFKPlus -->
@@ -200,6 +204,7 @@
         </dependency>
 
         <!-- AFKPlus -->
+
         <dependency>
             <groupId>net.lapismc</groupId>
             <artifactId>AFKPlus</artifactId>
@@ -213,15 +218,52 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.8</version>
+            <scope>compile</scope>
         </dependency>
 
-        <!-- MySQL -->
+        <!-- MySQL Connector (works also for mariadb) -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <version>9.5.0</version>
+            <scope>compile</scope>
         </dependency>
 
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>jetsantiafk</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.6.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-source</id>
+                                <phase>generate-sources</phase>
+                                <goals><goal>add-source</goal></goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/jetsantiafkpro/java</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>jetsantiafk</groupId>
+                    <artifactId>jetsantiafk</artifactId>
+                    <version>3.8.8</version>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
 </project>

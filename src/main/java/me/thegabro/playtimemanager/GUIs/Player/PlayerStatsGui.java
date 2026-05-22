@@ -617,7 +617,7 @@ public class PlayerStatsGui extends BaseCustomGUI {
 
         // Last seen information
         Instant lastSeen = subject.getLastSeen();
-        boolean isOnline = Bukkit.getPlayer(subject.getUuid()) != null;
+        boolean isOnline = subject.isOnline();
 
         if (isOnline) {
             combinations.put("%LAST_SEEN_DATE%", "Currently Online");

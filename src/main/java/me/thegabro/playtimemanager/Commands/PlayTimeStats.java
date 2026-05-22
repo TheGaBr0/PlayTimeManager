@@ -7,6 +7,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
+import me.thegabro.playtimemanager.Users.OnlineUsersManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Statistic;
@@ -64,7 +65,23 @@ public class PlayTimeStats implements CommandExecutor {
                 sendTextStats(sender, user);
             } else if (sender instanceof Player player) {
                 // Schedule GUI opening on main thread
-                Bukkit.getScheduler().runTask(plugin, () -> openStatsGui(player, user));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    // Respect vanish protection: if the subject is a vanished player and the
+                    // sender is not the subject, use their frozen snapshot so real playtime
+                    // and online status are not leaked.
+                    DBUser effectiveUser = user;
+                    if (user instanceof OnlineUser onlineUser
+                            && !player.getUniqueId().toString().equals(user.getUuid())) {
+                        OnlineUsersManager ouManager = OnlineUsersManager.getInstance();
+                        if (ouManager.isCurrentlyVanished(onlineUser)) {
+                            DBUser snapshot = ouManager.getVanishSnapshot(onlineUser.getUuid());
+                            if (snapshot != null) {
+                                effectiveUser = snapshot;
+                            }
+                        }
+                    }
+                    openStatsGui(player, effectiveUser);
+                });
             } else {
                 sendTextStats(sender, user);
             }

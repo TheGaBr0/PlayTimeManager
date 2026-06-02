@@ -208,7 +208,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                 while(protectedSlots.contains(slot)) slot++;
                 if(slot >= 45) break; // Stop before bottom border
 
-                inv.setItem(slot, createGuiItem(
+                ItemStack rewardItem = createGuiItem(
                         Material.valueOf(reward.getItemIcon()),
                         Utils.parseColors("&e&l#ID&r&e " + reward.getId()),
                         Utils.parseColors("&7Required Joins: &e" + (reward.getMinRequiredJoins() == -1 ? "-" : reward.getRequiredJoinsDisplay())),
@@ -223,7 +223,13 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
                         Utils.parseColors("&aMiddle click to clone this reward"),
                         Utils.parseColors(""),
                         Utils.parseColors("&c&oShift-Right Click to delete")
-                ));
+                );
+                if (reward.isItemIconGlint()) {
+                    ItemMeta rewardMeta = rewardItem.getItemMeta();
+                    rewardMeta.setEnchantmentGlintOverride(true);
+                    rewardItem.setItemMeta(rewardMeta);
+                }
+                inv.setItem(slot, rewardItem);
                 slot++;
             }
         } else {
@@ -367,6 +373,7 @@ public class AllJoinStreakRewardsGui implements InventoryHolder, Listener {
 
         clonedReward.setRequiredJoinsRange(reward.getMinRequiredJoins(), reward.getMaxRequiredJoins());
         clonedReward.setItemIcon(reward.getItemIcon());
+        clonedReward.setItemIconGlint(reward.isItemIconGlint());
         clonedReward.setRewardDescription(reward.getRewardDescription());
         clonedReward.setRewardMessage(reward.getRewardMessage());
         clonedReward.setDescription(reward.getDescription());

@@ -195,6 +195,11 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                         Utils.parseColors("&e&lReward Icon"),
                         Component.text(""),
                         Utils.parseColors("&7Click to set an icon"));
+        if (reward.isItemIconGlint()) {
+            ItemMeta iconMeta = iconItem.getItemMeta();
+            iconMeta.setEnchantmentGlintOverride(true);
+            iconItem.setItemMeta(iconMeta);
+        }
         inventory.setItem(Slots.REWARD_ICON, iconItem);
 
         // Repeatable toggle button
@@ -488,8 +493,12 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
             if (message.equalsIgnoreCase("confirm")) {
                 ItemStack heldItem = player.getInventory().getItemInMainHand();
                 if (heldItem.getType() != Material.AIR) {
-                    // Create a copy of the item to prevent inventory manipulation
-                    reward.setItemIcon(heldItem.clone().getType().toString());
+                    reward.setItemIcon(heldItem.getType().toString());
+                    boolean hasGlint = heldItem.hasItemMeta() && (
+                            heldItem.getItemMeta().hasEnchants() ||
+                            (heldItem.getItemMeta().hasEnchantmentGlintOverride() &&
+                                    heldItem.getItemMeta().getEnchantmentGlintOverride()));
+                    reward.setItemIconGlint(hasGlint);
                     player.sendMessage(Utils.parseColors("&aReward icon updated successfully!"));
                 } else {
                     player.sendMessage(Utils.parseColors("&cYou must be holding an item to set as the icon!"));

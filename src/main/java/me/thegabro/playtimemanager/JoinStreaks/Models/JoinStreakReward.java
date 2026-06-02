@@ -37,6 +37,7 @@ public class JoinStreakReward {
     private String rewardMessage;
     private String rewardSound;
     private String itemIcon;
+    private boolean itemIconGlint;
     private String description;
     private String rewardDescription;
     private boolean repeatable;
@@ -85,6 +86,7 @@ public class JoinStreakReward {
             commands = new ArrayList<>(config.getStringList("commands"));
             repeatable = config.getBoolean("repeatable");
             itemIcon = config.getString("item-icon", Material.SUNFLOWER.toString());
+            itemIconGlint = config.getBoolean("item-icon-glint", false);
 
             // Range-based rewards cannot be non-repeatable — enforce this on load
             if (!repeatable && requiredJoinsRange[0] != requiredJoinsRange[1]) {
@@ -100,6 +102,7 @@ public class JoinStreakReward {
             description = "";
             rewardDescription = "";
             itemIcon = Material.SUNFLOWER.toString();
+            itemIconGlint = false;
         }
     }
 
@@ -140,6 +143,8 @@ public class JoinStreakReward {
                     "---------------------------",
                     "item-icon represents the visual representation of the reward in GUI.",
                     "---------------------------",
+                    "item-icon-glint represents whether if the item-icon should have a glint effect applied.",
+                    "---------------------------",
                     "permissions defines what permissions will be granted to a player when they reach this reward",
                     "You can specify multiple permissions and groups that will all be granted.",
                     "---------------------------",
@@ -159,6 +164,7 @@ public class JoinStreakReward {
             config.set("commands", commands);
             config.set("repeatable", repeatable);
             config.set("item-icon", itemIcon);
+            config.set("item-icon-glint", itemIconGlint);
             config.save(rewardFile);
         } catch (IOException e) {
             plugin.getLogger().severe("Could not save reward file for " + id + ": " + e.getMessage());
@@ -362,6 +368,15 @@ public class JoinStreakReward {
 
     public void setItemIcon(String itemIcon) {
         this.itemIcon = itemIcon;
+        saveToFile();
+    }
+
+    public boolean isItemIconGlint() {
+        return itemIconGlint;
+    }
+
+    public void setItemIconGlint(boolean itemIconGlint) {
+        this.itemIconGlint = itemIconGlint;
         saveToFile();
     }
 

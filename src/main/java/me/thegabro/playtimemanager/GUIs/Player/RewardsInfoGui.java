@@ -477,7 +477,13 @@ public class RewardsInfoGui extends BaseCustomGUI {
         pdc.put(new NamespacedKey(plugin, "reward_id"),   reward.getId() + "." + subInstance.requiredJoins());
         pdc.put(new NamespacedKey(plugin, "reward_type"), rewardType);
 
-        return buildItem(materialString, rawName, rawLore, pdc, extraPlaceholders);
+        ItemStack item = buildItem(materialString, rawName, rawLore, pdc, extraPlaceholders);
+        if (reward.isItemIconGlint() && item.hasItemMeta()) {
+            ItemMeta meta = item.getItemMeta();
+            meta.setEnchantmentGlintOverride(true);
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 
     // -------------------------------------------------------------------------

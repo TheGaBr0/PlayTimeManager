@@ -123,14 +123,25 @@ public class OnlineUsersManager {
         vanishedPlayers.add(onlineUser);
 
         long stat = onlineUser.getPlayerInstance().getStatistic(Statistic.PLAY_ONE_MINUTE);
+
+        // Put a preliminary snapshot immediately so getVanishSnapshot() never returns null
+        // after the player is added to vanishedPlayers.
+        vanishSnapshots.put(onlineUser.getUuid(), DBUser.createFrozenSnapshot(onlineUser));
+
         onlineUser.updateAllOnQuitAsync(stat, () -> {
             onlineUser.syncAfterVanishPersist(stat);
 
-            // For join-in-vanish: override lastSeen so observers don't see the join timestamp.
-            if (fromJoin && onlineUser.getPreviousSessionLastSeen() != null) {
+            // updateAllOnQuitInternal overwrote lastSeen with Instant.now(); restore the
+            // pre-session value so both the DB and the updated snapshot are correct.
+            if (onlineUser.getPreviousSessionLastSeen() != null) {
                 onlineUser.setLastSeenToAsync(onlineUser.getPreviousSessionLastSeen());
+            } else {
+                // No previous session: null in memory so the snapshot shows "Unknown"
+                // instead of leaking the join timestamp.
+                onlineUser.lastSeen = null;
             }
 
+            // Replace the preliminary snapshot with one that has the correct playtime values.
             vanishSnapshots.put(onlineUser.getUuid(), DBUser.createFrozenSnapshot(onlineUser));
 
             // Update cached leaderboard so the live OnlineUser entry is replaced with the snapshot.

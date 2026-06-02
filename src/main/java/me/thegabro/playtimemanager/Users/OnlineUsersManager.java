@@ -154,9 +154,7 @@ public class OnlineUsersManager {
 
     /**
      * Removes a player from the vanished list and clears their snapshot.
-     * Called both on explicit unvanish and on quit — no re-anchoring here since
-     * on quit the baselines are no longer needed, and on unvanish the tracking
-     * already resumed correctly from the vanish-time re-anchor.
+     * Called both on explicit unvanish and on quit
      */
     public void removeVanishedPlayer(OnlineUser onlineUser) {
         vanishedPlayers.remove(onlineUser);

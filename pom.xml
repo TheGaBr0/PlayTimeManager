@@ -6,7 +6,7 @@
 
     <groupId>me.theGabro</groupId>
     <artifactId>PlayTimeManager</artifactId>
-    <version>3.6.5-dev</version>
+    <version>3.6.5</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -208,9 +208,9 @@
         <dependency>
             <groupId>net.lapismc</groupId>
             <artifactId>AFKPlus</artifactId>
-            <version>3.5.2</version>
+            <version>3.5.3</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/libs/AFKPlus-3.5.2.jar</systemPath>
+            <systemPath>${project.basedir}/libs/AFKPlus-3.5.3.jar</systemPath>
         </dependency>
 
         <!-- PostgreSQL -->

@@ -208,9 +208,9 @@
         <dependency>
             <groupId>net.lapismc</groupId>
             <artifactId>AFKPlus</artifactId>
-            <version>3.5.3</version>
+            <version>3.5.4</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/libs/AFKPlus-3.5.3.jar</systemPath>
+            <systemPath>${project.basedir}/libs/AFKPlus-3.5.4.jar</systemPath>
         </dependency>
 
         <!-- PostgreSQL -->

@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.GUIs.Player;
 
 import me.clip.placeholderapi.PlaceholderAPI;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.GUIs.BaseCustomGUI;
 import me.thegabro.playtimemanager.GUIs.InventoryListener;
@@ -38,6 +39,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
     private final RewardRegistry rewardRegistry = RewardRegistry.getInstance();
     private final RewardExecutor rewardExecutor = RewardExecutor.getInstance();
     private final GUIsConfiguration config;
+    private final CommandsConfiguration commandsConfig = CommandsConfiguration.getInstance();
     private final boolean isOwner;
     private final DBUser subject;
     private OfflinePlayer resolvedOfflinePlayer;
@@ -542,7 +544,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
                 if (container.has(idKey, PersistentDataType.STRING)) {
                     claimReward(container.get(idKey, PersistentDataType.STRING));
                 } else {
-                    whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+                    whoClicked.sendMessage(Utils.parseColors(commandsConfig.getString("prefix") + " " +
                             config.getString("rewards-gui.messages.not-available")));
                     playSound(config.getString("rewards-gui.sounds.claim-error"), whoClicked);
                 }
@@ -568,7 +570,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
             int specificJoinCount = Integer.parseInt(parts[1]);
 
             if (!sender.hasPermission("playtime.joinstreak.claim")) {
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+                sender.sendMessage(Utils.parseColors(commandsConfig.getString("prefix") + " " +
                         config.getString("rewards-gui.messages.no-permission")));
                 playSound(config.getString("rewards-gui.sounds.no-permission"), sender);
                 return;
@@ -576,7 +578,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
 
             JoinStreakReward reward = rewardRegistry.getReward(rewardId);
             if (reward == null) {
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+                sender.sendMessage(Utils.parseColors(commandsConfig.getString("prefix") + " " +
                         config.getString("rewards-gui.messages.reward-not-found")));
                 playSound(config.getString("rewards-gui.sounds.claim-error"), sender);
                 return;
@@ -592,7 +594,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
             } catch (Exception e) {
                 plugin.getLogger().severe("Error processing reward for " + sender.getName() + ": " + e.getMessage());
                 e.printStackTrace();
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+                sender.sendMessage(Utils.parseColors(commandsConfig.getString("prefix") + " " +
                         config.getString("rewards-gui.messages.error-processing")));
                 playSound(config.getString("rewards-gui.sounds.claim-error"), sender);
             }
@@ -611,7 +613,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
         }
 
         if (!sender.hasPermission("playtime.joinstreak.claim")) {
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+            sender.sendMessage(Utils.parseColors(commandsConfig.getString("prefix") + " " +
                     config.getString("rewards-gui.messages.no-permission")));
             playSound(config.getString("rewards-gui.sounds.no-permission"), sender);
             return;
@@ -630,11 +632,11 @@ public class RewardsInfoGui extends BaseCustomGUI {
         if (claimedCount > 0) {
             String message = config.getString("rewards-gui.messages.claimed-rewards")
                     .replace("%COUNT%", String.valueOf(claimedCount));
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " + message));
+            sender.sendMessage(Utils.parseColors(commandsConfig.getString("prefix") + " " + message));
             playSound(config.getString("rewards-gui.sounds.claim-success"), sender);
             loadRewards(); applyFilters(); initializeItems();
         } else {
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
+            sender.sendMessage(Utils.parseColors(commandsConfig.getString("prefix") + " " +
                     config.getString("rewards-gui.messages.error-processing")));
             playSound(config.getString("rewards-gui.sounds.claim-error"), sender);
         }

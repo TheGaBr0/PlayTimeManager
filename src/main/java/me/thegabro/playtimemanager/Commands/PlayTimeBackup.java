@@ -29,15 +29,13 @@ public class PlayTimeBackup implements CommandExecutor {
 
             File success = backupUtility.createBackup("Manual backup");
             if (success != null) {
-                sender.sendMessage(Utils.parseColors(commandsConfig.getString("prefix") +
-                        " &7Database backup created successfully!"));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix("&7Database backup created successfully!")));
             } else {
-                sender.sendMessage(Utils.parseColors(commandsConfig.getString("prefix") +
-                        " &7Failed to create database backup. Check console for details."));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix("&7Failed to create database backup. Check console for details.")));
             }
             return true;
         } else {
-            sender.sendMessage(Utils.parseColors(commandsConfig.getString("prefix") + commandsConfig.getString("no-permission")));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(commandsConfig.getString("no-permission"))));
         }
         return false;
     }

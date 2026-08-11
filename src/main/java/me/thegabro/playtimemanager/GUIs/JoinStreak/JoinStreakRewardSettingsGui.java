@@ -1,5 +1,4 @@
 package me.thegabro.playtimemanager.GUIs.JoinStreak;
-import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
@@ -35,7 +34,6 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
     private AllJoinStreakRewardsGui parentGui;
     private PlayTimeManager plugin;
     private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
-    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private static final class Slots {
         static final int REQUIRED_JOINS = 10;
         static final int REWARD_PRIZES = 13;
@@ -318,7 +316,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         // Ranged rewards must always be repeatable — block toggling off
         if (isRanged) {
             player.sendMessage(Utils.parseColors(
-                    config.getString("prefix") + " &cCannot disable repeatable: set a single value for Required Joins first."
+                    Utils.withPrefix("&cCannot disable repeatable: set a single value for Required Joins first.")
             ));
             return;
         }
@@ -375,7 +373,7 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
                         // Warn if repeatability was automatically enabled
                         if (!wasRepeatable && reward.isRepeatable()) {
                             player.sendMessage(Utils.parseColors(
-                                    config.getString("prefix") + " &eNote: &7Repeatability has been &aenabled &7because Required Joins is now a range."
+                                    Utils.withPrefix("&eNote: &7Repeatability has been &aenabled &7because Required Joins is now a range.")
                             ));
                         }
                     }
@@ -657,13 +655,13 @@ public class JoinStreakRewardSettingsGui implements InventoryHolder, Listener {
         ConfirmationGui confirmationGui = new ConfirmationGui(rewardItem, (confirmed) -> {
             if (confirmed) {
                 // Run deletion async
-                player.sendMessage(Utils.parseColors(config.getString("prefix") + " &7Deleting reward &e" + reward.getId() + "&7..."));
+                player.sendMessage(Utils.parseColors(Utils.withPrefix("&7Deleting reward &e" + reward.getId() + "&7...")));
                 Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
                     reward.kill(false);
 
                     // Switch back to main thread for UI updates
                     Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
-                        player.sendMessage(Utils.parseColors(config.getString("prefix") + " &aSuccessfully &7deleted reward &e" + reward.getId()));
+                        player.sendMessage(Utils.parseColors(Utils.withPrefix("&aSuccessfully &7deleted reward &e" + reward.getId())));
                         if (parentGui != null) {
                             parentGui.openInventory(player);
                         }

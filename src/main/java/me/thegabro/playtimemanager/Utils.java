@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormat;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import net.kyori.adventure.text.Component;
@@ -108,6 +109,20 @@ public class Utils {
         }
 
         return message;
+    }
+
+    /**
+     * Joins the configured chat prefix and a message with a single separating space,
+     * regardless of whether the prefix is empty or already carries its own trailing space.
+     *
+     * @param message the message to append after the prefix
+     * @return the joined string, ready to be passed to {@link #parseColors(String)}
+     */
+    public static String withPrefix(String message) {
+        String prefix = CommandsConfiguration.getInstance().getString("prefix");
+        String trimmedPrefix = prefix == null ? "" : prefix.stripTrailing();
+        String safeMessage = message == null ? "" : message;
+        return trimmedPrefix.isEmpty() ? safeMessage : trimmedPrefix + " " + safeMessage;
     }
 
     /**

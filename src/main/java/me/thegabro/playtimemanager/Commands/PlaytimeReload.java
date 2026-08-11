@@ -40,7 +40,7 @@ public class PlaytimeReload implements CommandExecutor {
             GUIsConfiguration.getInstance().reload();
             CommandsConfiguration.getInstance().reload();
 
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " The configuration files have been reloaded"));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix("The configuration files have been reloaded")));
 
             // Reload goals
             goalsManager.clearGoals();
@@ -57,7 +57,7 @@ public class PlaytimeReload implements CommandExecutor {
             onlineUsersManager.loadOnlineUsers();
 
             onlineUsersManager.startGoalCheckSchedule();
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Goal check schedule has been restarted"));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix("Goal check schedule has been restarted")));
 
             dbUsersManager.updateTopPlayersFromDB();
 
@@ -73,9 +73,9 @@ public class PlaytimeReload implements CommandExecutor {
 
             if (plugin.getConfiguration().getBoolean("rewards-check-schedule-activation", true)) {
                 if (!rewardRegistry.isEmpty()) {
-                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Join streak check schedule has been restarted"));
+                    sender.sendMessage(Utils.parseColors(Utils.withPrefix("Join streak check schedule has been restarted")));
                 } else {
-                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Join streak check schedule not started: no active rewards found"));
+                    sender.sendMessage(Utils.parseColors(Utils.withPrefix("Join streak check schedule not started: no active rewards found")));
                 }
             }
 
@@ -83,7 +83,7 @@ public class PlaytimeReload implements CommandExecutor {
 
             return true;
         } else {
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("no-permission"))));
         }
         return false;
     }

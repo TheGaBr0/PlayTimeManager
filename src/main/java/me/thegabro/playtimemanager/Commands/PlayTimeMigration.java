@@ -35,7 +35,7 @@ public class PlayTimeMigration implements CommandExecutor, TabCompleter {
 
         // Only allow console to use this command
         if (!(sender instanceof ConsoleCommandSender)) {
-            sender.sendMessage(Utils.parseColors(cmdConfig.getString("prefix") + cmdConfig.getString("console-only-command")));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(cmdConfig.getString("console-only-command"))));
             return true;
         }
 

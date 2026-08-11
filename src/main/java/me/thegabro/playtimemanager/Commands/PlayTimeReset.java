@@ -105,8 +105,7 @@ public class PlayTimeReset {
                 dbUsersManager.updateTopPlayersFromDB();
                 break;
             default:
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                        " Unknown reset type: &e" + resetType + "&7. Valid types: server_playtime, playtime, last_seen, first_join, joinstreak, joinstreak_rewards, goals, everything"));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix("Unknown reset type: &e" + resetType + "&7. Valid types: server_playtime, playtime, last_seen, first_join, joinstreak, joinstreak_rewards, goals, everything")));
                 break;
         }
     }
@@ -138,9 +137,8 @@ public class PlayTimeReset {
             }
 
             final long finalResetPlaytime = resetPlaytime;
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                    " Reset server playtime for player &e" + playerName +
-                    "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(finalResetPlaytime) + "&7 of playtime)"));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix("Reset server playtime for player &e" + playerName +
+                            "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(finalResetPlaytime) + "&7 of playtime)")));
         });
     }
 
@@ -151,9 +149,8 @@ public class PlayTimeReset {
         getValidatedUser(sender, playerName, user -> {
             long playtimeBeforeReset = user.getPlaytime();
             user.resetPlaytimeAsync(() ->
-                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                            " Reset playtime for player &e" + playerName +
-                            "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(playtimeBeforeReset) + "&7 of playtime)"))
+                    sender.sendMessage(Utils.parseColors(Utils.withPrefix("Reset playtime for player &e" + playerName +
+                                    "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(playtimeBeforeReset) + "&7 of playtime)")))
             );
         });
     }
@@ -164,8 +161,7 @@ public class PlayTimeReset {
     public void resetPlayerLastSeen(CommandSender sender, String playerName) {
         getValidatedUser(sender, playerName, user ->
                 user.resetLastSeenAsync(() ->
-                        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                                " Reset last seen data for player &e" + playerName + "&7"))
+                        sender.sendMessage(Utils.parseColors(Utils.withPrefix("Reset last seen data for player &e" + playerName + "&7")))
                 )
         );
     }
@@ -176,8 +172,7 @@ public class PlayTimeReset {
     public void resetPlayerFirstJoin(CommandSender sender, String playerName) {
         getValidatedUser(sender, playerName, user ->
                 user.resetFirstJoinAsync(() ->
-                        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                                " Reset first join data for player &e" + playerName + "&7"))
+                        sender.sendMessage(Utils.parseColors(Utils.withPrefix("Reset first join data for player &e" + playerName + "&7")))
                 )
         );
     }
@@ -190,9 +185,8 @@ public class PlayTimeReset {
             int joinStreakBeforeReset = user.getRelativeJoinStreak();
             user.resetJoinStreaksAsync(() -> {
                 streakTracker.restartUserJoinStreakRewards(user);
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                        " Reset join streak for player &e" + playerName +
-                        "&7 (Removed &e" + joinStreakBeforeReset + "&7 joins)"));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix("Reset join streak for player &e" + playerName +
+                                "&7 (Removed &e" + joinStreakBeforeReset + "&7 joins)")));
             });
         });
     }
@@ -204,8 +198,7 @@ public class PlayTimeReset {
         getValidatedUser(sender, playerName, user ->
                 user.resetJoinStreakRewardsAsync(() -> {
                     streakTracker.restartUserJoinStreakRewards(user);
-                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                            " Reset join streak rewards for player &e" + playerName + "&7"));
+                    sender.sendMessage(Utils.parseColors(Utils.withPrefix("Reset join streak rewards for player &e" + playerName + "&7")));
                 })
         );
     }
@@ -217,9 +210,8 @@ public class PlayTimeReset {
         getValidatedUser(sender, playerName, user -> {
             int completedGoalsCount = user.getCompletedGoals().size();
             user.resetGoalsAsync(() ->
-                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                            " Reset goals for player &e" + playerName +
-                            "&7 (Removed &e" + completedGoalsCount + "&7 completed goals)"))
+                    sender.sendMessage(Utils.parseColors(Utils.withPrefix("Reset goals for player &e" + playerName +
+                                    "&7 (Removed &e" + completedGoalsCount + "&7 completed goals)")))
             );
         });
     }
@@ -231,9 +223,8 @@ public class PlayTimeReset {
         getValidatedUser(sender, playerName, user -> {
             long playtimeBeforeReset = user.getPlaytime();
             user.resetAsync(() ->
-                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                            " Reset everything for player &e" + playerName +
-                            "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(playtimeBeforeReset) + "&7 of playtime)"))
+                    sender.sendMessage(Utils.parseColors(Utils.withPrefix("Reset everything for player &e" + playerName +
+                                    "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(playtimeBeforeReset) + "&7 of playtime)")))
             );
         });
     }
@@ -246,8 +237,7 @@ public class PlayTimeReset {
      * runs on the async thread where it was already sitting.
      */
     public void resetAllPlayerServerPlaytime(CommandSender sender) {
-        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                " Starting reset of all players' server playtime, this will take some time..."));
+        sender.sendMessage(Utils.parseColors(Utils.withPrefix("Starting reset of all players' server playtime, this will take some time...")));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             AtomicInteger totalPlayersReset = new AtomicInteger();
@@ -294,9 +284,8 @@ public class PlayTimeReset {
                     }
 
                     Bukkit.getScheduler().runTask(plugin, () ->
-                            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                                    " All players' server playtime has been reset! Total: &e" + totalPlayersReset +
-                                    "&7 players with &e" + Utils.ticksToFormattedPlaytime(totalPlaytimeReset.get()) + "&7 of playtime"))
+                            sender.sendMessage(Utils.parseColors(Utils.withPrefix("All players' server playtime has been reset! Total: &e" + totalPlayersReset +
+                                            "&7 players with &e" + Utils.ticksToFormattedPlaytime(totalPlaytimeReset.get()) + "&7 of playtime")))
                     );
                 });
             });
@@ -307,8 +296,7 @@ public class PlayTimeReset {
      * Generic method to reset specific data for all players.
      */
     private void resetAllPlayersGeneric(CommandSender sender, String resetType, String displayName) {
-        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                " Starting reset of all players' " + displayName + ", this will take some time..."));
+        sender.sendMessage(Utils.parseColors(Utils.withPrefix("Starting reset of all players' " + displayName + ", this will take some time...")));
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             List<String> allNicknames = DatabaseHandler.getInstance().getPlayerDAO().getAllNicknames();
@@ -318,8 +306,7 @@ public class PlayTimeReset {
 
             if (allNicknames.isEmpty()) {
                 Bukkit.getScheduler().runTask(plugin, () ->
-                        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                                " No players found to reset."))
+                        sender.sendMessage(Utils.parseColors(Utils.withPrefix("No players found to reset.")))
                 );
                 return;
             }
@@ -374,7 +361,7 @@ public class PlayTimeReset {
                                 message += " with &e" + totalDataReset + "&7 completed goals";
                             }
 
-                            sender.sendMessage(Utils.parseColors(config.getString("prefix") + message));
+                            sender.sendMessage(Utils.parseColors(Utils.withPrefix(message)));
                         });
                     }
                 });
@@ -395,16 +382,14 @@ public class PlayTimeReset {
         if (pendingReset != null) {
             if (pendingReset.isExpired()) {
                 pendingResets.remove(senderUUID);
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                        " Your previous reset confirmation has expired. Please try again."));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix("Your previous reset confirmation has expired. Please try again.")));
                 requestConfirmation(sender, senderUUID, resetType);
                 return;
             }
 
             if (!pendingReset.resetType.equals(resetType)) {
                 pendingResets.remove(senderUUID);
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                        " Reset type has changed. Please confirm again."));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix("Reset type has changed. Please confirm again.")));
                 requestConfirmation(sender, senderUUID, resetType);
                 return;
             }
@@ -446,8 +431,7 @@ public class PlayTimeReset {
                 resetAllPlayersGeneric(sender, "everything", "data");
                 break;
             default:
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                        " Unknown reset type: &e" + resetType + "&7. Valid types: server_playtime, playtime, last_seen, first_join, joinstreak, joinstreak_rewards, goals, everything"));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix("Unknown reset type: &e" + resetType + "&7. Valid types: server_playtime, playtime, last_seen, first_join, joinstreak, joinstreak_rewards, goals, everything")));
                 break;
         }
     }
@@ -458,12 +442,10 @@ public class PlayTimeReset {
     private void requestConfirmation(CommandSender sender, UUID senderUUID, String resetType) {
         pendingResets.put(senderUUID, new PendingReset(resetType));
 
-        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                " &c&lWARNING&r&7: You are about to reset " + getResetTypeDescription(resetType) +
-                " for &e&lALL players&7!"));
-        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                " &7This action cannot be undone. Run the command again within " +
-                CONFIRMATION_TIMEOUT_SECONDS + " seconds to confirm."));
+        sender.sendMessage(Utils.parseColors(Utils.withPrefix("&c&lWARNING&r&7: You are about to reset " + getResetTypeDescription(resetType) +
+                        " for &e&lALL players&7!")));
+        sender.sendMessage(Utils.parseColors(Utils.withPrefix("&7This action cannot be undone. Run the command again within " +
+                        CONFIRMATION_TIMEOUT_SECONDS + " seconds to confirm.")));
     }
 
     /**
@@ -487,8 +469,7 @@ public class PlayTimeReset {
     private void getValidatedUser(CommandSender sender, String playerName, Consumer<DBUser> callback) {
         dbUsersManager.getUserFromNicknameAsyncWithContext(playerName, "playtime reset command", user -> {
             if (user == null) {
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                        config.getString("player-never-joined").replace("%PLAYER%", playerName)));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("player-never-joined").replace("%PLAYER%", playerName))));
                 return;
             }
             callback.accept(user);

@@ -33,13 +33,13 @@ public class PlaytimeCommand {
     public boolean execute(CommandSender sender, DBUser user) {
         if (user == null) {
             if (!sender.hasPermission("playtime")) {
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission-check-own")));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("no-permission-check-own"))));
                 return false;
             }
             return handleSelf(sender);
         }else{
             if (!sender.hasPermission("playtime.others")) {
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission-check-others")));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("no-permission-check-others"))));
                 return false;
             }
             return handleOthers(sender, user);
@@ -48,7 +48,7 @@ public class PlaytimeCommand {
 
     private boolean handleSelf(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("must-be-player")));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("must-be-player"))));
             return false;
         }
 
@@ -62,14 +62,14 @@ public class PlaytimeCommand {
                                 player.getName(),
                                 String.valueOf(onlineUser.getPlaytime()),
                                 prefix);
-                        sender.sendMessage(Utils.parseColors(config.getString("prefix") + message));
+                        sender.sendMessage(Utils.parseColors(Utils.withPrefix(message)));
                     });
         } else {
             String message = createMessage(config.getString("playtime.self-message"),
                     player.getName(),
                     String.valueOf(onlineUser.getPlaytime()),
                     "");
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + message));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(message)));
         }
 
         return true;
@@ -82,14 +82,14 @@ public class PlaytimeCommand {
                         user.getNickname(),
                         String.valueOf(user.getPlaytime()),
                         prefix);
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + message));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix(message)));
             });
         } else {
             String message = createMessage(config.getString("playtime.others-message"),
                         user.getNickname(),
                         String.valueOf(user.getPlaytime()),
                         "");
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + message));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(message)));
         }
 
         return true;

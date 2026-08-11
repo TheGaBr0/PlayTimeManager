@@ -1,6 +1,5 @@
 package me.thegabro.playtimemanager.Commands;
 
-import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.GUIs.Player.RewardsInfoGui;
 import me.thegabro.playtimemanager.PlayTimeManager;
@@ -21,15 +20,13 @@ public class ClaimRewards implements CommandExecutor {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private static final Map<UUID, Long> lastGuiOpenTime = new HashMap<>();
     private static final long GUI_OPEN_COOLDOWN = 1000;
-    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     public ClaimRewards() {}
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         // Ensure only players can use this command
         if (!sender.hasPermission("playtime.joinstreak.claim")) {
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
-                    GUIsConfiguration.getInstance().getString("rewards-gui.messages.no-permission")));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(GUIsConfiguration.getInstance().getString("rewards-gui.messages.no-permission"))));
             return false;
         }
 
@@ -44,8 +41,7 @@ public class ClaimRewards implements CommandExecutor {
         if (lastGuiOpenTime.containsKey(playerId)) {
             long lastTime = lastGuiOpenTime.get(playerId);
             if (currentTime - lastTime < GUI_OPEN_COOLDOWN) {
-                player.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
-                        GUIsConfiguration.getInstance().getString("rewards-gui.messages.command-spam")));
+                player.sendMessage(Utils.parseColors(Utils.withPrefix(GUIsConfiguration.getInstance().getString("rewards-gui.messages.command-spam"))));
                 return true;
             }
         }

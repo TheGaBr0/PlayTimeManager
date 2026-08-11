@@ -17,11 +17,10 @@ public class PlaytimeAverage implements CommandExecutor {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String s, @NotNull String[] args) {
         //TODO: ASYNC
         if (sender.hasPermission("playtime.average")){
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                    " The average playtime is:&6 " + Utils.ticksToFormattedPlaytime( (long) (Math.ceil(DatabaseHandler.getInstance().getStatisticsDAO().getAveragePlaytime())))));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix("The average playtime is:&6 " + Utils.ticksToFormattedPlaytime( (long) (Math.ceil(DatabaseHandler.getInstance().getStatisticsDAO().getAveragePlaytime()))))));
             return true;
         } else {
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("no-permission"))));
         }
         return false;
     }

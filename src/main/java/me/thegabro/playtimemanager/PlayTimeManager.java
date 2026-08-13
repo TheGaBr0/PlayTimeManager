@@ -53,7 +53,7 @@ public class PlayTimeManager extends JavaPlugin {
     private JoinStreaksManager joinStreaksManager;
     private SessionManager sessionManager;
     private String configuredPlugin;
-    private final String CURRENT_CONFIG_VERSION = "4.4";
+    private final String CURRENT_CONFIG_VERSION = "4.5";
     private final boolean CACHE_DEBUG = false;
 
     @Override

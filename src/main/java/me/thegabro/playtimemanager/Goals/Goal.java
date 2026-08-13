@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public class Goal {
@@ -55,6 +56,9 @@ public class Goal {
     private final Map<String, String> goalMessageReplacements;
     private Date nextIntervalCheck; // Track next check time for interval mode
     private boolean offlineRewards;
+    private boolean perPlayerCheck;
+    // One BukkitTask per online player, keyed by player UUID; only populated when perPlayerCheck is true
+    private final Map<String, BukkitTask> playerCheckTasks = new ConcurrentHashMap<>();
 
     private boolean useCronExpression = true; // true for cron, false for seconds
     private long intervalSeconds = 900; // default 15 minutes in seconds
@@ -199,6 +203,7 @@ public class Goal {
             completionCheckInterval = config.getString("check-time-interval", "900");
             checkTimeTimezone = config.getString("check-time-timezone", "server");
             verbose = config.getBoolean("verbose", false);
+            perPlayerCheck = config.getBoolean("per-player-check", false);
         } else {
             goalMessage = getDefaultGoalMessage();
             goalSound = getDefaultGoalSound();
@@ -209,6 +214,7 @@ public class Goal {
             completionCheckInterval = "900";
             checkTimeTimezone = "server";
             verbose = false;
+            perPlayerCheck = false;
         }
     }
 
@@ -262,6 +268,15 @@ public class Goal {
                     "  - Values: 'server' or 'utc'",
                     "  - Only applies to cron expressions, not seconds format",
                     "",
+                    "per-player-check:",
+                    "  - If true, instead of a single check running for all online players,",
+                    "    each player gets their own individual check task using the same",
+                    "    check-time-interval, starting when they join and stopping when they leave.",
+                    "  - Useful to spread out the check load over time instead of checking",
+                    "    every online player at the same instant.",
+                    "  - Note: offline-rewards has no effect when this is enabled, since a",
+                    "    player's check task only exists while they are online.",
+                    "",
                     "verbose:",
                     "  - Enable or disable debug logging in the console for this goal",
                     "",
@@ -304,6 +319,7 @@ public class Goal {
             config.set("offline-rewards", offlineRewards);
             config.set("check-time-interval", completionCheckInterval);
             config.set("check-time-timezone", checkTimeTimezone);
+            config.set("per-player-check", perPlayerCheck);
             config.set("verbose", verbose);
             config.set("goal-sound", goalSound);
             config.set("goal-message", goalMessage);
@@ -331,15 +347,121 @@ public class Goal {
             completionCheckTask.cancel();
         }
         completionCheckTask = null;
+        cancelAllPlayerCheckTasks();
     }
 
     public void restartCompletionCheckTask() {
         cancelCheckTask();
-        if (useCronExpression) {
+        if (perPlayerCheck) {
+            // No global task: give every already-online player their own task
+            // (covers plugin reload/goal activation - joins are handled separately)
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+                if (onlineUser != null) {
+                    startPlayerCheckTask(onlineUser);
+                }
+            }
+        } else if (useCronExpression) {
             startCronCompletionCheck();
         } else {
             startSecondsCompletionCheck();
         }
+    }
+
+    /**
+     * Starts (or restarts) this player's individual completion check task.
+     * No-op unless the goal is active and per-player-check is enabled.
+     */
+    public void startPlayerCheckTask(OnlineUser user) {
+        if (!active || !perPlayerCheck) return;
+
+        String uuid = user.getUuid();
+        cancelPlayerCheckTask(uuid);
+
+        if (useCronExpression) {
+            schedulePlayerCronCheck(uuid, new Date());
+        } else {
+            schedulePlayerIntervalCheck(uuid);
+        }
+    }
+
+    private void schedulePlayerIntervalCheck(String uuid) {
+        long delayInTicks = intervalSeconds * 20L;
+
+        BukkitTask task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                Player player = Bukkit.getPlayer(UUID.fromString(uuid));
+                if (player == null || !player.isOnline()) {
+                    cancelPlayerCheckTask(uuid);
+                    return;
+                }
+
+                OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+                if (onlineUser != null) {
+                    checkCompletion(onlineUser);
+                }
+
+                if (verbose) {
+                    plugin.getLogger().info(String.format(
+                            "Goal %s per-player check completed for %s, next check in %s",
+                            name, player.getName(), Utils.ticksToFormattedPlaytime(delayInTicks)));
+                }
+            }
+        }.runTaskTimer(plugin, delayInTicks, delayInTicks);
+
+        playerCheckTasks.put(uuid, task);
+    }
+
+    private void schedulePlayerCronCheck(String uuid, Date afterDate) {
+        Date nextCheck = cronExpression.getNextValidTimeAfter(afterDate);
+        long delayInMillis = nextCheck.getTime() - afterDate.getTime();
+        long delayInTicks = Math.max(20, delayInMillis / 50);
+
+        BukkitTask task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                Player player = Bukkit.getPlayer(UUID.fromString(uuid));
+                if (player == null || !player.isOnline()) {
+                    cancelPlayerCheckTask(uuid);
+                    return;
+                }
+
+                OnlineUser onlineUser = onlineUsersManager.getOnlineUser(player.getName());
+                if (onlineUser != null) {
+                    checkCompletion(onlineUser);
+                }
+
+                if (verbose) {
+                    plugin.getLogger().info(String.format(
+                            "Goal %s per-player check completed for %s", name, player.getName()));
+                }
+
+                schedulePlayerCronCheck(uuid, nextCheck);
+            }
+        }.runTaskLater(plugin, delayInTicks);
+
+        playerCheckTasks.put(uuid, task);
+    }
+
+    /**
+     * Cancels and removes the individual check task for the given player UUID, if any.
+     * Safe to call even if the player has no task running (e.g. per-player-check is disabled).
+     */
+    public void cancelPlayerCheckTask(String uuid) {
+        BukkitTask task = playerCheckTasks.remove(uuid);
+        if (task != null && !task.isCancelled()) {
+            task.cancel();
+        }
+    }
+
+    private void cancelAllPlayerCheckTasks() {
+        for (BukkitTask task : playerCheckTasks.values()) {
+            if (task != null && !task.isCancelled()) {
+                task.cancel();
+            }
+        }
+        playerCheckTasks.clear();
     }
 
 
@@ -702,6 +824,10 @@ public class Goal {
         return this.offlineRewards;
     }
 
+    public boolean isPerPlayerCheck(){
+        return this.perPlayerCheck;
+    }
+
     public boolean isActive() {
         return active;
     }
@@ -723,19 +849,33 @@ public class Goal {
     public Map<String, Object> getNextSchedule() {
         Map<String, Object> scheduleInfo = new HashMap<>();
 
-        Date nextCheck = useCronExpression ? nextIntervalCheckCron : nextIntervalCheck;
-
-        if (active && nextCheck != null) {
+        if (active && perPlayerCheck) {
+            // Each player has their own timer relative to their join time; show a
+            // representative estimate computed from now rather than a single shared time.
             Date now = new Date();
+            Date nextCheck = useCronExpression
+                    ? cronExpression.getNextValidTimeAfter(now)
+                    : new Date(now.getTime() + intervalSeconds * 1000);
             long delayInMillis = nextCheck.getTime() - now.getTime();
             long delayInTicks = Math.max(20, delayInMillis / 50);
 
             scheduleInfo.put("nextCheck", nextCheck);
             scheduleInfo.put("timeRemaining", Utils.ticksToFormattedPlaytime(delayInTicks));
         } else {
-            scheduleInfo.put("nextCheck", "-");
-            scheduleInfo.put("timeRemaining", "-");
+            Date nextCheck = useCronExpression ? nextIntervalCheckCron : nextIntervalCheck;
 
+            if (active && nextCheck != null) {
+                Date now = new Date();
+                long delayInMillis = nextCheck.getTime() - now.getTime();
+                long delayInTicks = Math.max(20, delayInMillis / 50);
+
+                scheduleInfo.put("nextCheck", nextCheck);
+                scheduleInfo.put("timeRemaining", Utils.ticksToFormattedPlaytime(delayInTicks));
+            } else {
+                scheduleInfo.put("nextCheck", "-");
+                scheduleInfo.put("timeRemaining", "-");
+
+            }
         }
         scheduleInfo.put("timeCheckToText", checkTimeToText);
         return scheduleInfo;
@@ -787,6 +927,15 @@ public class Goal {
     public void setOfflineRewardEnabling(boolean activation){
         this.offlineRewards = activation;
         saveToFile();
+    }
+
+    public void setPerPlayerCheck(boolean perPlayerCheck){
+        this.perPlayerCheck = perPlayerCheck;
+        saveToFile();
+
+        if (active) {
+            restartCompletionCheckTask();
+        }
     }
 
     public boolean setCheckTime(String checkTime){
@@ -912,6 +1061,7 @@ public class Goal {
                 ", sound='" + goalSound + '\'' +
                 ", checkMode=" + (useCronExpression ? "cron" : "interval") +
                 ", checkValue=" + (useCronExpression ? completionCheckInterval : intervalSeconds + "s") +
+                ", perPlayerCheck=" + perPlayerCheck +
                 '}';
     }
 }

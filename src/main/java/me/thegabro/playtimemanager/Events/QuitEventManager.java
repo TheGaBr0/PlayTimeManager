@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.Events;
 
 import me.thegabro.playtimemanager.ExternalPluginSupport.AFKManager;
+import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
@@ -14,6 +15,7 @@ public class QuitEventManager implements Listener {
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
+    private final GoalsManager goalsManager = GoalsManager.getInstance();
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event){
@@ -24,6 +26,7 @@ public class QuitEventManager implements Listener {
         }
 
         onlineUsersManager.removeOnlineUser(onlineUser);
+        goalsManager.stopPlayerChecks(onlineUser.getUuid());
 
         try {
             // Finalize AFK time first if player was AFK

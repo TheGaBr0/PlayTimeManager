@@ -54,10 +54,11 @@ public class PlaytimeReload implements CommandExecutor {
                     onlineUsersManager.removeOnlineUser(user);
                 }
             }
-            onlineUsersManager.loadOnlineUsers();
 
-            onlineUsersManager.startGoalCheckSchedule();
-            sender.sendMessage(Utils.parseColors(Utils.withPrefix("Goal check schedule has been restarted")));
+            onlineUsersManager.loadOnlineUsers(() -> {
+                onlineUsersManager.startGoalCheckSchedule();
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix("Goal check schedule has been restarted")));
+            });
 
             dbUsersManager.updateTopPlayersFromDB();
 

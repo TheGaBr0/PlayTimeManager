@@ -7,6 +7,7 @@ import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Statistic;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -14,6 +15,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class OnlineUsersManager {
     private static volatile OnlineUsersManager instance;
@@ -180,8 +182,32 @@ public class OnlineUsersManager {
     }
 
     public void loadOnlineUsers() {
-        Bukkit.getOnlinePlayers().forEach(player ->
-                OnlineUser.createOnlineUserAsync(player, this::addOnlineUser));
+        loadOnlineUsers(null);
+    }
+
+    /**
+     * Asynchronously (re)loads every online player into the online-users map, then
+     * runs onComplete on the main thread once all of them have finished loading.
+     * Needed by callers (e.g. reload) that must wait for the map to be repopulated
+     * before doing anything that reads it, such as starting per-player goal checks.
+     */
+    public void loadOnlineUsers(Runnable onComplete) {
+        Collection<? extends Player> players = Bukkit.getOnlinePlayers();
+
+        if (players.isEmpty()) {
+            if (onComplete != null) onComplete.run();
+            return;
+        }
+
+        AtomicInteger remaining = new AtomicInteger(players.size());
+        for (Player player : players) {
+            OnlineUser.createOnlineUserAsync(player, user -> {
+                addOnlineUser(user);
+                if (onComplete != null && remaining.decrementAndGet() == 0) {
+                    onComplete.run();
+                }
+            });
+        }
     }
 
     public OnlineUser getOnlineUser(String nickname) {

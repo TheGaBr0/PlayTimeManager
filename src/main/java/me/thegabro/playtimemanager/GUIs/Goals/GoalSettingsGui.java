@@ -32,17 +32,17 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
     private static final class Slots {
+        static final int BACK_BUTTON = 0;
         static final int COMPLETION_CHECK = 4;
         static final int GOAL_REWARDS = 19;
         static final int GOAL_REQUIREMENTS = 21;
         static final int GOAL_MESSAGE = 23;
         static final int GOAL_SOUND = 25;
         static final int UNCOMPLETE_GOAL = 36;
-        static final int GOAL_ACTIVATION_STATUS = 39;
-        static final int GOAL_REPEATABLE_STATUS = 40;
-        static final int GOAL_OFFLINE_REWARDS = 41;
-        static final int GOAL_PER_PLAYER_CHECK = 42;
-        static final int BACK_BUTTON = 44;
+        static final int GOAL_REPEATABLE_STATUS = 39;
+        static final int GOAL_OFFLINE_REWARDS = 40;
+        static final int GOAL_PER_PLAYER_CHECK = 41;
+        static final int GOAL_ACTIVATION_STATUS = 44;
     }
 
     public GoalSettingsGui(){}

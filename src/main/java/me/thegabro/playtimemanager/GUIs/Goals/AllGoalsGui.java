@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 public class AllGoalsGui implements InventoryHolder, Listener {
     private final Inventory inv;
@@ -83,21 +84,29 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 ItemStack item = goal.isActive() ?  new ItemStack(Material.EXPERIENCE_BOTTLE) : new ItemStack(Material.RED_DYE);
                 ItemMeta meta = item.getItemMeta();
                 meta.displayName(Utils.parseColors("&e" + goal.getName()).decoration(TextDecoration.ITALIC, false));
+
+                Map<String, Object> scheduleInfo = goal.getNextSchedule();
+                String timeRequired = goal.getRequirements().getTime() != Long.MAX_VALUE
+                        ? Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime())
+                        : "-";
+
                 List<Component> lore = Arrays.asList(
-                        Utils.parseColors("§7Active: ")
-                                .append(Component.text(Boolean.toString(goal.isActive()))
-                                        .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
+                        statusIcon(goal.isActive(), "Active")
+                                .append(Component.text("  "))
+                                .append(statusIcon(goal.isRepeatable(), "Repeatable"))
+                                .append(Component.text("  "))
+                                .append(statusIcon(goal.isPerPlayerCheck(), "Per-Player"))
+                                .append(Component.text("  "))
+                                .append(statusIcon(goal.areOfflineRewardsEnabled(), "Offline"))
                                 .decoration(TextDecoration.ITALIC, false),
-                        Utils.parseColors("§7Repeatable: ")
-                                .append(Component.text(Boolean.toString(goal.isRepeatable()))
-                                        .color(goal.isRepeatable() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
-                                .decoration(TextDecoration.ITALIC, false),
-                        Utils.parseColors("§7Offline rewards: ")
-                                .append(Component.text(Boolean.toString(goal.areOfflineRewardsEnabled()))
-                                        .color(goal.areOfflineRewardsEnabled() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
-                                .decoration(TextDecoration.ITALIC, false),
-                        Utils.parseColors("§e" + goal.getRewardPermissions().size() + "§7 " + (goal.getRewardPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
-                        Utils.parseColors("§e" + goal.getRewardCommands().size() + "§7 " + (goal.getRewardCommands().size() != 1 ? "commands loaded" : "command loaded")),
+                        Utils.parseColors(""),
+                        Utils.parseColors("§7Requires: §e" + timeRequired + " §7playtime"),
+                        Utils.parseColors("§7Checked §e" + scheduleInfo.get("timeCheckToText") +
+                                " §7· next in §e" + scheduleInfo.get("timeRemaining")),
+                        Utils.parseColors("§7Rewards: §e" + goal.getRewardPermissions().size() + " §7perms · §e"
+                                + goal.getRewardCommands().size() + " §7commands"),
+                        Utils.parseColors("§7Requirements: §e" + goal.getRequirements().getPermissions().size() + " §7perms · §e"
+                                + goal.getRequirements().getPlaceholderConditions().size() + " §7placeholder cond."),
                         Utils.parseColors(""),
                         Utils.parseColors("&c&oShift-Right Click to delete")
                 );
@@ -114,6 +123,11 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                     Utils.parseColors("§l§cNo goals have been created!")
             ));
         }
+    }
+
+    private Component statusIcon(boolean value, String label) {
+        return Component.text((value ? "✔ " : "✖ ") + label)
+                .color(value ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555));
     }
 
     private ItemStack createGuiItem(Material material, @Nullable Component name, @Nullable Component...lore) {

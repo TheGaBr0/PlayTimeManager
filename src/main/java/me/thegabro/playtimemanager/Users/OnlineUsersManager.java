@@ -39,7 +39,7 @@ public class OnlineUsersManager {
         this.onlineUsersByUUID = new ConcurrentHashMap<>();
         this.vanishedPlayers = new CopyOnWriteArrayList<>();
         this.vanishSnapshots = new ConcurrentHashMap<>();
-        loadOnlineUsers();
+        loadOnlineUsers(null);
     }
 
     public static OnlineUsersManager getInstance() {
@@ -179,10 +179,6 @@ public class OnlineUsersManager {
         if (isCurrentlyVanished(onlineUser)) {
             removeVanishedPlayer(onlineUser);
         }
-    }
-
-    public void loadOnlineUsers() {
-        loadOnlineUsers(null);
     }
 
     /**

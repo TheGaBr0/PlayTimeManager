@@ -5,7 +5,7 @@ import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormat;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -20,6 +20,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Utils {
     // Constants for tick conversions
@@ -30,10 +32,21 @@ public class Utils {
     private static final long TICKS_PER_WEEK = TICKS_PER_DAY * 7;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
 
-    private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.builder()
-            .character('&')
-            .hexColors()
-            .build();
+    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
+
+    // Maps legacy &-codes to their MiniMessage tag equivalent so both syntaxes can be mixed in one string
+    private static final Map<Character, String> LEGACY_CODE_TAGS = Map.ofEntries(
+            Map.entry('0', "black"), Map.entry('1', "dark_blue"), Map.entry('2', "dark_green"),
+            Map.entry('3', "dark_aqua"), Map.entry('4', "dark_red"), Map.entry('5', "dark_purple"),
+            Map.entry('6', "gold"), Map.entry('7', "gray"), Map.entry('8', "dark_gray"),
+            Map.entry('9', "blue"), Map.entry('a', "green"), Map.entry('b', "aqua"),
+            Map.entry('c', "red"), Map.entry('d', "light_purple"), Map.entry('e', "yellow"),
+            Map.entry('f', "white"), Map.entry('k', "obfuscated"), Map.entry('l', "bold"),
+            Map.entry('m', "strikethrough"), Map.entry('n', "underlined"), Map.entry('o', "italic"),
+            Map.entry('r', "reset")
+    );
+
+    private static final Pattern LEGACY_CODE_PATTERN = Pattern.compile("[&§](#[0-9A-Fa-f]{6}|[0-9A-Fa-fK-Ok-oRr])");
 
     /**
      * Uses a regex to check if an input nickname is valid or not
@@ -46,10 +59,11 @@ public class Utils {
     }
 
     /**
-     * Parses color codes and formatting from a string and converts it to a Component
-     * Supports both legacy color codes (&0-f, &k-o, &r) and hex colors (&#RRGGBB)
+     * Parses color codes and formatting from a string and converts it to a Component.
+     * Supports legacy color codes (&/§ 0-f, k-o, r), legacy hex (&/§#RRGGBB), and MiniMessage
+     * tags (e.g. <red>, <bold>, <gradient:...>), mixed freely in the same string.
      *
-     * @param input The input string containing color codes and text
+     * @param input The input string containing color codes/tags and text
      * @return Component with proper formatting and colors applied
      */
     public static Component parseColors(String input) {
@@ -57,7 +71,25 @@ public class Utils {
             return Component.empty();
         }
 
-        return LEGACY_SERIALIZER.deserialize(input);
+        return MINI_MESSAGE.deserialize(legacyToMiniMessageTags(input));
+    }
+
+    /**
+     * Rewrites legacy &- and §-codes as their equivalent MiniMessage tags, leaving everything
+     * else (including any existing MiniMessage tags) untouched.
+     */
+    private static String legacyToMiniMessageTags(String input) {
+        Matcher matcher = LEGACY_CODE_PATTERN.matcher(input);
+        StringBuilder result = new StringBuilder();
+
+        while (matcher.find()) {
+            String code = matcher.group(1);
+            String tag = code.startsWith("#") ? code : LEGACY_CODE_TAGS.get(Character.toLowerCase(code.charAt(0)));
+            matcher.appendReplacement(result, tag == null ? Matcher.quoteReplacement(matcher.group()) : "<" + tag + ">");
+        }
+        matcher.appendTail(result);
+
+        return result.toString();
     }
 
     /**

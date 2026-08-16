@@ -5,6 +5,9 @@
 # where rr (red), gg (green) and bb (blue) are
 # hexadecimal values between 00 and ff (same as decimal 0-255)
 # Standard minecraft colors and styles are accepted using & format (e.g. "&5&lTest").
+# MiniMessage tags are also supported and can be freely mixed with the above
+# (e.g. "<red>Hello</red> &lworld", "<gradient:blue:green>Test</gradient>").
+# See https://docs.advntr.dev/minimessage/format.html for the full tag reference.
 
 # Placeholders enclosed in %% are FIELD-DEPENDENT. They can only be used within the specific field
 # where they're defined. All available placeholders are shown in this configuration file.

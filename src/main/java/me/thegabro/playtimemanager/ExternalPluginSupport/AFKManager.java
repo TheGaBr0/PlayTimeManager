@@ -9,7 +9,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class AFKManager {
 

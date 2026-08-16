@@ -96,6 +96,13 @@ public class OnlineUser extends DBUser {
     }
 
     /**
+     * Returns, in ticks, how long the player has been online during the current session only.
+     */
+    public long getSessionPlaytime() {
+        return playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE) - fromServerOnJoinPlayTime;
+    }
+
+    /**
      * Persists playtime using a pre-captured statistic snapshot.
      * Prefer this over {@link #updatePlayTimeAsync} when called after quit events,
      * because the player object may no longer be reliable at that point.
@@ -198,6 +205,17 @@ public class OnlineUser extends DBUser {
             totalAFK += playtimeSnapshot - afkStartPlaytime;
         }
         return Math.max(0, totalAFK);
+    }
+
+    /**
+     * Returns, in ticks, how long the player has been continuously AFK in their current
+     * AFK streak.
+     */
+    public long getCurrentAFKDuration() {
+        if (afk && afkStartPlaytime > 0 && !afkTimeFinalized) {
+            return Math.max(0, playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE) - afkStartPlaytime);
+        }
+        return 0;
     }
 
     /**

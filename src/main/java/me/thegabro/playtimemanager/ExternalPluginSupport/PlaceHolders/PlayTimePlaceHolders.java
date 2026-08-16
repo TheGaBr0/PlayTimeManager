@@ -38,6 +38,8 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
         this.handlers = List.of(
                 new PlaytimeHandler(resolver, utils),
+                new OnlineForHandler(resolver, utils),
+                new AfkForHandler(resolver, utils),
                 new PlayerInfoHandler(resolver, utils),
                 new LuckPermsHandler(luckPermsManager, utils),
                 new GoalsHandler(resolver, utils),

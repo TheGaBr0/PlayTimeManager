@@ -5,9 +5,7 @@ import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormat;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.Style;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -32,6 +30,11 @@ public class Utils {
     private static final long TICKS_PER_WEEK = TICKS_PER_DAY * 7;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
 
+    private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.builder()
+            .character('&')
+            .hexColors()
+            .build();
+
     /**
      * Uses a regex to check if an input nickname is valid or not
      *
@@ -54,61 +57,7 @@ public class Utils {
             return Component.empty();
         }
 
-        Component message = Component.empty();
-        Style currentStyle = Style.empty();
-        StringBuilder currentText = new StringBuilder();
-
-        for (int i = 0; i < input.length(); i++) {
-            if (input.charAt(i) == '&' && i + 1 < input.length()) {
-                // If we have accumulated text, append it with current style
-                if (!currentText.isEmpty()) {
-                    message = message.append(Component.text(currentText.toString(), currentStyle));
-                    currentText.setLength(0);
-                }
-
-                // Check for hex color
-                if (i + 7 < input.length() && input.charAt(i + 1) == '#') {
-                    String hexCode = input.substring(i + 2, i + 8);
-                    try {
-                        // Validate hex code
-                        if (hexCode.matches("[0-9A-Fa-f]{6}")) {
-                            currentStyle = currentStyle.color(TextColor.fromHexString("#" + hexCode));
-                            i += 7;  // Skip the hex code
-                            continue;
-                        }
-                    } catch (IllegalArgumentException e) {
-                        // Invalid hex code, treat as normal text
-                    }
-                }
-
-                // Handle legacy formatting
-                char formatCode = Character.toLowerCase(input.charAt(i + 1));
-
-                // Reset
-                if (formatCode == 'r') {
-                    currentStyle = Style.empty();
-                }
-                // Colors
-                else if (getLegacyColor(String.valueOf(formatCode)) != null) {
-                    currentStyle = currentStyle.color(getLegacyColor(String.valueOf(formatCode)));
-                }
-                // Formatting
-                else if (getLegacyFormatting(String.valueOf(formatCode)) != null) {
-                    currentStyle = currentStyle.decoration(getLegacyFormatting(String.valueOf(formatCode)), true);
-                }
-
-                i++; // Skip the format code
-            } else {
-                currentText.append(input.charAt(i));
-            }
-        }
-
-        // Append any remaining text
-        if (currentText.length() > 0) {
-            message = message.append(Component.text(currentText.toString(), currentStyle));
-        }
-
-        return message;
+        return LEGACY_SERIALIZER.deserialize(input);
     }
 
     /**
@@ -123,51 +72,6 @@ public class Utils {
         String trimmedPrefix = prefix == null ? "" : prefix.stripTrailing();
         String safeMessage = message == null ? "" : message;
         return trimmedPrefix.isEmpty() ? safeMessage : trimmedPrefix + " " + safeMessage;
-    }
-
-    /**
-     * Gets the TextColor for a legacy color code (0-9, a-f)
-     *
-     * @param code The single character color code
-     * @return TextColor object for the code, or null if invalid
-     */
-    private static TextColor getLegacyColor(String code) {
-        return switch (code.toLowerCase()) {
-            case "0" -> TextColor.color(0, 0, 0);         // Black
-            case "1" -> TextColor.color(0, 0, 170);       // Dark Blue
-            case "2" -> TextColor.color(0, 170, 0);       // Dark Green
-            case "3" -> TextColor.color(0, 170, 170);     // Dark Aqua
-            case "4" -> TextColor.color(170, 0, 0);       // Dark Red
-            case "5" -> TextColor.color(170, 0, 170);     // Dark Purple
-            case "6" -> TextColor.color(255, 170, 0);     // Gold
-            case "7" -> TextColor.color(170, 170, 170);   // Gray
-            case "8" -> TextColor.color(85, 85, 85);      // Dark Gray
-            case "9" -> TextColor.color(85, 85, 255);     // Blue
-            case "a" -> TextColor.color(85, 255, 85);     // Green
-            case "b" -> TextColor.color(85, 255, 255);    // Aqua
-            case "c" -> TextColor.color(255, 85, 85);     // Red
-            case "d" -> TextColor.color(255, 85, 255);    // Light Purple
-            case "e" -> TextColor.color(255, 255, 85);    // Yellow
-            case "f" -> TextColor.color(255, 255, 255);   // White
-            default -> null;                              // Not a color code
-        };
-    }
-
-    /**
-     * Gets the TextDecoration for a legacy formatting code (k, l, m, n, o)
-     *
-     * @param code The single character formatting code
-     * @return TextDecoration object for the code, or null if invalid
-     */
-    private static TextDecoration getLegacyFormatting(String code) {
-        return switch (code.toLowerCase()) {
-            case "k" -> TextDecoration.OBFUSCATED;    // Obfuscated
-            case "l" -> TextDecoration.BOLD;          // Bold
-            case "m" -> TextDecoration.STRIKETHROUGH; // Strikethrough
-            case "n" -> TextDecoration.UNDERLINED;    // Underline
-            case "o" -> TextDecoration.ITALIC;        // Italic
-            default -> null;                          // Not a formatting code
-        };
     }
 
     /**

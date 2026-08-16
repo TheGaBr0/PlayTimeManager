@@ -164,15 +164,34 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text("§7If they miss that window, they won't receive it.")
         ));
 
+        List<Component> perPlayerCheckLore = new ArrayList<>(List.of(
+                Component.text("§7Click to " + (goal.isPerPlayerCheck() ? "§cdisable" : "§aenable") + " §7per-player checking"),
+                Component.text("")
+        ));
+        if (goal.isPerPlayerCheck()) {
+            perPlayerCheckLore.add(Component.text("§7Currently: each online player has their own"));
+            perPlayerCheckLore.add(Component.text("§7individual check timer, started when they join"));
+            perPlayerCheckLore.add(Component.text("§7and stopped when they quit"));
+            if (goal.isUsingCronExpression()) {
+                perPlayerCheckLore.add(Component.text(""));
+                perPlayerCheckLore.add(Component.text("§7With a cron schedule, checks still land on the"));
+                perPlayerCheckLore.add(Component.text("§7same fixed times for everyone"));
+            }
+            perPlayerCheckLore.add(Component.text(""));
+            perPlayerCheckLore.add(Component.text("§eNote: §7Offline rewards have no effect while"));
+            perPlayerCheckLore.add(Component.text("§7this is enabled, since a player's timer only"));
+            perPlayerCheckLore.add(Component.text("§7exists while they're online."));
+        } else {
+            perPlayerCheckLore.add(Component.text("§7Currently: a single shared timer"));
+            perPlayerCheckLore.add(Component.text("§7checks every online player at once, on the"));
+            perPlayerCheckLore.add(Component.text("§7schedule set in the completion check settings."));
+
+        }
+
         inventory.setItem(Slots.GOAL_PER_PLAYER_CHECK, createGuiItem(
                 goal.isPerPlayerCheck() ? Material.LIME_DYE : Material.GRAY_DYE,
                 Component.text(goal.isPerPlayerCheck() ? "§a§lPer-player check enabled" : "§c§lPer-player check disabled"),
-                Component.text("§7Click to " + (goal.isPerPlayerCheck() ? "§cdisable" : "§aenable") + " §7per-player checking"),
-                Component.text(""),
-                Component.text("§7When enabled, each online player gets their"),
-                Component.text("§7own individual check timer instead of a"),
-                Component.text("§7single check running for all players."),
-                Component.text("§7Timers start on join and stop on quit.")
+                perPlayerCheckLore.toArray(new Component[0])
         ));
 
         inventory.setItem(Slots.GOAL_REQUIREMENTS, createGuiItem(

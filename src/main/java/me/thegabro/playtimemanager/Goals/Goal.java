@@ -72,6 +72,10 @@ public class Goal {
 
         loadFromFile();
         validateConfiguration();
+
+        if (active) {
+            restartCompletionCheckTask();
+        }
     }
 
     public Goal(PlayTimeManager plugin, String name, boolean active) {
@@ -86,6 +90,10 @@ public class Goal {
         loadFromFile();
         validateConfiguration();
         saveToFile();
+
+        if (this.active) {
+            restartCompletionCheckTask();
+        }
     }
 
     public void loadPlayersJoinedDuringTimeWindow(Consumer<List<DBUser>> callback) {

@@ -99,15 +99,15 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                                 .append(Component.text("  "))
                                 .append(statusIcon(goal.areOfflineRewardsEnabled(), "Offline"))
                                 .decoration(TextDecoration.ITALIC, false),
-                        Utils.parseColors(""),
-                        Utils.parseColors("§7Requires: §e" + timeRequired + " §7playtime"),
+                        Utils.parseColors("").decoration(TextDecoration.ITALIC, false),
+                        Utils.parseColors("§7Requires: §e" + timeRequired + " §7playtime").decoration(TextDecoration.ITALIC, false),
                         Utils.parseColors("§7Checked §e" + scheduleInfo.get("timeCheckToText") +
-                                " §7· next in §e" + scheduleInfo.get("timeRemaining")),
+                                " §7· next in §e" + scheduleInfo.get("timeRemaining")).decoration(TextDecoration.ITALIC, false),
                         Utils.parseColors("§7Rewards: §e" + goal.getRewardPermissions().size() + " §7perms · §e"
-                                + goal.getRewardCommands().size() + " §7commands"),
+                                + goal.getRewardCommands().size() + " §7commands").decoration(TextDecoration.ITALIC, false),
                         Utils.parseColors("§7Requirements: §e" + goal.getRequirements().getPermissions().size() + " §7perms · §e"
-                                + goal.getRequirements().getPlaceholderConditions().size() + " §7placeholder cond."),
-                        Utils.parseColors(""),
+                                + goal.getRequirements().getPlaceholderConditions().size() + " §7placeholder cond.").decoration(TextDecoration.ITALIC, false),
+                        Utils.parseColors("").decoration(TextDecoration.ITALIC, false),
                         Utils.parseColors("&c&oShift-Right Click to delete")
                 );
                 meta.lore(lore);

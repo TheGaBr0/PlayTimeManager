@@ -537,9 +537,12 @@ public class Goal {
     }
 
     private void startCronCompletionCheck() {
-        Date oldSchedule;
+        Date now = new Date();
 
-        oldSchedule = Objects.requireNonNullElseGet(nextIntervalCheckCron, Date::new);
+        /
+        Date oldSchedule = (nextIntervalCheckCron == null || nextIntervalCheckCron.after(now))
+                ? now
+                : nextIntervalCheckCron;
 
         nextIntervalCheckCron = cronExpression.getNextValidTimeAfter(oldSchedule);
 

@@ -539,7 +539,7 @@ public class Goal {
     private void startCronCompletionCheck() {
         Date now = new Date();
 
-        /
+
         Date oldSchedule = (nextIntervalCheckCron == null || nextIntervalCheckCron.after(now))
                 ? now
                 : nextIntervalCheckCron;
@@ -965,6 +965,10 @@ public class Goal {
 
             this.completionCheckInterval = checkTime;
             saveToFile();
+
+            if (active) {
+                restartCompletionCheckTask();
+            }
 
             return true;
         } catch(Exception e) {

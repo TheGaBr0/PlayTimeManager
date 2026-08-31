@@ -136,7 +136,7 @@
         <dependency>
             <groupId>org.purpurmc.purpur</groupId>
             <artifactId>purpur-api</artifactId>
-            <version>[26.2.build,)</version>
+            <version>26.1.2.build.2583-stable</version>
             <scope>provided</scope>
         </dependency>
 

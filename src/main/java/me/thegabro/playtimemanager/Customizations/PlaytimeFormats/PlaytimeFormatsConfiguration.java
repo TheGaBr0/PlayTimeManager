@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.Customizations.PlaytimeFormats;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -75,7 +76,7 @@ public class PlaytimeFormatsConfiguration {
             }
         }
 
-        plugin.getLogger().info("Loaded " + playtimeFormats.size() + " playtime format(s)");
+        Utils.consoleLog("Loaded " + playtimeFormats.size() + " playtime format(s)");
     }
 
     private void loadFormatFromFile(File file) {

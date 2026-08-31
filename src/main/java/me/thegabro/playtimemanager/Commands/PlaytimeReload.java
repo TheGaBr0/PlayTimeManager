@@ -45,6 +45,7 @@ public class PlaytimeReload implements CommandExecutor {
             // Reload goals
             goalsManager.clearGoals();
             goalsManager.loadGoals();
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix("Loaded " + goalsManager.getGoals().size() + " goal(s)")));
 
             // Reload online users data
             for (Player p : Bukkit.getOnlinePlayers()) {
@@ -66,6 +67,7 @@ public class PlaytimeReload implements CommandExecutor {
             RewardRegistry rewardRegistry = RewardRegistry.getInstance();
             rewardRegistry.clearRewards();
             rewardRegistry.loadRewards();
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix("Loaded " + rewardRegistry.getRewards().size() + " join streak reward(s)")));
 
             JoinStreaksManager.getInstance().cleanUp();
             JoinStreaksManager freshJSM = JoinStreaksManager.getInstance();

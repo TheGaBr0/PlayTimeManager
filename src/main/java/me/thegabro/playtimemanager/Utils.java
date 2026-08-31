@@ -93,6 +93,15 @@ public class Utils {
     }
 
     /**
+     * Sends a colored, PlayTimeManager-branded message to the console.
+     *
+     * @param message the message to log (legacy color codes/hex/MiniMessage tags supported)
+     */
+    public static void consoleLog(String message) {
+        Bukkit.getServer().getConsoleSender().sendMessage(parseColors("[&6PlayTime&eManager&f]&7 " + message));
+    }
+
+    /**
      * Joins the configured chat prefix and a message with a single separating space,
      * regardless of whether the prefix is empty or already carries its own trailing space.
      *

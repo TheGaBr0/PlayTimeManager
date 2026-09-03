@@ -1,6 +1,5 @@
 package me.thegabro.playtimemanager.GUIs.Goals;
 
-import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
@@ -28,9 +27,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 public class AllGoalsGui implements InventoryHolder, Listener {
-    private final CommandsConfiguration config = CommandsConfiguration.getInstance();
     private final Inventory inv;
     private final ArrayList<Integer> protectedSlots = new ArrayList<>();
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
@@ -85,22 +84,30 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                 ItemStack item = goal.isActive() ?  new ItemStack(Material.EXPERIENCE_BOTTLE) : new ItemStack(Material.RED_DYE);
                 ItemMeta meta = item.getItemMeta();
                 meta.displayName(Utils.parseColors("&e" + goal.getName()).decoration(TextDecoration.ITALIC, false));
+
+                Map<String, Object> scheduleInfo = goal.getNextSchedule();
+                String timeRequired = goal.getRequirements().getTime() != Long.MAX_VALUE
+                        ? Utils.ticksToFormattedPlaytime(goal.getRequirements().getTime())
+                        : "-";
+
                 List<Component> lore = Arrays.asList(
-                        Utils.parseColors("§7Active: ")
-                                .append(Component.text(Boolean.toString(goal.isActive()))
-                                        .color(goal.isActive() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
+                        statusIcon(goal.isActive(), "Active")
+                                .append(Component.text("  "))
+                                .append(statusIcon(goal.isRepeatable(), "Repeatable"))
+                                .append(Component.text("  "))
+                                .append(statusIcon(goal.isPerPlayerCheck(), "Per-Player"))
+                                .append(Component.text("  "))
+                                .append(statusIcon(goal.areOfflineRewardsEnabled(), "Offline"))
                                 .decoration(TextDecoration.ITALIC, false),
-                        Utils.parseColors("§7Repeatable: ")
-                                .append(Component.text(Boolean.toString(goal.isRepeatable()))
-                                        .color(goal.isRepeatable() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
-                                .decoration(TextDecoration.ITALIC, false),
-                        Utils.parseColors("§7Offline rewards: ")
-                                .append(Component.text(Boolean.toString(goal.areOfflineRewardsEnabled()))
-                                        .color(goal.areOfflineRewardsEnabled() ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555)))
-                                .decoration(TextDecoration.ITALIC, false),
-                        Utils.parseColors("§e" + goal.getRewardPermissions().size() + "§7 " + (goal.getRewardPermissions().size() != 1 ? "permissions loaded" : "permission loaded")),
-                        Utils.parseColors("§e" + goal.getRewardCommands().size() + "§7 " + (goal.getRewardCommands().size() != 1 ? "commands loaded" : "command loaded")),
-                        Utils.parseColors(""),
+                        Utils.parseColors("").decoration(TextDecoration.ITALIC, false),
+                        Utils.parseColors("§7Requires: §e" + timeRequired + " §7playtime").decoration(TextDecoration.ITALIC, false),
+                        Utils.parseColors("§7Checked §e" + scheduleInfo.get("timeCheckToText") +
+                                " §7· next in §e" + scheduleInfo.get("timeRemaining")).decoration(TextDecoration.ITALIC, false),
+                        Utils.parseColors("§7Rewards: §e" + goal.getRewardPermissions().size() + " §7perms · §e"
+                                + goal.getRewardCommands().size() + " §7commands").decoration(TextDecoration.ITALIC, false),
+                        Utils.parseColors("§7Requirements: §e" + goal.getRequirements().getPermissions().size() + " §7perms · §e"
+                                + goal.getRequirements().getPlaceholderConditions().size() + " §7placeholder cond.").decoration(TextDecoration.ITALIC, false),
+                        Utils.parseColors("").decoration(TextDecoration.ITALIC, false),
                         Utils.parseColors("&c&oShift-Right Click to delete")
                 );
                 meta.lore(lore);
@@ -116,6 +123,11 @@ public class AllGoalsGui implements InventoryHolder, Listener {
                     Utils.parseColors("§l§cNo goals have been created!")
             ));
         }
+    }
+
+    private Component statusIcon(boolean value, String label) {
+        return Component.text((value ? "✔ " : "✖ ") + label)
+                .color(value ? TextColor.color(0x55FF55) : TextColor.color(0xFF5555));
     }
 
     private ItemStack createGuiItem(Material material, @Nullable Component name, @Nullable Component...lore) {
@@ -174,13 +186,13 @@ public class AllGoalsGui implements InventoryHolder, Listener {
     }
 
     private void handleDeleteGoal(Player player, Goal goal) {
-        player.sendMessage(Utils.parseColors(config.getString("prefix") + " &7Deleting goal &e" + goal.getName() + "&7..."));
+        player.sendMessage(Utils.parseColors(Utils.withPrefix("&7Deleting goal &e" + goal.getName() + "&7...")));
         Bukkit.getScheduler().runTaskAsynchronously(PlayTimeManager.getInstance(), () -> {
             goal.kill(false);
 
             // Switch back to main thread for UI updates
             Bukkit.getScheduler().runTask(PlayTimeManager.getInstance(), () -> {
-                player.sendMessage(Utils.parseColors(config.getString("prefix") + " &aSuccessfully &7deleted goal &e" + goal.getName()));
+                player.sendMessage(Utils.parseColors(Utils.withPrefix("&aSuccessfully &7deleted goal &e" + goal.getName())));
                 initializeItems();
                 player.updateInventory();
             });

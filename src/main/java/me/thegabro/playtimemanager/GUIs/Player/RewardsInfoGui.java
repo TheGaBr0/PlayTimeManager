@@ -542,8 +542,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
                 if (container.has(idKey, PersistentDataType.STRING)) {
                     claimReward(container.get(idKey, PersistentDataType.STRING));
                 } else {
-                    whoClicked.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
-                            config.getString("rewards-gui.messages.not-available")));
+                    whoClicked.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("rewards-gui.messages.not-available"))));
                     playSound(config.getString("rewards-gui.sounds.claim-error"), whoClicked);
                 }
             }
@@ -568,16 +567,14 @@ public class RewardsInfoGui extends BaseCustomGUI {
             int specificJoinCount = Integer.parseInt(parts[1]);
 
             if (!sender.hasPermission("playtime.joinstreak.claim")) {
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
-                        config.getString("rewards-gui.messages.no-permission")));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("rewards-gui.messages.no-permission"))));
                 playSound(config.getString("rewards-gui.sounds.no-permission"), sender);
                 return;
             }
 
             JoinStreakReward reward = rewardRegistry.getReward(rewardId);
             if (reward == null) {
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
-                        config.getString("rewards-gui.messages.reward-not-found")));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("rewards-gui.messages.reward-not-found"))));
                 playSound(config.getString("rewards-gui.sounds.claim-error"), sender);
                 return;
             }
@@ -592,8 +589,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
             } catch (Exception e) {
                 plugin.getLogger().severe("Error processing reward for " + sender.getName() + ": " + e.getMessage());
                 e.printStackTrace();
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
-                        config.getString("rewards-gui.messages.error-processing")));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("rewards-gui.messages.error-processing"))));
                 playSound(config.getString("rewards-gui.sounds.claim-error"), sender);
             }
 
@@ -611,8 +607,7 @@ public class RewardsInfoGui extends BaseCustomGUI {
         }
 
         if (!sender.hasPermission("playtime.joinstreak.claim")) {
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
-                    config.getString("rewards-gui.messages.no-permission")));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("rewards-gui.messages.no-permission"))));
             playSound(config.getString("rewards-gui.sounds.no-permission"), sender);
             return;
         }
@@ -630,12 +625,11 @@ public class RewardsInfoGui extends BaseCustomGUI {
         if (claimedCount > 0) {
             String message = config.getString("rewards-gui.messages.claimed-rewards")
                     .replace("%COUNT%", String.valueOf(claimedCount));
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " + message));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(message)));
             playSound(config.getString("rewards-gui.sounds.claim-success"), sender);
             loadRewards(); applyFilters(); initializeItems();
         } else {
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + " " +
-                    config.getString("rewards-gui.messages.error-processing")));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("rewards-gui.messages.error-processing"))));
             playSound(config.getString("rewards-gui.sounds.claim-error"), sender);
         }
     }

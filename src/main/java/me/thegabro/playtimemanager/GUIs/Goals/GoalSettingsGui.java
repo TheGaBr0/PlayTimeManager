@@ -18,7 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -32,16 +32,17 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private final ChatEventManager chatEventManager = ChatEventManager.getInstance();
     private static final class Slots {
+        static final int BACK_BUTTON = 0;
         static final int COMPLETION_CHECK = 4;
         static final int GOAL_REWARDS = 19;
         static final int GOAL_REQUIREMENTS = 21;
         static final int GOAL_MESSAGE = 23;
         static final int GOAL_SOUND = 25;
         static final int UNCOMPLETE_GOAL = 36;
-        static final int GOAL_ACTIVATION_STATUS = 39;
-        static final int GOAL_REPEATABLE_STATUS = 40;
-        static final int GOAL_OFFLINE_REWARDS = 41;
-        static final int BACK_BUTTON = 44;
+        static final int GOAL_REPEATABLE_STATUS = 39;
+        static final int GOAL_OFFLINE_REWARDS = 40;
+        static final int GOAL_PER_PLAYER_CHECK = 41;
+        static final int GOAL_ACTIVATION_STATUS = 44;
     }
 
     public GoalSettingsGui(){}
@@ -90,17 +91,25 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
             lore.add(Component.text("§cPermissions will not be assigned"));
         }
         Map<String, Object> scheduleInfo = goal.getNextSchedule();
-        inventory.setItem(Slots.COMPLETION_CHECK, createGuiItem(
-                Material.COMPASS,
-                Component.text("§e§lCompletion check settings"),
+        List<Component> completionCheckLore = new ArrayList<>(List.of(
                 Component.text("§7The next completion check will occur in §e"+ scheduleInfo.get("timeRemaining") +
                         "§7 on §e"+scheduleInfo.get("nextCheck")),
                 Component.text(""),
                 Component.text("§7Completion check time is currently set to: §e"+goal.getCompletionCheckInterval()),
-                Component.text("§7which means it will occur §e"+scheduleInfo.get("timeCheckToText")),
-                Component.text(""),
-                Component.text("§7Click to change when the next check occurs")
+                Component.text("§7which means it will occur §e"+scheduleInfo.get("timeCheckToText"))
+        ));
+        if (goal.isPerPlayerCheck()) {
+            completionCheckLore.add(Component.text(""));
+            completionCheckLore.add(Component.text("§7Per-player check is §aenabled§7: each player has"));
+            completionCheckLore.add(Component.text("§7their own timer, times above are estimates."));
+        }
+        completionCheckLore.add(Component.text(""));
+        completionCheckLore.add(Component.text("§7Click to change when the next check occurs"));
 
+        inventory.setItem(Slots.COMPLETION_CHECK, createGuiItem(
+                Material.COMPASS,
+                Component.text("§e§lCompletion check settings"),
+                completionCheckLore.toArray(new Component[0])
         ));
 
         inventory.setItem(Slots.GOAL_REWARDS, createGuiItem(
@@ -153,6 +162,36 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
                 Component.text("§7online during the last completion check"),
                 Component.text("§7interval are eligible for offline rewards."),
                 Component.text("§7If they miss that window, they won't receive it.")
+        ));
+
+        List<Component> perPlayerCheckLore = new ArrayList<>(List.of(
+                Component.text("§7Click to " + (goal.isPerPlayerCheck() ? "§cdisable" : "§aenable") + " §7per-player checking"),
+                Component.text("")
+        ));
+        if (goal.isPerPlayerCheck()) {
+            perPlayerCheckLore.add(Component.text("§7Currently: each online player has their own"));
+            perPlayerCheckLore.add(Component.text("§7individual check timer, started when they join"));
+            perPlayerCheckLore.add(Component.text("§7and stopped when they quit"));
+            if (goal.isUsingCronExpression()) {
+                perPlayerCheckLore.add(Component.text(""));
+                perPlayerCheckLore.add(Component.text("§7With a cron schedule, checks still land on the"));
+                perPlayerCheckLore.add(Component.text("§7same fixed times for everyone"));
+            }
+            perPlayerCheckLore.add(Component.text(""));
+            perPlayerCheckLore.add(Component.text("§eNote: §7Offline rewards have no effect while"));
+            perPlayerCheckLore.add(Component.text("§7this is enabled, since a player's timer only"));
+            perPlayerCheckLore.add(Component.text("§7exists while they're online."));
+        } else {
+            perPlayerCheckLore.add(Component.text("§7Currently: a single shared timer"));
+            perPlayerCheckLore.add(Component.text("§7checks every online player at once, on the"));
+            perPlayerCheckLore.add(Component.text("§7schedule set in the completion check settings."));
+
+        }
+
+        inventory.setItem(Slots.GOAL_PER_PLAYER_CHECK, createGuiItem(
+                goal.isPerPlayerCheck() ? Material.LIME_DYE : Material.GRAY_DYE,
+                Component.text(goal.isPerPlayerCheck() ? "§a§lPer-player check enabled" : "§c§lPer-player check disabled"),
+                perPlayerCheckLore.toArray(new Component[0])
         ));
 
         inventory.setItem(Slots.GOAL_REQUIREMENTS, createGuiItem(
@@ -248,6 +287,11 @@ public class GoalSettingsGui implements InventoryHolder, Listener {
 
             case Slots.GOAL_OFFLINE_REWARDS:
                 goal.setOfflineRewardEnabling(!goal.areOfflineRewardsEnabled());
+                initializeItems();
+                break;
+
+            case Slots.GOAL_PER_PLAYER_CHECK:
+                goal.setPerPlayerCheck(!goal.isPerPlayerCheck());
                 initializeItems();
                 break;
 

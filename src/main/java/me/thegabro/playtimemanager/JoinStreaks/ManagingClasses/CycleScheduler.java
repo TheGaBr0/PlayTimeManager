@@ -9,7 +9,6 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
 import me.thegabro.playtimemanager.Utils;
-import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.quartz.CronExpression;
@@ -152,9 +151,7 @@ public class CycleScheduler {
             @Override
             public void run() {
                 playersJoinedDuringCurrentCycle.clear();
-                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                    JoinStreaksManager.getInstance().resetMissingPlayerStreaksAsync();
-                });
+                JoinStreaksManager.getInstance().resetMissingPlayerStreaksAsync();
                 scheduleNextReset();
             }
         }.runTaskLater(plugin, delayInTicks);

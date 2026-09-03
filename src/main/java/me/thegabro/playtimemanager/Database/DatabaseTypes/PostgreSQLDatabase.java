@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import me.thegabro.playtimemanager.Database.Database;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -101,7 +102,7 @@ public class PostgreSQLDatabase implements Database {
                 if (!rs.next()) {
                     // Database doesn't exist, create it
                     stmt.execute("CREATE DATABASE \"" + database + "\"");
-                    plugin.getLogger().info("PostgreSQL database '" + database + "' created");
+                    Utils.consoleLog("PostgreSQL database '" + database + "' created");
                 }
             }
 
@@ -184,12 +185,12 @@ public class PostgreSQLDatabase implements Database {
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
         if (config.getBoolean("database-debug", false)) {
-            plugin.getLogger().info("PostgreSQL JDBC URL: " + jdbcUrl.toString().replaceAll("password=[^&]*", "password=***"));
+            Utils.consoleLog("PostgreSQL JDBC URL: " + jdbcUrl.toString().replaceAll("password=[^&]*", "password=***"));
         }
 
         try {
             dataSource = new HikariDataSource(hikariConfig);
-            plugin.getLogger().info("Successfully connected to PostgreSQL database");
+            Utils.consoleLog("Successfully connected to PostgreSQL database");
             createTables();
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to initialize PostgreSQL connection", e);
@@ -211,7 +212,7 @@ public class PostgreSQLDatabase implements Database {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
             dataSource = null;
-            plugin.getLogger().info("PostgreSQL connection closed");
+            Utils.consoleLog("PostgreSQL connection closed");
         }
     }
 

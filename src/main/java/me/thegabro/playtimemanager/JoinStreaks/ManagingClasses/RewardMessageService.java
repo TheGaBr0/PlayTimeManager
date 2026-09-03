@@ -1,7 +1,6 @@
 package me.thegabro.playtimemanager.JoinStreaks.ManagingClasses;
 
 import me.thegabro.playtimemanager.Configuration;
-import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
@@ -19,7 +18,6 @@ import java.util.Map;
 public class RewardMessageService {
     private static RewardMessageService instance;
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
-    private final CommandsConfiguration commandsConfiguration = CommandsConfiguration.getInstance();
     private final Configuration config = Configuration.getInstance();
     private RewardMessageService() {}
 
@@ -44,11 +42,9 @@ public class RewardMessageService {
 
     public void sendScheduleActivationMessage(CommandSender sender, boolean activated) {
         if (activated) {
-            sender.sendMessage(Utils.parseColors(commandsConfiguration.getString("prefix") +
-                    " The join streak check schedule has been activated"));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix("The join streak check schedule has been activated")));
         } else {
-            sender.sendMessage(Utils.parseColors(commandsConfiguration.getString("prefix") +
-                    " The join streak check schedule has been deactivated"));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix("The join streak check schedule has been deactivated")));
         }
     }
 
@@ -59,11 +55,10 @@ public class RewardMessageService {
             Date nextReset = (Date) scheduleInfo.get("nextReset");
             String timeRemaining = (String) scheduleInfo.get("timeRemaining");
 
-            sender.sendMessage(Utils.parseColors(commandsConfiguration.getString("prefix") +
-                    " Next join streak interval reset scheduled for: &e" + formatter.format(
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix("Next join streak interval reset scheduled for: &e" + formatter.format(
                     nextReset.toInstant()
                             .atZone(ZoneId.systemDefault())
-                            .toLocalDateTime()) + "&7 (in &e" + timeRemaining + "&7)"));
+                            .toLocalDateTime()) + "&7 (in &e" + timeRemaining + "&7)")));
         }
     }
 

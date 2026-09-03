@@ -12,6 +12,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import me.thegabro.playtimemanager.Database.Database;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
 
 
@@ -79,7 +80,7 @@ public class SQLiteDatabase implements Database {
         if (!dataFolder.exists()) {
             try {
                 dataFolder.createNewFile();
-                plugin.getLogger().info("Created new SQLite database file: " + DBNAME + ".db");
+                Utils.consoleLog("Created new SQLite database file: " + DBNAME + ".db");
             } catch (IOException e) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to create database file: " + DBNAME + ".db", e);
                 Bukkit.getPluginManager().disablePlugin(plugin);
@@ -104,12 +105,12 @@ public class SQLiteDatabase implements Database {
         config.addDataSourceProperty("temp_store", "MEMORY");
 
         if (plugin.getConfig().getBoolean("database-debug", false)) {
-            plugin.getLogger().info("SQLite database path: " + dataFolder.getAbsolutePath());
+            Utils.consoleLog("SQLite database path: " + dataFolder.getAbsolutePath());
         }
 
         try {
             dataSource = new HikariDataSource(config);
-            plugin.getLogger().info("Successfully connected to SQLite database");
+            Utils.consoleLog("Successfully connected to SQLite database");
             createTables();
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to initialize SQLite connection", e);
@@ -131,7 +132,7 @@ public class SQLiteDatabase implements Database {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
             dataSource = null;
-            plugin.getLogger().info("SQLite connection closed");
+            Utils.consoleLog("SQLite connection closed");
         }
     }
 

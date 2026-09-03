@@ -24,6 +24,7 @@ import me.thegabro.playtimemanager.GUIs.JoinStreak.JoinStreakRewardSettingsGui;
 import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
 import me.thegabro.playtimemanager.Updates.UpdateManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
@@ -53,7 +54,7 @@ public class PlayTimeManager extends JavaPlugin {
     private JoinStreaksManager joinStreaksManager;
     private SessionManager sessionManager;
     private String configuredPlugin;
-    private final String CURRENT_CONFIG_VERSION = "4.4";
+    private final String CURRENT_CONFIG_VERSION = "4.5";
     private final boolean CACHE_DEBUG = false;
 
     @Override
@@ -101,7 +102,7 @@ public class PlayTimeManager extends JavaPlugin {
         try {
             DatabaseHandler.resetInstance();
             this.databaseHandler = DatabaseHandler.getInstance();
-            getLogger().info("Database initialized successfully");
+            Utils.consoleLog("Database initialized successfully");
         } catch (Exception e) {
             getLogger().severe("CRITICAL: Failed to initialize database connection!");
             getLogger().severe("Error: " + e.getMessage());
@@ -133,6 +134,7 @@ public class PlayTimeManager extends JavaPlugin {
 
         GoalsManager goalsManager = GoalsManager.getInstance();
         goalsManager.initialize(this);
+        Utils.consoleLog("Loaded " + goalsManager.getGoals().size() + " goal(s)");
 
         onlineUsersManager = OnlineUsersManager.getInstance();
         dbUsersManager = DBUsersManager.getInstance();
@@ -140,6 +142,7 @@ public class PlayTimeManager extends JavaPlugin {
         joinStreaksManager = JoinStreaksManager.getInstance();
         joinStreaksManager.initialize();
         joinStreaksManager.onServerReload();
+        Utils.consoleLog("Loaded " + RewardRegistry.getInstance().getRewards().size() + " join streak reward(s)");
 
         getServer().getPluginManager().registerEvents(new QuitEventManager(), this);
         getServer().getPluginManager().registerEvents(new JoinEventManager(), this);
@@ -195,13 +198,13 @@ public class PlayTimeManager extends JavaPlugin {
             };
         }));
 
-        getLogger().info("has been enabled!");
+        Utils.consoleLog("has been enabled!");
     }
 
     @Override
     public void onDisable() {
 
-        getLogger().info("Saving player data...");
+        Utils.consoleLog("Saving player data...");
 
         Bukkit.getScheduler().cancelTasks(this);
 
@@ -233,7 +236,7 @@ public class PlayTimeManager extends JavaPlugin {
         }
         DatabaseHandler.resetInstance();
 
-        getLogger().info("has been disabled!");
+        Utils.consoleLog("has been disabled!");
     }
 
     public static PlayTimeManager getInstance() {
@@ -273,7 +276,7 @@ public class PlayTimeManager extends JavaPlugin {
             if (luckPerms != null && luckPerms.isEnabled()) {
                 try {
                     LuckPermsManager.getInstance(this);
-                    getLogger().info("LuckPerms detected! Launching related functions");
+                    Utils.consoleLog("LuckPerms detected! Launching related functions");
                     return true;
                 } catch (Exception e) {
                     getLogger().severe("ERROR: Failed to initialize LuckPerms API: " + e.getMessage());

@@ -51,15 +51,13 @@ public class PlayTimeCommandManager implements TabExecutor {
             // Case: /playtime <playername>
             if (args.length == 1) {
                 if (!sender.hasPermission("playtime.others")) {
-                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                            config.getString("no-permission")));
+                    sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("no-permission"))));
                     return false;
                 }
 
                 dbUsersManager.getUserFromNicknameAsyncWithContext(args[0], "playtime command", user -> {
                     if (user == null) {
-                        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                        config.getString("player-never-joined").replace("%PLAYER%", args[0])));
+                        sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("player-never-joined").replace("%PLAYER%", args[0]))));
                         return;
                     }
                     Bukkit.getScheduler().runTask(plugin, () -> new PlaytimeCommand(sender, user));
@@ -73,23 +71,20 @@ public class PlayTimeCommandManager implements TabExecutor {
             String subCommand = args[1];
 
             if (!subCommands.contains(subCommand)) {
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                        config.getString("unknown-subcommand").replace("%SUBCOMMAND%", args[1])));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("unknown-subcommand").replace("%SUBCOMMAND%", args[1]))));
                 return false;
             }
 
             boolean isWildcardReset = subCommand.equals("reset") && targetPlayerName.equals("*");
             if (isWildcardReset && !sender.hasPermission("playtime.others.modify.all")) {
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                        config.getString("no-permission-wildcard-reset")));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("no-permission-wildcard-reset"))));
                 return false;
             }
 
             if (!isWildcardReset) {
                 dbUsersManager.getUserFromNicknameAsyncWithContext(targetPlayerName, "playtime subcommand", user -> {
                     if (user == null) {
-                        sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                                config.getString("player-never-joined").replace("%PLAYER%", targetPlayerName)));
+                        sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("player-never-joined").replace("%PLAYER%", targetPlayerName))));
                         return;
                     }
 
@@ -98,7 +93,7 @@ public class PlayTimeCommandManager implements TabExecutor {
                         switch (subCommand) {
                             case "add":
                                 if (!sender.hasPermission("playtime.others.modify")) {
-                                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
+                                    sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("no-permission"))));
                                     return;
                                 }
                                 new PlayTimeAddTime(sender, args);
@@ -106,7 +101,7 @@ public class PlayTimeCommandManager implements TabExecutor {
 
                             case "remove":
                                 if (!sender.hasPermission("playtime.others.modify")) {
-                                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
+                                    sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("no-permission"))));
                                     return;
                                 }
                                 new PlayTimeRemoveTime(sender, args);
@@ -114,7 +109,7 @@ public class PlayTimeCommandManager implements TabExecutor {
 
                             case "reset":
                                 if (!sender.hasPermission("playtime.others.modify")) {
-                                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
+                                    sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("no-permission"))));
                                     return;
                                 }
                                 new PlayTimeReset(sender, args);
@@ -130,7 +125,7 @@ public class PlayTimeCommandManager implements TabExecutor {
                 return true;
             }
         } else {
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("no-permission"))));
             return false;
         }
 

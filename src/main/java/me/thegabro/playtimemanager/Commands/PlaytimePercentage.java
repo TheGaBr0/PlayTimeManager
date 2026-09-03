@@ -28,7 +28,7 @@ public class PlaytimePercentage implements CommandExecutor {
                 long timeToTicks = Utils.formattedPlaytimeToTicks(args[0]);
 
                 if(timeToTicks == -1L){
-                    sender.sendMessage(Utils.parseColors(config.getString("prefix") + " Time is not specified correctly!"));
+                    sender.sendMessage(Utils.parseColors(Utils.withPrefix("Time is not specified correctly!")));
                     return false;
                 }
 
@@ -46,16 +46,14 @@ public class PlaytimePercentage implements CommandExecutor {
 
                         // Send the message on the main thread
                         org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-                            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                                    " The players with playtime greater than or equal to &6" + args[0] +
+                            sender.sendMessage(Utils.parseColors(Utils.withPrefix("The players with playtime greater than or equal to &6" + args[0] +
                                     " &7are &6" + result[1] + " &7and represent &6" + formattedNumber +
-                                    "% &7of the &6" + result[2] + " &7players stored"));
+                                    "% &7of the &6" + result[2] + " &7players stored")));
                         });
                     } catch (InterruptedException | ExecutionException e) {
                         // Send error message on the main thread
                         org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-                            sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                                    " Error while processing command: " + e.getMessage()));
+                            sender.sendMessage(Utils.parseColors(Utils.withPrefix("Error while processing command: " + e.getMessage())));
                         });
                         plugin.getLogger().severe("Error in PlaytimePercentage command: " + e.getMessage());
                     }
@@ -63,10 +61,10 @@ public class PlaytimePercentage implements CommandExecutor {
 
                 return true;
             } else {
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("too-few-arguments")));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("too-few-arguments"))));
             }
         } else {
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("no-permission")));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("no-permission"))));
         }
         return false;
     }

@@ -32,6 +32,8 @@ public class GoalsManager {
 
     public void processPlayerLogin(OnlineUser user){
 
+        startPlayerChecks(user);
+
         List<String> notReceivedGoals = new ArrayList<>(user.getNotReceivedGoals());
 
         for(String notReceivedGoal : notReceivedGoals){
@@ -51,6 +53,28 @@ public class GoalsManager {
                     getGoal(notReceivedGoal).processCompletedGoal(user, player);
                 }
             });
+        }
+    }
+
+    /**
+     * Starts the per-player check task for this user on every active goal that has
+     * per-player-check enabled. Called as part of processPlayerLogin on player join.
+     */
+    private void startPlayerChecks(OnlineUser user) {
+        for (Goal g : goals) {
+            if (g.isActive() && g.isPerPlayerCheck()) {
+                g.startPlayerCheckTask(user);
+            }
+        }
+    }
+
+    /**
+     * Cancels any per-player check task running for this player UUID across all goals.
+     * Called on player quit.
+     */
+    public void stopPlayerChecks(String uuid) {
+        for (Goal g : goals) {
+            g.cancelPlayerCheckTask(uuid);
         }
     }
 

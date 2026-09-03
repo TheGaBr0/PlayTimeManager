@@ -1,12 +1,11 @@
 package me.thegabro.playtimemanager;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
+import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormat;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.Style;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -21,6 +20,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Utils {
     // Constants for tick conversions
@@ -30,6 +31,22 @@ public class Utils {
     private static final long TICKS_PER_DAY = TICKS_PER_HOUR * 24;
     private static final long TICKS_PER_WEEK = TICKS_PER_DAY * 7;
     private static final long TICKS_PER_YEAR = TICKS_PER_DAY * 365;
+
+    private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
+
+    // Maps legacy &-codes to their MiniMessage tag equivalent so both syntaxes can be mixed in one string
+    private static final Map<Character, String> LEGACY_CODE_TAGS = Map.ofEntries(
+            Map.entry('0', "black"), Map.entry('1', "dark_blue"), Map.entry('2', "dark_green"),
+            Map.entry('3', "dark_aqua"), Map.entry('4', "dark_red"), Map.entry('5', "dark_purple"),
+            Map.entry('6', "gold"), Map.entry('7', "gray"), Map.entry('8', "dark_gray"),
+            Map.entry('9', "blue"), Map.entry('a', "green"), Map.entry('b', "aqua"),
+            Map.entry('c', "red"), Map.entry('d', "light_purple"), Map.entry('e', "yellow"),
+            Map.entry('f', "white"), Map.entry('k', "obfuscated"), Map.entry('l', "bold"),
+            Map.entry('m', "strikethrough"), Map.entry('n', "underlined"), Map.entry('o', "italic"),
+            Map.entry('r', "reset")
+    );
+
+    private static final Pattern LEGACY_CODE_PATTERN = Pattern.compile("[&§](#[0-9A-Fa-f]{6}|[0-9A-Fa-fK-Ok-oRr])");
 
     /**
      * Uses a regex to check if an input nickname is valid or not
@@ -42,10 +59,11 @@ public class Utils {
     }
 
     /**
-     * Parses color codes and formatting from a string and converts it to a Component
-     * Supports both legacy color codes (&0-f, &k-o, &r) and hex colors (&#RRGGBB)
+     * Parses color codes and formatting from a string and converts it to a Component.
+     * Supports legacy color codes (&/§ 0-f, k-o, r), legacy hex (&/§#RRGGBB), and MiniMessage
+     * tags (e.g. <red>, <bold>, <gradient:...>), mixed freely in the same string.
      *
-     * @param input The input string containing color codes and text
+     * @param input The input string containing color codes/tags and text
      * @return Component with proper formatting and colors applied
      */
     public static Component parseColors(String input) {
@@ -53,106 +71,48 @@ public class Utils {
             return Component.empty();
         }
 
-        Component message = Component.empty();
-        Style currentStyle = Style.empty();
-        StringBuilder currentText = new StringBuilder();
-
-        for (int i = 0; i < input.length(); i++) {
-            if (input.charAt(i) == '&' && i + 1 < input.length()) {
-                // If we have accumulated text, append it with current style
-                if (!currentText.isEmpty()) {
-                    message = message.append(Component.text(currentText.toString(), currentStyle));
-                    currentText.setLength(0);
-                }
-
-                // Check for hex color
-                if (i + 7 < input.length() && input.charAt(i + 1) == '#') {
-                    String hexCode = input.substring(i + 2, i + 8);
-                    try {
-                        // Validate hex code
-                        if (hexCode.matches("[0-9A-Fa-f]{6}")) {
-                            currentStyle = currentStyle.color(TextColor.fromHexString("#" + hexCode));
-                            i += 7;  // Skip the hex code
-                            continue;
-                        }
-                    } catch (IllegalArgumentException e) {
-                        // Invalid hex code, treat as normal text
-                    }
-                }
-
-                // Handle legacy formatting
-                char formatCode = Character.toLowerCase(input.charAt(i + 1));
-
-                // Reset
-                if (formatCode == 'r') {
-                    currentStyle = Style.empty();
-                }
-                // Colors
-                else if (getLegacyColor(String.valueOf(formatCode)) != null) {
-                    currentStyle = currentStyle.color(getLegacyColor(String.valueOf(formatCode)));
-                }
-                // Formatting
-                else if (getLegacyFormatting(String.valueOf(formatCode)) != null) {
-                    currentStyle = currentStyle.decoration(getLegacyFormatting(String.valueOf(formatCode)), true);
-                }
-
-                i++; // Skip the format code
-            } else {
-                currentText.append(input.charAt(i));
-            }
-        }
-
-        // Append any remaining text
-        if (currentText.length() > 0) {
-            message = message.append(Component.text(currentText.toString(), currentStyle));
-        }
-
-        return message;
+        return MINI_MESSAGE.deserialize(legacyToMiniMessageTags(input));
     }
 
     /**
-     * Gets the TextColor for a legacy color code (0-9, a-f)
-     *
-     * @param code The single character color code
-     * @return TextColor object for the code, or null if invalid
+     * Rewrites legacy &- and §-codes as their equivalent MiniMessage tags, leaving everything
+     * else (including any existing MiniMessage tags) untouched.
      */
-    private static TextColor getLegacyColor(String code) {
-        return switch (code.toLowerCase()) {
-            case "0" -> TextColor.color(0, 0, 0);         // Black
-            case "1" -> TextColor.color(0, 0, 170);       // Dark Blue
-            case "2" -> TextColor.color(0, 170, 0);       // Dark Green
-            case "3" -> TextColor.color(0, 170, 170);     // Dark Aqua
-            case "4" -> TextColor.color(170, 0, 0);       // Dark Red
-            case "5" -> TextColor.color(170, 0, 170);     // Dark Purple
-            case "6" -> TextColor.color(255, 170, 0);     // Gold
-            case "7" -> TextColor.color(170, 170, 170);   // Gray
-            case "8" -> TextColor.color(85, 85, 85);      // Dark Gray
-            case "9" -> TextColor.color(85, 85, 255);     // Blue
-            case "a" -> TextColor.color(85, 255, 85);     // Green
-            case "b" -> TextColor.color(85, 255, 255);    // Aqua
-            case "c" -> TextColor.color(255, 85, 85);     // Red
-            case "d" -> TextColor.color(255, 85, 255);    // Light Purple
-            case "e" -> TextColor.color(255, 255, 85);    // Yellow
-            case "f" -> TextColor.color(255, 255, 255);   // White
-            default -> null;                              // Not a color code
-        };
+    private static String legacyToMiniMessageTags(String input) {
+        Matcher matcher = LEGACY_CODE_PATTERN.matcher(input);
+        StringBuilder result = new StringBuilder();
+
+        while (matcher.find()) {
+            String code = matcher.group(1);
+            String tag = code.startsWith("#") ? code : LEGACY_CODE_TAGS.get(Character.toLowerCase(code.charAt(0)));
+            matcher.appendReplacement(result, tag == null ? Matcher.quoteReplacement(matcher.group()) : "<" + tag + ">");
+        }
+        matcher.appendTail(result);
+
+        return result.toString();
     }
 
     /**
-     * Gets the TextDecoration for a legacy formatting code (k, l, m, n, o)
+     * Sends a colored, PlayTimeManager-branded message to the console.
      *
-     * @param code The single character formatting code
-     * @return TextDecoration object for the code, or null if invalid
+     * @param message the message to log (legacy color codes/hex/MiniMessage tags supported)
      */
-    private static TextDecoration getLegacyFormatting(String code) {
-        return switch (code.toLowerCase()) {
-            case "k" -> TextDecoration.OBFUSCATED;    // Obfuscated
-            case "l" -> TextDecoration.BOLD;          // Bold
-            case "m" -> TextDecoration.STRIKETHROUGH; // Strikethrough
-            case "n" -> TextDecoration.UNDERLINED;    // Underline
-            case "o" -> TextDecoration.ITALIC;        // Italic
-            default -> null;                          // Not a formatting code
-        };
+    public static void consoleLog(String message) {
+        Bukkit.getServer().getConsoleSender().sendMessage(parseColors("[&6PlayTime&eManager&f]&7 " + message));
+    }
+
+    /**
+     * Joins the configured chat prefix and a message with a single separating space,
+     * regardless of whether the prefix is empty or already carries its own trailing space.
+     *
+     * @param message the message to append after the prefix
+     * @return the joined string, ready to be passed to {@link #parseColors(String)}
+     */
+    public static String withPrefix(String message) {
+        String prefix = CommandsConfiguration.getInstance().getString("prefix");
+        String trimmedPrefix = prefix == null ? "" : prefix.stripTrailing();
+        String safeMessage = message == null ? "" : message;
+        return trimmedPrefix.isEmpty() ? safeMessage : trimmedPrefix + " " + safeMessage;
     }
 
     /**

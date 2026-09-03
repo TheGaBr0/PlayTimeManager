@@ -1,10 +1,11 @@
 package me.thegabro.playtimemanager.Customizations.PlaytimeFormats;
 
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -75,7 +76,7 @@ public class PlaytimeFormatsConfiguration {
             }
         }
 
-        plugin.getLogger().info("Loaded " + playtimeFormats.size() + " playtime format(s)");
+        Utils.consoleLog("Loaded " + playtimeFormats.size() + " playtime format(s)");
     }
 
     private void loadFormatFromFile(File file) {

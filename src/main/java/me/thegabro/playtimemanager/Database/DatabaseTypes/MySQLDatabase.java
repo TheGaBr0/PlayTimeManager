@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import me.thegabro.playtimemanager.Database.Database;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -139,12 +140,12 @@ public class MySQLDatabase implements Database {
         hikariConfig.addDataSourceProperty("useServerPrepStmts", "true");
 
         if (config.getBoolean("database-debug", false)) {
-            plugin.getLogger().info("MySQL JDBC URL: " + jdbcUrl.toString().replaceAll("password=[^&]*", "password=***"));
+            Utils.consoleLog("MySQL JDBC URL: " + jdbcUrl.toString().replaceAll("password=[^&]*", "password=***"));
         }
 
         try {
             dataSource = new HikariDataSource(hikariConfig);
-            plugin.getLogger().info("Successfully connected to MySQL database");
+            Utils.consoleLog("Successfully connected to MySQL database");
             createTables();
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to initialize MySQL connection", e);
@@ -166,7 +167,7 @@ public class MySQLDatabase implements Database {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
             dataSource = null;
-            plugin.getLogger().info("MySQL connection closed");
+            Utils.consoleLog("MySQL connection closed");
         }
     }
 

@@ -5,6 +5,7 @@ import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -176,7 +177,7 @@ public class JoinStreakReward {
     }
 
     private String getDefaultRewardMessage() {
-        return config.getString("prefix")+" Congratulations &e%PLAYER_NAME%&7, you have redeemed your reward successfully!";
+        return Utils.withPrefix("Congratulations &e%PLAYER_NAME%&7, you have redeemed your reward successfully!");
     }
 
     public ItemStack getDefaultIcon(){

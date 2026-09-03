@@ -18,20 +18,19 @@ public class PlayTimeAddTime {
     public void execute(CommandSender sender, String[] args) {
 
         if (args.length < 3) {
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("too-few-arguments")));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("too-few-arguments"))));
             return;
         }
 
         long timeToTicks = Utils.formattedPlaytimeToTicks(args[2]);
         if (timeToTicks == -1L) {
-            sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("invalid-time-format").replace("%TIME%", args[2])));
+            sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("invalid-time-format").replace("%TIME%", args[2]))));
             return;
         }
 
         dbUsersManager.getUserFromNicknameAsyncWithContext(args[0], "add playtime command", user -> {
             if (user == null) {
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                        config.getString("player-never-joined").replace("%PLAYER%", args[0]) ));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("player-never-joined").replace("%PLAYER%", args[0]) )));
                 return;
             }
 
@@ -39,7 +38,7 @@ public class PlayTimeAddTime {
             long newArtificialPlaytime = user.getArtificialPlaytime() + timeToTicks;
 
             if (newArtificialPlaytime < 0) { // Overflow check
-                sender.sendMessage(Utils.parseColors(config.getString("prefix") + config.getString("overflow-error")));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("overflow-error"))));
                 return;
             }
 
@@ -48,12 +47,11 @@ public class PlayTimeAddTime {
                 String formattedNewPlaytime = Utils.ticksToFormattedPlaytime(oldPlaytime + timeToTicks);
 
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage(Utils.parseColors(config.getString("prefix") +
-                            config.getString("playtime.updated")
+                    sender.sendMessage(Utils.parseColors(Utils.withPrefix(config.getString("playtime.updated")
                                     .replace("%PLAYER_NAME%", args[0])
                                     .replace("%OLD_TIME%", formattedOldPlaytime)
                                     .replace("%NEW_TIME%", formattedNewPlaytime)
-                    ));
+                    )));
 
                     dbUsersManager.updateTopPlayersFromDB();
                 });

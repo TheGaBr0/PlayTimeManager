@@ -6,10 +6,11 @@ import me.thegabro.playtimemanager.ExternalPluginSupport.EssentialsX.EssentialsA
 import me.thegabro.playtimemanager.ExternalPluginSupport.Purpur.PurpurAFKHook;
 import me.thegabro.playtimemanager.ExternalPluginSupport.genericAFKPlaceholder.AFKPlaceholderManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
+import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class AFKManager {
 
@@ -50,7 +51,7 @@ public class AFKManager {
                     try {
                         EssentialsAFKHook afkHook = EssentialsAFKHook.getInstance();
                         plugin.getServer().getPluginManager().registerEvents(afkHook, plugin);
-                        plugin.getLogger().info("Essentials detected! Launching related functions");
+                        Utils.consoleLog("Essentials detected! Launching related functions");
                         return true;
                     } catch (Exception e) {
                         plugin.getLogger().severe("ERROR: Failed to initialize Essentials API: " + e.getMessage());
@@ -69,7 +70,7 @@ public class AFKManager {
                     Class.forName("org.purpurmc.purpur.event.PlayerAFKEvent");
                     PurpurAFKHook afkHook = PurpurAFKHook.getInstance();
                     plugin.getServer().getPluginManager().registerEvents(afkHook, plugin);
-                    plugin.getLogger().info("Purpur AFK detection enabled! Launching related functions");
+                    Utils.consoleLog("Purpur AFK detection enabled! Launching related functions");
                     return true;
                 } catch (ClassNotFoundException e) {
                     plugin.getLogger().warning(
@@ -88,7 +89,7 @@ public class AFKManager {
                     try {
                         AntiAFKPlusAFKHook afkHook = AntiAFKPlusAFKHook.getInstance();
                         afkHook.register();
-                        plugin.getLogger().info("AntiAFKPlus detected! Launching related functions");
+                        Utils.consoleLog("AntiAFKPlus detected! Launching related functions");
                         return true;
                     } catch (Exception e) {
                         plugin.getLogger().severe("ERROR: Failed to initialize AntiAFKPlus API: " + e.getMessage());
@@ -108,7 +109,7 @@ public class AFKManager {
                     try {
                         AFKPlusAFKHook afkHook = AFKPlusAFKHook.getInstance();
                         plugin.getServer().getPluginManager().registerEvents(afkHook, plugin);
-                        plugin.getLogger().info("AFKPlus detected! Launching related functions");
+                        Utils.consoleLog("AFKPlus detected! Launching related functions");
                         return true;
                     } catch (Exception e) {
                         plugin.getLogger().severe("ERROR: Failed to initialize AFKPlus API: " + e.getMessage());
@@ -129,7 +130,7 @@ public class AFKManager {
                         Class<?> hookClass = Class.forName("me.thegabro.playtimemanager.ExternalPluginSupport.JetsAntiAFKPro.JetsAntiAFKProHook");
                         Object afkHook = hookClass.getMethod("getInstance").invoke(null);
                         hookClass.getMethod("init").invoke(afkHook);
-                        plugin.getLogger().info("JetsAntiAFKPro detected! Launching related functions");
+                        Utils.consoleLog("JetsAntiAFKPro detected! Launching related functions");
                         return true;
                     } catch (Exception e) {
                         plugin.getLogger().severe("ERROR: Failed to initialize JetsAntiAFKPro API: " + e.getMessage());

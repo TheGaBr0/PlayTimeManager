@@ -46,6 +46,14 @@ public class DatabaseMigration {
 
         String currentDbType = config.getString("database-type", "sqlite");
 
+        // The migration empties the target before copying into it: with the database already in use as
+        // the target that would erase everything (the command refuses it, a hand-edited config would not)
+        if (normalizeDatabaseType(currentDbType).equals(normalizeDatabaseType(migratingTo))) {
+            logger.warning("migrating-to (" + migratingTo + ") is the database already in use: nothing to migrate");
+            config.set("migrating-to", "none");
+            return true;
+        }
+
         logger.info("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
         logger.info("MIGRATION IN PROGRESS");
         logger.info("Source: " + currentDbType.toUpperCase());
@@ -79,6 +87,16 @@ public class DatabaseMigration {
 
         logger.info("▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
         return success;
+    }
+
+    /** mysql and mariadb are the same server for the plugin, and so are postgresql and postgres. */
+    private static String normalizeDatabaseType(String type) {
+        String lower = type == null ? "" : type.trim().toLowerCase();
+        return switch (lower) {
+            case "mariadb" -> "mysql";
+            case "postgres" -> "postgresql";
+            default -> lower;
+        };
     }
 
     private boolean executeMigration(String sourceType, String targetType) {

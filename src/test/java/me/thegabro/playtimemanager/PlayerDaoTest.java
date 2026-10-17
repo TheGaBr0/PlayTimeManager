@@ -206,8 +206,8 @@ class PlayerDaoTest extends PluginTestBase {
     }
 
     /**
-     * Current behaviour, written down: a reset empties the player's data but not the playtime journal,
-     * which is a history of sessions.
+     * The table-level reset leaves the playtime journal alone: it also has sessions open in memory, so
+     * the reset command wipes it through the JournalManager (see JournalResetTest).
      */
     @Test
     void resettingAPlayerKeepsTheirJournal() throws Exception {

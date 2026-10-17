@@ -33,6 +33,7 @@ public class PlayTimeCommandManager implements TabExecutor {
         resetOptions.add("joinstreak");
         resetOptions.add("joinstreak_rewards");
         resetOptions.add("goals");
+        resetOptions.add("journal");
         resetOptions.add("everything");
     }
 

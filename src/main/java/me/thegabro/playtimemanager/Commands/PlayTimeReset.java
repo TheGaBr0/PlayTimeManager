@@ -4,6 +4,7 @@ import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.StreakTracker;
+import me.thegabro.playtimemanager.Journal.JournalManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUser;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
@@ -100,12 +101,15 @@ public class PlayTimeReset {
             case "goals":
                 resetPlayerGoals(sender, playerName);
                 break;
+            case "journal":
+                resetPlayerJournal(sender, playerName);
+                break;
             case "everything":
                 resetPlayerEverything(sender, playerName);
                 dbUsersManager.updateTopPlayersFromDB();
                 break;
             default:
-                sender.sendMessage(Utils.parseColors(Utils.withPrefix("Unknown reset type: &e" + resetType + "&7. Valid types: server_playtime, playtime, last_seen, first_join, joinstreak, joinstreak_rewards, goals, everything")));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix("Unknown reset type: &e" + resetType + "&7. Valid types: server_playtime, playtime, last_seen, first_join, joinstreak, joinstreak_rewards, goals, journal, everything")));
                 break;
         }
     }
@@ -217,11 +221,41 @@ public class PlayTimeReset {
     }
 
     /**
+     * Reset the playtime journal (sessions, AFK and vanish intervals) of a player. A session still open
+     * starts again from now. The other data of the player is not touched. "everything" includes it.
+     */
+    public void resetPlayerJournal(CommandSender sender, String playerName) {
+        getValidatedUser(sender, playerName, user -> {
+            int sessions = DatabaseHandler.getInstance().getJournalDAO().countSessions(user.getUuid());
+            JournalManager.getInstance().reset(user.getUuid()).thenRun(() ->
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                            sender.sendMessage(Utils.parseColors(Utils.withPrefix("Reset journal for player &e" + playerName +
+                                    "&7 (Removed &e" + sessions + "&7 sessions)")))));
+        });
+    }
+
+    /**
+     * Reset the playtime journal of all players.
+     */
+    public void resetAllJournals(CommandSender sender) {
+        sender.sendMessage(Utils.parseColors(Utils.withPrefix("Starting reset of all players' journal, this will take some time...")));
+
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            int sessions = DatabaseHandler.getInstance().getJournalDAO().countSessions(null);
+            JournalManager.getInstance().reset(null).thenRun(() ->
+                    Bukkit.getScheduler().runTask(plugin, () ->
+                            sender.sendMessage(Utils.parseColors(Utils.withPrefix("All players' journal has been reset! Total: &e" +
+                                    sessions + "&7 sessions")))));
+        });
+    }
+
+    /**
      * Reset everything for a player.
      */
     public void resetPlayerEverything(CommandSender sender, String playerName) {
         getValidatedUser(sender, playerName, user -> {
             long playtimeBeforeReset = user.getPlaytime();
+            JournalManager.getInstance().reset(user.getUuid());
             user.resetAsync(() ->
                     sender.sendMessage(Utils.parseColors(Utils.withPrefix("Reset everything for player &e" + playerName +
                                     "&7 (Removed &e" + Utils.ticksToFormattedPlaytime(playtimeBeforeReset) + "&7 of playtime)")))
@@ -427,11 +461,15 @@ public class PlayTimeReset {
             case "goals":
                 resetAllPlayersGeneric(sender, "goals", "goals");
                 break;
+            case "journal":
+                resetAllJournals(sender);
+                break;
             case "everything":
+                JournalManager.getInstance().reset(null);
                 resetAllPlayersGeneric(sender, "everything", "data");
                 break;
             default:
-                sender.sendMessage(Utils.parseColors(Utils.withPrefix("Unknown reset type: &e" + resetType + "&7. Valid types: server_playtime, playtime, last_seen, first_join, joinstreak, joinstreak_rewards, goals, everything")));
+                sender.sendMessage(Utils.parseColors(Utils.withPrefix("Unknown reset type: &e" + resetType + "&7. Valid types: server_playtime, playtime, last_seen, first_join, joinstreak, joinstreak_rewards, goals, journal, everything")));
                 break;
         }
     }
@@ -460,6 +498,7 @@ public class PlayTimeReset {
             case "joinstreak":      return "join streaks";
             case "joinstreak_rewards": return "join streak rewards";
             case "goals":           return "goals data";
+            case "journal":         return "the playtime journal";
             case "everything":      return "all data";
             default:                return "unknown data";
         }

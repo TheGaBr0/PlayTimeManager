@@ -112,6 +112,46 @@ public class JournalManager {
     }
 
     /**
+     * Deletes the journal of one player, or of everybody when {@code uuid} is null. A session that is
+     * open right now is not lost: it starts again from this moment (with its AFK and vanish intervals,
+     * if the player is AFK or vanished), so what happens next is still recorded.
+     *
+     * @return completes once the deletion has been written
+     */
+    public CompletableFuture<Void> reset(String uuid) {
+        CompletableFuture<Void> done = new CompletableFuture<>();
+        synchronized (this) {
+            long now = System.currentTimeMillis();
+            List<JournalDAO.Op> ops = new ArrayList<>(uuid == null ? JournalDAO.deleteAll() : JournalDAO.deleteOfPlayer(uuid));
+
+            for (String openUuid : new ArrayList<>(open.keySet())) {
+                if (uuid != null && !uuid.equals(openUuid)) continue;
+
+                OpenSession old = open.get(openUuid);
+                OpenSession restarted = new OpenSession(now);
+                ops.add(JournalDAO.insertSession(openUuid, now));
+                if (old.afkStart >= 0) {
+                    restarted.afkStart = now;
+                    ops.add(JournalDAO.insertAfk(openUuid, now, now));
+                }
+                if (old.vanishStart >= 0) {
+                    restarted.vanishStart = now;
+                    ops.add(JournalDAO.insertVanish(openUuid, now, now));
+                }
+                open.put(openUuid, restarted);
+            }
+
+            enqueue(ops);
+            try {
+                writer.execute(() -> done.complete(null));
+            } catch (RejectedExecutionException e) {
+                done.complete(null);
+            }
+        }
+        return done;
+    }
+
+    /**
      * Moves the end of every open session (and its open intervals) to now, in a single
      * transaction. Called periodically, so a crash loses at most one update interval.
      */

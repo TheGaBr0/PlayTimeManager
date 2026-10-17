@@ -66,6 +66,38 @@ public class JournalDAO {
                 end, uuid, start);
     }
 
+    /** The deletes that empty the journal of one player (sessions, AFK and vanish intervals). */
+    public static List<Op> deleteOfPlayer(String uuid) {
+        return List.of(
+                new Op("DELETE FROM vanish_journal WHERE uuid = ?", uuid),
+                new Op("DELETE FROM afk_journal WHERE uuid = ?", uuid),
+                new Op("DELETE FROM playtime_journal WHERE uuid = ?", uuid));
+    }
+
+    /** The deletes that empty the whole journal. */
+    public static List<Op> deleteAll() {
+        return List.of(
+                new Op("DELETE FROM vanish_journal"),
+                new Op("DELETE FROM afk_journal"),
+                new Op("DELETE FROM playtime_journal"));
+    }
+
+    /** How many sessions the journal holds for the player, or for everybody when {@code uuid} is null. */
+    public int countSessions(String uuid) {
+        String sql = uuid == null
+                ? "SELECT COUNT(*) FROM playtime_journal"
+                : "SELECT COUNT(*) FROM playtime_journal WHERE uuid = ?";
+        try (Connection conn = dbManager.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (uuid != null) ps.setString(1, uuid);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+            return 0;
+        }
+    }
+
     /**
      * Executes all operations in a single transaction, so that a session and its intervals are
      * always closed with the same timestamp or not at all.

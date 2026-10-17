@@ -33,7 +33,7 @@ class JournalLifecycleTest extends PluginTestBase {
         Thread.sleep(200);
         // Not settle(): that would run a heartbeat itself and hide what the periodic task does
         server.getScheduler().performTicks(PERIODIC_UPDATE_TICKS);
-        Thread.sleep(500);
+        drain();
 
         assertTrue(dao.getSessions(uuid, 0, Long.MAX_VALUE).get(0).end() >= sessionEnd + 180,
                 "the session end moved forward with the periodic update");

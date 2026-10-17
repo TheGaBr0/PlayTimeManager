@@ -85,6 +85,8 @@ abstract class PluginTestBase {
 
     @AfterAll
     void stopServer() throws Exception {
+        // unmock() waits for the running async tasks (and gives up after a minute): let them finish first
+        drain();
         MockBukkit.unmock();
         if (dataFolder != null && dataFolder.exists()) {
             try (Stream<Path> files = Files.walk(dataFolder.toPath())) {
@@ -138,7 +140,23 @@ abstract class PluginTestBase {
         // The console also receives the plugin's own log lines: drop whatever is already queued
         while (((MessageTarget) sender).nextComponentMessage() != null) { /* discard */ }
         server.execute(command, sender, args);
-        return String.join("\n", awaitMessages((MessageTarget) sender));
+        String output = String.join("\n", awaitMessages((MessageTarget) sender));
+        drain(); // what the command started in the background (database writes, leaderboard)
+        return output;
+    }
+
+    /**
+     * Advances the simulated server until no async task of the plugin is running anymore.
+     * MockBukkit runs an async task only when its scheduler ticks, so a task that waits for another
+     * one (e.g. the leaderboard update) would otherwise stay blocked, and results would not be ready.
+     */
+    protected void drain() throws Exception {
+        int idle = 0;
+        for (int i = 0; i < 200 && idle < 3; i++) {
+            server.getScheduler().performOneTick();
+            Thread.sleep(15);
+            idle = server.getScheduler().getActiveWorkers().isEmpty() ? idle + 1 : 0;
+        }
     }
 
     /** Lets the async join/quit handlers and the journal writer thread finish. */
@@ -149,5 +167,6 @@ abstract class PluginTestBase {
             Thread.sleep(30);
         }
         JournalManager.getInstance().flush().get(10, TimeUnit.SECONDS);
+        drain();
     }
 }

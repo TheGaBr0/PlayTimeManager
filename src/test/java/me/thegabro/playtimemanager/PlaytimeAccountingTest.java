@@ -69,7 +69,7 @@ class PlaytimeAccountingTest extends PluginTestBase {
         player.setStatistic(Statistic.PLAY_ONE_MINUTE, 700);
 
         server.getScheduler().performTicks(6001); // every 5 minutes
-        Thread.sleep(500);
+        drain();
 
         assertEquals(700, players().getPlaytime(uuid.toString()), "saved without waiting for the quit");
     }

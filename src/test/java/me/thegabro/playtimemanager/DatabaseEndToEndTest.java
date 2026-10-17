@@ -142,7 +142,7 @@ abstract class DatabaseEndToEndTest extends PluginTestBase {
 
         Thread.sleep(200);
         server.getScheduler().performTicks(6001);
-        Thread.sleep(700);
+        drain();
 
         assertTrue(dao.getSessions(uuid.toString(), 0, Long.MAX_VALUE).get(0).end() >= end + 180);
     }

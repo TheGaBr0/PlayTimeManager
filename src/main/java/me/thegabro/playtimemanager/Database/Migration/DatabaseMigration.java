@@ -207,7 +207,9 @@ public class DatabaseMigration {
         boolean useSSL = config.getBoolean("mysql.use-ssl", false);
         String properties = config.getString("mysql.connection-properties", "");
 
-        String url = String.format("jdbc:mysql://%s:%d/%s?useSSL=%b&allowPublicKeyRetrieval=true",
+        // serverTimezone=UTC like MySQLDatabase: the dates must be written the way the plugin reads them,
+        // otherwise they all shift by the offset of the time zone of the machine the server runs on
+        String url = String.format("jdbc:mysql://%s:%d/%s?useSSL=%b&allowPublicKeyRetrieval=true&serverTimezone=UTC",
                 host, port, database, useSSL);
 
         if (properties != null && !properties.isEmpty()) {
@@ -406,7 +408,9 @@ public class DatabaseMigration {
                                     } else if (value instanceof java.util.Date dateValue) {
                                         ts = new Timestamp(dateValue.getTime());
                                     } else if (value instanceof java.time.LocalDateTime ldtValue) {
-                                        ts = Timestamp.valueOf(ldtValue);
+                                        // MySQL DATETIME: the connection is in UTC (see createMySQLConnection),
+                                        // so the wall clock read is UTC and not the time zone of this machine
+                                        ts = Timestamp.from(ldtValue.atZone(ZoneId.of("UTC")).toInstant());
                                     } else if (value instanceof java.time.Instant instantValue) {
                                         ts = Timestamp.from(instantValue);
                                     } else {

@@ -196,6 +196,10 @@
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
+        <repository>
+            <id>lapismc</id>
+            <url>https://maven.lapismc.net/releases</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -279,13 +283,18 @@
         </dependency>
 
         <!-- AFKPlus -->
-
         <dependency>
             <groupId>net.lapismc</groupId>
             <artifactId>AFKPlus</artifactId>
             <version>3.5.4</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/AFKPlus-3.5.4.jar</systemPath>
+            <scope>provided</scope>
+            <exclusions>
+                <!-- Its own runtime dependencies: AFKPlus is a plugin, the server provides them -->
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- PostgreSQL -->

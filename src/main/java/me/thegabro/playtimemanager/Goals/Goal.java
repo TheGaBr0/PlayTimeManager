@@ -37,7 +37,7 @@ public class Goal {
     private final OnlineUsersManager onlineUsersManager = OnlineUsersManager.getInstance();
     private final DBUsersManager dbUsersManager = DBUsersManager.getInstance();
     private String name;
-    private final File goalFile;
+    private File goalFile; // not final: it follows the goal when it is renamed
     private final GoalRewardRequirement requirements;
     private ArrayList<String> rewardPermissions = new ArrayList<>();
     private ArrayList<String> rewardCommands = new ArrayList<>();
@@ -772,9 +772,17 @@ public class Goal {
     public void rename(String newName) {
         File oldFile = this.goalFile;
 
+        // The manager keeps goals in a HashSet hashed by name: take the goal out before its name
+        // changes, otherwise it can no longer be found (and removed) afterwards
+        boolean registered = goalsManager.getGoals().contains(this);
+        if (registered) {
+            goalsManager.removeGoal(this);
+        }
+
         this.name = newName;
 
         File newFile = new File(plugin.getDataFolder() + File.separator + "Goals" + File.separator + newName + ".yml");
+        this.goalFile = newFile; // later saves and the deletion must use the new file, not the old one
 
         try {
             // Create parent directories if they don't exist
@@ -802,6 +810,10 @@ public class Goal {
 
         } catch (IOException e) {
             plugin.getLogger().severe("Could not rename goal file from " + oldFile.getName() + " to " + newFile.getName() + ": " + e.getMessage());
+        } finally {
+            if (registered) {
+                goalsManager.addGoal(this);
+            }
         }
     }
 

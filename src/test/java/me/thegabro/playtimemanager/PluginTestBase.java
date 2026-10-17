@@ -42,7 +42,7 @@ abstract class PluginTestBase {
     private File dataFolder;
 
     @BeforeAll
-    void startServer() {
+    void startServer() throws Exception {
         server = MockBukkit.mock();
         seedConfig();
         // PlaceholderAPI is emulated: this makes the plugin believe it is installed, the behaviour
@@ -53,6 +53,9 @@ abstract class PluginTestBase {
         // Keep the test output readable: the plugin's warnings and info lines are expected noise here,
         // while real errors (SEVERE) stay visible
         plugin.getLogger().setLevel(Level.SEVERE);
+        // What the plugin queued while starting (e.g. the leaderboard) only runs when the simulated server
+        // ticks: let it finish now, before a test changes the database under it
+        drain();
     }
 
     /**

@@ -1,0 +1,43 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+
+# A newer push to the same branch/PR makes the older run pointless
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The plugin builds against a recent Paper/Purpur API and MockBukkit needs the same JDK
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # Docker is preinstalled on the runner: the MariaDB/PostgreSQL tests start their servers with it.
+      # -Dtests.all=true: a CI run has no previous green run to compare with, so it runs every test.
+      - name: Build and test
+        run: mvn -B -ntp verify -Dtests.all=true
+
+      - name: Keep the test reports when something fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          retention-days: 7

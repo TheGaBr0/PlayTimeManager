@@ -330,11 +330,13 @@ public class DatabaseMigration {
         }
 
         List<Integer> targetColumnTypes = new ArrayList<>();
+        List<Boolean> targetColumnNullable = new ArrayList<>();
         try (Statement stmt = targetConnection.createStatement();
              ResultSet rs2 = stmt.executeQuery("SELECT * FROM " + tableName + " LIMIT 0")) {
             ResultSetMetaData targetMeta = rs2.getMetaData();
             for (int i = 1; i <= columnCount; i++) {
                 targetColumnTypes.add(targetMeta.getColumnType(i));
+                targetColumnNullable.add(targetMeta.isNullable(i) != ResultSetMetaData.columnNoNulls);
             }
         }
 
@@ -371,7 +373,10 @@ public class DatabaseMigration {
                                 columnName.equals("created_at") ||
                                 columnName.equals("updated_at");
 
-                        if (isDateTimeColumn) {
+                        if (isDateTimeColumn && value == null && targetColumnNullable.get(i)) {
+                            // e.g. completed_goals.received_at of a goal not received yet: it must stay empty
+                            pstmt.setNull(i + 1, targetType);
+                        } else if (isDateTimeColumn) {
                             Timestamp ts = null;
 
                             if (value != null) {
@@ -395,7 +400,7 @@ public class DatabaseMigration {
                                     ts = new Timestamp(System.currentTimeMillis());
                                 }
                             } else {
-                                // value is null but attribute is not null → use current time
+                                // value is null but the target column does not accept NULL → use current time
                                 ts = new Timestamp(System.currentTimeMillis());
                             }
 

@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager.Users;
 
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.JoinStreaks.Models.RewardSubInstance;
+import me.thegabro.playtimemanager.Journal.JournalManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
@@ -228,6 +229,7 @@ public class OnlineUser extends DBUser {
             this.afk = true;
             this.afkStartPlaytime = playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE);
             this.afkTimeFinalized = false;
+            JournalManager.getInstance().afkStarted(uuid);
         } else if (!isAFK && this.afk) {
             if (this.afkStartPlaytime > 0 && !afkTimeFinalized) {
                 long afkDuration = playerInstance.getStatistic(Statistic.PLAY_ONE_MINUTE) - this.afkStartPlaytime;
@@ -236,6 +238,7 @@ public class OnlineUser extends DBUser {
             this.afk = false;
             this.afkStartPlaytime = 0;
             this.afkTimeFinalized = false;
+            JournalManager.getInstance().afkEnded(uuid);
         }
     }
 

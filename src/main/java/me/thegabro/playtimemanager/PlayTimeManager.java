@@ -23,6 +23,7 @@ import me.thegabro.playtimemanager.GUIs.JoinStreak.JoinStreakRewardPrizesGui;
 import me.thegabro.playtimemanager.GUIs.JoinStreak.JoinStreakRewardSettingsGui;
 import me.thegabro.playtimemanager.GUIs.Misc.ConfirmationGui;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
+import me.thegabro.playtimemanager.Journal.JournalManager;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.JoinStreaksManager;
 import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
 import me.thegabro.playtimemanager.Updates.UpdateManager;
@@ -54,7 +55,7 @@ public class PlayTimeManager extends JavaPlugin {
     private JoinStreaksManager joinStreaksManager;
     private SessionManager sessionManager;
     private String configuredPlugin;
-    private final String CURRENT_CONFIG_VERSION = "4.5";
+    private final String CURRENT_CONFIG_VERSION = "4.6";
     private final boolean CACHE_DEBUG = false;
 
     @Override
@@ -182,6 +183,7 @@ public class PlayTimeManager extends JavaPlugin {
         });
         Objects.requireNonNull(getCommand("playtimestats")).setExecutor(new PlayTimeStats() {
         });
+        Objects.requireNonNull(getCommand("playtimejournal")).setExecutor(new PlaytimeJournal());
         Objects.requireNonNull(getCommand("playtimemigration")).setExecutor(new PlayTimeMigration() {
         });
         onlineUsersManager.initialize();
@@ -222,6 +224,9 @@ public class PlayTimeManager extends JavaPlugin {
 
             onlineUsersManager.stopSchedules();
         }
+
+        // After the users loop: closes the sessions still open and waits for the writes
+        JournalManager.getInstance().shutdown();
 
 
         if (joinStreaksManager != null) {

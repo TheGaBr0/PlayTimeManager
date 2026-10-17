@@ -3,6 +3,7 @@ package me.thegabro.playtimemanager.Database.DatabaseTypes;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import me.thegabro.playtimemanager.Database.Database;
+import me.thegabro.playtimemanager.Database.JournalTables;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
@@ -225,6 +226,9 @@ public class PostgreSQLDatabase implements Database {
             s.executeUpdate(COMPLETED_GOALS_TABLE);
             s.executeUpdate(RECEIVED_REWARDS_TABLE);
             s.executeUpdate(REWARDS_TO_BE_CLAIMED_TABLE);
+            for (String statement : JournalTables.createStatements(DBTYPES.POSTGRESQL)) {
+                s.executeUpdate(statement);
+            }
 
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to create PostgreSQL tables", e);

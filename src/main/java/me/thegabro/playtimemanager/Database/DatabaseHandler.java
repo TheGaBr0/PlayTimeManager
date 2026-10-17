@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager.Database;
 
 import me.thegabro.playtimemanager.Database.DAOs.GoalsDAO;
 import me.thegabro.playtimemanager.Database.DAOs.JoinstreakDAO;
+import me.thegabro.playtimemanager.Database.DAOs.JournalDAO;
 import me.thegabro.playtimemanager.Database.DAOs.PlayerDAO;
 import me.thegabro.playtimemanager.Database.DAOs.StatisticsDAO;
 import java.sql.Connection;
@@ -22,6 +23,7 @@ public class DatabaseHandler {
     private final GoalsDAO goalsDAO;
     private final JoinstreakDAO streakDAO;
     private final StatisticsDAO statisticsDAO;
+    private final JournalDAO journalDAO;
 
     private DatabaseHandler() {
 
@@ -35,6 +37,7 @@ public class DatabaseHandler {
         this.goalsDAO = new GoalsDAO(this);
         this.streakDAO = new JoinstreakDAO(this);
         this.statisticsDAO = new StatisticsDAO(this);
+        this.journalDAO = new JournalDAO(this);
     }
 
     public Connection getConnection() throws SQLException {
@@ -70,5 +73,9 @@ public class DatabaseHandler {
 
     public StatisticsDAO getStatisticsDAO() {
         return statisticsDAO;
+    }
+
+    public JournalDAO getJournalDAO() {
+        return journalDAO;
     }
 }

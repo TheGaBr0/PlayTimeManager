@@ -56,6 +56,12 @@ commands:
     permission: playtime.stats
     permission-message: You don't have the permission to execute this command!
     aliases: [ptstats]
+  playtimejournal:
+    description: Command to see how long a player was online/AFK and what they did in a period
+    usage: /playtimejournal <player> <from> [HH:mm] <to> [HH:mm]
+    permission: playtime.journal
+    permission-message: You don't have the permission to execute this command!
+    aliases: [ptjournal]
   claimrewards:
     description: Command to claim join streak rewards
     permission: playtime.joinstreak.claim
@@ -76,6 +82,7 @@ permissions:
       playtime.others.stats: true
       playtime.others.stats.staff: true
       playtime.stats: true
+      playtime.journal: true
       playtime.average: true
       playtime.percentage: true
       playtime.top: true
@@ -101,6 +108,8 @@ permissions:
   playtime.others.stats:
     default: false
   playtime.others.stats.staff:
+    default: false
+  playtime.journal:
     default: false
   playtime.average:
     default: false

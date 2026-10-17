@@ -4,6 +4,7 @@ import me.clip.placeholderapi.PlaceholderAPI;
 import me.thegabro.playtimemanager.Configuration;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
+import me.thegabro.playtimemanager.Journal.JournalManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Statistic;
@@ -123,6 +124,7 @@ public class OnlineUsersManager {
         if (vanishedPlayers.contains(onlineUser)) return;
 
         vanishedPlayers.add(onlineUser);
+        JournalManager.getInstance().vanishStarted(onlineUser.getUuid());
 
         long stat = onlineUser.getPlayerInstance().getStatistic(Statistic.PLAY_ONE_MINUTE);
 
@@ -161,11 +163,16 @@ public class OnlineUsersManager {
     public void removeVanishedPlayer(OnlineUser onlineUser) {
         vanishedPlayers.remove(onlineUser);
         vanishSnapshots.remove(onlineUser.getUuid());
+        JournalManager.getInstance().vanishEnded(onlineUser.getUuid());
         if(config.getBoolean("vanish-protection.debug", false))
             plugin.getLogger().info("[Vanish] Removed " + onlineUser.getNickname() + " from vanish");
     }
 
     public void addOnlineUser(OnlineUser onlineUser) {
+        // Before the vanish check below, so a player joining vanished gets its vanish interval
+        // inside an already open session
+        JournalManager.getInstance().openSession(onlineUser.getUuid());
+
         onlineUsersByName.put(onlineUser.getNickname().toLowerCase(), onlineUser);
         onlineUsersByUUID.put(onlineUser.getUuid(), onlineUser);
 
@@ -268,6 +275,8 @@ public class OnlineUsersManager {
      */
     public CompletableFuture<Void> updateAllOnlineUsersPlaytimeAsync() {
         CompletableFuture<Void> future = new CompletableFuture<>();
+
+        JournalManager.getInstance().heartbeat();
 
         // Capture snapshots on whichever thread calls this (normally the main thread or
         // the periodic scheduler task). Snapshots decouple the DB writes from the

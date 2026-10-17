@@ -26,7 +26,7 @@
 # See https://docs.advntr.dev/minimessage/format.html for the full tag reference.
 
 #Leave this untouched
-config-version: 4.5
+config-version: 4.6
 
 #Choose your permissions management plugin
 #Available options: "luckperms"

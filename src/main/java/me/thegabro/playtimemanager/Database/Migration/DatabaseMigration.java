@@ -1,7 +1,9 @@
 package me.thegabro.playtimemanager.Database.Migration;
 
 import me.thegabro.playtimemanager.Configuration;
+import me.thegabro.playtimemanager.Database.Database;
 import me.thegabro.playtimemanager.Database.DatabaseBackupUtility;
+import me.thegabro.playtimemanager.Database.JournalTables;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
 import java.io.File;
@@ -467,6 +469,7 @@ public class DatabaseMigration {
         tables.add("completed_goals");
         tables.add("received_rewards");
         tables.add("rewards_to_be_claimed");
+        tables.addAll(JournalTables.NAMES);
         return tables;
     }
 
@@ -628,6 +631,12 @@ public class DatabaseMigration {
                 );
                 break;
         }
+
+        statements.addAll(JournalTables.createStatements(switch (dbType.toLowerCase()) {
+            case "mysql", "mariadb" -> Database.DBTYPES.MYSQL;
+            case "postgresql" -> Database.DBTYPES.POSTGRESQL;
+            default -> Database.DBTYPES.SQLITE;
+        }));
 
         return statements;
     }

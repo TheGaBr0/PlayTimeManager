@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.Database.DAOs;
 
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
+import me.thegabro.playtimemanager.Database.JournalTables;
 import me.thegabro.playtimemanager.Database.Errors;
 import me.thegabro.playtimemanager.PlayTimeManager;
 
@@ -350,6 +351,25 @@ public class PlayerDAO {
         try {
             conn = dbManager.getConnection();
             conn.setAutoCommit(false);
+
+            String oldUUID = null;
+            try (PreparedStatement psOld = conn.prepareStatement("SELECT uuid FROM play_time WHERE nickname = ?;")) {
+                psOld.setString(1, nickname);
+                try (ResultSet rsOld = psOld.executeQuery()) {
+                    if (rsOld.next()) oldUUID = rsOld.getString("uuid");
+                }
+            }
+
+            if (oldUUID != null) {
+                for (String journalTable : JournalTables.NAMES) {
+                    try (PreparedStatement psJournal = conn.prepareStatement(
+                            "UPDATE " + journalTable + " SET uuid = ? WHERE uuid = ?;")) {
+                        psJournal.setString(1, newUUID);
+                        psJournal.setString(2, oldUUID);
+                        psJournal.executeUpdate();
+                    }
+                }
+            }
 
             // Update play_time table
             ps1 = conn.prepareStatement("UPDATE play_time SET uuid = ? WHERE nickname = ?;");

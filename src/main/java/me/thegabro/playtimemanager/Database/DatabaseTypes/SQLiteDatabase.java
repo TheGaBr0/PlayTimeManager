@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import me.thegabro.playtimemanager.Database.Database;
+import me.thegabro.playtimemanager.Database.JournalTables;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 import org.bukkit.Bukkit;
@@ -67,7 +68,6 @@ public class SQLiteDatabase implements Database {
             "expired INTEGER DEFAULT 0," +
             "FOREIGN KEY (user_uuid) REFERENCES play_time(uuid)" +
             ");";
-
 
     @Override
     public void initialize() {
@@ -145,6 +145,9 @@ public class SQLiteDatabase implements Database {
             s.executeUpdate(COMPLETED_GOALS_TABLE);
             s.executeUpdate(RECEIVED_REWARDS_TABLE);
             s.executeUpdate(REWARDS_TO_BE_CLAIMED_TABLE);
+            for (String statement : JournalTables.createStatements(DBTYPES.SQLITE)) {
+                s.executeUpdate(statement);
+            }
 
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Failed to create SQLite tables", e);

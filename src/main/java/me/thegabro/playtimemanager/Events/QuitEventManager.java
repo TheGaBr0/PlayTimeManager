@@ -2,6 +2,7 @@ package me.thegabro.playtimemanager.Events;
 
 import me.thegabro.playtimemanager.ExternalPluginSupport.AFKManager;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
+import me.thegabro.playtimemanager.Journal.JournalManager;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Users.OnlineUser;
@@ -19,6 +20,8 @@ public class QuitEventManager implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event){
+        JournalManager.getInstance().closeSession(event.getPlayer().getUniqueId().toString());
+
         OnlineUser onlineUser = onlineUsersManager.getOnlineUser(event.getPlayer().getName());
         if (onlineUser == null) {
             plugin.getLogger().severe("OnlineUser is null for player: " + event.getPlayer().getName());

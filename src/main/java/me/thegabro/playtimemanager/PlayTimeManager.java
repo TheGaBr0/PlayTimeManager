@@ -62,7 +62,8 @@ public class PlayTimeManager extends JavaPlugin {
     public void onEnable() {
 
         int BSTATS_PLUGIN_ID = 24739;
-        Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
+        // bStats refuses to run unrelocated, which is the case when the tests load the plugin unshaded
+        Metrics metrics = Boolean.getBoolean("ptm.disableMetrics") ? null : new Metrics(this, BSTATS_PLUGIN_ID);
 
         if (!getDataFolder().exists()) {
             getDataFolder().mkdirs();
@@ -191,14 +192,16 @@ public class PlayTimeManager extends JavaPlugin {
 
         sessionManager = new SessionManager();
 
-        metrics.addCustomChart(new SimplePie("database_type_pie_chart", () -> {
-            String dbType = config.getString("database-type", "sqlite").toLowerCase();
+        if (metrics != null) {
+            metrics.addCustomChart(new SimplePie("database_type_pie_chart", () -> {
+                String dbType = config.getString("database-type", "sqlite").toLowerCase();
 
-            return switch (dbType) {
-                case "mysql", "mariadb", "postgresql", "sqlite" -> dbType;
-                default -> "sqlite";
-            };
-        }));
+                return switch (dbType) {
+                    case "mysql", "mariadb", "postgresql", "sqlite" -> dbType;
+                    default -> "sqlite";
+                };
+            }));
+        }
 
         Utils.consoleLog("has been enabled!");
     }

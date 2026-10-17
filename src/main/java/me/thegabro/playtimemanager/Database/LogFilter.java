@@ -12,8 +12,10 @@ public class LogFilter extends AbstractFilter
 {
     public static void registerFilter()
     {
-        Logger logger = (Logger) LogManager.getRootLogger();
-        logger.addFilter(new LogFilter());
+        // Only the log4j-core backend supports filters (e.g. not when the plugin runs under test)
+        if (LogManager.getRootLogger() instanceof Logger logger) {
+            logger.addFilter(new LogFilter());
+        }
     }
 
     @Override

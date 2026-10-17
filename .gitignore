@@ -14,3 +14,5 @@
 
 target/
 .idea/
+# State of the last green test run (see AffectedTests)
+.affected-tests/

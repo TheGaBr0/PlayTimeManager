@@ -96,7 +96,7 @@ public class PlayerDAO {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return null;
+        return 0L; // Default return value if the player is not found or an error occurs (like getPlaytime)
     }
 
     public Long getAFKPlaytime(String uuid) {
@@ -129,7 +129,7 @@ public class PlayerDAO {
                 plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionClose(), ex);
             }
         }
-        return null;
+        return 0L; // Default return value if the player is not found or an error occurs (like getPlaytime)
     }
 
     public String getUUIDFromNickname(String nickname) {

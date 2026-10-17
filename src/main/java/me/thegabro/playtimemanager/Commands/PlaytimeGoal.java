@@ -102,10 +102,11 @@ public class PlaytimeGoal implements TabExecutor {
         // Run the creation process async
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             // Create new goal with inactive status (false)
-            new Goal(plugin, goalName, false);
+            Goal goal = new Goal(plugin, goalName, false);
 
-            // Switch back to main thread for UI update
+            // Switch back to main thread: register the goal (like the GUI does) and update the UI
             Bukkit.getScheduler().runTask(plugin, () -> {
+                goalsManager.addGoal(goal);
                 sender.sendMessage(Utils.parseColors(Utils.withPrefix("Goal &e" + goalName + " has been created &asuccessfully &7(inactive by default)." +
                         " &7To edit this goal, use the GUI or manually modify the &e" + goalName + ".yml &7file.")));
             });

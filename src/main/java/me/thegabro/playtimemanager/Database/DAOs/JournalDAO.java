@@ -23,6 +23,9 @@ public class JournalDAO {
     private static final DateTimeFormatter SQLITE_ISO =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    /** 9999-12-31 23:59:59.999 UTC, the last instant every supported database can store as a date. */
+    private static final long MAX_DATABASE_MILLIS = 253_402_300_799_999L;
+
     private final DatabaseHandler dbManager;
     private final PlayTimeManager plugin = PlayTimeManager.getInstance();
 
@@ -191,7 +194,9 @@ public class JournalDAO {
 
     /** Same representation the goal/join streak DAOs use when writing their timestamps (UTC). */
     private Object toDatabase(long epochMillis, boolean sqlite) {
-        Instant instant = Instant.ofEpochMilli(epochMillis);
+        // MySQL and PostgreSQL reject dates beyond the year 9999: an open-ended range (Long.MAX_VALUE)
+        // would make the whole query fail
+        Instant instant = Instant.ofEpochMilli(Math.max(0, Math.min(epochMillis, MAX_DATABASE_MILLIS)));
         if (sqlite) {
             return instant.atZone(ZoneId.of("UTC")).toLocalDateTime().format(SQLITE_ISO);
         }

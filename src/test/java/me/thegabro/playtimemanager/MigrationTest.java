@@ -41,8 +41,13 @@ class MigrationTest extends PluginTestBase {
 
     private Map<String, List<List<String>>> original;
 
+    private java.util.TimeZone originalTimeZone;
+
     @BeforeAll
     void prepare() throws Exception {
+        // A machine that is not on UTC: a date written or read in the wrong zone would shift (invisible on a UTC runner)
+        originalTimeZone = java.util.TimeZone.getDefault();
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Tokyo"));
         var config = plugin.getConfiguration();
         TestDatabases.mariadb();
         TestDatabases.postgres();
@@ -68,6 +73,7 @@ class MigrationTest extends PluginTestBase {
 
     @Override
     protected void afterServerStopped() {
+        java.util.TimeZone.setDefault(originalTimeZone);
         TestDatabases.stopAll();
     }
 
@@ -100,7 +106,8 @@ class MigrationTest extends PluginTestBase {
             case "mysql" -> {
                 var db = TestDatabases.mariadb();
                 yield DriverManager.getConnection("jdbc:mysql://" + db.getHost() + ":" + db.getMappedPort(3306) + "/"
-                        + db.getDatabaseName() + "?useSSL=false&allowPublicKeyRetrieval=true", db.getUsername(), db.getPassword());
+                        + db.getDatabaseName() + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+                        db.getUsername(), db.getPassword()); // like the plugin reads it
             }
             case "postgresql" -> {
                 var db = TestDatabases.postgres();
@@ -141,7 +148,8 @@ class MigrationTest extends PluginTestBase {
             return ts.toInstant().atZone(ZoneId.of("UTC")).format(UTC_TEXT);
         }
         if (value instanceof java.time.LocalDateTime ldt) {
-            return Timestamp.valueOf(ldt).toInstant().atZone(ZoneId.of("UTC")).format(UTC_TEXT);
+            // MySQL DATETIME, read with serverTimezone=UTC: the wall clock stored is already UTC
+            return ldt.atZone(ZoneId.of("UTC")).format(UTC_TEXT);
         }
         if (value instanceof Number n) return String.valueOf(n.longValue());
         return value.toString();

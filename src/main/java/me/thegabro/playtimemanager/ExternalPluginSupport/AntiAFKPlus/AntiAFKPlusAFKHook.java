@@ -33,8 +33,6 @@ public class AntiAFKPlusAFKHook {
 
         afkStateRegistration = api.registerAFKStateListener(event -> {
 
-            PlayTimeManager.getInstance().getLogger().info("AntiAFKPlus Event");
-
             Player player = event.getPlayer();
 
             if (player == null || !player.isOnline()) {

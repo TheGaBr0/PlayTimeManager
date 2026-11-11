@@ -170,6 +170,17 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+                <excludes>
+                    <exclude>web/**</exclude>
+                </excludes>
+            </resource>
+            <!-- The dashboard files are copied untouched: filtering would corrupt the icon and the ${...} in the JS -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>web/**</include>
+                </includes>
             </resource>
         </resources>
     </build>

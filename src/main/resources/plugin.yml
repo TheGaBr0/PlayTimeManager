@@ -66,6 +66,11 @@ commands:
     description: Command to claim join streak rewards
     permission: playtime.joinstreak.claim
     permission-message: You don't have the permission to execute this command!
+  playtimeweb:
+    description: Command to approve and manage web dashboard logins
+    permission: playtime.web
+    permission-message: You don't have the permission to execute this command!
+    aliases: [ptweb]
   playtimemigration:
     description:  Command to migrate the database
     aliases: [ptmigration]
@@ -83,6 +88,7 @@ permissions:
       playtime.others.stats.staff: true
       playtime.stats: true
       playtime.journal: true
+      playtime.web: true
       playtime.average: true
       playtime.percentage: true
       playtime.top: true
@@ -110,6 +116,8 @@ permissions:
   playtime.others.stats.staff:
     default: false
   playtime.journal:
+    default: false
+  playtime.web:
     default: false
   playtime.average:
     default: false

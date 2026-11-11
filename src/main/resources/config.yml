@@ -226,6 +226,33 @@ join-unclaimed-previous-message: "[&6PlayTime&eManager&f]&7 &e%PLAYER_NAME%&7, y
 join-reward-message-delay: 1
 
 #=================================================================
+#                          WEB DASHBOARD
+#=================================================================
+
+# A minimal read-only web page showing the data of every player
+# (playtime, AFK, streaks, goals, rewards and the session journal).
+# Each person logs in with their own username and password. Accounts are created
+# from the console or in game with "/playtimeweb adduser <name> [password]"
+# (a random password is generated when omitted) and stored hashed in web-users.txt.
+# After 5 wrong passwords an account is locked for 5 minutes.
+# Requires the permission "playtime.web". Changes need a server restart.
+web:
+  enabled: false
+  # Keep 127.0.0.1 to allow only local access. To reach it remotely, prefer an
+  # HTTPS reverse proxy (nginx, Caddy) in front of it and list its host in allowed-hosts.
+  bind-address: "127.0.0.1"
+  port: 8765
+  # How long an approved login stays valid
+  session-hours: 12
+  # Only enable when behind a reverse proxy you control (reads X-Forwarded-For)
+  trust-proxy-headers: false
+  # Set to true when the dashboard is served over HTTPS
+  secure-cookie: false
+  # Host names accepted in the Host header (needed when behind a proxy)
+  # Example: ["stats.example.com"]
+  allowed-hosts: []
+
+#=================================================================
 #                           PLACEHOLDERS
 #=================================================================
 

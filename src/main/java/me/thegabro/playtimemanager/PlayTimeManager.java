@@ -6,6 +6,8 @@ import me.thegabro.playtimemanager.Customizations.CommandsConfiguration;
 import me.thegabro.playtimemanager.Customizations.GUIsConfiguration;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
+import me.thegabro.playtimemanager.Web.WebServer;
+import me.thegabro.playtimemanager.Commands.PlaytimeWeb;
 import me.thegabro.playtimemanager.Database.LogFilter;
 import me.thegabro.playtimemanager.Database.Migration.DatabaseMigration;
 import me.thegabro.playtimemanager.Events.ChatEventManager;
@@ -48,6 +50,7 @@ public class PlayTimeManager extends JavaPlugin {
     private static PlayTimeManager instance;
     private Configuration config;
     private DatabaseHandler databaseHandler;
+    private WebServer webServer;
     private boolean permissionsManagerConfigured;
     private boolean placeholdersapiConfigured;
     private OnlineUsersManager onlineUsersManager;
@@ -185,6 +188,8 @@ public class PlayTimeManager extends JavaPlugin {
         Objects.requireNonNull(getCommand("playtimestats")).setExecutor(new PlayTimeStats() {
         });
         Objects.requireNonNull(getCommand("playtimejournal")).setExecutor(new PlaytimeJournal());
+        Objects.requireNonNull(getCommand("playtimeweb")).setExecutor(new PlaytimeWeb());
+        Objects.requireNonNull(getCommand("playtimeweb")).setTabCompleter(new PlaytimeWeb());
         Objects.requireNonNull(getCommand("playtimemigration")).setExecutor(new PlayTimeMigration() {
         });
         onlineUsersManager.initialize();
@@ -203,6 +208,16 @@ public class PlayTimeManager extends JavaPlugin {
             }));
         }
 
+        if (config.getBoolean("web.enabled", false)) {
+            try {
+                webServer = new WebServer(this);
+                webServer.start();
+            } catch (Exception e) {
+                webServer = null;
+                getLogger().log(java.util.logging.Level.SEVERE, "Could not start the web dashboard", e);
+            }
+        }
+
         Utils.consoleLog("has been enabled!");
     }
 
@@ -212,6 +227,11 @@ public class PlayTimeManager extends JavaPlugin {
         Utils.consoleLog("Saving player data...");
 
         Bukkit.getScheduler().cancelTasks(this);
+
+        if (webServer != null) {
+            webServer.stop();
+            webServer = null;
+        }
 
         if (onlineUsersManager != null) {
             // Persist each online user
@@ -249,6 +269,10 @@ public class PlayTimeManager extends JavaPlugin {
 
     public static PlayTimeManager getInstance() {
         return instance;
+    }
+
+    public WebServer getWebServer() {
+        return webServer;
     }
 
     public Configuration getConfiguration() {

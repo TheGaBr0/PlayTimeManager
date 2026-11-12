@@ -6,6 +6,7 @@ import me.thegabro.playtimemanager.PlayTimeManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -68,6 +69,13 @@ public class JournalManager {
 
         open.put(uuid, new OpenSession(now));
         enqueue(List.of(JournalDAO.insertSession(uuid, now)));
+    }
+
+    /** Snapshot of the sessions open right now: player uuid to login instant. */
+    public synchronized Map<String, Long> openSessions() {
+        Map<String, Long> out = new LinkedHashMap<>();
+        for (Map.Entry<String, OpenSession> e : open.entrySet()) out.put(e.getKey(), e.getValue().login);
+        return out;
     }
 
     /** Closes the session and any interval still open in it, all with the same logout instant. */

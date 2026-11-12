@@ -297,18 +297,25 @@ async function renderPlayers() {
   const onlineCard = h('div', { class: 'card' });
   main.append(onlineCard, h('div', { class: 'toolbar' }, search, h('div', { class: 'grow' }), size), holder);
   async function loadOnline() {
-    const d = await api('/api/players/online');
+    const tz = Math.round(-new Date().getTimezoneOffset());
+    const d = await api('/api/players/online?tz=' + tz);
     clear(onlineCard);
-    onlineCard.append(h('h2', {}, 'Online now', h('span', { class: 'count' }, String(d.rows.length))),
-      d.rows.length
-        ? h('div', { class: 'scroll' }, h('table', {}, h('thead', {}, h('tr', {}, h('th', {}, 'Player'),
-            h('th', { class: 'n' }, 'Playtime'), h('th', { class: 'n' }, 'Streak'), h('th', {}, 'Online since'))),
-            h('tbody', {}, d.rows.map(p => h('tr', { class: 'row', onclick: () => openPlayer(p.uuid) },
-              h('td', {}, h('div', { class: 'who' }, avatar(p.nickname), p.nickname)),
-              h('td', { class: 'n' }, fmtTicks(p.playtime)),
-              h('td', { class: 'n' }, h('span', { class: 'pill' }, p.relativeStreak)),
-              h('td', { class: 'muted' }, fmtDate(p.since)))))))
-        : h('div', { class: 'empty' }, 'Nobody is online right now.'));
+    const rows = (list, lastCol, lastFn) => h('div', { class: 'scroll' }, h('table', {}, h('thead', {}, h('tr', {}, h('th', {}, 'Player'),
+      h('th', { class: 'n' }, 'Playtime'), h('th', { class: 'n' }, 'Streak'), h('th', {}, lastCol))),
+      h('tbody', {}, list.map(p => h('tr', { class: 'row', onclick: () => openPlayer(p.uuid) },
+        h('td', {}, h('div', { class: 'who' }, avatar(p.nickname), p.nickname)),
+        h('td', { class: 'n' }, fmtTicks(p.playtime)),
+        h('td', { class: 'n' }, h('span', { class: 'pill' }, p.relativeStreak)),
+        h('td', { class: 'muted' }, lastFn(p)))))));
+    const divider = (label, n) => h('h2', { style: 'margin-top:18px;padding-top:12px;border-top:1px solid var(--line)' },
+      label, h('span', { class: 'count' }, String(n)));
+    onlineCard.append(h('h2', {}, 'Online today', h('span', { class: 'count' }, String(d.now.length + d.today.length))),
+      divider('Online right now', d.now.length),
+      d.now.length ? rows(d.now, 'Online since', p => fmtDate(p.since))
+        : h('div', { class: 'empty' }, 'Nobody is online right now.'),
+      divider('Earlier today', d.today.length),
+      d.today.length ? rows(d.today, 'Last online', p => fmtDate(p.lastOnline))
+        : h('div', { class: 'empty' }, 'Nobody else has played today.'));
   }
   loadOnline();
 

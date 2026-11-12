@@ -1,6 +1,7 @@
 package me.thegabro.playtimemanager.Web;
 
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
+import me.thegabro.playtimemanager.Journal.JournalManager;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -209,22 +210,53 @@ public class WebDAO {
         return out;
     }
 
-    /** Players with an open journal session (logout not after login), longest-connected first. */
-    public List<Map<String, Object>> online() throws SQLException {
-        List<Map<String, Object>> rows = new ArrayList<>();
+    /**
+     * Who is connected right now ("now", longest-connected first) and who played earlier today in the
+     * viewer's timezone ("today", most recent first, without those still connected). Open sessions come
+     * from the journal's memory: the heartbeat keeps moving an open session's logout forward, so the
+     * database alone cannot tell an open session from a closed one.
+     */
+    public Map<String, Object> online(int tzMinutes) throws SQLException {
+        final long dayMs = 86_400_000L, off = tzMinutes * 60_000L;
+        long startOfToday = Math.floorDiv(System.currentTimeMillis() + off, dayMs) * dayMs - off;
+        Map<String, Long> open = JournalManager.getInstance().openSessions();
+        List<Map<String, Object>> now = new ArrayList<>(), today = new ArrayList<>();
         try (Connection c = db.getConnection();
              PreparedStatement ps = c.prepareStatement("SELECT p.uuid, p.nickname, p.playtime, p.artificial_playtime, " +
-                     "p.afk_playtime, p.last_seen, p.first_join, p.relative_join_streak, p.absolute_join_streak, MIN(j.login) " +
-                     "FROM play_time p JOIN playtime_journal j ON j.uuid = p.uuid WHERE j.logout <= j.login " +
-                     "GROUP BY p.uuid ORDER BY MIN(j.login) ASC, p.nickname ASC");
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                Map<String, Object> m = playerRow(rs);
-                m.put("since", rs.getLong(10));
-                rows.add(m);
+                     "p.afk_playtime, p.last_seen, p.first_join, p.relative_join_streak, p.absolute_join_streak, " +
+                     "MAX(j.logout) FROM play_time p JOIN playtime_journal j ON j.uuid = p.uuid " +
+                     "WHERE j.logout >= ? GROUP BY p.uuid")) {
+            ps.setLong(1, startOfToday);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> m = playerRow(rs);
+                    Long since = open.get(rs.getString(1));
+                    if (since != null) { m.put("since", since); now.add(m); }
+                    else { m.put("lastOnline", rs.getLong(10)); today.add(m); }
+                }
             }
         }
-        return rows;
+        if (!open.isEmpty()) { // open sessions whose heartbeat has not been written yet
+            Set<String> have = new HashSet<>();
+            for (Map<String, Object> m : now) have.add((String) m.get("uuid"));
+            for (Map.Entry<String, Long> e : open.entrySet()) {
+                if (have.contains(e.getKey())) continue;
+                try (Connection c = db.getConnection();
+                     PreparedStatement ps = c.prepareStatement("SELECT " + PLAYER_COLS + " FROM play_time WHERE uuid = ?")) {
+                    ps.setString(1, e.getKey());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) { Map<String, Object> m = playerRow(rs); m.put("since", e.getValue()); now.add(m); }
+                    }
+                }
+            }
+        }
+        now.sort(Comparator.comparingLong((Map<String, Object> m) -> (Long) m.get("since"))
+                .thenComparing(m -> String.valueOf(m.get("nickname"))));
+        today.sort(Comparator.comparingLong((Map<String, Object> m) -> (Long) m.get("lastOnline")).reversed());
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("now", now);
+        out.put("today", today);
+        return out;
     }
 
     public Map<String, Object> player(String uuid) throws SQLException {

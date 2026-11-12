@@ -189,7 +189,7 @@ public class WebServer {
                 case "/api/overview" -> json(ex, 200, overviewCache.get("overview", dao::overview));
                 case "/api/goals" -> json(ex, 200, goalsOverview());
                 case "/api/rewards" -> json(ex, 200, rewardsOverview());
-                case "/api/players/online" -> json(ex, 200, Map.of("rows", dao.online()));
+                case "/api/players/online" -> json(ex, 200, dao.online(intParam(q, "tz", 0)));
                 case "/api/players" -> json(ex, 200, dao.players(
                         q.get("search"), q.getOrDefault("sort", "playtime"),
                         !"asc".equals(q.get("dir")), intParam(q, "page", 0), intParam(q, "size", 25)));

@@ -269,6 +269,86 @@ public class WebDAO {
         return out;
     }
 
+    /**
+     * Playtime and AFK time per day for one player, from the journal. Sessions and AFK intervals are
+     * split at midnight of the viewer's timezone ({@code tzMinutes} east of UTC). {@code days <= 0}
+     * means everything since the first recorded session. Returns null for an unknown player.
+     */
+    public Map<String, Object> playerDaily(String uuid, int days, int tzMinutes) throws SQLException {
+        final long dayMs = 86_400_000L;
+        final long off = Math.max(-840, Math.min(840, tzMinutes)) * 60_000L;
+        final long now = System.currentTimeMillis();
+        final long today = Math.floorDiv(now + off, dayMs);
+
+        try (Connection c = db.getConnection()) {
+            try (PreparedStatement ps = c.prepareStatement("SELECT 1 FROM play_time WHERE uuid = ?")) {
+                ps.setString(1, uuid);
+                try (ResultSet rs = ps.executeQuery()) { if (!rs.next()) return null; }
+            }
+            long first = 0;
+            try (PreparedStatement ps = c.prepareStatement("SELECT MIN(login) FROM playtime_journal WHERE uuid = ?")) {
+                ps.setString(1, uuid);
+                try (ResultSet rs = ps.executeQuery()) { rs.next(); first = rs.getLong(1); if (rs.wasNull()) first = 0; }
+            }
+            long firstDay = first == 0 ? today : Math.floorDiv(first + off, dayMs);
+            long startDay = days <= 0 ? firstDay : Math.max(today - Math.min(days, 3660) + 1, 0);
+            if (days <= 0) startDay = Math.min(startDay, today);
+            int n = (int) (today - startDay + 1);
+            long[] play = new long[n], afk = new long[n];
+            long since = startDay * dayMs - off;
+
+            try (PreparedStatement ps = c.prepareStatement(
+                    "SELECT login, logout FROM playtime_journal WHERE uuid = ? AND (logout > ? OR logout <= login)")) {
+                ps.setString(1, uuid);
+                ps.setLong(2, since);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        long login = rs.getLong(1), logout = rs.getLong(2);
+                        spread(play, startDay, dayMs, off, login, logout > login ? logout : now);
+                    }
+                }
+            }
+            try (PreparedStatement ps = c.prepareStatement(
+                    "SELECT a.afk_start, a.afk_end, (SELECT COUNT(*) FROM playtime_journal j WHERE j.uuid = a.uuid " +
+                            "AND j.login = a.session_login AND j.logout <= j.login) " +
+                            "FROM afk_journal a WHERE a.uuid = ? AND (a.afk_end > ? OR a.afk_end <= a.afk_start)")) {
+                ps.setString(1, uuid);
+                ps.setLong(2, since);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        long start = rs.getLong(1), end = rs.getLong(2);
+                        if (end <= start) { if (rs.getLong(3) == 0) continue; end = now; } // still AFK in an open session
+                        spread(afk, startDay, dayMs, off, start, end);
+                    }
+                }
+            }
+
+            List<Map<String, Object>> rows = new ArrayList<>(n);
+            for (int i = 0; i < n; i++) {
+                rows.add(Map.of("day", (startDay + i) * dayMs - off, "playtime", play[i], "afk", Math.min(afk[i], play[i])));
+            }
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("days", rows);
+            out.put("firstSession", first == 0 ? null : first);
+            out.put("totalDays", first == 0 ? 0 : today - firstDay + 1);
+            return out;
+        }
+    }
+
+    /** Adds the [from, to) interval to per-day buckets, splitting it at day boundaries. */
+    private static void spread(long[] buckets, long startDay, long dayMs, long off, long from, long to) {
+        if (to <= from) return;
+        long t = from;
+        while (t < to) {
+            long day = Math.floorDiv(t + off, dayMs);
+            long dayEnd = (day + 1) * dayMs - off;
+            long part = Math.min(to, dayEnd) - t;
+            int i = (int) (day - startDay);
+            if (i >= 0 && i < buckets.length) buckets[i] += part;
+            t += part;
+        }
+    }
+
     /** Completion counts per goal name: {completions, distinct players}. */
     public Map<String, long[]> goalCounts() throws SQLException {
         Map<String, long[]> out = new LinkedHashMap<>();

@@ -55,6 +55,8 @@ async function api(path, opts) {
   return r.json();
 }
 
+const loading = (label) => h('div', { class: 'loading', role: 'status' }, h('span', { class: 'spin' }), label || 'Loading…');
+
 const brandMark = () => h('div', { class: 'brand' }, h('img', { src: '/icon.webp', alt: '', width: 34, height: 34 }),
   h('span', { class: 'wordmark' }, h('span', { class: 'pt' }, 'Playtime'), ' ', h('span', { class: 'tm' }, 'Manager')));
 
@@ -142,7 +144,10 @@ function route() {
   const cur = views[v] ? v : 'overview';
   document.querySelectorAll('nav .tab').forEach(a => a.classList.toggle('on', a.dataset.v === cur));
   clear(main);
-  views[cur]().catch(e => { if (e.message !== 'unauthorized') main.append(h('div', { class: 'card empty' }, 'Failed to load data.')); });
+  const wait = loading();
+  main.append(wait);   // hidden by CSS as soon as the view appends its content
+  views[cur]().catch(e => { if (e.message !== 'unauthorized') main.append(h('div', { class: 'card empty' }, 'Failed to load data.')); })
+    .finally(() => wait.remove());
 }
 
 const tile = (k, v, color, span = 'c3') => h('div', { class: 'card stat ' + span, style: `--c:${color}` }, h('div', { class: 'k' }, k), h('div', { class: 'v' }, v));
@@ -367,7 +372,11 @@ function showTip(anchor, lines) {
 
 // ---- player modal -----------------------------------------------------------------------------
 async function openPlayer(uuid) {
-  const d = await api('/api/player/' + encodeURIComponent(uuid));
+  const wait = h('div', { class: 'scrim' }, loading());
+  document.body.append(wait);
+  let d;
+  try { d = await api('/api/player/' + encodeURIComponent(uuid)); }
+  finally { wait.remove(); }
   const pendingRewards = d.pendingRewards.filter(r => !r.expired);
   openModal({
     label: d.nickname,
@@ -378,6 +387,7 @@ async function openPlayer(uuid) {
         kv('First join', fmtDate(d.firstJoin), 'var(--ice)'), kv('Last seen', fmtDate(d.lastSeen), 'var(--ice)'))],
     tabs: {
       Journal: () => journal(d),
+      Trend: () => trend(d.uuid),
       [`Goals (${d.goals.length})`]: () => paged(d.goals, 8, g => h('div', { class: 'li' },
         h('span', {}, g.name + ' ', h('span', { class: 'pill ' + (g.received ? 'ok' : 'warn') }, g.received ? 'received' : 'unclaimed')),
         h('span', { class: 'muted' }, fmtText(g.completedAt))), 'No goals completed yet.'),
@@ -433,6 +443,76 @@ function journal(d) {
       h('span', {}, h('b', { class: 'ring' }), 'Vanish used'),
       h('span', { class: 'muted' }, 'One dot per session · hover for details')),
     paged([...sessions].reverse(), 6, render, 'No sessions recorded.', rows => h('div', {}, rows)));
+}
+
+/** Daily playtime / AFK lines. Default 30 days, extendable up to the first recorded session. */
+function trend(uuid) {
+  const box = h('div'), ranges = [['30 days', 30], ['90 days', 90], ['1 year', 365], ['All', 0]];
+  let days = 30;
+  const tz = Math.round(-new Date().getTimezoneOffset());
+  async function load() {
+    box.querySelectorAll('.chartbox').forEach(c => c.classList.add('stale'));   // keep the old chart dimmed while loading
+    const wait = loading();
+    box.append(wait);
+    let d;
+    try { d = await api(`/api/player/${encodeURIComponent(uuid)}/daily?days=${days}&tz=${tz}`); }
+    finally { wait.remove(); }
+    clear(box);
+    if (d.firstSession == null) { box.append(h('div', { class: 'empty' }, 'No sessions recorded.')); return; }
+    const bar = h('div', { class: 'tabs', style: 'margin-bottom:8px' }, ranges
+      .filter(([, n]) => n === 0 || n === 30 || n < d.totalDays)
+      .map(([label, n]) => h('button', { class: 'tab' + (n === days ? ' on' : ''), onclick: () => { days = n; load(); } }, label)));
+    const tot = d.days.reduce((a, x) => a + x.playtime, 0), afk = d.days.reduce((a, x) => a + x.afk, 0);
+    const sum = (k, v) => h('div', { class: 'sum' }, h('div', { class: 'k' }, k), h('div', { class: 'v' }, v));
+    box.append(bar,
+      h('div', { class: 'sums' }, sum('Playtime', fmtSecs(Math.round(tot / 1000))), sum('AFK', fmtSecs(Math.round(afk / 1000))),
+        sum('Daily average', fmtSecs(Math.round(tot / d.days.length / 1000)))),
+      h('div', { class: 'chartbox' }, lineChart(d.days)),
+      h('div', { class: 'legend' },
+        h('span', {}, h('b', { style: 'background:var(--blue)' }), 'Playtime'),
+        h('span', {}, h('b', { style: 'background:var(--orange)' }), 'AFK'),
+        h('span', { class: 'muted' }, `Recording since ${fmtDate(d.firstSession)} · hover for details`)));
+  }
+  load();
+  return box;
+}
+
+function lineChart(items) {
+  const W = 720, H = 260, L = 48, R = 14, T = 14, B = 28;
+  const max = Math.max(1, ...items.map(x => x.playtime));
+  const el = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': 'Playtime and AFK per day' });
+  const text = (x, y, anchor, str) => { const t = svg('text', { x, y, 'text-anchor': anchor }); t.textContent = str; el.append(t); };
+  const n = items.length, step = n > 1 ? (W - L - R) / (n - 1) : 0;
+  const X = (i) => n > 1 ? L + step * i : (L + W - R) / 2;
+  const Y = (v) => T + (H - T - B) * (1 - v / max);
+  for (let i = 0; i <= 4; i++) {
+    const y = T + (H - T - B) * i / 4;
+    el.append(svg('line', { x1: L, x2: W - R, y1: y, y2: y, stroke: 'var(--line)' }));
+    text(L - 8, y + 4, 'end', fmtSecs(Math.round(max * (1 - i / 4) / 1000)));
+  }
+  const ticks = Math.min(n, 5);
+  for (let k = 0; k < ticks; k++) {
+    const i = ticks === 1 ? 0 : Math.round((n - 1) * k / (ticks - 1));
+    text(X(i), H - 8, k === 0 && n > 1 ? 'start' : k === ticks - 1 && n > 1 ? 'end' : 'middle',
+      new Date(items[i].day).toLocaleDateString([], { month: 'short', day: 'numeric' }));
+  }
+  const path = (key) => items.map((x, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(x[key]).toFixed(1)}`).join('');
+  for (const [key, color] of [['playtime', 'var(--blue)'], ['afk', 'var(--orange)']]) {
+    if (n > 1) el.append(svg('path', { d: path(key), fill: 'none', style: `stroke:${color};stroke-width:2.5;stroke-linejoin:round` }));
+    if (n <= 60) items.forEach((x, i) => el.append(svg('circle', { cx: X(i), cy: Y(x[key]), r: 3.5, style: `fill:${color};pointer-events:none` })));
+  }
+  const line = (k, v, c) => h('div', { class: 'tl' }, h('span', {}, k), h('b', { style: `color:${c}` }, v));
+  items.forEach((x, i) => {
+    const w = Math.max(step, 6);
+    const r = svg('rect', { x: X(i) - w / 2, y: T, width: w, height: H - T - B, fill: 'transparent', tabindex: 0,
+      'aria-label': `${new Date(x.day).toLocaleDateString()}: ${fmtSecs(Math.round(x.playtime / 1000))}` });
+    const on = () => showTip(r, [h('div', { class: 'tt' }, new Date(x.day).toLocaleDateString([], { dateStyle: 'medium' })),
+      line('Playtime', fmtSecs(Math.round(x.playtime / 1000)), 'var(--blue)'), line('AFK', fmtSecs(Math.round(x.afk / 1000)), 'var(--orange)')]);
+    r.addEventListener('mouseenter', on); r.addEventListener('focus', on);
+    r.addEventListener('mouseleave', hideTip); r.addEventListener('blur', hideTip);
+    el.append(r);
+  });
+  return el;
 }
 
 /** Scatter: x = when the session started, y = how long it lasted, colour = share of AFK time. */

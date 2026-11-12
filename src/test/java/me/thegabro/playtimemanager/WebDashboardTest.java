@@ -87,6 +87,14 @@ class WebDashboardTest extends PluginTestBase {
         assertTrue(detail.get("afk").isJsonPrimitive(), "afk is the AFK playtime, not the intervals");
         assertTrue(detail.get("afkIntervals").isJsonArray() && detail.get("vanishIntervals").isJsonArray());
 
+        JsonObject daily = JsonParser.parseString(send("GET", "/api/player/" + uuid + "/daily?days=30", null, cookie, null).body()).getAsJsonObject();
+        assertEquals(30, daily.getAsJsonArray("days").size(), "default window is 30 days");
+        assertEquals(1, daily.get("totalDays").getAsInt());
+        JsonObject allDays = JsonParser.parseString(send("GET", "/api/player/" + uuid + "/daily?days=0", null, cookie, null).body()).getAsJsonObject();
+        assertEquals(1, allDays.getAsJsonArray("days").size(), "days=0 starts at the first recorded session");
+        assertEquals(400, send("GET", "/api/player/xyz/daily", null, cookie, null).statusCode());
+        assertEquals(404, send("GET", "/api/player/00000000-0000-0000-0000-000000000000/daily", null, cookie, null).statusCode());
+
         JsonObject overview = JsonParser.parseString(send("GET", "/api/overview", null, cookie, null).body()).getAsJsonObject();
         JsonObject jr = overview.getAsJsonObject("journal");
         assertEquals(672, jr.getAsJsonArray("heat").size(), "weekday x 15-minute slots");

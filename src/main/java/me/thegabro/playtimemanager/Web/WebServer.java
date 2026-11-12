@@ -49,6 +49,9 @@ public class WebServer {
     private final Gson gson = new Gson();
     private final WebAuth auth;
     private final WebDAO dao;
+    // The overview is server-wide and costly; per-player trends are only computed when someone opens that player.
+    private final TtlCache<String, Map<String, Object>> overviewCache = new TtlCache<>(30_000, 4);
+    private final TtlCache<String, Map<String, Object>> dailyCache = new TtlCache<>(60_000, 500);
     private final boolean trustProxy;
     private final boolean loopbackOnly;
     private final Set<String> allowedHosts = new HashSet<>();
@@ -181,7 +184,7 @@ public class WebServer {
         try {
             switch (path) {
                 case "/api/me" -> json(ex, 200, Map.of("user", session.user(), "expires", session.expires()));
-                case "/api/overview" -> json(ex, 200, dao.overview());
+                case "/api/overview" -> json(ex, 200, overviewCache.get("overview", dao::overview));
                 case "/api/goals" -> json(ex, 200, goalsOverview());
                 case "/api/rewards" -> json(ex, 200, dao.rewards());
                 case "/api/players/online" -> json(ex, 200, Map.of("rows", dao.online()));
@@ -194,6 +197,13 @@ public class WebServer {
                         Map<String, Object> g = goalDetail(name);
                         if (g == null) json(ex, 404, Map.of("error", "not_found"));
                         else json(ex, 200, g);
+                    } else if (path.startsWith("/api/player/") && path.endsWith("/daily")) {
+                        String uuid = path.substring("/api/player/".length(), path.length() - "/daily".length());
+                        if (!UUID_RE.matcher(uuid).matches()) { json(ex, 400, Map.of("error", "bad_uuid")); return; }
+                        int days = intParam(q, "days", 30), tz = intParam(q, "tz", 0);
+                        Map<String, Object> p = dailyCache.get(uuid + "|" + days + "|" + tz, () -> dao.playerDaily(uuid, days, tz));
+                        if (p == null) json(ex, 404, Map.of("error", "not_found"));
+                        else json(ex, 200, p);
                     } else if (path.startsWith("/api/player/")) {
                         String uuid = path.substring("/api/player/".length());
                         if (!UUID_RE.matcher(uuid).matches()) { json(ex, 400, Map.of("error", "bad_uuid")); return; }

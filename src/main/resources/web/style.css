@@ -207,3 +207,10 @@ code { font: 12px ui-monospace, Menlo, monospace; background: var(--hover); bord
 .hb { display: grid; grid-template-columns: 82px 1fr 78px; gap: 12px; align-items: center; font-size: 13px; }
 .hb .hl { color: var(--muted); } .hb .hv { text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; } .hb small { color: var(--muted); font-weight: 500; }
 .meter.big { height: 14px; border-radius: 7px; margin: 0; } .meter.big i { border-radius: 7px; background: var(--blue); }
+
+.loading { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 48px 0; color: var(--muted); font-weight: 600; }
+.scrim > .loading { position: fixed; inset: 0; padding: 0; color: var(--text); }
+main > .loading:not(:last-child) { display: none; }
+.spin { width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--blue); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.chartbox.stale { opacity: .45; transition: opacity .2s; }

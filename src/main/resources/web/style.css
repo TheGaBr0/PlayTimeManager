@@ -214,3 +214,9 @@ main > .loading:not(:last-child) { display: none; }
 .spin { width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--blue); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .chartbox.stale { opacity: .45; transition: opacity .2s; }
+
+.dot.sel { r: 9; stroke: var(--text) !important; stroke-width: 3 !important; }
+.sess { cursor: pointer; border-radius: 10px; padding-left: 8px; padding-right: 8px; }
+.sess:hover, .sess.sel { background: var(--hover); }
+.sess.sel { box-shadow: inset 3px 0 0 var(--orange); }
+.sess:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }

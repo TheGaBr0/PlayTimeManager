@@ -127,6 +127,8 @@ class WebDashboardTest extends PluginTestBase {
         assertFalse(noTime.has("time"), "no requirement: the field is absent, shown as 'Not set'");
         me.thegabro.playtimemanager.Goals.GoalsManager.getInstance().removeGoal(goal);
         assertEquals(404, send("GET", "/api/goal/NoSuchGoal", null, cookie, null).statusCode());
+        assertEquals(400, send("GET", "/api/reward/abc", null, cookie, null).statusCode());
+        assertEquals(404, send("GET", "/api/reward/987654", null, cookie, null).statusCode());
         assertEquals(400, send("GET", "/api/player/not-a-uuid%27%3B--", null, cookie, null).statusCode());
         assertEquals(405, send("DELETE", "/api/players", null, cookie, null).statusCode(), "read-only");
 

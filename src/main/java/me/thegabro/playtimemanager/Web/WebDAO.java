@@ -376,20 +376,49 @@ public class WebDAO {
         }
     }
 
-    public Map<String, Object> rewards() throws SQLException {
-        Map<String, Object> out = new LinkedHashMap<>();
+    /** Per reward id: {times received, distinct players, waiting to be claimed}. */
+    public Map<Integer, long[]> rewardCounts() throws SQLException {
+        Map<Integer, long[]> out = new TreeMap<>();
         try (Connection c = db.getConnection()) {
-            out.put("rewards", list(c,
-                    "SELECT main_instance_ID, required_joins, COUNT(*) FROM received_rewards " +
-                            "GROUP BY main_instance_ID, required_joins ORDER BY main_instance_ID, required_joins", null,
-                    rs -> Map.of("rewardId", rs.getInt(1), "joins", rs.getInt(2), "received", rs.getLong(3))));
-            out.put("pending", list(c,
-                    "SELECT nickname, main_instance_ID, required_joins, created_at FROM rewards_to_be_claimed " +
-                            "WHERE expired = 0 ORDER BY id DESC LIMIT 500", null,
-                    rs -> Map.of("nickname", rs.getString(1), "rewardId", rs.getInt(2), "joins", rs.getInt(3),
-                            "at", str(rs, 4))));
+            try (PreparedStatement ps = c.prepareStatement(
+                    "SELECT main_instance_ID, COUNT(*), COUNT(DISTINCT user_uuid) FROM received_rewards GROUP BY main_instance_ID");
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) { long[] a = out.computeIfAbsent(rs.getInt(1), k -> new long[3]); a[0] = rs.getLong(2); a[1] = rs.getLong(3); }
+            }
+            try (PreparedStatement ps = c.prepareStatement(
+                    "SELECT main_instance_ID, COUNT(*) FROM rewards_to_be_claimed WHERE expired = 0 GROUP BY main_instance_ID");
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) out.computeIfAbsent(rs.getInt(1), k -> new long[3])[2] = rs.getLong(2);
+            }
         }
         return out;
+    }
+
+    /** Who received a reward, newest first. */
+    public List<Map<String, Object>> rewardReceivers(int rewardId) throws SQLException {
+        try (Connection c = db.getConnection()) {
+            return list(c, "SELECT user_uuid, nickname, required_joins, received_at FROM received_rewards " +
+                        "WHERE main_instance_ID = ? ORDER BY id DESC LIMIT 1000", rewardId,
+                rs -> Map.of("uuid", rs.getString(1), "nickname", rs.getString(2), "joins", rs.getInt(3), "at", str(rs, 4)));
+        }
+    }
+
+    /** Who still has to claim a reward, newest first. */
+    public List<Map<String, Object>> rewardPending(int rewardId) throws SQLException {
+        try (Connection c = db.getConnection()) {
+            return list(c, "SELECT user_uuid, nickname, required_joins, created_at FROM rewards_to_be_claimed " +
+                        "WHERE main_instance_ID = ? AND expired = 0 ORDER BY id DESC LIMIT 1000", rewardId,
+                rs -> Map.of("uuid", rs.getString(1), "nickname", rs.getString(2), "joins", rs.getInt(3), "at", str(rs, 4)));
+        }
+    }
+
+    public List<Map<String, Object>> pendingRewards() throws SQLException {
+        try (Connection c = db.getConnection()) {
+            return list(c, "SELECT nickname, main_instance_ID, required_joins, created_at, user_uuid FROM rewards_to_be_claimed " +
+                        "WHERE expired = 0 ORDER BY id DESC LIMIT 500", null,
+                rs -> Map.of("nickname", rs.getString(1), "rewardId", rs.getInt(2), "joins", rs.getInt(3),
+                        "at", str(rs, 4), "uuid", rs.getString(5)));
+        }
     }
 
     // ---- helpers -------------------------------------------------------------------------------
@@ -401,10 +430,11 @@ public class WebDAO {
         return s == null ? "" : s;
     }
 
-    private List<Map<String, Object>> list(Connection c, String sql, String uuid, RowMapper mapper) throws SQLException {
+    private List<Map<String, Object>> list(Connection c, String sql, Object param, RowMapper mapper) throws SQLException {
         List<Map<String, Object>> out = new ArrayList<>();
         try (PreparedStatement ps = c.prepareStatement(sql)) {
-            if (uuid != null) ps.setString(1, uuid);
+            if (param instanceof Integer n) ps.setInt(1, n);
+            else if (param != null) ps.setString(1, String.valueOf(param));
             try (ResultSet rs = ps.executeQuery()) { while (rs.next()) out.add(mapper.map(rs)); }
         }
         return out;

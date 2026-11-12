@@ -90,6 +90,10 @@ function paged(items, size, render, empty, wrap) {
       pager(page, pages, items.length, (n) => { page = n; draw(); }));
   };
   draw();
+  box.reveal = (pred) => {                       // jump to the page that holds the first matching item
+    const i = items.findIndex(pred);
+    if (i >= 0 && Math.floor(i / size) !== page) { page = Math.floor(i / size); draw(); }
+  };
   return box;
 }
 
@@ -421,6 +425,16 @@ function journal(d) {
   const total = sessions.reduce((a, s) => a + (s.open ? 0 : s.len), 0), afkTotal = sessions.reduce((a, s) => a + s.afkMs, 0);
   const sum = (k, v) => h('div', { class: 'sum' }, h('div', { class: 'k' }, k), h('div', { class: 'v' }, v));
 
+  // a session is selected from its row or from its dot; both stay in sync
+  let selected = null, chart, list;
+  const syncRows = () => list.querySelectorAll('.sess').forEach(r => r.classList.toggle('sel', Number(r.dataset.login) === selected));
+  const select = (login, fromChart) => {
+    selected = selected === login ? null : login;
+    chart.select(selected);
+    if (selected != null && fromChart) list.reveal(x => x.login === selected);   // bring its row into view
+    syncRows();
+  };
+
   const render = (s) => {
     const bar = h('div', { class: 'bar' });
     for (const [cls, m] of [['afk', afk], ['vanish', van]]) {
@@ -429,20 +443,25 @@ function journal(d) {
         bar.append(h('i', { class: cls, style: `left:${a}%;width:${Math.min(w, 100 - a)}%` }));
       }
     }
-    return h('div', { class: 'sess' }, h('span', { class: 'muted' }, fmtDate(s.login)), bar,
+    return h('div', { class: 'sess' + (s.login === selected ? ' sel' : ''), 'data-login': s.login, tabindex: 0,
+      onclick: () => select(s.login, false),
+      onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(s.login, false); } } },
+      h('span', { class: 'muted' }, fmtDate(s.login)), bar,
       h('span', { style: 'text-align:right;font-weight:650' }, s.open ? 'online' : fmtSecs(Math.round(s.len / 1000))));
   };
 
+  chart = sessionChart(sessions, (login) => select(login, true));
+  list = paged([...sessions].reverse(), 6, render, 'No sessions recorded.', rows => h('div', {}, rows));
   return h('div', {},
     h('div', { class: 'sums' }, sum('Sessions shown', sessions.length), sum('Time online', fmtSecs(Math.round(total / 1000))),
       sum('AFK in them', total ? Math.round(afkTotal / total * 100) + '%' : '0%')),
-    h('div', { class: 'chartbox' }, sessionChart(sessions)),
+    h('div', { class: 'chartbox' }, chart),
     h('div', { class: 'legend' },
       h('span', {}, h('b', { style: 'background:var(--blue)' }), 'Mostly active'),
       h('span', {}, h('b', { style: 'background:var(--orange)' }), '25%+ AFK'),
       h('span', {}, h('b', { class: 'ring' }), 'Vanish used'),
-      h('span', { class: 'muted' }, 'One dot per session · hover for details')),
-    paged([...sessions].reverse(), 6, render, 'No sessions recorded.', rows => h('div', {}, rows)));
+      h('span', { class: 'muted' }, 'One dot per session · hover for details · click to select')),
+    list);
 }
 
 /** Daily playtime / AFK lines. Default 30 days, extendable up to the first recorded session. */
@@ -516,7 +535,7 @@ function lineChart(items) {
 }
 
 /** Scatter: x = when the session started, y = how long it lasted, colour = share of AFK time. */
-function sessionChart(sessions) {
+function sessionChart(sessions, onPick) {
   const W = 720, H = 250, L = 48, R = 14, T = 14, B = 28;
   const t0 = sessions[0].login, t1 = Math.max(...sessions.map(s => s.end));
   const span = Math.max(1, t1 - t0), maxLen = Math.max(...sessions.map(s => s.len));
@@ -537,7 +556,7 @@ function sessionChart(sessions) {
   for (const s of sessions) {
     const share = Math.min(1, s.afkMs / s.len);
     const c = svg('circle', {
-      cx: L + pad + (W - L - R - 2 * pad) * (s.login - t0) / span,
+      'data-login': s.login, cx: L + pad + (W - L - R - 2 * pad) * (s.login - t0) / span,
       cy: T + (H - T - B) * (1 - s.len / maxLen), r, tabindex: 0, class: 'dot',
       'aria-label': `${fmtDate(s.login)}, ${s.open ? 'online' : fmtSecs(Math.round(s.len / 1000))}`,
       style: `fill:${share >= 0.25 ? 'var(--orange)' : 'var(--blue)'};` +
@@ -554,8 +573,16 @@ function sessionChart(sessions) {
     const on = () => showTip(c, lines());
     c.addEventListener('mouseenter', on); c.addEventListener('focus', on);
     c.addEventListener('mouseleave', hideTip); c.addEventListener('blur', hideTip);
+    c.addEventListener('click', () => onPick && onPick(s.login));
+    c.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick && onPick(s.login); } });
     el.append(c);
   }
+  // highlight the selected session's dot and draw it on top of the others
+  el.select = (login) => el.querySelectorAll('.dot').forEach(c => {
+    const on = Number(c.dataset.login) === login;
+    c.classList.toggle('sel', on);
+    if (on) el.append(c);
+  });
   return el;
 }
 
@@ -624,19 +651,62 @@ async function openGoal(name) {
 // ---- rewards ----------------------------------------------------------------------------------
 async function renderRewards() {
   const d = await api('/api/rewards');
+  const received = d.rewards.reduce((a, r) => a + r.received, 0);
   main.append(
     h('div', { class: 'cols' },
-      tile('Reward types given', d.rewards.length, 'var(--blue)', 'c4'),
-      tile('Rewards received', d.rewards.reduce((a, r) => a + r.received, 0).toLocaleString(), 'var(--orange)', 'c4'),
+      tile('Join streak rewards', d.rewards.length, 'var(--blue)', 'c4'),
+      tile('Rewards received', received.toLocaleString(), 'var(--orange)', 'c4'),
       tile('Waiting to be claimed', d.pending.length.toLocaleString(), 'var(--yellow)', 'c4')),
     h('div', { class: 'cols' },
+      h('div', { class: 'card c6' }, h('h2', {}, 'Join streak rewards', h('span', { class: 'count' }, 'click one for details')),
+        table([['Reward'], ['Joins'], ['Received', 1], ['Waiting', 1]], r => h('tr', { class: 'row', onclick: () => openReward(r.id) },
+          h('td', {}, '#' + r.id, !r.configured && h('span', { class: 'pill warn', style: 'margin-left:8px' }, 'removed')),
+          h('td', { class: 'muted' }, r.joins), h('td', { class: 'n' }, r.received), h('td', { class: 'n' }, r.pending)),
+          d.rewards, 'No rewards configured.')),
       h('div', { class: 'card c6' }, h('h2', {}, 'Waiting to be claimed'),
-        table([['Player'], ['Reward'], ['Since']], r => h('tr', {},
+        table([['Player'], ['Reward'], ['Since']], r => h('tr', { class: 'row', onclick: () => openReward(r.rewardId) },
           h('td', {}, h('div', { class: 'who' }, avatar(r.nickname), r.nickname)),
-          h('td', {}, `#${r.rewardId} · ${r.joins} joins`), h('td', { class: 'muted' }, fmtText(r.at))), d.pending, 'Nothing pending.')),
-      h('div', { class: 'card c6' }, h('h2', {}, 'Join streak rewards received'),
-        table([['Reward'], ['Joins', 1], ['Times', 1]], r => h('tr', {}, h('td', {}, '#' + r.rewardId),
-          h('td', { class: 'n' }, r.joins), h('td', { class: 'n' }, r.received)), d.rewards, 'None yet.'))));
+          h('td', {}, `#${r.rewardId} · ${r.joins} joins`), h('td', { class: 'muted' }, fmtText(r.at))), d.pending, 'Nothing pending.'))));
+}
+
+async function openReward(id) {
+  const r = await api('/api/reward/' + id);
+  const yn = (b) => b ? 'Yes' : 'No';
+  const chips = (arr, empty) => arr && arr.length
+    ? h('div', { class: 'chipsrow' }, arr.map(x => h('code', {}, x))) : h('span', { class: 'muted' }, empty);
+  const field = (k, v) => h('div', { class: 'field' }, h('div', { class: 'fk' }, k), h('div', { class: 'fv' }, v));
+  const text = (v) => v || h('span', { class: 'muted' }, 'none');
+  const close = () => { document.querySelectorAll('.scrim,.modal').forEach(n => n.remove()); hideTip(); };
+  const people = (arr, empty, label) => paged(arr, 8, c => h('div', { class: 'li link', tabindex: 0,
+    onclick: () => { close(); openPlayer(c.uuid); } },
+    h('span', { class: 'who' }, avatar(c.nickname), c.nickname, h('span', { class: 'muted' }, ` · ${c.joins} joins`)),
+    h('span', { class: 'muted' }, fmtText(c.at))), empty);
+
+  const details = () => !r.configured
+    ? h('div', { class: 'empty' }, 'This reward no longer exists in the configuration. Only its history is kept.')
+    : h('div', { class: 'fields' },
+      field('Requirements', h('div', {}, field('Joins needed', r.joins), field('Repeatable', yn(r.repeatable)))),
+      field('Rewards', h('div', {}, field('Commands run', chips(r.commands, 'none')),
+        field('Permissions granted', chips(r.permissions, 'none')))),
+      field('Announcement', h('div', {}, field('Message', text(r.message)), field('Sound', text(r.sound)))),
+      field('Display', h('div', {}, field('Description', text(r.description)),
+        field('Reward description', text(r.rewardDescription)), field('Icon', text(r.icon)))));
+
+  openModal({
+    label: 'Reward #' + r.id,
+    side: [h('div', { class: 'avatar lg', style: '--av:var(--orange)' }, '#' + r.id),
+      h('div', {}, h('h1', {}, 'Reward #' + r.id),
+        r.configured ? h('span', { class: 'pill ok' }, 'configured') : h('span', { class: 'pill warn' }, 'removed')),
+      h('div', { class: 'kvs' },
+        kv('Received', r.received.toLocaleString(), 'var(--blue)'), kv('Players', r.players.toLocaleString(), 'var(--orange)'),
+        kv('Waiting', r.pending.toLocaleString(), 'var(--yellow)'),
+        r.configured && kv('Joins needed', r.joins, 'var(--ice)'))],
+    tabs: {
+      Details: details,
+      [`Received by (${r.receivers.length})`]: () => people(r.receivers, 'Nobody has received this reward yet.'),
+      [`Waiting (${r.waiting.length})`]: () => people(r.waiting, 'Nobody is waiting to claim this reward.'),
+    },
+  });
 }
 
 boot();

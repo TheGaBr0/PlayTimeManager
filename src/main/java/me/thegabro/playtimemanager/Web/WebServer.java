@@ -9,6 +9,8 @@ import com.sun.net.httpserver.HttpServer;
 import me.thegabro.playtimemanager.Database.DatabaseHandler;
 import me.thegabro.playtimemanager.Goals.Goal;
 import me.thegabro.playtimemanager.Goals.GoalsManager;
+import me.thegabro.playtimemanager.JoinStreaks.ManagingClasses.RewardRegistry;
+import me.thegabro.playtimemanager.JoinStreaks.Models.JoinStreakReward;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Utils;
 
@@ -186,7 +188,7 @@ public class WebServer {
                 case "/api/me" -> json(ex, 200, Map.of("user", session.user(), "expires", session.expires()));
                 case "/api/overview" -> json(ex, 200, overviewCache.get("overview", dao::overview));
                 case "/api/goals" -> json(ex, 200, goalsOverview());
-                case "/api/rewards" -> json(ex, 200, dao.rewards());
+                case "/api/rewards" -> json(ex, 200, rewardsOverview());
                 case "/api/players/online" -> json(ex, 200, Map.of("rows", dao.online()));
                 case "/api/players" -> json(ex, 200, dao.players(
                         q.get("search"), q.getOrDefault("sort", "playtime"),
@@ -197,6 +199,13 @@ public class WebServer {
                         Map<String, Object> g = goalDetail(name);
                         if (g == null) json(ex, 404, Map.of("error", "not_found"));
                         else json(ex, 200, g);
+                    } else if (path.startsWith("/api/reward/")) {
+                        int id;
+                        try { id = Integer.parseInt(path.substring("/api/reward/".length())); }
+                        catch (NumberFormatException e) { json(ex, 400, Map.of("error", "bad_id")); return; }
+                        Map<String, Object> r = rewardDetail(id);
+                        if (r == null) json(ex, 404, Map.of("error", "not_found"));
+                        else json(ex, 200, r);
                     } else if (path.startsWith("/api/player/") && path.endsWith("/daily")) {
                         String uuid = path.substring("/api/player/".length(), path.length() - "/daily".length());
                         if (!UUID_RE.matcher(uuid).matches()) { json(ex, 400, Map.of("error", "bad_uuid")); return; }
@@ -291,6 +300,67 @@ public class WebServer {
         out.put("completed", c[0]);
         out.put("players", c[1]);
         out.put("completions", dao.goalCompletions(name));
+        return out;
+    }
+
+    // ---- join streak rewards ------------------------------------------------------------------
+
+    private static String joinsText(JoinStreakReward r) { return r.getRequiredJoinsDisplay(); }
+
+    /** Every configured reward plus the ones that only survive in the history, with their counts. */
+    private Map<String, Object> rewardsOverview() throws SQLException {
+        Map<Integer, long[]> counts = dao.rewardCounts();
+        List<Map<String, Object>> list = new ArrayList<>();
+        Set<Integer> seen = new HashSet<>();
+        for (JoinStreakReward r : RewardRegistry.getInstance().getRewards()) {
+            seen.add(r.getId());
+            long[] c = counts.getOrDefault(r.getId(), new long[3]);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", r.getId());
+            m.put("configured", true);
+            m.put("joins", joinsText(r));
+            m.put("repeatable", r.isRepeatable());
+            m.put("received", c[0]);
+            m.put("players", c[1]);
+            m.put("pending", c[2]);
+            list.add(m);
+        }
+        counts.forEach((id, c) -> {
+            if (seen.add(id)) {
+                list.add(Map.of("id", id, "configured", false, "joins", "—", "repeatable", false,
+                        "received", c[0], "players", c[1], "pending", c[2]));
+            }
+        });
+        list.sort(Comparator.comparingInt(m -> (Integer) m.get("id")));
+        return Map.of("rewards", list, "pending", dao.pendingRewards());
+    }
+
+    private Map<String, Object> rewardDetail(int id) throws SQLException {
+        JoinStreakReward r = RewardRegistry.getInstance().getReward(id);
+        Map<Integer, long[]> counts = dao.rewardCounts();
+        if (r == null && !counts.containsKey(id)) return null;
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("id", id);
+        out.put("configured", r != null);
+        if (r != null) {
+            out.put("joins", joinsText(r));
+            out.put("singleJoin", r.isSingleJoinReward());
+            out.put("repeatable", r.isRepeatable());
+            out.put("commands", new ArrayList<>(r.getCommands()));
+            out.put("permissions", new ArrayList<>(r.getPermissions()));
+            out.put("message", r.getRewardMessage() == null ? "" : Utils.stripColor(r.getRewardMessage()));
+            out.put("sound", r.getRewardSound() == null ? "" : r.getRewardSound());
+            out.put("description", r.getDescription() == null ? "" : Utils.stripColor(r.getDescription()));
+            out.put("rewardDescription", r.getRewardDescription() == null ? "" : Utils.stripColor(r.getRewardDescription()));
+            out.put("icon", r.getItemIcon() == null ? "" : r.getItemIcon());
+        }
+        long[] c = counts.getOrDefault(id, new long[3]);
+        out.put("received", c[0]);
+        out.put("players", c[1]);
+        out.put("pending", c[2]);
+        out.put("receivers", dao.rewardReceivers(id));
+        out.put("waiting", dao.rewardPending(id));
         return out;
     }
 

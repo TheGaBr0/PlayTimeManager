@@ -32,7 +32,36 @@ public record JournalReport(
     }
 
     public static JournalReport build(JournalDAO dao, String uuid, long from, long to) {
-        List<Interval> rawSessions = dao.getSessions(uuid, from, to);
+        return compute(dao.getSessions(uuid, from, to),
+                dao.getAfkIntervals(uuid, from, to),
+                dao.getVanishIntervals(uuid, from, to),
+                dao.getCompletedGoals(uuid, from, to),
+                dao.getReceivedRewards(uuid, from, to),
+                from, to);
+    }
+
+    /**
+     * Reports of every player that has a session in [from, to), with three queries in total.
+     * Goals and rewards are not loaded (empty lists).
+     */
+    public static Map<String, JournalReport> buildAll(JournalDAO dao, long from, long to) {
+        Map<String, List<Interval>> sessions = dao.getAllSessions(from, to);
+        Map<String, List<Interval>> afk = dao.getAllAfkIntervals(from, to);
+        Map<String, List<Interval>> vanish = dao.getAllVanishIntervals(from, to);
+
+        Map<String, JournalReport> result = new HashMap<>();
+        for (Map.Entry<String, List<Interval>> entry : sessions.entrySet()) {
+            String uuid = entry.getKey();
+            result.put(uuid, compute(entry.getValue(),
+                    afk.getOrDefault(uuid, List.of()),
+                    vanish.getOrDefault(uuid, List.of()),
+                    List.of(), List.of(), from, to));
+        }
+        return result;
+    }
+
+    private static JournalReport compute(List<Interval> rawSessions, List<Interval> rawAfk, List<Interval> rawVanish,
+                                         List<Event> goals, List<Event> rewards, long from, long to) {
         List<Interval> sessions = clampToRange(rawSessions, from, to);
 
         // Real session bounds, used to keep AFK/vanish intervals inside their session
@@ -41,8 +70,8 @@ public record JournalReport(
             sessionByLogin.put(session.sessionLogin(), session);
         }
 
-        List<Interval> afk = clampToSessions(dao.getAfkIntervals(uuid, from, to), sessionByLogin, from, to);
-        List<Interval> vanish = clampToSessions(dao.getVanishIntervals(uuid, from, to), sessionByLogin, from, to);
+        List<Interval> afk = clampToSessions(rawAfk, sessionByLogin, from, to);
+        List<Interval> vanish = clampToSessions(rawVanish, sessionByLogin, from, to);
 
         return new JournalReport(
                 sessions.size(),
@@ -50,8 +79,8 @@ public record JournalReport(
                 total(vanish),
                 total(afk),
                 overlap(afk, vanish),
-                dao.getCompletedGoals(uuid, from, to),
-                dao.getReceivedRewards(uuid, from, to)
+                goals,
+                rewards
         );
     }
 

@@ -14,7 +14,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 
 
@@ -152,6 +154,46 @@ public class JournalDAO {
                 "SELECT session_login AS a, vanish_start AS b, vanish_end AS c FROM vanish_journal " +
                         "WHERE uuid = ? AND vanish_end > ? AND vanish_start < ? ORDER BY vanish_start",
                 uuid, from, to);
+    }
+
+    /** Sessions of every player overlapping [from, to), grouped by player uuid. */
+    public Map<String, List<Interval>> getAllSessions(long from, long to) {
+        return queryAllIntervals(
+                "SELECT uuid, login AS a, login AS b, logout AS c FROM playtime_journal " +
+                        "WHERE logout > ? AND login < ? ORDER BY login",
+                from, to);
+    }
+
+    public Map<String, List<Interval>> getAllAfkIntervals(long from, long to) {
+        return queryAllIntervals(
+                "SELECT uuid, session_login AS a, afk_start AS b, afk_end AS c FROM afk_journal " +
+                        "WHERE afk_end > ? AND afk_start < ? ORDER BY afk_start",
+                from, to);
+    }
+
+    public Map<String, List<Interval>> getAllVanishIntervals(long from, long to) {
+        return queryAllIntervals(
+                "SELECT uuid, session_login AS a, vanish_start AS b, vanish_end AS c FROM vanish_journal " +
+                        "WHERE vanish_end > ? AND vanish_start < ? ORDER BY vanish_start",
+                from, to);
+    }
+
+    private Map<String, List<Interval>> queryAllIntervals(String sql, long from, long to) {
+        Map<String, List<Interval>> result = new HashMap<>();
+        try (Connection conn = dbManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, from);
+            ps.setLong(2, to);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.computeIfAbsent(rs.getString("uuid"), k -> new ArrayList<>())
+                            .add(new Interval(rs.getLong("a"), rs.getLong("b"), rs.getLong("c")));
+                }
+            }
+        } catch (SQLException ex) {
+            plugin.getLogger().log(Level.SEVERE, Errors.sqlConnectionExecute(), ex);
+        }
+        return result;
     }
 
     private List<Interval> queryIntervals(String sql, String uuid, long from, long to) {

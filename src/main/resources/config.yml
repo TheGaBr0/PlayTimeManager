@@ -273,6 +273,11 @@ placeholders:
   # - "TestAccount"
   # - "StaffMember"
   playtime-leaderboard-blacklist: []
+  # Placeholders that use a rolling window (e.g. %PTM_playtime_last24h%, %PTM_playtime_top_last7d_1%)
+  # are read from the journal and cached. How many seconds before a cached value is refreshed:
+  journal-cache-seconds: 10
+  # The same, for the leaderboards of those placeholders
+  journal-top-cache-seconds: 30
 
 
 

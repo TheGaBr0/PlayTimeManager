@@ -5,6 +5,7 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.thegabro.playtimemanager.Customizations.PlaytimeFormats.PlaytimeFormatsConfiguration;
 import me.thegabro.playtimemanager.ExternalPluginSupport.LuckPerms.LuckPermsManager;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlaceholderExpansion.Handlers.*;
+import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlaceholderExpansion.Utils.JournalPlaceholderCache;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlaceholderExpansion.Utils.ParamParser;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlaceholderExpansion.Utils.PlaceholderUtils;
 import me.thegabro.playtimemanager.ExternalPluginSupport.PlaceHolders.PlaceholderExpansion.Utils.UserResolver;
@@ -19,6 +20,7 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
 
     private final List<PlaceholderHandler> handlers;
     private final ParamParser parser;
+    private final JournalPlaceholderCache journalCache;
 
     public PlayTimePlaceHolders() {
         PlayTimeManager plugin = PlayTimeManager.getInstance();
@@ -36,7 +38,11 @@ public class PlayTimePlaceHolders extends PlaceholderExpansion {
             }
         }
 
+        this.journalCache = new JournalPlaceholderCache();
+
+        // First, so it claims the rolling window forms; everything else falls through unchanged
         this.handlers = List.of(
+                new RollingWindowHandler(resolver, utils, journalCache),
                 new PlaytimeHandler(resolver, utils),
                 new OnlineForHandler(resolver, utils),
                 new AfkForHandler(resolver, utils),

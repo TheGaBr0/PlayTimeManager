@@ -98,7 +98,7 @@ main { display: grid; gap: 16px; padding-top: 20px; }
 .avatar.lg { width: 64px; height: 64px; border-radius: 20px; font-size: 28px; }
 
 /* tables */
-.scroll { overflow-x: auto; }
+.scroll { overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 11px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; user-select: none; }
@@ -130,9 +130,11 @@ input:focus, select:focus, button:focus-visible { outline: 2px solid var(--blue)
 .scrim { position: fixed; inset: 0; background: rgba(4,18,25,.55); backdrop-filter: blur(4px); z-index: 10; animation: fade .2s ease; }
 @keyframes fade { from { opacity: 0; } }
 .modal { position: fixed; z-index: 11; inset: 4vh 0 auto; margin: 0 auto; width: min(1040px, calc(100% - 24px)); max-height: 92vh;
-  overflow-y: auto; border-radius: 24px; background: var(--surface-solid); border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0,0,0,.4);
+  overflow-y: auto; overscroll-behavior: contain; border-radius: 24px; background: var(--surface-solid); border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0,0,0,.4);
   display: grid; grid-template-columns: 300px 1fr; animation: rise .25s ease; }
-@media (max-width: 800px) { .modal { grid-template-columns: 1fr; inset: 0; width: 100%; max-height: 100vh; border-radius: 0; } }
+@media (max-width: 800px) { .modal { grid-template-columns: 1fr; inset: 0; width: 100%; max-height: 100vh; max-height: 100dvh; border-radius: 0; } }
+/* the page behind a dialog must not scroll with it */
+body:has(.modal) { overflow: hidden; }
 .side { padding: 24px; background: linear-gradient(180deg, color-mix(in srgb, var(--blue) 30%, transparent), transparent 70%);
   display: flex; flex-direction: column; gap: 14px; }
 .side h1 { margin: 0; font-size: 24px; letter-spacing: -.02em; }
@@ -220,3 +222,34 @@ main > .loading:not(:last-child) { display: none; }
 .sess:hover, .sess.sel { background: var(--hover); }
 .sess.sel { box-shadow: inset 3px 0 0 var(--orange); }
 .sess:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+
+/* ---- touch & small screens ---- */
+/* charts: dragging sideways reads the chart (see scrub() in app.js), dragging up/down still scrolls the page */
+svg[role=img] { touch-action: pan-y; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.dot, svg [data-tip] { -webkit-tap-highlight-color: transparent; }
+@media (hover: none) { .tip { max-width: min(300px, calc(100vw - 16px)); } }
+html { -webkit-text-size-adjust: 100%; }
+input[type=search], select, .loginform input { font-size: 16px; }   /* below 16px iOS zooms the page when a field is focused */
+
+@media (max-width: 640px) {
+  /* top bar: brand and log out on one row, the tabs below, full width */
+  .top .wrap { flex-wrap: wrap; gap: 8px 12px; }
+  .brand { order: 1; }
+  .top .wrap > .btn { order: 2; margin-left: auto; }
+  nav { order: 3; width: 100%; margin-right: 0; overflow-x: auto; scrollbar-width: none; }
+  nav::-webkit-scrollbar { display: none; }
+  nav .tab { flex: 1; text-align: center; white-space: nowrap; padding: 8px 10px; }
+  .card { padding: 14px; }
+  .stat .v { font-size: 24px; }
+  .modal .side, .modal .body { padding: 16px; }
+  .body .tabs { flex-wrap: wrap; }
+  .sums { grid-template-columns: 1fr; }
+  .sum { display: flex; justify-content: space-between; align-items: baseline; }
+  .hb { grid-template-columns: 70px 1fr 64px; gap: 8px; }
+  .toolbar > * { flex: 1 1 100%; }
+  input[type=search] { max-width: none; }
+  .pager { justify-content: center; }
+  th, td { padding: 10px 8px; }
+  /* bigger touch targets */
+  .btn, .tab, .pg { min-height: 40px; }
+}

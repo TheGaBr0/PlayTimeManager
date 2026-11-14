@@ -183,7 +183,7 @@ async function renderOverview() {
       tile('Avg session · 30d', jr.sessions ? ms(jr.avgMs) : '—', 'var(--ice)')),
     h('div', { class: 'cols' },
       h('div', { class: 'card c8' }, h('h2', {}, 'Unique players per day', h('span', { class: 'count' }, 'last 30 days')),
-        barChart(d.activity.map(x => ({ day: x.day, v: x.players })), { h: 340, fmt: (v) => `${v} players`, tick: (v) => String(Math.round(v)) })),
+        barChart(d.activity.map(x => ({ day: x.day, v: x.players })), { h: 340, label: 'Players', fmt: (v) => `${v} players`, tick: (v) => String(Math.round(v)) })),
       h('div', { class: 'card c4' }, h('h2', {}, 'Top playtime'), leaderboard(d.top.slice(0, 7)))),
     h('div', { class: 'cols' },
       h('div', { class: 'card c8' }, h('h2', {}, 'When players join', h('span', { class: 'count' }, 'sessions started · 30 days')), heatmap(jr.heat)),
@@ -201,7 +201,7 @@ async function renderOverview() {
       h('div', { class: 'card c6' }, h('h2', {}, 'Session length', h('span', { class: 'count' }, 'how long visits last')), lengthChart(jr.lengths)),
       h('div', { class: 'card c6' }, h('h2', {}, 'Hours online per day', h('span', { class: 'count' }, 'last 30 days')),
         barChart(d.activity.map((x, i) => ({ day: x.day, v: (jr.onlinePerDay[i] || 0) / 3.6e6 })),
-          { color: 'var(--orange)', fmt: (v) => v.toFixed(1) + ' h', tick: (v) => (v >= 10 ? Math.round(v) : v.toFixed(1)) + 'h' }))));
+          { color: 'var(--orange)', label: 'Online', fmt: (v) => v.toFixed(1) + ' h', tick: (v) => (v >= 10 ? Math.round(v) : v.toFixed(1)) + 'h' }))));
 }
 
 function leaderboard(top) {
@@ -215,7 +215,7 @@ function leaderboard(top) {
 
 /** Daily bars for 30 days; the last bar (today) is highlighted. items: [{day, v}] */
 function barChart(items, opt) {
-  const W = 720, H = opt.h || 300, L = 36, B = 26, T = 10;
+  const W = chartWidth(), H = opt.h || 300, L = 36, B = 26, T = 10;
   const max = Math.max(1e-9, ...items.map(x => x.v));
   const el = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img' });
   const grad = 'g' + Math.random().toString(36).slice(2, 7);
@@ -235,13 +235,16 @@ function barChart(items, opt) {
       fill: last ? 'var(--orange)' : `url(#${grad})` });
     if (last && opt.color) r.setAttribute('fill', 'var(--yellow)');
     const t = svg('title'); t.textContent = `${new Date(x.day).toLocaleDateString()}: ${opt.fmt(x.v)}`; r.append(t);
+    r.setAttribute('tabindex', 0);
+    tipOn(r, () => showTip(r, [h('div', { class: 'tt' }, new Date(x.day).toLocaleDateString([], { dateStyle: 'medium' })),
+      h('div', { class: 'tl' }, h('span', {}, opt.label || 'Value'), h('b', {}, opt.fmt(x.v)))]));
     el.append(r);
     if ((i % 5 === 0 && i <= items.length - 4) || last) {
       const lb = svg('text', { x: last ? W : L + i * bw + bw / 2, y: H - 8, 'text-anchor': last ? 'end' : 'middle' });
       lb.textContent = new Date(x.day).toLocaleDateString([], { month: 'short', day: 'numeric' }); el.append(lb);
     }
   });
-  return el;
+  return scrub(el);
 }
 
 /** Weekday x hour grid of session starts. The server counts in UTC 15-minute slots; shift to the viewer's timezone. */
@@ -256,7 +259,7 @@ function heatmap(slots) {
     grid[(dayFromThu + 3) % 7][hour] += c;                                   // Thu -> index 3 in Mon-first order
   });
   const max = Math.max(1, ...grid.flat());
-  const W = 720, L = 40, T = 4, cw = (W - L) / 24, ch = 42, H = T + 7 * ch + 24;
+  const W = chartWidth(), L = 40, T = 4, cw = (W - L) / 24, ch = 42, H = T + 7 * ch + 24;
   const el = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': 'Sessions started by weekday and hour' });
   const text = (x, y, anchor, str) => { const t = svg('text', { x, y, 'text-anchor': anchor }); t.textContent = str; el.append(t); };
   grid.forEach((row, d) => {
@@ -266,13 +269,12 @@ function heatmap(slots) {
         style: `fill:var(--blue);fill-opacity:${c ? (0.14 + 0.86 * c / max).toFixed(3) : 0.07}` });
       const on = () => showTip(r, [h('div', { class: 'tt' }, `${names[d]} ${String(hr).padStart(2, '0')}:00`),
         h('div', { class: 'tl' }, h('span', {}, 'Sessions started'), h('b', {}, c))]);
-      r.addEventListener('mouseenter', on); r.addEventListener('focus', on);
-      r.addEventListener('mouseleave', hideTip); r.addEventListener('blur', hideTip);
+      tipOn(r, on);
       el.append(r);
     });
   });
   for (let hr = 0; hr < 24; hr += 3) text(L + hr * cw + cw / 2, H - 6, 'middle', String(hr).padStart(2, '0'));
-  return el;
+  return scrub(el);
 }
 
 function lengthChart(lengths) {
@@ -367,6 +369,44 @@ function openModal({ label, side, tabs }) {
 const kv = (k, v, c) => h('div', { class: 'kv', style: `--c:${c}` }, h('span', { class: 'k' }, k), h('span', { class: 'v' }, v));
 
 // ---- tooltip ----------------------------------------------------------------------------------
+/** Drawing width of the charts: 720 on desktop, the screen width on phones so text keeps its real size. */
+const chartWidth = () => window.innerWidth >= 800 ? 720 : Math.max(280, Math.min(720, window.innerWidth - 80));
+
+/** Shows the tooltip on hover/focus (mouse, keyboard) and marks the node as a target for touch scrubbing. */
+function tipOn(node, on) {
+  node.dataset.tip = '1';
+  node._tip = on;
+  node.addEventListener('mouseenter', on); node.addEventListener('focus', on);
+  node.addEventListener('mouseleave', hideTip); node.addEventListener('blur', hideTip);
+}
+
+/**
+ * Touch: tap or drag a finger over the chart to read it, like a slider. Dragging sideways does not scroll
+ * the page (touch-action in the CSS), dragging vertically still does. The tooltip stays until the next tap elsewhere.
+ */
+function scrub(chart) {
+  let last = null;
+  const pick = (e) => {
+    const hit = document.elementFromPoint(e.clientX, e.clientY);
+    let node = hit && hit.closest ? hit.closest('[data-tip]') : null;
+    if (!node) {                                        // small targets: take the nearest one within reach
+      let best = 28;
+      for (const n of chart.querySelectorAll('[data-tip]')) {
+        const r = n.getBoundingClientRect();
+        const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+        if (d < best) { best = d; node = n; }
+      }
+    }
+    if (node && node !== last) { last = node; node._tip(); }
+  };
+  chart.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') { last = null; pick(e); } });
+  chart.addEventListener('pointermove', (e) => { if (e.pointerType !== 'mouse' && e.buttons) pick(e); });
+  return chart;
+}
+document.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'mouse' && !(e.target.closest && e.target.closest('svg[role=img]'))) hideTip();
+});
+
 let tip = null;
 function hideTip() { if (tip) { tip.remove(); tip = null; } }
 function showTip(anchor, lines) {
@@ -467,7 +507,7 @@ function journal(d) {
       h('span', {}, h('b', { style: 'background:var(--blue)' }), 'Mostly active'),
       h('span', {}, h('b', { style: 'background:var(--orange)' }), '25%+ AFK'),
       h('span', {}, h('b', { class: 'ring' }), 'Vanish used'),
-      h('span', { class: 'muted' }, 'One dot per session · hover for details · click to select')),
+      h('span', { class: 'muted' }, 'One dot per session · hover or touch for details · click to select')),
     list);
 }
 
@@ -497,14 +537,14 @@ function trend(uuid) {
       h('div', { class: 'legend' },
         h('span', {}, h('b', { style: 'background:var(--blue)' }), 'Playtime'),
         h('span', {}, h('b', { style: 'background:var(--orange)' }), 'AFK'),
-        h('span', { class: 'muted' }, `Recording since ${fmtDate(d.firstSession)} · hover for details`)));
+        h('span', { class: 'muted' }, `Recording since ${fmtDate(d.firstSession)} · hover or touch for details`)));
   }
   load();
   return box;
 }
 
 function lineChart(items) {
-  const W = 720, H = 260, L = 48, R = 14, T = 14, B = 28;
+  const W = chartWidth(), H = 260, L = 48, R = 14, T = 14, B = 28;
   const max = Math.max(1, ...items.map(x => x.playtime));
   const el = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': 'Playtime and AFK per day' });
   const text = (x, y, anchor, str) => { const t = svg('text', { x, y, 'text-anchor': anchor }); t.textContent = str; el.append(t); };
@@ -534,16 +574,15 @@ function lineChart(items) {
       'aria-label': `${new Date(x.day).toLocaleDateString()}: ${fmtSecs(Math.round(x.playtime / 1000))}` });
     const on = () => showTip(r, [h('div', { class: 'tt' }, new Date(x.day).toLocaleDateString([], { dateStyle: 'medium' })),
       line('Playtime', fmtSecs(Math.round(x.playtime / 1000)), 'var(--blue)'), line('AFK', fmtSecs(Math.round(x.afk / 1000)), 'var(--orange)')]);
-    r.addEventListener('mouseenter', on); r.addEventListener('focus', on);
-    r.addEventListener('mouseleave', hideTip); r.addEventListener('blur', hideTip);
+    tipOn(r, on);
     el.append(r);
   });
-  return el;
+  return scrub(el);
 }
 
 /** Scatter: x = when the session started, y = how long it lasted, colour = share of AFK time. */
 function sessionChart(sessions, onPick) {
-  const W = 720, H = 250, L = 48, R = 14, T = 14, B = 28;
+  const W = chartWidth(), H = 250, L = 48, R = 14, T = 14, B = 28;
   const t0 = sessions[0].login, t1 = Math.max(...sessions.map(s => s.end));
   const span = Math.max(1, t1 - t0), maxLen = Math.max(...sessions.map(s => s.len));
   const el = svg('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', role: 'img', 'aria-label': 'Sessions over time' });
@@ -578,8 +617,7 @@ function sessionChart(sessions, onPick) {
       s.goals.length > 0 && line('Goals', s.goals.join(', ')),
       s.rewards.length > 0 && line('Rewards', s.rewards.join(', '))];
     const on = () => showTip(c, lines());
-    c.addEventListener('mouseenter', on); c.addEventListener('focus', on);
-    c.addEventListener('mouseleave', hideTip); c.addEventListener('blur', hideTip);
+    tipOn(c, on);
     c.addEventListener('click', () => onPick && onPick(s.login));
     c.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick && onPick(s.login); } });
     el.append(c);
@@ -590,7 +628,7 @@ function sessionChart(sessions, onPick) {
     c.classList.toggle('sel', on);
     if (on) el.append(c);
   });
-  return el;
+  return scrub(el);
 }
 
 // ---- goals ------------------------------------------------------------------------------------

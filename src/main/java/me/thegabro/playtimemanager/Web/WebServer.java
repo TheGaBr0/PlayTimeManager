@@ -320,6 +320,8 @@ public class WebServer {
             m.put("configured", true);
             m.put("joins", joinsText(r));
             m.put("repeatable", r.isRepeatable());
+            m.put("icon", r.getItemIcon() == null ? "" : r.getItemIcon());
+            m.put("glint", r.isItemIconGlint());
             m.put("received", c[0]);
             m.put("players", c[1]);
             m.put("pending", c[2]);
@@ -354,6 +356,7 @@ public class WebServer {
             out.put("description", r.getDescription() == null ? "" : Utils.stripColor(r.getDescription()));
             out.put("rewardDescription", r.getRewardDescription() == null ? "" : Utils.stripColor(r.getRewardDescription()));
             out.put("icon", r.getItemIcon() == null ? "" : r.getItemIcon());
+            out.put("glint", r.isItemIconGlint());
         }
         long[] c = counts.getOrDefault(id, new long[3]);
         out.put("received", c[0]);
@@ -458,7 +461,7 @@ public class WebServer {
         h.set("Cross-Origin-Resource-Policy", "same-origin");
         h.set("Content-Security-Policy",
                 "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; " +
-                        "img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
+                        "img-src 'self' data: https://cdn.jsdelivr.net; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
         boolean head = ex.getRequestMethod().equals("HEAD");
         ex.sendResponseHeaders(status, head ? -1 : body.length);
         if (!head) ex.getResponseBody().write(body);

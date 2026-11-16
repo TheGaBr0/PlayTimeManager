@@ -95,6 +95,17 @@ main { display: grid; gap: 16px; padding-top: 20px; }
 .val { font-variant-numeric: tabular-nums; font-weight: 650; font-size: 14px; }
 .avatar { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; font-weight: 800; color: var(--ink);
   background: var(--av, var(--blue)); flex: none; }
+.avatar.itemicon { background: none; image-rendering: pixelated; object-fit: contain; border-radius: 0; }
+.avatar.itemicon:not(img) { background: var(--av); border-radius: 11px; }
+.iwrap { position: relative; display: inline-block; width: 34px; height: 34px; flex: none; }
+.iwrap.lg { width: 64px; height: 64px; }
+.iwrap > img { display: block; }
+.iwrap.glint::after { content: ''; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+  -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat;
+  image-rendering: pixelated; background: linear-gradient(115deg, #3b1d7a 20%, #b57cff 45%, #3b1d7a 70%) 0 0 / 300% 100%;
+  animation: glint 3s linear infinite; }
+@keyframes glint { to { background-position: -300% 0; } }
+@media (prefers-reduced-motion: reduce) { .iwrap.glint::after { animation: none; } }
 .avatar.lg { width: 64px; height: 64px; border-radius: 20px; font-size: 28px; }
 
 /* tables */

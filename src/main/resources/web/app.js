@@ -48,6 +48,26 @@ const avatar = (name, big) => {
   return h('div', { class: 'avatar' + (big ? ' lg' : ''), style: `--av:${AV[x % AV.length]}` }, (name[0] || '?').toUpperCase());
 };
 
+// Item textures come from the PrismarineJS minecraft-assets CDN: plain items first, then block textures, then a text tile.
+const ASSETS = 'https://cdn.jsdelivr.net/gh/PrismarineJS/minecraft-assets@master/data/1.21.1/';
+const itemIcon = (material, fallback, big, glint) => {
+  const cls = 'avatar itemicon' + (big ? ' lg' : '');
+  const tile = () => h('div', { class: cls, style: '--av:var(--orange)' }, fallback);
+  const name = String(material || '').toLowerCase();
+  if (!/^[a-z0-9_]+$/.test(name)) return tile();
+  const wrap = h('span', { class: 'iwrap' + (glint ? ' glint' : '') + (big ? ' lg' : '') });
+  const img = h('img', { class: cls, alt: '', loading: 'lazy', width: big ? 64 : 34, height: big ? 64 : 34 });
+  const load = (kind) => { const u = `${ASSETS}${kind}/${name}.png`; img.src = u; wrap.style.setProperty('--icon', `url("${u}")`); };
+  let step = 0;
+  img.onerror = () => {
+    if (step++ === 0) load('blocks');
+    else wrap.replaceWith(tile());
+  };
+  load('items');
+  wrap.append(img);
+  return wrap;
+};
+
 async function api(path, opts) {
   const r = await fetch(path, Object.assign({ credentials: 'same-origin' }, opts));
   if (r.status === 401) { showLogin(); throw new Error('unauthorized'); }
@@ -705,7 +725,7 @@ async function renderRewards() {
     h('div', { class: 'cols' },
       h('div', { class: 'card c6' }, h('h2', {}, 'Join streak rewards', h('span', { class: 'count' }, 'click one for details')),
         table([['Reward'], ['Joins'], ['Received', 1], ['Waiting', 1]], r => h('tr', { class: 'row', onclick: () => openReward(r.id) },
-          h('td', {}, '#' + r.id, !r.configured && h('span', { class: 'pill warn', style: 'margin-left:8px' }, 'removed')),
+          h('td', {}, h('div', { class: 'who' }, itemIcon(r.icon, '#', false, r.glint), '#' + r.id), !r.configured && h('span', { class: 'pill warn', style: 'margin-left:8px' }, 'removed')),
           h('td', { class: 'muted' }, r.joins), h('td', { class: 'n' }, r.received), h('td', { class: 'n' }, r.pending)),
           d.rewards, 'No rewards configured.')),
       h('div', { class: 'card c6' }, h('h2', {}, 'Waiting to be claimed'),
@@ -739,7 +759,7 @@ async function openReward(id) {
 
   openModal({
     label: 'Reward #' + r.id,
-    side: [h('div', { class: 'avatar lg', style: '--av:var(--orange)' }, '#' + r.id),
+    side: [itemIcon(r.icon, '#' + r.id, true, r.glint),
       h('div', {}, h('h1', {}, 'Reward #' + r.id),
         r.configured ? h('span', { class: 'pill ok' }, 'configured') : h('span', { class: 'pill warn' }, 'removed')),
       h('div', { class: 'kvs' },

@@ -8,6 +8,9 @@ import me.thegabro.playtimemanager.Journal.JournalReport;
 import me.thegabro.playtimemanager.PlayTimeManager;
 import me.thegabro.playtimemanager.Users.DBUsersManager;
 import me.thegabro.playtimemanager.Utils;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -23,13 +26,14 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
- * /playtimejournal <player> <from> [HH:mm] <to> [HH:mm]
+ * /playtimejournal <player> <from> [HH:mm] <to> [HH:mm] [pN]
  */
 public class PlaytimeJournal implements CommandExecutor, TabCompleter {
-    private static final int MAX_LISTED_EVENTS = 10;
+    private static final int LINES_PER_PAGE = 12;
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final CommandsConfiguration config = CommandsConfiguration.getInstance();
@@ -43,10 +47,18 @@ public class PlaytimeJournal implements CommandExecutor, TabCompleter {
             return false;
         }
 
+        int page = 1;
+        if (args.length > 3 && isPageArg(args[args.length - 1])) {
+            page = Math.max(1, parsePage(args[args.length - 1]));
+            args = Arrays.copyOf(args, args.length - 1);
+        }
+        final int requestedPage = page;
+        final String commandBase = "/" + label + " " + String.join(" ", args);
+
         long[] range = args.length >= 3 ? parseRange(args) : null;
         if (range == null) {
             sender.sendMessage(Utils.parseColors(Utils.withPrefix(
-                    "&cUsage: /" + label + " <player> <from: yyyy-MM-dd [HH:mm]> <to: yyyy-MM-dd [HH:mm]>")));
+                    "&cUsage: /" + label + " <player> <from: yyyy-MM-dd [HH:mm]> <to: yyyy-MM-dd [HH:mm]> [pN]")));
             return false;
         }
         long from = range[0];
@@ -67,7 +79,7 @@ public class PlaytimeJournal implements CommandExecutor, TabCompleter {
                     Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                         JournalReport report = JournalReport.build(
                                 DatabaseHandler.getInstance().getJournalDAO(), user.getUuid(), from, to);
-                        sendSync(sender, format(user.getNickname(), report, from, to));
+                        sendPaged(sender, format(user.getNickname(), report, from, to), requestedPage, commandBase);
                     }));
         });
 
@@ -92,17 +104,13 @@ public class PlaytimeJournal implements CommandExecutor, TabCompleter {
     }
 
     private void addEvents(List<String> lines, List<Event> events, boolean reward) {
-        for (int i = 0; i < Math.min(events.size(), MAX_LISTED_EVENTS); i++) {
-            Event e = events.get(i);
+        for (Event e : events) {
             String name = e.label();
             if (reward) {
                 String[] parts = e.label().split(":");
                 name = "Reward #" + parts[0] + " (" + parts[1] + " joins)";
             }
             lines.add("&7    * &f" + name + " &8" + formatInstant(e.at()));
-        }
-        if (events.size() > MAX_LISTED_EVENTS) {
-            lines.add("&7    ... and " + (events.size() - MAX_LISTED_EVENTS) + " more");
         }
     }
 
@@ -121,6 +129,54 @@ public class PlaytimeJournal implements CommandExecutor, TabCompleter {
                         ? Utils.withPrefix(line) : line));
             }
         });
+    }
+
+    /** Sends the title line, then one page of the body, followed by clickable navigation when there are several pages. */
+    private void sendPaged(CommandSender sender, List<String> lines, int page, String commandBase) {
+        String title = lines.get(0);
+        List<String> body = lines.subList(1, lines.size());
+        int totalPages = Math.max(1, (body.size() + LINES_PER_PAGE - 1) / LINES_PER_PAGE);
+        int current = Math.min(page, totalPages);
+        int start = (current - 1) * LINES_PER_PAGE;
+        List<String> pageLines = new ArrayList<>();
+        pageLines.add(title);
+        pageLines.addAll(body.subList(start, Math.min(body.size(), start + LINES_PER_PAGE)));
+
+        Component nav = null;
+        if (totalPages > 1) {
+            Component prev = current > 1
+                    ? Utils.parseColors("&e[<<]")
+                            .clickEvent(ClickEvent.runCommand(commandBase + " p" + (current - 1)))
+                            .hoverEvent(HoverEvent.showText(Utils.parseColors("&7Previous page")))
+                    : Utils.parseColors("&8[<<]");
+            Component next = current < totalPages
+                    ? Utils.parseColors("&e[>>]")
+                            .clickEvent(ClickEvent.runCommand(commandBase + " p" + (current + 1)))
+                            .hoverEvent(HoverEvent.showText(Utils.parseColors("&7Next page")))
+                    : Utils.parseColors("&8[>>]");
+            nav = prev.append(Utils.parseColors(" &7Page &e" + current + "&7/&e" + totalPages + " ")).append(next);
+        }
+
+        final Component footer = nav;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            for (String line : pageLines) {
+                sender.sendMessage(Utils.parseColors(line.startsWith("&7Journal") || line.startsWith("&c")
+                        ? Utils.withPrefix(line) : line));
+            }
+            if (footer != null) sender.sendMessage(footer);
+        });
+    }
+
+    private boolean isPageArg(String s) {
+        return s.length() > 1 && (s.charAt(0) == 'p' || s.charAt(0) == 'P') && s.substring(1).chars().allMatch(Character::isDigit);
+    }
+
+    private int parsePage(String s) {
+        try {
+            return Integer.parseInt(s.substring(1));
+        } catch (NumberFormatException e) {
+            return 1;
+        }
     }
 
     /**

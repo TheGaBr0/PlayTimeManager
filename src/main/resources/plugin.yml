@@ -58,7 +58,7 @@ commands:
     aliases: [ptstats]
   playtimejournal:
     description: Command to see how long a player was online/AFK and what they did in a period
-    usage: /playtimejournal <player> <from> [HH:mm] <to> [HH:mm]
+    usage: /playtimejournal <player> <from> [HH:mm] <to> [HH:mm] [pN]
     permission: playtime.journal
     permission-message: You don't have the permission to execute this command!
     aliases: [ptjournal]

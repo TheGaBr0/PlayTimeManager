@@ -50,7 +50,7 @@ class JournalEventsTest extends PluginTestBase {
     }
 
     @Test
-    void aLongListIsShortened() throws Exception {
+    void aLongListIsPaged() throws Exception {
         PlayerMock player = server.addPlayer("Collector");
         settle();
         String uuid = player.getUniqueId().toString();
@@ -61,6 +61,14 @@ class JournalEventsTest extends PluginTestBase {
         String out = run(server.getConsoleSender(), "playtimejournal", "Collector", yesterday, tomorrow);
 
         assertTrue(out.contains("Goals completed: 12"), out);
-        assertTrue(out.contains("and 2 more"), out);
+        assertTrue(out.contains("goal_1"), out);
+        assertFalse(out.contains("goal_12"), out);
+        assertTrue(out.contains("Page 1/2"), out);
+
+        String second = run(server.getConsoleSender(), "playtimejournal", "Collector", yesterday, tomorrow, "p2");
+
+        assertTrue(second.contains("goal_12"), second);
+        assertFalse(second.contains("goal_1 "), second);
+        assertTrue(second.contains("Page 2/2"), second);
     }
 }

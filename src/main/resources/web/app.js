@@ -203,8 +203,8 @@ async function renderOverview() {
       h('div', { class: 'chips' },
         h('span', { class: 'chip' }, d.players.toLocaleString() + ' players'),
         h('span', { class: 'chip' }, afkShare + '% AFK'),
-        h('span', { class: 'chip' }, 'avg ' + fmtTicks(avg) + ' each'),
-        d.database && h('span', { class: 'chip' }, dbLabel(d.database)))),
+        h('span', { class: 'chip' }, 'avg ' + fmtTicks(avg) + ' each')),
+      d.database && h('span', { class: 'chip dbchip', title: 'Database type and size' }, dbLabel(d.database))),
     h('div', { class: 'cols' },
       tile('Players today', todayPlayers.toLocaleString(), 'var(--blue)'),
       tile('Best day · 30d', bestDay.toLocaleString(), 'var(--orange)'),
@@ -609,6 +609,9 @@ function lineChart(items) {
   return scrub(el);
 }
 
+/** Keeps a tooltip short: the first few items, then how many more there are. */
+const capList = (arr, max = 3) => arr.slice(0, max).join(', ') + (arr.length > max ? ` +${arr.length - max} more` : '');
+
 /** Scatter: x = when the session started, y = how long it lasted, colour = share of AFK time. */
 function sessionChart(sessions, onPick) {
   const W = chartWidth(), H = 250, L = 48, R = 14, T = 14, B = 28;
@@ -643,8 +646,8 @@ function sessionChart(sessions, onPick) {
       line('Duration', s.open ? 'ongoing' : fmtSecs(Math.round(s.len / 1000))),
       line('AFK', s.afkN ? `${fmtSecs(Math.round(s.afkMs / 1000))} · ${s.afkN}×` : 'none'),
       line('Vanish', s.vanN ? `${fmtSecs(Math.round(s.vanMs / 1000))} · ${s.vanN}×` : 'none'),
-      s.goals.length > 0 && line('Goals', s.goals.join(', ')),
-      s.rewards.length > 0 && line('Rewards', s.rewards.join(', '))];
+      s.goals.length > 0 && line('Goals', capList(s.goals)),
+      s.rewards.length > 0 && line('Rewards', capList(s.rewards))];
     const on = () => showTip(c, lines());
     tipOn(c, on);
     c.addEventListener('click', () => onPick && onPick(s.login));

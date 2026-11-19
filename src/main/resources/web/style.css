@@ -72,6 +72,8 @@ main { display: grid; gap: 16px; padding-top: 20px; }
 .hero .eyebrow { font-weight: 650; text-transform: uppercase; letter-spacing: .1em; font-size: 12px; opacity: .75; }
 .hero .big { font-size: clamp(38px, 6vw, 68px); font-weight: 800; letter-spacing: -.04em; line-height: 1.05; margin: 6px 0 14px; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.hero .dbchip { position: absolute; top: clamp(14px, 2vw, 22px); right: clamp(14px, 2vw, 22px); font-size: 13px; }
+@media (max-width: 560px) { .hero .dbchip { position: static; display: inline-block; margin-top: 10px; } }
 .chip { background: rgba(255,255,255,.55); border-radius: 99px; padding: 5px 13px; font-weight: 600; font-size: 14px; }
 
 /* stat tiles */

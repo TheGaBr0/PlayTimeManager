@@ -490,7 +490,9 @@ function journal(d) {
   // everything registered for each session, once
   const sessions = d.sessions.map(s => {
     const open = s.logout <= s.login, end = open ? now : s.logout, len = Math.max(1, end - s.login);
-    const inside = (t) => { const v = parseTs(t); return !isNaN(v) && v >= s.login && v <= end; };
+    // event times are stored to the second, session times to the millisecond: a reward given on join is stamped
+    // up to 1s before the login itself, so allow that much slack on both sides
+    const inside = (t) => { const v = parseTs(t); return !isNaN(v) && v >= s.login - 999 && v <= end + 999; };
     return { ...s, open, end, len,
       afkMs: clip(afk.get(s.login), s.login, end), afkN: (afk.get(s.login) || []).length,
       vanMs: clip(van.get(s.login), s.login, end), vanN: (van.get(s.login) || []).length,

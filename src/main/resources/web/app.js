@@ -176,6 +176,14 @@ function route() {
 
 const tile = (k, v, color, span = 'c3') => h('div', { class: 'card stat ' + span, style: `--c:${color}` }, h('div', { class: 'k' }, k), h('div', { class: 'v' }, v));
 
+const DB_NAMES = { SQLITE: 'SQLite', MYSQL: 'MySQL', POSTGRESQL: 'PostgreSQL' };
+const fmtBytes = (b) => {
+  const u = ['B', 'KB', 'MB', 'GB', 'TB']; let i = 0;
+  while (b >= 1024 && i < u.length - 1) { b /= 1024; i++; }
+  return (i ? b.toFixed(b >= 100 ? 0 : 1) : b) + ' ' + u[i];
+};
+const dbLabel = (db) => (DB_NAMES[db.type] || db.type) + (db.bytes >= 0 ? ' · ' + fmtBytes(db.bytes) : '');
+
 // ---- overview ---------------------------------------------------------------------------------
 async function renderOverview() {
   const d = await api('/api/overview');
@@ -195,7 +203,8 @@ async function renderOverview() {
       h('div', { class: 'chips' },
         h('span', { class: 'chip' }, d.players.toLocaleString() + ' players'),
         h('span', { class: 'chip' }, afkShare + '% AFK'),
-        h('span', { class: 'chip' }, 'avg ' + fmtTicks(avg) + ' each'))),
+        h('span', { class: 'chip' }, 'avg ' + fmtTicks(avg) + ' each'),
+        d.database && h('span', { class: 'chip' }, dbLabel(d.database)))),
     h('div', { class: 'cols' },
       tile('Players today', todayPlayers.toLocaleString(), 'var(--blue)'),
       tile('Best day · 30d', bestDay.toLocaleString(), 'var(--orange)'),

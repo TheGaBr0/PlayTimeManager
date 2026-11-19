@@ -93,7 +93,34 @@ public class WebDAO {
             out.put("activity", days);
             out.put("journal", journalStats(c, today, dayMs));
         }
+        out.put("database", dbInfoCache.get("db", this::databaseInfo));
         return out;
+    }
+
+    // The size barely moves and can be costly to compute (MySQL/PostgreSQL scan metadata), so it is cached much longer than the overview.
+    private final TtlCache<String, Map<String, Object>> dbInfoCache = new TtlCache<>(6 * 3_600_000L, 1);
+
+    private Map<String, Object> databaseInfo() throws SQLException {
+        Map<String, Object> info = new LinkedHashMap<>();
+        info.put("type", String.valueOf(db.getDatabaseType()));
+        try (Connection c = db.getConnection()) {
+            info.put("bytes", databaseSize(c));
+        }
+        return info;
+    }
+
+    /** Size of the whole database in bytes, or -1 when the backend can't tell. */
+    private long databaseSize(Connection c) {
+        String sql = switch (db.getDatabaseType()) {
+            case SQLITE -> "SELECT page_count * page_size FROM pragma_page_count(), pragma_page_size()";
+            case MYSQL -> "SELECT COALESCE(SUM(data_length + index_length), 0) FROM information_schema.tables WHERE table_schema = DATABASE()";
+            case POSTGRESQL -> "SELECT pg_database_size(current_database())";
+        };
+        try (PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? rs.getLong(1) : -1;
+        } catch (SQLException e) {
+            return -1;
+        }
     }
 
     private static final long SLOT_MS = 900_000L;      // 15 minutes
